@@ -7,15 +7,12 @@
 #include "DataFormats/GeometryVector/interface/GlobalPoint.h"
 #include "DataFormats/GeometryCommonDetAlgo/interface/GlobalError.h"
 
-//#include "TrackingTools/DetLayers/interface/DetLayer.h"
 #include "Geometry/CommonDetUnit/interface/GeomDet.h"
 #include "DataFormats/TrackingRecHit/interface/TrackingRecHit.h"
 #include "RecoTracker/TkMSParametrization/interface/PixelRecoUtilities.h"
 
-//#include "CommonTools/Statistics/interface/LinearFit.h"
 #include "DataFormats/GeometryCommonDetAlgo/interface/Measurement1D.h"
 
-#include "Geometry/CommonDetUnit/interface/GeomDetUnit.h"
 #include "Geometry/CommonDetUnit/interface/GeomDetType.h"
 
 #include "MagneticField/Engine/interface/MagneticField.h"
@@ -24,8 +21,6 @@
 #include <Eigen/Core>
 #include <Eigen/Eigenvalues>
 
-//#include "RecoPixelVertexing/PixelTrackFitting/interface/RZLine.h"
-//#include "CircleFromThreePoints.h"
 #include "RecoPixelVertexing/PixelTrackFitting/interface/PixelTrackBuilder.h"
 #include "RecoPixelVertexing/PixelTrackFitting/interface/PixelTrackErrorParam.h"
 #include "DataFormats/GeometryVector/interface/Pi.h"
