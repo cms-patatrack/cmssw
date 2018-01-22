@@ -36,7 +36,6 @@ using namespace Eigen;
 constexpr double d = 1.e-4;         //!< used in numerical derivative (J2 in Circle_fit())
 constexpr unsigned int max_nop = 8;  //!< In order to avoid use of dynamic memory
 
-
 using MatrixNd = Eigen::Matrix<double, Dynamic, Dynamic, 0, max_nop, max_nop>;
 using ArrayNd = Eigen::Array<double, Dynamic, Dynamic, 0, max_nop, max_nop>;
 using Matrix2Nd = Eigen::Matrix<double, Dynamic, Dynamic, 0, 2 * max_nop, 2 * max_nop>;
@@ -54,7 +53,7 @@ using RowVector2Nd = Eigen::Matrix<double, 1, Dynamic, 1, 1, 2 * max_nop>;
 using Matrix5d = Eigen::Matrix<double, 5, 5>;
 using Matrix6d = Eigen::Matrix<double, 6, 6>;
 using Vector5d = Eigen::Matrix<double, 5, 1>;
-typedef unsigned int u_int;
+using u_int    = unsigned int;
 
 struct circle_fit {
   Vector3d par;  //!< parameter: (X0,Y0,R)
@@ -94,9 +93,6 @@ struct helix_fit {
   Vector4d fast_fit;
   VectorXd time;  // TO FIX just for profiling
 };
-
-
-u_int n;                            //!< number of points to be fitted
 
 /*!
     \brief raise to square.
@@ -138,6 +134,7 @@ inline double cross2D(const Vector2d& a, const Vector2d& b) {
  */
 // X in input TO FIX
 MatrixNd Scatter_cov_rad(const Matrix2xNd& p2D, const Vector4d& fast_fit, VectorNd const & rad) {
+  u_int n = p2D.cols();
   double theta = fast_fit(3);
   double p = fast_fit(2) / cos(fast_fit(3));
   double X = 0.04d;
@@ -169,6 +166,7 @@ MatrixNd Scatter_cov_rad(const Matrix2xNd& p2D, const Vector4d& fast_fit, Vector
 inline Matrix2Nd cov_radtocart(const Matrix2xNd& p2D,
                                const MatrixNd& cov_rad,
                                const VectorNd &rad) {
+  u_int n = p2D.cols();
   Matrix2Nd cov_cart = MatrixXd::Zero(2 * n, 2 * n);
   VectorNd rad_inv = rad.cwiseInverse();
   for (u_int i = 0; i < n; ++i) {
@@ -203,6 +201,7 @@ inline Matrix2Nd cov_radtocart(const Matrix2xNd& p2D,
 MatrixNd cov_carttorad(const Matrix2xNd& p2D,
                        const Matrix2Nd& cov_cart,
                        const VectorNd& rad) {
+  u_int n = p2D.cols();
   MatrixNd cov_rad = MatrixXd::Zero(n, n);
   const VectorNd rad_inv2 = rad.cwiseInverse().array().square();
   for (u_int i = 0; i < n; ++i) {
@@ -237,6 +236,7 @@ MatrixNd cov_carttorad(const Matrix2xNd& p2D,
 MatrixNd cov_carttorad_prefit(const Matrix2xNd& p2D, const Matrix2Nd& cov_cart,
                               const Vector4d& fast_fit,
                               const VectorNd& rad) {
+  u_int n = p2D.cols();
   MatrixNd cov_rad = MatrixXd::Zero(n, n);
   for (u_int i = 0; i < n; ++i) {
     //!< in case you have (0,0) to avoid dividing by 0 radius
@@ -357,6 +357,7 @@ void par_uvrtopak(circle_fit& circle, const double& B, const bool& error) {
 
 VectorNd X_err2(const Matrix3Nd& V, const circle_fit& circle, const MatrixNx5d& J,
                 const bool& error) {
+  u_int n = V.cols();
   VectorNd x_err2(n);
   for (u_int i = 0; i < n; ++i) {
     Matrix5d Cov = MatrixXd::Zero(5, 5);
@@ -459,6 +460,7 @@ Vector2d min_eigen2D(const Matrix2d& A, double& chi2) {
 
 Vector4d Fast_fit(const Matrix3xNd& hits) {
   Vector4d result;
+  u_int n = hits.cols();
 
   // CIRCLE FIT
   const Vector2d b = hits.block(0, n / 2, 2, 1) - hits.block(0, 0, 2, 1);
@@ -540,6 +542,7 @@ circle_fit Circle_fit(const Matrix2xNd& hits2D, const Matrix2Nd& hits_cov2D,
                       const bool& scattering = false) {
   // INITIALIZATION
   Matrix2Nd V = hits_cov2D;
+  u_int n = hits2D.cols();
 
   // WEIGHT COMPUTATION
   VectorNd weight;
@@ -548,7 +551,7 @@ circle_fit Circle_fit(const Matrix2xNd& hits2D, const Matrix2Nd& hits_cov2D,
   {
     MatrixNd cov_rad;
     cov_rad = cov_carttorad_prefit(hits2D, V, fast_fit, rad);
-    // cov_rad = cov_carttorad(hits2D, V, rad);
+    // cov_rad = cov_carttorad(hits2D, V);
 
     if (scattering) {
       MatrixNd scatter_cov_rad = Scatter_cov_rad(hits2D, fast_fit, rad);
@@ -778,6 +781,7 @@ circle_fit Circle_fit(const Matrix2xNd& hits2D, const Matrix2Nd& hits_cov2D,
 line_fit Line_fit(const Matrix3xNd& hits, const Matrix3Nd& hits_cov, const circle_fit& circle,
                   const Vector4d& fast_fit, const bool& error = true) {
   // PROJECTION ON THE CILINDER
+  u_int n = hits.cols();
   Matrix2xNd p2D(2, n);
   MatrixNx5d Jx(n, 5);
 
@@ -907,7 +911,7 @@ line_fit Line_fit(const Matrix3xNd& hits, const Matrix3Nd& hits_cov, const circl
 
 helix_fit Helix_fit(const Matrix3xNd& hits, const Matrix3Nd& hits_cov, const double& B,
                     const bool& error = true, const bool& scattering = false) {
-  n = hits.cols();
+  u_int n = hits.cols();
   VectorNd rad = (hits.block(0, 0, 2, n).colwise().norm());
 
   const Vector4d fast_fit = Fast_fit(hits);
