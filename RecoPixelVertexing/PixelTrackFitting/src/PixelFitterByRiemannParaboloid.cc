@@ -28,27 +28,32 @@
 #include "CommonTools/Utils/interface/DynArray.h"
 
 using namespace std;
+
+namespace Rfit {
+
 using namespace Eigen;
 
+constexpr double d = 1.e-4;         //!< used in numerical derivative (J2 in Circle_fit())
 constexpr unsigned int max_nop = 8;  //!< In order to avoid use of dynamic memory
 
-typedef Matrix<double, Dynamic, Dynamic, 0, max_nop, max_nop> MatrixNd;
-typedef Array<double, Dynamic, Dynamic, 0, max_nop, max_nop> ArrayNd;
-typedef Matrix<double, Dynamic, Dynamic, 0, 2 * max_nop, 2 * max_nop> Matrix2Nd;
-typedef Matrix<double, Dynamic, Dynamic, 0, 3 * max_nop, 3 * max_nop> Matrix3Nd;
-typedef Matrix<double, 2, Dynamic, 0, 2, max_nop> Matrix2xNd;
-typedef Array<double, 2, Dynamic, 0, 2, max_nop> Array2xNd;
-typedef Matrix<double, 3, Dynamic, 0, 3, max_nop> Matrix3xNd;
-typedef Matrix<double, Dynamic, 3, 0, max_nop, 3> MatrixNx3d;
-typedef Matrix<double, Dynamic, 5, 0, max_nop, 5> MatrixNx5d;
-typedef Matrix<double, Dynamic, 1, 0, max_nop, 1> VectorNd;
-typedef Matrix<double, Dynamic, 1, 0, 2 * max_nop, 1> Vector2Nd;
-typedef Matrix<double, Dynamic, 1, 0, 3 * max_nop, 1> Vector3Nd;
-typedef Matrix<double, 1, Dynamic, 1, 1, max_nop> RowVectorNd;
-typedef Matrix<double, 1, Dynamic, 1, 1, 2 * max_nop> RowVector2Nd;
-typedef Matrix<double, 5, 5> Matrix5d;
-typedef Matrix<double, 6, 6> Matrix6d;
-typedef Matrix<double, 5, 1> Vector5d;
+
+using MatrixNd = Eigen::Matrix<double, Dynamic, Dynamic, 0, max_nop, max_nop>;
+using ArrayNd = Eigen::Array<double, Dynamic, Dynamic, 0, max_nop, max_nop>;
+using Matrix2Nd = Eigen::Matrix<double, Dynamic, Dynamic, 0, 2 * max_nop, 2 * max_nop>;
+using Matrix3Nd = Eigen::Matrix<double, Dynamic, Dynamic, 0, 3 * max_nop, 3 * max_nop>;
+using Matrix2xNd = Eigen::Matrix<double, 2, Dynamic, 0, 2, max_nop>;
+using Array2xNd = Eigen::Array<double, 2, Dynamic, 0, 2, max_nop>;
+using Matrix3xNd = Eigen::Matrix<double, 3, Dynamic, 0, 3, max_nop>;
+using MatrixNx3d = Eigen::Matrix<double, Dynamic, 3, 0, max_nop, 3>;
+using MatrixNx5d = Eigen::Matrix<double, Dynamic, 5, 0, max_nop, 5>;
+using VectorNd = Eigen::Matrix<double, Dynamic, 1, 0, max_nop, 1>;
+using Vector2Nd = Eigen::Matrix<double, Dynamic, 1, 0, 2 * max_nop, 1>;
+using Vector3Nd = Eigen::Matrix<double, Dynamic, 1, 0, 3 * max_nop, 1>;
+using RowVectorNd = Eigen::Matrix<double, 1, Dynamic, 1, 1, max_nop>;
+using RowVector2Nd = Eigen::Matrix<double, 1, Dynamic, 1, 1, 2 * max_nop>;
+using Matrix5d = Eigen::Matrix<double, 5, 5>;
+using Matrix6d = Eigen::Matrix<double, 6, 6>;
+using Vector5d = Eigen::Matrix<double, 5, 1>;
 typedef unsigned int u_int;
 
 struct circle_fit {
@@ -90,13 +95,8 @@ struct helix_fit {
   VectorXd time;  // TO FIX just for profiling
 };
 
-namespace Rfit {
 
-// GLOBAL VARIABLE
-
-constexpr double d = 1.e-4;  //!< used in numerical derivative (J2 in Circle_fit())
-u_int n;                     //!< number of points to be fitted
-VectorNd rad;                //!< vector of points' distance from (0,0)
+u_int n;                            //!< number of points to be fitted
 
 /*!
     \brief raise to square.
@@ -137,7 +137,7 @@ inline double cross2D(const Vector2d& a, const Vector2d& b) {
 
  */
 // X in input TO FIX
-MatrixNd Scatter_cov_rad(const Matrix2xNd& p2D, const Vector4d& fast_fit) {
+MatrixNd Scatter_cov_rad(const Matrix2xNd& p2D, const Vector4d& fast_fit, VectorNd const & rad) {
   double theta = fast_fit(3);
   double p = fast_fit(2) / cos(fast_fit(3));
   double X = 0.04d;
@@ -166,7 +166,9 @@ MatrixNd Scatter_cov_rad(const Matrix2xNd& p2D, const Vector4d& fast_fit) {
     \return cov_cart covariance matrix in Cartesian coordinates.
 */
 
-inline Matrix2Nd cov_radtocart(const Matrix2xNd& p2D, const MatrixNd& cov_rad) {
+inline Matrix2Nd cov_radtocart(const Matrix2xNd& p2D,
+                               const MatrixNd& cov_rad,
+                               const VectorNd &rad) {
   Matrix2Nd cov_cart = MatrixXd::Zero(2 * n, 2 * n);
   VectorNd rad_inv = rad.cwiseInverse();
   for (u_int i = 0; i < n; ++i) {
@@ -198,7 +200,9 @@ inline Matrix2Nd cov_radtocart(const Matrix2xNd& p2D, const MatrixNd& cov_rad) {
 
     \warning correlation between different point are not computed.
 */
-MatrixNd cov_carttorad(const Matrix2xNd& p2D, const Matrix2Nd& cov_cart) {
+MatrixNd cov_carttorad(const Matrix2xNd& p2D,
+                       const Matrix2Nd& cov_cart,
+                       const VectorNd& rad) {
   MatrixNd cov_rad = MatrixXd::Zero(n, n);
   const VectorNd rad_inv2 = rad.cwiseInverse().array().square();
   for (u_int i = 0; i < n; ++i) {
@@ -231,7 +235,8 @@ MatrixNd cov_carttorad(const Matrix2xNd& p2D, const Matrix2Nd& cov_cart) {
 */
 
 MatrixNd cov_carttorad_prefit(const Matrix2xNd& p2D, const Matrix2Nd& cov_cart,
-                              const Vector4d& fast_fit) {
+                              const Vector4d& fast_fit,
+                              const VectorNd& rad) {
   MatrixNd cov_rad = MatrixXd::Zero(n, n);
   for (u_int i = 0; i < n; ++i) {
     //!< in case you have (0,0) to avoid dividing by 0 radius
@@ -530,7 +535,8 @@ Vector4d Fast_fit(const Matrix3xNd& hits) {
 */
 
 circle_fit Circle_fit(const Matrix2xNd& hits2D, const Matrix2Nd& hits_cov2D,
-                      const Vector4d& fast_fit, const bool& error = true,
+                      const Vector4d& fast_fit, VectorNd const & rad,
+                      const bool& error = true,
                       const bool& scattering = false) {
   // INITIALIZATION
   Matrix2Nd V = hits_cov2D;
@@ -541,12 +547,12 @@ circle_fit Circle_fit(const Matrix2xNd& hits2D, const Matrix2Nd& hits_cov2D,
   double renorm;
   {
     MatrixNd cov_rad;
-    cov_rad = cov_carttorad_prefit(hits2D, V, fast_fit);
-    // cov_rad = cov_carttorad(hits2D, V);
+    cov_rad = cov_carttorad_prefit(hits2D, V, fast_fit, rad);
+    // cov_rad = cov_carttorad(hits2D, V, rad);
 
     if (scattering) {
-      MatrixNd scatter_cov_rad = Scatter_cov_rad(hits2D, fast_fit);
-      V += cov_radtocart(hits2D, scatter_cov_rad);
+      MatrixNd scatter_cov_rad = Scatter_cov_rad(hits2D, fast_fit, rad);
+      V += cov_radtocart(hits2D, scatter_cov_rad, rad);
       cov_rad += scatter_cov_rad;
       G = cov_rad.inverse();
       renorm = G.sum();
@@ -902,12 +908,12 @@ line_fit Line_fit(const Matrix3xNd& hits, const Matrix3Nd& hits_cov, const circl
 helix_fit Helix_fit(const Matrix3xNd& hits, const Matrix3Nd& hits_cov, const double& B,
                     const bool& error = true, const bool& scattering = false) {
   n = hits.cols();
-  rad = (hits.block(0, 0, 2, n).colwise().norm());
+  VectorNd rad = (hits.block(0, 0, 2, n).colwise().norm());
 
   const Vector4d fast_fit = Fast_fit(hits);
 
   circle_fit circle = Circle_fit(hits.block(0, 0, 2, n), hits_cov.block(0, 0, 2 * n, 2 * n),
-                                 fast_fit, error, scattering);
+                                 fast_fit, rad, error, scattering);
 
   const line_fit line = Line_fit(hits, hits_cov, circle, fast_fit, error);
 
@@ -935,6 +941,9 @@ PixelFitterByRiemannParaboloid::PixelFitterByRiemannParaboloid(const edm::EventS
 
 std::unique_ptr<reco::Track> PixelFitterByRiemannParaboloid::run(
     const std::vector<const TrackingRecHit*>& hits, const TrackingRegion& region) const {
+
+  using namespace Rfit;
+
   std::unique_ptr<reco::Track> ret;
 
   unsigned int nhits = hits.size();
