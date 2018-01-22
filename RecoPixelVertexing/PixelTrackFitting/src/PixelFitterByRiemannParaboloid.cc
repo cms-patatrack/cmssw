@@ -38,22 +38,38 @@ constexpr unsigned int max_nop = 8;
 constexpr float halfpi = Geom::fhalfPi();
 
 struct circle_fit {
-  Vector3f par;
+  Vector3f par;  //!< parameter: (X0,Y0,R)
   Matrix3f cov;
-  int charge;
+  /*!< covariance matrix: \n
+      |cov(X0,X0)|cov(Y0,X0)|cov( R,X0)| \n
+      |cov(X0,Y0)|cov(Y0,Y0)|cov( R,Y0)| \n
+      |cov(X0, R)|cov(Y0, R)|cov( R, R)|
+  */
+  int charge;  //!< particle charge
   float chi2;
 };
 
 struct line_fit {
-  Vector2f par;
+  Vector2f par;  //!<(cotan(theta),Zip)
   Matrix2f cov;
+  /*!<
+      |cov(c_t,c_t)|cov(Zip,c_t)| \n
+      |cov(c_t,Zip)|cov(Zip,Zip)|
+  */
   float chi2;
 };
 
 struct helix_fit {
-  Matrix<float, 5, 1> par;
+  Matrix<float, 5, 1> par;  //!<(phi,Tip,pt,cotan(theta)),Zip)
   Matrix<float, 5, 5> cov;
-  int charge;
+  /*!< ()->cov() \n
+      |(phi,phi)|(Tip,phi)|(p_t,phi)|(c_t,phi)|(Zip,phi)| \n
+      |(phi,Tip)|(Tip,Tip)|(p_t,Tip)|(c_t,Tip)|(Zip,Tip)| \n
+      |(phi,p_t)|(Tip,p_t)|(p_t,p_t)|(c_t,p_t)|(Zip,p_t)| \n
+      |(phi,c_t)|(Tip,c_t)|(p_t,c_t)|(c_t,c_t)|(Zip,c_t)| \n
+      |(phi,Zip)|(Tip,Zip)|(p_t,Zip)|(c_t,Zip)|(Zip,Zip)|
+  */
+  int charge;  //!< particle charge
   float chi2;
 };
 
