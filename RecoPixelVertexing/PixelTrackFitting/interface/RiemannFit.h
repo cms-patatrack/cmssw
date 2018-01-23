@@ -331,8 +331,7 @@ void par_uvrtopak(circle_fit& circle, const double& B, const bool& error) {
 */
 
 VectorNd X_err2(const Matrix3Nd& V, const circle_fit& circle, const MatrixNx5d& J,
-                const bool& error) {
-  u_int n = V.cols();
+                const bool& error, u_int n) {
   VectorNd x_err2(n);
   for (u_int i = 0; i < n; ++i) {
     Matrix5d Cov = MatrixXd::Zero(5, 5);
@@ -755,8 +754,8 @@ circle_fit Circle_fit(const Matrix2xNd& hits2D, const Matrix2Nd& hits_cov2D,
 
 line_fit Line_fit(const Matrix3xNd& hits, const Matrix3Nd& hits_cov, const circle_fit& circle,
                   const Vector4d& fast_fit, const bool& error = true) {
-  // PROJECTION ON THE CILINDER
   u_int n = hits.cols();
+  // PROJECTION ON THE CILINDER
   Matrix2xNd p2D(2, n);
   MatrixNx5d Jx(n, 5);
 
@@ -786,7 +785,7 @@ line_fit Line_fit(const Matrix3xNd& hits, const Matrix3Nd& hits_cov, const circl
   p2D.row(1) = hits.row(2);
 
   // WEIGHT COMPUTATION
-  VectorNd x_err2 = X_err2(hits_cov, circle, Jx, error);
+  VectorNd x_err2 = X_err2(hits_cov, circle, Jx, error, n);
   VectorNd y_err2 = hits_cov.block(2 * n, 2 * n, n, n).diagonal();
 
   const VectorNd err2_inv = Weight_line(x_err2, y_err2, fast_fit(3));
