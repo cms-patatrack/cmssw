@@ -169,16 +169,27 @@ void test_helix_fit() {
   Matrix<double, 6, 1> gen_par;
   Vector5d true_par;
   Vector5d err;
-  while (1) {
+//  while (1) {
     generator.seed(1);
     int debug = 0;
     debug2 = 0;
     std::cout << std::setprecision(6);
     cout << "_________________________________________________________________________\n";
     cout << "n x(cm) y(cm) z(cm) phi(grad) R(Gev/c) eta iteration return_err debug" << endl;
-    cin >> n_ >> gen_par(0) >> gen_par(1) >> gen_par(2) >> gen_par(3) >> gen_par(4) >> gen_par(5) >>
-        iteration >> return_err >> debug2;
-    iteration *= 1000;
+//    cin >> n_ >> gen_par(0) >> gen_par(1) >> gen_par(2) >> gen_par(3) >> gen_par(4) >> gen_par(5) >>
+//        iteration >> return_err >> debug2;
+    n_ = 4;
+    gen_par(0) = -1.;
+    gen_par(1) = 1.;
+    gen_par(2) = -1.;
+    gen_par(3) = 1.;
+    gen_par(4) = 1.;
+    gen_par(5) = 1.;
+    iteration = 1;
+    return_err = 1;
+    debug2 = 1;
+
+    iteration *= 10;
     gen_par = New_par(gen_par, 1, B_field);
     true_par = True_par(gen_par, 1, B_field);
     Matrix3xNd hits;
@@ -192,10 +203,10 @@ void test_helix_fit() {
       }
       hits_gen gen;
       gen = Hits_gen(n_, gen_par);
-      helix[i] = Rfit::Helix_fit(gen.hits, gen.hits_cov, B_field, return_err, false);
+      helix[i] = Rfit::Helix_fit(gen.hits, gen.hits_cov, B_field, return_err, true);
 
       if (debug)
-        cout
+        cout << std::setprecision(10)
             << "phi:  " << helix[i].par(0) << " +/- " << sqrt(helix[i].cov(0, 0)) << " vs "
             << true_par(0) << endl
             << "Tip:  " << helix[i].par(1) << " +/- " << sqrt(helix[i].cov(1, 1)) << " vs "
@@ -212,6 +223,7 @@ void test_helix_fit() {
     }
 
     for (int x = 0; x < iteration; x++) {
+      // Compute PULLS information
       score(0, x) = (helix[x].par(0) - true_par(0)) / sqrt(helix[x].cov(0, 0));
       score(1, x) = (helix[x].par(1) - true_par(1)) / sqrt(helix[x].cov(1, 1));
       score(2, x) = (helix[x].par(2) - true_par(2)) / sqrt(helix[x].cov(2, 2));
@@ -266,7 +278,7 @@ void test_helix_fit() {
         score.row(24).mean(), score.row(18).mean(), score.row(19).mean(), score.row(20).mean(),
         score.row(24).mean(), 1.;
 
-    cout << "\n"
+    cout << "\nPULLS:\n"
          << "phi:  " << phi_ << "     "
          << sqrt((score.row(0).array() - phi_).square().sum() / (iteration - 1)) << "   "
          << abs(score.row(10).mean()) << "%\n"
@@ -291,7 +303,7 @@ void test_helix_fit() {
          << "correlation matrix:\n"
          << correlation << "\n\n"
          << endl;
-  }
+//  }
 }
 
 int main() {
