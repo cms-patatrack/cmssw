@@ -68,7 +68,7 @@ std::unique_ptr<reco::Track> PixelFitterByRiemannParaboloid::run(
 
     for (auto j = 0; j < 3; ++j) {
       for (auto l = 0; l < 3; ++l) {
-        riemannHits_cov(i + j * nhits, i + l * nhits) = errorMatrix(j, l);
+        riemannHits_cov(i * 3 + j * nhits, i * 3 + l * nhits) = errorMatrix(j, l);
 
         std::cout << "printing error matrix for i j l " << i << " " << j << " " << l << std::endl;
 
