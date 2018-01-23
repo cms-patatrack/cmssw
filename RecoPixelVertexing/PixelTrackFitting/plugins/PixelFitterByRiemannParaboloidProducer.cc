@@ -18,17 +18,24 @@
 
 class PixelFitterByRiemannParaboloidProducer: public edm::global::EDProducer<> {
 public:
-  explicit PixelFitterByRiemannParaboloidProducer(const edm::ParameterSet& iConfig) {
+  explicit PixelFitterByRiemannParaboloidProducer(const edm::ParameterSet& iConfig)
+    : useErrors_(iConfig.getParameter<bool>("useErrors")),
+    useMultipleScattering_(iConfig.getParameter<bool>("useMultipleScattering"))
+  {
     produces<PixelFitter>();
   }
   ~PixelFitterByRiemannParaboloidProducer() {}
 
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
     edm::ParameterSetDescription desc;
+    desc.add<bool>("useErrors", true);
+    desc.add<bool>("useMultipleScattering", true);
     descriptions.add("pixelFitterByRiemannParaboloid", desc);
   }
 
 private:
+  bool useErrors_;
+  bool useMultipleScattering_;
   virtual void produce(edm::StreamID, edm::Event& iEvent, const edm::EventSetup& iSetup) const override;
 };
 
@@ -37,7 +44,8 @@ void PixelFitterByRiemannParaboloidProducer::produce(edm::StreamID, edm::Event& 
   edm::ESHandle<MagneticField> fieldESH;
   iSetup.get<IdealMagneticFieldRecord>().get(fieldESH);
 
-  auto impl = std::make_unique<PixelFitterByRiemannParaboloid>(&iSetup, fieldESH.product());
+  auto impl = std::make_unique<PixelFitterByRiemannParaboloid>(&iSetup,
+      fieldESH.product(), useErrors_, useMultipleScattering_);
   auto prod = std::make_unique<PixelFitter>(std::move(impl));
   iEvent.put(std::move(prod));
 }

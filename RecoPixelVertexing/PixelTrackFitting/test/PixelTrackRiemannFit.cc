@@ -126,6 +126,7 @@ hits_gen Hits_gen(const unsigned int& n, const Matrix<double, 6, 1>& gen_par) {
 
   return gen;
 }
+
 Vector5d True_par(const Matrix<double, 6, 1>& gen_par, const int& charge, const double& B_field) {
   Vector5d true_par;
   const double x0 = gen_par(0) + gen_par(4) * cos(gen_par(3) * pi / 180);
@@ -156,7 +157,8 @@ Matrix<double, 6, 1> New_par(const Matrix<double, 6, 1>& gen_par, const int& cha
   new_par.block(0, 0, 3, 1) = gen_par.block(0, 0, 3, 1);
   new_par(3) = gen_par(3) - charge * 90;
   new_par(4) = gen_par(4) / B_field;
-  new_par(5) = atan(sinh(gen_par(5))) * 180 / pi;
+//  new_par(5) = atan(sinh(gen_par(5))) * 180 / pi;
+  new_par(5) = 2.*atan(exp(-gen_par(5))) * 180 / pi;
   return new_par;
 }
 
@@ -179,12 +181,12 @@ void test_helix_fit() {
 //    cin >> n_ >> gen_par(0) >> gen_par(1) >> gen_par(2) >> gen_par(3) >> gen_par(4) >> gen_par(5) >>
 //        iteration >> return_err >> debug2;
     n_ = 4;
-    gen_par(0) = -1.;
-    gen_par(1) = 1.;
-    gen_par(2) = -1.;
-    gen_par(3) = 1.;
-    gen_par(4) = 1.;
-    gen_par(5) = 1.;
+    gen_par(0) = -0.1;  // x
+    gen_par(1) = 0.1;   // y
+    gen_par(2) = -1.;  // z
+    gen_par(3) = 45.;   // phi
+    gen_par(4) = 10.;   // R (p_t)
+    gen_par(5) = 1.;   // eta
     iteration = 1;
     return_err = 1;
     debug2 = 1;
@@ -203,7 +205,13 @@ void test_helix_fit() {
       }
       hits_gen gen;
       gen = Hits_gen(n_, gen_par);
-      helix[i] = Rfit::Helix_fit(gen.hits, gen.hits_cov, B_field, return_err, true);
+//      gen.hits = MatrixXd::Zero(3, 4);
+//      gen.hits_cov = MatrixXd::Zero(3 * 4, 3 * 4);
+//      gen.hits.col(0) << 1.82917642593, 2.0411875248, 7.18495464325;
+//      gen.hits.col(1) << 4.47041416168, 4.82704305649, 18.6394691467;
+//      gen.hits.col(2) << 7.25991010666, 7.74653434753, 30.6931324005;
+//      gen.hits.col(3) << 8.99161434174, 9.54262828827, 38.1338043213;
+      helix[i] = Rfit::Helix_fit(gen.hits, gen.hits_cov, B_field, return_err, false);
 
       if (debug)
         cout << std::setprecision(10)
@@ -219,7 +227,9 @@ void test_helix_fit() {
             << true_par(4) << endl
             << "charge:" << helix[i].q << " vs 1" << endl
             << "covariance matrix:" << endl
-            << helix[i].cov << endl;
+            << helix[i].cov << endl
+            << "Initial hits:\n" << gen.hits << endl
+            << "Initial Covariance:\n" << gen.hits_cov << endl;
     }
 
     for (int x = 0; x < iteration; x++) {
