@@ -43,7 +43,6 @@ std::unique_ptr<reco::Track> PixelFitterByRiemannParaboloid::run(
 
   unsigned int nhits = hits.size();
 
-  std::cout << "nhits " << nhits << std::endl;
   if (nhits < 2) return ret;
 
   declareDynArray(GlobalPoint, nhits, points);
@@ -78,7 +77,6 @@ std::unique_ptr<reco::Track> PixelFitterByRiemannParaboloid::run(
     }
   }
 
-  std::cout << riemannHits_cov << std::endl;
   float bField = 1 / PixelRecoUtilities::fieldInInvGev(*theES);
   helix_fit fittedTrack = Rfit::Helix_fit(riemannHits, riemannHits_cov, bField, true);
   int iCharge = fittedTrack.q;
@@ -120,8 +118,6 @@ std::unique_ptr<reco::Track> PixelFitterByRiemannParaboloid::run(
   Measurement1D pt(valPt, errValPt);
   Measurement1D cotTheta(valCotTheta, errValCotTheta);
   Measurement1D zip(valZip, errValZip);
-  //    std::cout << "found one track with " << valPhi << " " << valTip << " " << valPt << " "
-  //            << valCotTheta << " " << valZip << " " << chi2 << std::endl;
 
   ret.reset(
       builder.build(pt, phi, cotTheta, tip, zip, chi2, iCharge, hits, theField, region.origin()));
