@@ -14,3 +14,6 @@
 <library   file="PixelTrackTest.cc" name="PixelTrackTest">
   <flags   EDM_PLUGIN="1"/>
 </library>
+<bin file="PixelTrackRiemannFit.cc">
+  <flags   CXXFLAGS="-g -O0"/>
+</bin>
