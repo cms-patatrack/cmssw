@@ -1060,7 +1060,9 @@ void TrackingMonitor::analyze(const edm::Event& iEvent, const edm::EventSetup& i
       
 	  std::vector<int> NClus;
 	  setNclus(iEvent,NClus);
+          std::cout << "VI stat " << totalNumGoodPV << ' ' << numberOfTracks; 
 	  for (uint  i=0; i< ClusterLabels.size(); i++){
+            std::cout << ' ' << NClus[i];
 	    if ( doPlotsVsLUMI_ || doAllPlots )	{
 	      if (ClusterLabels[i]  =="Pix") NumberOfPixelClustersVsLUMI->Fill(lumi,NClus[i]);
 	      if (ClusterLabels[i]=="Strip") NumberOfStripClustersVsLUMI->Fill(lumi,NClus[i]);
@@ -1068,7 +1070,7 @@ void TrackingMonitor::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 	    if (ClusterLabels[i]  =="Pix") NumberOfPixelClustersVsGoodPVtx->Fill(float(totalNumGoodPV),NClus[i]);
 	    if (ClusterLabels[i]=="Strip") NumberOfStripClustersVsGoodPVtx->Fill(float(totalNumGoodPV),NClus[i]);
 	  }
-	
+	  std::cout << std::endl;
 	if ( doPlotsVsBXlumi_ ) {
 	  double bxlumi = theLumiDetails_->getValue(iEvent);
 	  NumberOfTracksVsBXlumi       -> Fill( bxlumi, numberOfTracks      );

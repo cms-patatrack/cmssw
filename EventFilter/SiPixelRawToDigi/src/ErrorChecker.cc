@@ -204,6 +204,7 @@ void ErrorChecker::conversionError(int fedId, const SiPixelFrameConverter* conve
     break;
   }
   case(3) : {
+    std::cout << ("ErrorChecker::conversionError")<< " Fed: " << fedId << "  invalid dcol/pixel value (errorType=37)"  << std::endl;
     LogDebug("ErrorChecker::conversionError")<< " Fed: " << fedId << "  invalid dcol/pixel value (errorType=37)";
     if(includeErrors) {
       int errorType = 37;
