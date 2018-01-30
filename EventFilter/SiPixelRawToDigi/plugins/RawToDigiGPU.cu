@@ -532,7 +532,7 @@ __global__ void RawToDigi_kernel(const SiPixelFedCablingMapGPU *Map, const uint3
             errWord[gIndex]  = ww;
             errFedID[gIndex] = fedId;
             errRawID[gIndex] = rawId;
-            printf("BPIX1  Error status: %i\n", error);
+            // printf("BPIX1  Error status: %i\n", error);
             continue;
           }
         }
@@ -550,7 +550,7 @@ __global__ void RawToDigi_kernel(const SiPixelFedCablingMapGPU *Map, const uint3
           errWord[gIndex] = ww;
           errFedID[gIndex] = fedId;
           errRawID[gIndex] = rawId;
-          printf("Error status: %i %d %d %d %d\n", error, dcol, pxid, fedId, roc);
+          // printf("Error status: %i %d %d %d %d\n", error, dcol, pxid, fedId, roc);
           continue;
         }
       }

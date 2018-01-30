@@ -439,7 +439,7 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
                   if (roc->idInDetUnit() > ch.roc_last) ch.roc_last = roc->idInDetUnit();
                 }
 		if (ch.roc_first<ch.roc_last) disabledChannelsDetSet.push_back(ch);
-                std::cout << "error 25 " << fed->id() << ' ' << ch.roc_first << ' ' << ch.roc_last << std::endl;
+                // std::cout << "error 25 " << fed->id() << ' ' << ch.roc_first << ' ' << ch.roc_last << std::endl;
               }
 	    }
 	  }
