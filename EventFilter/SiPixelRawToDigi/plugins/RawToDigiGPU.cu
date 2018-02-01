@@ -480,7 +480,6 @@ __global__ void RawToDigi_kernel(const SiPixelFedCablingMapGPU *Map, const uint3
 
 
       uint32_t errorType = checkROC(ww, fedId, link, Map, debug);
-      if(errRawID[gIndex] == 9999) printf("%i, %i, %i\n", gIndex, errRawID[gIndex], errorType);
       skipROC = (roc < maxROCIndex) ? false : (errorType != 0);
       if (includeErrors and skipROC)
       {
