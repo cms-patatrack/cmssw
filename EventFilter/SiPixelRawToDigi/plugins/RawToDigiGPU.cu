@@ -494,7 +494,6 @@ __global__ void RawToDigi_kernel(const SiPixelFedCablingMapGPU *Map, const uint3
 
       uint32_t rawId  = detId.RawId;
       uint32_t rocIdInDetUnit = detId.rocInDet;
-      rawIdArr[gIndex] = rawId;
       bool barrel = isBarrel(rawId);
 
       uint32_t index = fedId * MAX_LINK * MAX_ROC + (link-1) * MAX_ROC + roc;
@@ -569,6 +568,7 @@ __global__ void RawToDigi_kernel(const SiPixelFedCablingMapGPU *Map, const uint3
       pdigi[gIndex] = pack(globalPix.row,globalPix.col,ADC[gIndex]);
       layerArr[gIndex] = layer;
       moduleId[gIndex] = detId.moduleId;
+      rawIdArr[gIndex] = rawId;
     } // end of if (gIndex < end)
    } // end fake loop
 
