@@ -50,7 +50,7 @@ context initDeviceMemory() {
   cudaCheck(cudaMalloc((void**) & c.xx_adc,        MAX_WORD16_SIZE)); // to store the x and y coordinate
   cudaCheck(cudaMalloc((void**) & c.yy_adc,        MAX_WORD16_SIZE));
   cudaCheck(cudaMalloc((void**) & c.adc_d,         MAX_WORD16_SIZE));
-  cudaCheck(cudaMalloc((void**) & c.layer_d,      MAX_WORD16_SIZE));
+  cudaCheck(cudaMalloc((void**) & c.layer_d,       MAX_WORD16_SIZE));
   cudaCheck(cudaMalloc((void**) & c.rawIdArr_d,    MAX_WORD32_SIZE));
   cudaCheck(cudaMalloc((void**) & c.errType_d,     MAX_WORD32_SIZE));
   cudaCheck(cudaMalloc((void**) & c.errWord_d,     MAX_WORD32_SIZE));
