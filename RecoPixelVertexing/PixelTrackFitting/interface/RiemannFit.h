@@ -95,7 +95,8 @@ inline double cross2D(const Vector2d& a, const Vector2d& b) {
 
     \param p2D 2D points in the transverse plane.
     \param fast_fit fast_fit Vector4d result of the previous pre-fit
-    structured in this form:(X0, Y0, R, Theta)).
+    structured in this form:(X0, Y0, R, Tan(Theta))).
+    \param B magnetic field use to compute p
 
     \return scatter_cov_rad errors due to multiple scattering.
 
@@ -108,15 +109,16 @@ inline double cross2D(const Vector2d& a, const Vector2d& b) {
 
  */
 // X in input TO FIX
-MatrixNd Scatter_cov_rad(const Matrix2xNd& p2D, const Vector4d& fast_fit, VectorNd const & rad) {
+MatrixNd Scatter_cov_rad(const Matrix2xNd& p2D, const Vector4d& fast_fit, VectorNd const & rad, double B) {
   u_int n = p2D.cols();
-  double theta = fast_fit(3);
-  double p = fast_fit(2) / cos(fast_fit(3));
   double X = 0.04;
+  double theta = atan(fast_fit(3));
+  double radlen_eff = X * sqrt(fast_fit(3) * fast_fit(3) + 1);
+  double p_t = fast_fit(2) * B;
+  double p_2 = p_t * p_t * (1. + 1./(fast_fit(3)*fast_fit(3)));
 
   MatrixNd scatter_cov_rad = MatrixXd::Zero(n, n);
-  const float cos_f_theta = cos(theta);
-  const double sig2 = sqr(0.015 / std::abs(p) * (1 + 0.038 * log(X / std::abs(cos_f_theta)))) * (X / cos_f_theta) ;
+  const double sig2 = .000225 / p_2 * sqr(1 + 0.038 * log(radlen_eff)) * radlen_eff ;
   for (u_int k = 0; k < n; ++k) {
     for (u_int l = k; l < n; ++l) {
       for (u_int i = 0; i < std::min(k, l); ++i) {
@@ -296,7 +298,7 @@ inline int Charge(const Matrix2xNd& p2D, const Vector3d& par_uvr) {
     \param error flag for errors computation.
 */
 
-void par_uvrtopak(circle_fit& circle, const double& B, const bool& error) {
+void par_uvrtopak(circle_fit& circle, const double B, const bool& error) {
   Vector3d par_pak;
   const double temp0 = circle.par.head(2).squaredNorm();
   const double temp1 = sqrt(temp0);
@@ -489,6 +491,7 @@ Vector4d Fast_fit(const Matrix3xNd& hits) {
     \param hits_cov2D covariance matrix of 2D points.
     \param fast_fit pre-fit result in this form: (X0,Y0,R,tan(theta)).
     (tan(theta) is not used).
+    \param B magnetic field
     \param error flag for error computation.
     \param scattering flag for multiple scattering
 
@@ -513,6 +516,7 @@ Vector4d Fast_fit(const Matrix3xNd& hits) {
 
 circle_fit Circle_fit(const Matrix2xNd& hits2D, const Matrix2Nd& hits_cov2D,
                       const Vector4d& fast_fit, VectorNd const & rad,
+                      const double B,
                       const bool& error = true,
                       const bool& scattering = false) {
   // INITIALIZATION
@@ -529,7 +533,7 @@ circle_fit Circle_fit(const Matrix2xNd& hits2D, const Matrix2Nd& hits_cov2D,
     // cov_rad = cov_carttorad(hits2D, V);
 
     if (scattering) {
-      MatrixNd scatter_cov_rad = Scatter_cov_rad(hits2D, fast_fit, rad);
+      MatrixNd scatter_cov_rad = Scatter_cov_rad(hits2D, fast_fit, rad, B);
       V += cov_radtocart(hits2D, scatter_cov_rad, rad);
       cov_rad += scatter_cov_rad;
       G = cov_rad.inverse();
@@ -907,7 +911,7 @@ line_fit Line_fit(const Matrix3xNd& hits, const Matrix3Nd& hits_cov, const circl
    \bug see Circle_fit(), Line_fit() and Fast_fit() bugs.
 */
 
-helix_fit Helix_fit(const Matrix3xNd& hits, const Matrix3Nd& hits_cov, const double& B,
+helix_fit Helix_fit(const Matrix3xNd& hits, const Matrix3Nd& hits_cov, const double B,
                     const bool& error = true, const bool& scattering = false) {
   u_int n = hits.cols();
   VectorNd rad = (hits.block(0, 0, 2, n).colwise().norm());
@@ -916,7 +920,7 @@ helix_fit Helix_fit(const Matrix3xNd& hits, const Matrix3Nd& hits_cov, const dou
   const Vector4d fast_fit = Fast_fit(hits);
 
   circle_fit circle = Circle_fit(hits.block(0, 0, 2, n), hits_cov.block(0, 0, 2 * n, 2 * n),
-                                 fast_fit, rad, error, scattering);
+                                 fast_fit, rad, B, error, scattering);
 
   const line_fit line = Line_fit(hits, hits_cov, circle, fast_fit, error);
 
