@@ -37,9 +37,9 @@ context initDeviceMemory() {
   context c;
 
   // Number of words for all the feds
-  constexpr uint32_t MAX_WORD08_SIZE = MAX_FED * MAX_WORD  * sizeof(uint8_t);
-  constexpr uint32_t MAX_WORD32_SIZE = MAX_FED * MAX_WORD  * sizeof(uint32_t);
-  constexpr uint32_t MAX_WORD16_SIZE = MAX_FED * MAX_WORD  * sizeof(uint16_t);
+  constexpr uint32_t MAX_WORD08_SIZE = MAX_FED * MAX_WORD * sizeof(uint8_t);
+  constexpr uint32_t MAX_WORD32_SIZE = MAX_FED * MAX_WORD * sizeof(uint32_t);
+  constexpr uint32_t MAX_WORD16_SIZE = MAX_FED * MAX_WORD * sizeof(uint16_t);
   constexpr uint32_t MSIZE = NMODULE*sizeof(int)+sizeof(int);
 
   cudaCheck(cudaMalloc((void**) & c.word_d,        MAX_WORD32_SIZE));
@@ -52,11 +52,8 @@ context initDeviceMemory() {
   cudaCheck(cudaMalloc((void**) & c.adc_d,         MAX_WORD16_SIZE));
   cudaCheck(cudaMalloc((void**) & c.layer_d,       MAX_WORD16_SIZE));
   cudaCheck(cudaMalloc((void**) & c.rawIdArr_d,    MAX_WORD32_SIZE));
-  cudaCheck(cudaMalloc((void**) & c.errType_d,     MAX_WORD32_SIZE));
-  cudaCheck(cudaMalloc((void**) & c.errWord_d,     MAX_WORD32_SIZE));
-  cudaCheck(cudaMalloc((void**) & c.errFedID_d,    MAX_WORD32_SIZE));
-  cudaCheck(cudaMalloc((void**) & c.errRawID_d,    MAX_WORD32_SIZE));
   cudaCheck(cudaMalloc((void**) & c.moduleId_d,    MAX_WORD32_SIZE));
+  cudaCheck(cudaMalloc((void**) & c.error_d,       4*MAX_WORD32_SIZE));
   cudaCheck(cudaMalloc((void**) & c.mIndexStart_d, MSIZE));
   cudaCheck(cudaMalloc((void**) & c.mIndexEnd_d,   MSIZE));
 
@@ -79,10 +76,7 @@ void freeMemory(context & c) {
   cudaCheck(cudaFree(c.adc_d));
   cudaCheck(cudaFree(c.layer_d));
   cudaCheck(cudaFree(c.rawIdArr_d));
-  cudaCheck(cudaFree(c.errType_d));
-  cudaCheck(cudaFree(c.errWord_d));
-  cudaCheck(cudaFree(c.errFedID_d));
-  cudaCheck(cudaFree(c.errRawID_d));
+  cudaCheck(cudaFree(c.error_d));
   cudaCheck(cudaFree(c.mIndexStart_d));
   cudaCheck(cudaFree(c.mIndexEnd_d));
 
@@ -437,12 +431,10 @@ __device__ uint32_t getErrRawID(uint32_t fedId, uint32_t errWord, uint32_t error
 __global__ void RawToDigi_kernel(const SiPixelFedCablingMapGPU *Map, const uint32_t wordCounter, const uint32_t *Word, const uint8_t *fedIds,
                                  uint16_t * XX, uint16_t * YY, uint16_t * ADC,
                                  uint32_t * pdigi, uint32_t *moduleId, int *mIndexStart,
-                                 int *mIndexEnd,  uint16_t *layerArr, uint32_t *rawIdArr,
-                                 uint32_t *errType, uint32_t *errWord, uint32_t *errFedID, uint32_t *errRawID,
+                                 int *mIndexEnd,  uint16_t *layerArr, uint32_t *rawIdArr, uint32_t *err,
                                  bool useQualityInfo, bool includeErrors, bool debug)
 {
   uint32_t blockId  = blockIdx.x;
-
   uint32_t threadId  = threadIdx.x;
 
   bool skipROC = false;
@@ -453,15 +445,16 @@ __global__ void RawToDigi_kernel(const SiPixelFedCablingMapGPU *Map, const uint3
     if (gIndex < wordCounter) {
    
       uint32_t fedId = fedIds[gIndex/2]; // +1200;    
+
       pdigi[gIndex]  = 0;
       rawIdArr[gIndex] = 0;
 
       uint32_t ww = Word[gIndex]; // Array containing 32 bit raw data
       if (includeErrors) {
-        errType[gIndex]  = 0;
-        errWord[gIndex]  = ww;
-        errFedID[gIndex] = fedId;
-        errRawID[gIndex] = 0;
+        err[gIndex] = 0;
+        err[gIndex + wordCounter] = ww;
+        err[gIndex + 2*wordCounter] = fedId;
+        err[gIndex + 3*wordCounter] = 0;
       }
       if (ww == 0) {
         //noise and dead channels are ignored
@@ -484,13 +477,12 @@ __global__ void RawToDigi_kernel(const SiPixelFedCablingMapGPU *Map, const uint3
       if (includeErrors and skipROC)
       {
         uint32_t rID = getErrRawID(fedId, ww, errorType, Map, debug);
-        errType[gIndex]  = errorType;
-        errWord[gIndex]  = ww;
-        errFedID[gIndex] = fedId;
-        errRawID[gIndex] = rID;
+        err[gIndex] = errorType;
+        err[gIndex + wordCounter] = ww;
+        err[gIndex + 2*wordCounter] = fedId;
+        err[gIndex + 3*wordCounter] = rID;
         continue;
       }
-
 
       uint32_t rawId  = detId.RawId;
       uint32_t rocIdInDetUnit = detId.rocInDet;
@@ -534,10 +526,10 @@ __global__ void RawToDigi_kernel(const SiPixelFedCablingMapGPU *Map, const uint3
         if (includeErrors) {
           if (not rocRowColIsValid(row, col)) {
             uint32_t error = conversionError(fedId, 3, debug); //use the device function and fill the arrays
-            errType[gIndex]  = error;
-            errWord[gIndex]  = ww;
-            errFedID[gIndex] = fedId;
-            errRawID[gIndex] = rawId;
+            err[gIndex] = error;
+            err[gIndex + wordCounter] = ww;
+            err[gIndex + 2*wordCounter] = fedId;
+            err[gIndex + 3*wordCounter] = rawId;
             if(debug) printf("BPIX1  Error status: %i\n", error);
             continue;
           }
@@ -552,10 +544,10 @@ __global__ void RawToDigi_kernel(const SiPixelFedCablingMapGPU *Map, const uint3
         localPix.col = col;
         if (includeErrors and not dcolIsValid(dcol, pxid)) {
           uint32_t error = conversionError(fedId, 3, debug);
-          errType[gIndex] = error;
-          errWord[gIndex] = ww;
-          errFedID[gIndex] = fedId;
-          errRawID[gIndex] = rawId;
+          err[gIndex] = error;
+          err[gIndex + wordCounter] = ww;
+          err[gIndex + 2*wordCounter] = fedId;
+          err[gIndex + 3*wordCounter] = rawId;
           if(debug) printf("Error status: %i %d %d %d %d\n", error, dcol, pxid, fedId, roc);
           continue;
         }
@@ -637,9 +629,9 @@ __global__ void RawToDigi_kernel(const SiPixelFedCablingMapGPU *Map, const uint3
 // kernel wrapper called from runRawToDigi_kernel
 void RawToDigi_wrapper(
     context & c,
-    const SiPixelFedCablingMapGPU* cablingMapDevice, const uint32_t wordCounter, uint32_t *word, const uint32_t fedCounter,  uint8_t *fedId_h,
-    bool convertADCtoElectrons, uint32_t * pdigi_h, int *mIndexStart_h, int *mIndexEnd_h, 
-    uint32_t *rawIdArr_h, uint32_t *errType_h, uint32_t *errWord_h, uint32_t *errFedID_h, uint32_t *errRawID_h,
+    const SiPixelFedCablingMapGPU* cablingMapDevice, const uint32_t wordCounter, uint32_t *word, const uint32_t fedCounter,
+    uint8_t *fedId_h, bool convertADCtoElectrons, uint32_t * pdigi_h, int *mIndexStart_h, int *mIndexEnd_h,
+    uint32_t *rawIdArr_h, uint32_t *error_h,
     bool useQualityInfo, bool includeErrors, bool debug)
 {
   const int threadsPerBlock = 512;
@@ -657,7 +649,7 @@ void RawToDigi_wrapper(
 
   assert(0 == wordCounter%2);
   // wordCounter is the total no of words in each event to be trasfered on device
-  cudaCheck(cudaMemcpyAsync(&c.word_d[0],     &word[0],     wordCounter*sizeof(uint32_t), cudaMemcpyHostToDevice, c.stream));
+  cudaCheck(cudaMemcpyAsync(&c.word_d[0],  &word[0],    wordCounter*sizeof(uint32_t),  cudaMemcpyHostToDevice, c.stream));
   cudaCheck(cudaMemcpyAsync(&c.fedId_d[0], &fedId_h[0], wordCounter*sizeof(uint8_t)/2, cudaMemcpyHostToDevice, c.stream));
 
   // Launch rawToDigi kernel
@@ -673,10 +665,7 @@ void RawToDigi_wrapper(
       c.mIndexEnd_d,
       c.layer_d,
       c.rawIdArr_d,
-      c.errType_d,
-      c.errWord_d,
-      c.errFedID_d,
-      c.errRawID_d,
+      c.error_d,
       useQualityInfo,
       includeErrors,
       debug);
@@ -692,14 +681,10 @@ void RawToDigi_wrapper(
   cudaCheck(cudaMemcpyAsync(mIndexEnd_h, c.mIndexEnd_d, NMODULE*sizeof(int), cudaMemcpyDeviceToHost, c.stream));
   */
 
-
   if (includeErrors) {
-    cudaCheck(cudaMemcpyAsync(errType_h, c.errType_d, wordCounter*sizeof(uint32_t), cudaMemcpyDeviceToHost, c.stream));
-    cudaCheck(cudaMemcpyAsync(errWord_h, c.errWord_d, wordCounter*sizeof(uint32_t), cudaMemcpyDeviceToHost, c.stream));
-    cudaCheck(cudaMemcpyAsync(errFedID_h, c.errFedID_d, wordCounter*sizeof(uint32_t), cudaMemcpyDeviceToHost, c.stream));
-    cudaCheck(cudaMemcpyAsync(errRawID_h, c.errRawID_d, wordCounter*sizeof(uint32_t), cudaMemcpyDeviceToHost, c.stream));
+    cudaCheck(cudaMemcpyAsync(error_h, c.error_d, wordCounter*sizeof(uint32_t)*4, cudaMemcpyDeviceToHost, c.stream));
   }
   cudaStreamSynchronize(c.stream);
-  // End  of Raw2Digi and passing data for cluserisation
+  // End of Raw2Digi and passing data for clusterization
   // PixelCluster_Wrapper(c.xx_adc , c.yy_adc, c.adc_d,wordCounter, c.mIndexStart_d, c.mIndexEnd_d);
 }

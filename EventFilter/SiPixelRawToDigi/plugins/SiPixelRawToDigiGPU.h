@@ -68,7 +68,8 @@ private:
 
   // to store the output
   uint32_t *pdigi_h, *rawIdArr_h;                   // host copy of output
-  uint32_t *errType_h, *errWord_h, *errFedID_h, *errRawID_h;    // host copy of output
+  uint32_t *error_h;
+>>>>>>> calabria-cmssw/GPU_SiPixel_RawToDigi_VI1_Cesare_2
   // store the start and end index for each module (total 1856 modules-phase 1)
   int *mIndexStart_h, *mIndexEnd_h;
 

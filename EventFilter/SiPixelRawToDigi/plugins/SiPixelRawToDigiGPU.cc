@@ -122,16 +122,12 @@ SiPixelRawToDigiGPU::SiPixelRawToDigiGPU( const edm::ParameterSet& conf )
 
   int WSIZE = MAX_FED*MAX_WORD*sizeof(unsigned int);
   cudaMallocHost(&word,       sizeof(unsigned int)*WSIZE);
-  cudaMallocHost(&fedId_h,   sizeof(unsigned char)*WSIZE);
+  cudaMallocHost(&fedId_h,    sizeof(unsigned char)*WSIZE);
 
   // to store the output of RawToDigi
   cudaMallocHost(&pdigi_h,    sizeof(uint32_t)*WSIZE);
   cudaMallocHost(&rawIdArr_h, sizeof(uint32_t)*WSIZE);
-
-  cudaMallocHost(&errType_h,  sizeof(uint32_t)*WSIZE);
-  cudaMallocHost(&errRawID_h, sizeof(uint32_t)*WSIZE);
-  cudaMallocHost(&errWord_h,  sizeof(uint32_t)*WSIZE);
-  cudaMallocHost(&errFedID_h, sizeof(uint32_t)*WSIZE);
+  cudaMallocHost(&error_h,    4*sizeof(uint32_t)*WSIZE);
 
   // mIndexStart_h = new int[NMODULE+1];
   // mIndexEnd_h = new int[NMODULE+1];
@@ -164,10 +160,7 @@ SiPixelRawToDigiGPU::~SiPixelRawToDigiGPU() {
   cudaFreeHost(fedId_h);
   cudaFreeHost(pdigi_h);
   cudaFreeHost(rawIdArr_h);
-  cudaFreeHost(errType_h);
-  cudaFreeHost(errRawID_h);
-  cudaFreeHost(errWord_h);
-  cudaFreeHost(errFedID_h);
+  cudaFreeHost(error_h);
   cudaFreeHost(mIndexStart_h);
   cudaFreeHost(mIndexEnd_h);
 
@@ -353,8 +346,7 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
 
 
 
-    RawToDigi_wrapper(context_, cablingMapGPUDevice_, wordCounterGPU, word, fedCounter, fedId_h, convertADCtoElectrons, pdigi_h, mIndexStart_h, mIndexEnd_h, 
-                      rawIdArr_h, errType_h, errWord_h, errFedID_h, errRawID_h, useQuality, includeErrors, debug);
+    RawToDigi_wrapper(context_, cablingMapGPUDevice_, wordCounterGPU, word, fedCounter, fedId_h, convertADCtoElectrons, pdigi_h, mIndexStart_h, mIndexEnd_h, rawIdArr_h, error_h, useQuality, includeErrors, debug);
 
 
 
@@ -366,6 +358,12 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
     }
 
     for (uint32_t i = 0; i < wordCounterGPU; i++) {
+        //errorType, word, fedID, rawID
+        if (error_h[i] != 0) {
+            SiPixelRawDataError error(error_h[i+wordCounterGPU], error_h[i], error_h[i+2*wordCounterGPU]+1200);
+            errors[error_h[i+3*wordCounterGPU]].push_back(error);
+        }
+        
         if (pdigi_h[i]==0) continue;
         assert(rawIdArr_h[i] > 109999);
         if ( (*detDigis).detId() != rawIdArr_h[i])
@@ -377,16 +375,10 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
         (*detDigis).data.emplace_back(pdigi_h[i]);
         theDigiCounter++;
     }
-
-    for (uint32_t i = 0; i < wordCounterGPU; i++) {
-        if (errType_h[i] != 0) {
-            SiPixelRawDataError error(errWord_h[i], errType_h[i], errFedID_h[i]+1200);
-            errors[errRawID_h[i]].push_back(error);
-        }
-    }
+    
 
 
-  fedCounter =0;
+  fedCounter = 0;
 
   if (theTimer) {
     theTimer->stop();
