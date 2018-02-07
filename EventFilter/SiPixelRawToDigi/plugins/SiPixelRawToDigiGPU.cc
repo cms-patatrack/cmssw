@@ -68,6 +68,7 @@ SiPixelRawToDigiGPU::SiPixelRawToDigiGPU( const edm::ParameterSet& conf )
     usererrorlist = config_.getParameter<std::vector<int> > ("UserErrorList");
   }
   tFEDRawDataCollection = consumes <FEDRawDataCollection> (config_.getParameter<edm::InputTag>("InputLabel"));
+  debug = config_.getParameter<bool>("enableErrorDebug");
 
   //start counters
   ndigis = 0;
@@ -208,6 +209,7 @@ SiPixelRawToDigiGPU::fillDescriptions(edm::ConfigurationDescriptions& descriptio
   desc.add<std::string>("CablingMapLabel","")->setComment("CablingMap label"); //Tav
   desc.addOptional<bool>("CheckPixelOrder");  // never used, kept for back-compatibility
   desc.add<bool>("ConvertADCtoElectrons", false)->setComment("## do the calibration ADC-> Electron and apply the threshold, requried for clustering");
+  desc.add<bool>("enableErrorDebug",false);
   descriptions.add("siPixelRawToDigiGPU",desc);
 }
 
@@ -218,8 +220,6 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
   int theWordCounter = 0;
   int theDigiCounter = 0;
   const uint32_t dummydetid = 0xffffffff;
-  //debug = edm::MessageDrop::instance()->debugEnabled;
-  debug = false;
 
   // initialize quality record or update if necessary
   if (qualityWatcher.check( es ) && useQuality) {
@@ -285,9 +285,7 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
 
     if (!usePilotBlade && (fedId==40) ) continue; // skip pilot blade data
     if (regions_ && !regions_->mayUnpackFED(fedId)) continue;
-    #if 0
-    if (debug) LogDebug("SiPixelRawToDigiGPU") << " PRODUCE DIGI FOR FED: " <<  fedId << endl;
-    #endif
+    LogDebug("SiPixelRawToDigiGPU") << " PRODUCE DIGI FOR FED: " <<  fedId;
 
     // for GPU
     // first 150 index stores the fedId and next 150 will store the
@@ -344,41 +342,33 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
 
   // GPU specific: RawToDigi -> clustering -> CPE
 
+  RawToDigi_wrapper(context_, cablingMapGPUDevice_, wordCounterGPU, word, fedCounter, fedId_h, convertADCtoElectrons, pdigi_h, mIndexStart_h, mIndexEnd_h, rawIdArr_h, error_h, useQuality, includeErrors, debug);
 
-
-    RawToDigi_wrapper(context_, cablingMapGPUDevice_, wordCounterGPU, word, fedCounter, fedId_h, convertADCtoElectrons, pdigi_h, mIndexStart_h, mIndexEnd_h, rawIdArr_h, error_h, useQuality, includeErrors, debug);
-
-
-
-    for (uint32_t i = 0; i < wordCounterGPU; i++) {
-       if (pdigi_h[i]==0) continue;
-       detDigis = &(*collection).find_or_insert(rawIdArr_h[i]);
-       if ( (*detDigis).empty() ) (*detDigis).data.reserve(32); // avoid the first relocations
-       break;
-    }
-
-    for (uint32_t i = 0; i < wordCounterGPU; i++) {
-        //errorType, word, fedID, rawID
-        if (error_h[i] != 0) {
-            SiPixelRawDataError error(error_h[i+wordCounterGPU], error_h[i], error_h[i+2*wordCounterGPU]+1200);
-            errors[error_h[i+3*wordCounterGPU]].push_back(error);
-        }
-        
-        if (pdigi_h[i]==0) continue;
-        assert(rawIdArr_h[i] > 109999);
-        if ( (*detDigis).detId() != rawIdArr_h[i])
-        {
-            detDigis = &(*collection).find_or_insert(rawIdArr_h[i]);
-            if ( (*detDigis).empty() )
-                (*detDigis).data.reserve(32); // avoid the first relocations
-        }
-        (*detDigis).data.emplace_back(pdigi_h[i]);
-        theDigiCounter++;
-    }
+  for (uint32_t i = 0; i < wordCounterGPU; i++) {
+      if (pdigi_h[i]==0) continue;
+      detDigis = &(*collection).find_or_insert(rawIdArr_h[i]);
+      if ( (*detDigis).empty() ) (*detDigis).data.reserve(32); // avoid the first relocations
+      break;
+  }
     
-
-
-  fedCounter = 0;
+  for (uint32_t i = 0; i < wordCounterGPU; i++) {
+      //errorType, word, fedID, rawID
+      if (error_h[i] != 0) {
+          SiPixelRawDataError error(error_h[i+wordCounterGPU], error_h[i], error_h[i+2*wordCounterGPU]+1200);
+          errors[error_h[i+3*wordCounterGPU]].push_back(error);
+      }
+        
+      if (pdigi_h[i]==0) continue;
+      assert(rawIdArr_h[i] > 109999);
+      if ( (*detDigis).detId() != rawIdArr_h[i])
+      {
+          detDigis = &(*collection).find_or_insert(rawIdArr_h[i]);
+          if ( (*detDigis).empty() )
+                (*detDigis).data.reserve(32); // avoid the first relocations
+      }
+      (*detDigis).data.emplace_back(pdigi_h[i]);
+      theDigiCounter++;
+  }
 
   if (theTimer) {
     theTimer->stop();

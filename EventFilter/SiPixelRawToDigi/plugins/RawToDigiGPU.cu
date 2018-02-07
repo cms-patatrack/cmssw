@@ -466,11 +466,9 @@ __global__ void RawToDigi_kernel(const SiPixelFedCablingMapGPU *Map, const uint3
         continue ; // 0: bad word
       }
 
-
       uint32_t link  = getLink(ww);            // Extract link
       uint32_t roc   = getRoc(ww);             // Extract Roc in link
       DetIdGPU detId = getRawId(Map, fedId, link, roc);
-
 
       uint32_t errorType = checkROC(ww, fedId, link, Map, debug);
       skipROC = (roc < maxROCIndex) ? false : (errorType != 0);
