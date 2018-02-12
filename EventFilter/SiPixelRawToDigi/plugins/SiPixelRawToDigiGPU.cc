@@ -32,6 +32,10 @@
 #include "DataFormats/SiPixelDetId/interface/PixelFEDChannel.h"
 #include "DataFormats/SiPixelDigi/interface/PixelDigi.h"
 #include "DataFormats/SiPixelRawData/interface/SiPixelRawDataError.h"
+
+#include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
+#include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
+
 #include "EventFilter/SiPixelRawToDigi/interface/PixelDataFormatter.h"
 #include "EventFilter/SiPixelRawToDigi/interface/PixelUnpackingRegions.h"
 #include "FWCore/Framework/interface/ConsumesCollector.h"
@@ -81,6 +85,9 @@ SiPixelRawToDigiGPU::SiPixelRawToDigiGPU( const edm::ParameterSet& conf )
     produces<DetIdCollection>("UserErrorModules");
     produces<edmNew::DetSetVector<PixelFEDChannel> >();
   }
+
+  //GPU "product"
+  produces<std::vector<unsigned long long>>();
 
   // regions
   if (config_.exists("Regions")) {
@@ -249,6 +256,11 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
 
   // initialize cabling map or update if necessary
   if (recordWatcher.check( es )) {
+    // tracker geometry: to make sure numbering of DetId is consistent...
+    edm::ESHandle<TrackerGeometry> geom;
+    // get the TrackerGeom
+    es.get<TrackerDigiGeometryRecord>().get( geom );
+    
     // cabling map, which maps online address (fed->link->ROC->local pixel) to offline (DetId->global pixel)
     edm::ESTransientHandle<SiPixelFedCablingMap> cablingMap;
     es.get<SiPixelFedCablingMapRcd>().get( cablingMapLabel, cablingMap ); //Tav
@@ -256,7 +268,7 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
     cabling_ = cablingMap->cablingTree();
     LogDebug("map version:") << cabling_->version();
     // convert the cabling map to a GPU-friendly version
-    processCablingMap(*cablingMap, cablingMapGPUHost_, cablingMapGPUDevice_, badPixelInfo_, modules);
+    processCablingMap(*cablingMap, *geom.product(), cablingMapGPUHost_, cablingMapGPUDevice_, badPixelInfo_, modules);
   }
 
   edm::Handle<FEDRawDataCollection> buffers;
@@ -349,13 +361,20 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
 
   }  // end of for loop
 
-  // GPU specific: RawToDigi -> clustering -> CPE
+  // GPU specific: RawToDigi -> clustering
 
 
+    uint32_t nModulesActive=0;
+    RawToDigi_wrapper(context_, cablingMapGPUDevice_, wordCounterGPU, word, fedCounter, fedId_h, convertADCtoElectrons, pdigi_h, 
+                      rawIdArr_h, errType_h, errWord_h, errFedID_h, errRawID_h, useQuality, includeErrors, debug,nModulesActive);
 
-    RawToDigi_wrapper(context_, cablingMapGPUDevice_, wordCounterGPU, word, fedCounter, fedId_h, convertADCtoElectrons, pdigi_h, mIndexStart_h, mIndexEnd_h, 
-                      rawIdArr_h, errType_h, errWord_h, errFedID_h, errRawID_h, useQuality, includeErrors, debug);
 
+     auto gpuProd = std::make_unique<std::vector<unsigned long long>>();
+     gpuProd->resize(3);
+     (*gpuProd)[0]=uint64_t(&context_);
+     (*gpuProd)[1]=wordCounterGPU;
+     (*gpuProd)[2]=nModulesActive;
+      ev.put(std::move(gpuProd));
 
 
     for (uint32_t i = 0; i < wordCounterGPU; i++) {
