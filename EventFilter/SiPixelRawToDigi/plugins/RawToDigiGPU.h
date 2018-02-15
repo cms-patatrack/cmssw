@@ -8,6 +8,7 @@
 #include <cuda_runtime.h>
 
 #include "SiPixelFedCablingMapGPU.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/GPUSimpleVector.h"
 #include<algorithm>
 
 const uint32_t layerStartBit_   = 20;
@@ -145,6 +146,12 @@ inline uint32_t pack(uint32_t row, uint32_t col, uint32_t adc) {
 
 }
 
+typedef struct error {
+    uint32_t rawId;
+    uint32_t word;
+    unsigned char errorType;
+    unsigned char fedId;
+    } error_obj;
 
 // configuration and memory buffers alocated on the GPU
 struct context {
@@ -159,12 +166,10 @@ struct context {
 
   uint16_t * moduleInd_d;
   uint32_t * rawIdArr_d;
-  uint32_t * errType_d;
-  uint32_t * errWord_d;
-  uint32_t * errFedID_d;
-  uint32_t * errRawID_d;
 
-
+  GPU::SimpleVector<error_obj> * error_d;
+  error_obj * data_d;
+    
   // these are for the clusterizer (to be moved)
   uint32_t * moduleStart_d;
   int32_t *  clus_d;
@@ -180,7 +185,7 @@ void RawToDigi_wrapper(context &, const SiPixelFedCablingMapGPU* cablingMapDevic
                         const uint32_t wordCounter, uint32_t *word, 
                         const uint32_t fedCounter,  uint8_t *fedId_h,
                         bool convertADCtoElectrons, uint32_t * pdigi_h,
-                        uint32_t *rawIdArr_h, uint32_t *errType_h, uint32_t *errWord_h, uint32_t *errFedID_h, uint32_t *errRawID_h,
+                        uint32_t *rawIdArr_h, GPU::SimpleVector<error_obj> *error_h, GPU::SimpleVector<error_obj> *error_h_tmp, error_obj *data_h,
                         bool useQualityInfo, bool includeErrors, bool debug, uint32_t & nModulesActive);
 
 // void initCablingMap();
