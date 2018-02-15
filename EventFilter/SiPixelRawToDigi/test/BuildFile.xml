@@ -16,3 +16,4 @@
 <library   file="findHotPixels.cc" name="findHotPixels">
   <flags   EDM_PLUGIN="1"/>
 </library>
+
