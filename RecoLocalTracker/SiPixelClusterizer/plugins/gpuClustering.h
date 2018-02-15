@@ -42,13 +42,16 @@ namespace gpuClustering {
     
     __shared__ bool go;
     __shared__ int nclus;
-    
-    
+
+    __shared__  int msize;    
+
     auto first = moduleStart[1 + blockIdx.x];  
     
     auto me = id[first];
 
     assert(me<MaxNumModules);    
+
+    // auto debugme = (me==31 && threadIdx.x==127);
 
 #ifdef GPU_DEBUG
     if (me%100==1)
@@ -56,33 +59,52 @@ namespace gpuClustering {
 #endif
 
     first+=threadIdx.x;
+   
+    if (first>=numElements) return;
     
     go=true;
     nclus=0;
+
+    msize=numElements;
     __syncthreads();
-    
-    
+
+    for (int i=first; i<numElements; i+=blockDim.x) {
+      if (id[i]==InvId) continue;  // not valid
+      if (id[i]!=me) { atomicMin(&msize,i); break;}  // end of module
+     }
+    __syncthreads();
+
+    assert(msize<=numElements);    
+    if (first>=msize) return;
+
+    int jmax[10];
+    auto niter = (msize-first)/blockDim.x;
+    assert(niter<10);
+    for (int i=0; i<niter+1; ++i) jmax[i]=msize;    
+
     while (go) {
       __syncthreads();
       go=false;
       __syncthreads();
 
-      for (int i=first; i<numElements; i+=blockDim.x) {
+      int k=-1;
+      for (int i=first; i<msize; i+=blockDim.x) {
+        ++k;
 	if (id[i]==InvId) continue;  // not valid
-	if (id[i]!=me) break;  // end of module
+	assert(id[i]==me); //  break;  // end of module
 	++debug[i];
-	for (int j=i+1; j<numElements; ++j) {
-	if (id[j]==InvId) continue;  // not valid
-	if (id[j]!=me) break;  // end of module
-
-	if (std::abs(int(x[j])-int(x[i]))>1) continue;
-	if (std::abs(int(y[j])-int(y[i]))>1) continue;
-	auto old = atomicMin(&clus[j],clus[i]);
-	if (old!=clus[i]) go=true;
-	atomicMin(&clus[i],old);
+        auto jm = jmax[k];
+	for (int j=i+1; j<jm; ++j) {
+ 	  if (id[j]==InvId) continue;  // not valid
+          if (std::abs(int(x[j])-int(x[i]))>1) continue;
+	  if (std::abs(int(y[j])-int(y[i]))>1) continue;
+	  auto old = atomicMin(&clus[j],clus[i]);
+	  if (old!=clus[i]) go=true;
+	  atomicMin(&clus[i],old);
+          jmax[k]=j+1;
 	}
       }
-      
+      assert (k<=niter);
     __syncthreads();
     }
     
