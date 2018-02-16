@@ -603,9 +603,7 @@ void RawToDigi_wrapper(
     
   constexpr uint32_t VSIZE = sizeof(GPU::SimpleVector<error_obj>);
   constexpr uint32_t ESIZE = sizeof(error_obj);
-  //cudaCheck(cudaMemcpyAsync(c.error_d, error_h_tmp, VSIZE, cudaMemcpyHostToDevice, c.stream));
-  bool success = cudaMemcpy(c.error_d, error_h_tmp, VSIZE, cudaMemcpyHostToDevice) == cudaSuccess;
-  assert(success);
+  cudaCheck(cudaMemcpyAsync(c.error_d, error_h_tmp, VSIZE, cudaMemcpyHostToDevice, c.stream));
     
   // Launch rawToDigi kernel
   RawToDigi_kernel<<<blocks, threadsPerBlock, 0, c.stream>>>(
@@ -632,21 +630,12 @@ void RawToDigi_wrapper(
       cudaCheck(cudaMemcpy(error_h, c.error_d, VSIZE, cudaMemcpyDeviceToHost));
       error_h->set_data(data_h);
       int size = error_h->size();
-      std::cout<<"crepamento1: "<<size<<std::endl;
-      std::cout<<"error_h: "<<error_h->size()<<" "<<(error_h->data())<<" "<<(data_h)<<std::endl;
-      std::cout<<"boh1 "<<data_h<<std::endl;
       cudaCheck(cudaMemcpy(data_h, c.data_d, size*ESIZE, cudaMemcpyDeviceToHost));
-      std::cout<<"boh2 "<<std::endl;
-      std::cout<<"crepamento2: "<<size<<std::endl;
-      std::cout<<"boh3 "<<data_h<<" "<<error_h->data()<<std::endl;
-      std::cout<<"boh4 "<<(int)data_h[1].errorType<<" "<<data_h[1].word<<" "<<(int)data_h[1].fedId<<" "<<data_h[1].rawId<<std::endl;
-      std::cout<<"boh5 "<<(int)(*error_h)[1].errorType<<" "<<(*error_h)[1].word<<" "<<(int)(*error_h)[1].fedId<<" "<<(*error_h)[1].rawId<<std::endl;
-
   }
   cudaStreamSynchronize(c.stream);
   // End  of Raw2Digi and passing data for cluserisation
 
- /*{
+ {
    // clusterizer ...
    using namespace gpuClustering;
   int threadsPerBlock = 256;
@@ -688,7 +677,7 @@ void RawToDigi_wrapper(
 
   cudaCheck(cudaMemsetAsync(c.clusInModule_d, 0, (MaxNumModules)*sizeof(uint32_t),c.stream));
 
-  /
+  /*
   gpuCalibPixel::calibADCByModule<<<blocks, threadsPerBlock, 0, c.stream>>>(
                c.moduleInd_d,
                c.xx_d, c.yy_d, c.adc_d,
@@ -696,7 +685,7 @@ void RawToDigi_wrapper(
                ped, 
                wordCounter
              );
-  /
+  */
 
   findClus<<<blocks, threadsPerBlock, 0, c.stream>>>(
                c.moduleInd_d,
@@ -714,5 +703,5 @@ void RawToDigi_wrapper(
   nModulesActive = nModules;
 
  } // end clusterizer scope
-*/
+
 }

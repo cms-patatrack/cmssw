@@ -436,7 +436,6 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
         std::vector<PixelFEDChannel> disabledChannelsDetSet;
 
         for (auto const& aPixelError : errorDetSet) {
-            cout<<"DetId: "<<errordetid<<", error: "<<aPixelError.getType()<<endl;
           // For the time being, we extend the error handling functionality with ErrorType 25
           // In the future, we should sort out how the usage of tkerrorlist can be generalized
           if (aPixelError.getType() == 25) {
