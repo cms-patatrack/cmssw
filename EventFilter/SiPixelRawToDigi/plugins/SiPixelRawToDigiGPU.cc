@@ -148,12 +148,6 @@ SiPixelRawToDigiGPU::SiPixelRawToDigiGPU( const edm::ParameterSet& conf )
   assert(error_h->capacity() == static_cast<int>(MAX_FED*MAX_WORD));
   assert(error_h_tmp->size() == 0);
   assert(error_h_tmp->capacity() == static_cast<int>(MAX_FED*MAX_WORD));
-    
-  // // allocate auxilary memory for clustering
-  // initDeviceMemCluster();
-
-  // // allocate memory for CPE on GPU
-  // initDeviceMemCPE();
 }
 
 // -----------------------------------------------------------------------------
@@ -276,7 +270,6 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
     // convert the cabling map to a GPU-friendly version
     processCablingMap(*cablingMap, *geom.product(), cablingMapGPUHost_, cablingMapGPUDevice_, badPixelInfo_, modules);
     processGainCalibration(theSiPixelGainCalibration_.payload(), *geom.product(), gainForHLTonGPU_, gainDataOnGPU_);
-
   }
 
   edm::Handle<FEDRawDataCollection> buffers;
@@ -393,13 +386,12 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
     theDigiCounter++;
   }
 
-    uint32_t size = error_h->size();
-    for (uint32_t i = 0; i < size; i++) {
-        error_obj err = (*error_h)[i];
-        if (err.errorType != 0) {
-            SiPixelRawDataError error(err.word, err.errorType, err.fedId + 1200);
-            errors[err.rawId].push_back(error);
-        }
+  uint32_t size = error_h->size();
+  for (uint32_t i = 0; i < size; i++) {
+    error_obj err = (*error_h)[i];
+    if (err.errorType != 0) {
+        SiPixelRawDataError error(err.word, err.errorType, err.fedId + 1200);
+        errors[err.rawId].push_back(error);
     }
   }
 
