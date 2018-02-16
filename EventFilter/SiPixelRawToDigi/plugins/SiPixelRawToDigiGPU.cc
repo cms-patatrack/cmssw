@@ -393,14 +393,14 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
     theDigiCounter++;
   }
 
-    uint32_t vec_size = error_h->size();
-    for (uint32_t i = 0; i < vec_size; i++) {
-//      error_obj err = *error_h[i];
-//      if (err.errorType != 0) {
-//          SiPixelRawDataError error(err.word, err.errorType, err.fedId + 1200);
-//          errors[err.rawId].push_back(error);
-//      }
-
+    uint32_t size = error_h->size();
+    cout<<"size: "<<size<<endl;
+    for (uint32_t i = 0; i < size; i++) {
+        error_obj err = (*error_h)[i];
+        if (err.errorType != 0) {
+            SiPixelRawDataError error(err.word, err.errorType, err.fedId + 1200);
+            errors[err.rawId].push_back(error);
+        }
     }
   }
 
@@ -436,6 +436,7 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
         std::vector<PixelFEDChannel> disabledChannelsDetSet;
 
         for (auto const& aPixelError : errorDetSet) {
+            cout<<"DetId: "<<errordetid<<", error: "<<aPixelError.getType()<<endl;
           // For the time being, we extend the error handling functionality with ErrorType 25
           // In the future, we should sort out how the usage of tkerrorlist can be generalized
           if (aPixelError.getType() == 25) {

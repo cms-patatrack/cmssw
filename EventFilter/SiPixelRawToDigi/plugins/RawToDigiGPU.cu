@@ -479,11 +479,9 @@ __global__ void RawToDigi_kernel(const SiPixelFedCablingMapGPU *Map, const uint3
         continue ; // 0: bad word
       }
 
-
       uint32_t link  = getLink(ww);            // Extract link
       uint32_t roc   = getRoc(ww);             // Extract Roc in link
       DetIdGPU detId = getRawId(Map, fedId, link, roc);
-
 
       uint32_t errorType = checkROC(ww, fedId, link, Map, debug);
       skipROC = (roc < maxROCIndex) ? false : (errorType != 0);
@@ -498,7 +496,6 @@ __global__ void RawToDigi_kernel(const SiPixelFedCablingMapGPU *Map, const uint3
         err->push_back(temp_err);
         continue;
       }
-
 
       uint32_t rawId  = detId.RawId;
       uint32_t rocIdInDetUnit = detId.rocInDet;
@@ -582,8 +579,6 @@ __global__ void RawToDigi_kernel(const SiPixelFedCablingMapGPU *Map, const uint3
       rawIdArr[gIndex] = rawId;
     } // end of if (gIndex < end)
    } // end fake loop
-
-
 } // end of Raw to Digi kernel
 
 
@@ -635,17 +630,23 @@ void RawToDigi_wrapper(
 
   if (includeErrors) {
       cudaCheck(cudaMemcpy(error_h, c.error_d, VSIZE, cudaMemcpyDeviceToHost));
+      error_h->set_data(data_h);
+      int size = error_h->size();
+      std::cout<<"crepamento1: "<<size<<std::endl;
+      std::cout<<"error_h: "<<error_h->size()<<" "<<(error_h->data())<<" "<<(data_h)<<std::endl;
+      std::cout<<"boh1 "<<data_h<<std::endl;
+      cudaCheck(cudaMemcpy(data_h, c.data_d, size*ESIZE, cudaMemcpyDeviceToHost));
+      std::cout<<"boh2 "<<std::endl;
+      std::cout<<"crepamento2: "<<size<<std::endl;
+      std::cout<<"boh3 "<<data_h<<" "<<error_h->data()<<std::endl;
+      std::cout<<"boh4 "<<(int)data_h[1].errorType<<" "<<data_h[1].word<<" "<<(int)data_h[1].fedId<<" "<<data_h[1].rawId<<std::endl;
+      std::cout<<"boh5 "<<(int)(*error_h)[1].errorType<<" "<<(*error_h)[1].word<<" "<<(int)(*error_h)[1].fedId<<" "<<(*error_h)[1].rawId<<std::endl;
 
-      assert(error_h->size() == ((blocks * threadsPerBlock) < (MAX_FED * MAX_WORD)
-                                 ? (blocks * threadsPerBlock)
-                                 : (MAX_FED * MAX_WORD)));
-
-      cudaCheck(cudaMemcpy(data_h, c.data_d, (error_h->size())*ESIZE, cudaMemcpyDeviceToHost));
   }
   cudaStreamSynchronize(c.stream);
   // End  of Raw2Digi and passing data for cluserisation
 
- { 
+ /*{
    // clusterizer ...
    using namespace gpuClustering;
   int threadsPerBlock = 256;
@@ -687,7 +688,7 @@ void RawToDigi_wrapper(
 
   cudaCheck(cudaMemsetAsync(c.clusInModule_d, 0, (MaxNumModules)*sizeof(uint32_t),c.stream));
 
-  /*
+  /
   gpuCalibPixel::calibADCByModule<<<blocks, threadsPerBlock, 0, c.stream>>>(
                c.moduleInd_d,
                c.xx_d, c.yy_d, c.adc_d,
@@ -695,7 +696,7 @@ void RawToDigi_wrapper(
                ped, 
                wordCounter
              );
-  */
+  /
 
   findClus<<<blocks, threadsPerBlock, 0, c.stream>>>(
                c.moduleInd_d,
@@ -713,5 +714,5 @@ void RawToDigi_wrapper(
   nModulesActive = nModules;
 
  } // end clusterizer scope
-
+*/
 }

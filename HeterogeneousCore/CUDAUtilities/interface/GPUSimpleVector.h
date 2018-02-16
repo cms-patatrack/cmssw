@@ -83,6 +83,11 @@ template <class T> struct SimpleVector {
   __inline__ __host__ __device__ int capacity() const { return m_capacity; }
 
   __inline__ __host__ __device__ T *data() const { return m_data; }
+    
+  __inline__ __host__ __device__ void set_size(int size) { m_size = size; }
+    
+  __inline__ __host__ __device__ void set_data(T * data) { m_data = data; }
+
 
 private:
   int m_size;
