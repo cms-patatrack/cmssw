@@ -394,7 +394,6 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
   }
 
     uint32_t size = error_h->size();
-    cout<<"size: "<<size<<endl;
     for (uint32_t i = 0; i < size; i++) {
         error_obj err = (*error_h)[i];
         if (err.errorType != 0) {
