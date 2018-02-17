@@ -612,7 +612,7 @@ void RawToDigi_wrapper(
   cudaCheck(cudaMemcpyAsync(rawIdArr_h, c.rawIdArr_d, wordCounter*sizeof(uint32_t), cudaMemcpyDeviceToHost, c.stream));
 
   if (includeErrors) {
-      cudaCheck(cudaMemcpy(error_h, c.error_d, vsize, cudaMemcpyDeviceToHost));
+      cudaCheck(cudaMemcpyAsync(error_h, c.error_d, vsize, cudaMemcpyDeviceToHost, c.stream));
       error_h->set_data(data_h);
       int size = error_h->size();
       cudaCheck(cudaMemcpyAsync(data_h, c.data_d, size*esize, cudaMemcpyDeviceToHost, c.stream));
