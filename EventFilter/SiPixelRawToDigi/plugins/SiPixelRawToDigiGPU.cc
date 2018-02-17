@@ -128,13 +128,11 @@ SiPixelRawToDigiGPU::SiPixelRawToDigiGPU( const edm::ParameterSet& conf )
   cudaMallocHost(&pdigi_h,    sizeof(uint32_t)*WSIZE);
   cudaMallocHost(&rawIdArr_h, sizeof(uint32_t)*WSIZE);
 
-  uint32_t VSIZE = sizeof(GPU::SimpleVector<error_obj>);
-  uint32_t ESIZE = sizeof(error_obj);
-  bool success = cudaMallocHost(&error_h, VSIZE) == cudaSuccess &&
-                 cudaMallocHost(&error_h_tmp, VSIZE) == cudaSuccess &&
-                 cudaMallocHost(&data_h, MAX_FED*MAX_WORD*ESIZE) == cudaSuccess;
-
-  assert(success);
+  uint32_t vsize = sizeof(GPU::SimpleVector<error_obj>);
+  uint32_t esize = sizeof(error_obj);
+  cudaCheck(cudaMallocHost(&error_h, vsize));
+  cudaCheck(cudaMallocHost(&error_h_tmp, vsize));
+  cudaCheck(cudaMallocHost(&data_h, MAX_FED*MAX_WORD*esize));
 
   cudaMallocHost(&mIndexStart_h, sizeof(int)*(NMODULE+1));
   cudaMallocHost(&mIndexEnd_h,   sizeof(int)*(NMODULE+1));
@@ -357,7 +355,9 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
 
   // GPU specific: RawToDigi -> clustering
   uint32_t nModulesActive=0;
-  RawToDigi_wrapper(context_, cablingMapGPUDevice_, gainForHLTonGPU_, wordCounterGPU, word, fedCounter, fedId_h, convertADCtoElectrons, pdigi_h, rawIdArr_h, error_h, error_h_tmp, data_h, useQuality, includeErrors, debug,nModulesActive);
+  RawToDigi_wrapper(context_, cablingMapGPUDevice_, gainForHLTonGPU_, wordCounterGPU, word, fedCounter,
+                    fedId_h, convertADCtoElectrons, pdigi_h, rawIdArr_h, error_h, error_h_tmp, data_h,
+                    useQuality, includeErrors, debug,nModulesActive);
 
   auto gpuProd = std::make_unique<std::vector<unsigned long long>>();
   gpuProd->resize(3);

@@ -146,12 +146,14 @@ inline uint32_t pack(uint32_t row, uint32_t col, uint32_t adc) {
 
 }
 
-typedef struct error {
-    uint32_t rawId;
-    uint32_t word;
-    unsigned char errorType;
-    unsigned char fedId;
-    } error_obj;
+struct error_obj {
+  uint32_t rawId;
+  uint32_t word;
+  unsigned char errorType;
+  unsigned char fedId;
+  __host__ __device__ error_obj(uint32_t a_, uint32_t b_, unsigned char c_, unsigned char d_):
+    rawId(a_), word(b_), errorType(c_), fedId(d_) {}
+};
 
 // configuration and memory buffers alocated on the GPU
 struct context {
@@ -181,12 +183,15 @@ struct context {
 
 
 // wrapper function to call RawToDigi on the GPU from host side
-void RawToDigi_wrapper(context &, const SiPixelFedCablingMapGPU* cablingMapDevice, SiPixelGainForHLTonGPU * const ped, 
-                        const uint32_t wordCounter, uint32_t *word, 
-                        const uint32_t fedCounter,  uint8_t *fedId_h,
-                        bool convertADCtoElectrons, uint32_t * pdigi_h,
-                        uint32_t *rawIdArr_h, GPU::SimpleVector<error_obj> *error_h, GPU::SimpleVector<error_obj> *error_h_tmp, error_obj *data_h,
-                        bool useQualityInfo, bool includeErrors, bool debug, uint32_t & nModulesActive);
+void RawToDigi_wrapper(context &, const SiPixelFedCablingMapGPU* cablingMapDevice,
+                       SiPixelGainForHLTonGPU * const ped,
+                       const uint32_t wordCounter, uint32_t *word,
+                       const uint32_t fedCounter,  uint8_t *fedId_h,
+                       bool convertADCtoElectrons, uint32_t * pdigi_h,
+                       uint32_t *rawIdArr_h, GPU::SimpleVector<error_obj> *error_h,
+                       GPU::SimpleVector<error_obj> *error_h_tmp, error_obj *data_h,
+                       bool useQualityInfo, bool includeErrors, bool debug,
+                       uint32_t & nModulesActive);
 
 // void initCablingMap();
 context initDeviceMemory();

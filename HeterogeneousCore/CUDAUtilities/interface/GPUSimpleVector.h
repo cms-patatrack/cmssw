@@ -84,7 +84,7 @@ template <class T> struct SimpleVector {
 
   __inline__ __host__ __device__ T *data() const { return m_data; }
     
-  __inline__ __host__ __device__ void set_size(int size) { m_size = size; }
+  __inline__ __host__ __device__ void resize(int size) { m_size = size; }
     
   __inline__ __host__ __device__ void set_data(T * data) { m_data = data; }
 
@@ -98,3 +98,4 @@ private:
 } // namespace GPU
 
 #endif // HeterogeneousCore_CUDAUtilities_GPUSimpleVector_h
+

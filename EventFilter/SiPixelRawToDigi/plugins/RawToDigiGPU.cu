@@ -46,9 +46,9 @@ context initDeviceMemory() {
   constexpr uint32_t MAX_WORD08_SIZE = MAX_FED * MAX_WORD  * sizeof(uint8_t);
   constexpr uint32_t MAX_WORD32_SIZE = MAX_FED * MAX_WORD  * sizeof(uint32_t);
   constexpr uint32_t MAX_WORD16_SIZE = MAX_FED * MAX_WORD  * sizeof(uint16_t);
-  constexpr uint32_t VSIZE = sizeof(GPU::SimpleVector<error_obj>);
-  constexpr uint32_t ESIZE = sizeof(error_obj);
-  constexpr uint32_t MAX_ERROR_SIZE  = MAX_FED * MAX_WORD * ESIZE;
+  constexpr uint32_t vsize = sizeof(GPU::SimpleVector<error_obj>);
+  constexpr uint32_t esize = sizeof(error_obj);
+  constexpr uint32_t MAX_ERROR_SIZE  = MAX_FED * MAX_WORD * esize;
 
   cudaCheck(cudaMalloc((void**) & c.word_d,        MAX_WORD32_SIZE));
   cudaCheck(cudaMalloc((void**) & c.fedId_d,       MAX_WORD08_SIZE));
@@ -59,7 +59,7 @@ context initDeviceMemory() {
 
   cudaCheck(cudaMalloc((void**) & c.moduleInd_d,   MAX_WORD16_SIZE));
   cudaCheck(cudaMalloc((void**) & c.rawIdArr_d,    MAX_WORD32_SIZE));
-  cudaCheck(cudaMalloc((void**) & c.error_d,       VSIZE));
+  cudaCheck(cudaMalloc((void**) & c.error_d,       vsize));
   cudaCheck(cudaMalloc((void**) & c.data_d,        MAX_ERROR_SIZE));
 
   // for the clusterizer
@@ -488,12 +488,7 @@ __global__ void RawToDigi_kernel(const SiPixelFedCablingMapGPU *Map, const uint3
       if (includeErrors and skipROC)
       {
         uint32_t rID = getErrRawID(fedId, ww, errorType, Map, debug);
-        error_obj temp_err;
-        temp_err.errorType = errorType;
-        temp_err.word = ww;
-        temp_err.fedId = fedId;
-        temp_err.rawId = rID;
-        err->push_back(temp_err);
+        err->emplace_back(rID, ww, errorType, fedId);
         continue;
       }
 
@@ -539,12 +534,7 @@ __global__ void RawToDigi_kernel(const SiPixelFedCablingMapGPU *Map, const uint3
         if (includeErrors) {
           if (not rocRowColIsValid(row, col)) {
             uint32_t error = conversionError(fedId, 3, debug); //use the device function and fill the arrays
-            error_obj temp_err;
-            temp_err.errorType = error;
-            temp_err.word = ww;
-            temp_err.fedId = fedId;
-            temp_err.rawId = rawId;
-            err->push_back(temp_err);
+            err->emplace_back(rawId, ww, error, fedId);
             if(debug) printf("BPIX1  Error status: %i\n", error);
             continue;
           }
@@ -559,12 +549,7 @@ __global__ void RawToDigi_kernel(const SiPixelFedCablingMapGPU *Map, const uint3
         localPix.col = col;
         if (includeErrors and not dcolIsValid(dcol, pxid)) {
           uint32_t error = conversionError(fedId, 3, debug);
-          error_obj temp_err;
-          temp_err.errorType = error;
-          temp_err.word = ww;
-          temp_err.fedId = fedId;
-          temp_err.rawId = rawId;
-          err->push_back(temp_err);
+          err->emplace_back(rawId, ww, error, fedId);
           if(debug) printf("Error status: %i %d %d %d %d\n", error, dcol, pxid, fedId, roc);
           continue;
         }
@@ -601,9 +586,9 @@ void RawToDigi_wrapper(
   cudaCheck(cudaMemcpyAsync(&c.word_d[0],     &word[0],     wordCounter*sizeof(uint32_t), cudaMemcpyHostToDevice, c.stream));
   cudaCheck(cudaMemcpyAsync(&c.fedId_d[0], &fedId_h[0], wordCounter*sizeof(uint8_t)/2, cudaMemcpyHostToDevice, c.stream));
     
-  constexpr uint32_t VSIZE = sizeof(GPU::SimpleVector<error_obj>);
-  constexpr uint32_t ESIZE = sizeof(error_obj);
-  cudaCheck(cudaMemcpyAsync(c.error_d, error_h_tmp, VSIZE, cudaMemcpyHostToDevice, c.stream));
+  constexpr uint32_t vsize = sizeof(GPU::SimpleVector<error_obj>);
+  constexpr uint32_t esize = sizeof(error_obj);
+  cudaCheck(cudaMemcpyAsync(c.error_d, error_h_tmp, vsize, cudaMemcpyHostToDevice, c.stream));
     
   // Launch rawToDigi kernel
   RawToDigi_kernel<<<blocks, threadsPerBlock, 0, c.stream>>>(
@@ -627,10 +612,10 @@ void RawToDigi_wrapper(
   cudaCheck(cudaMemcpyAsync(rawIdArr_h, c.rawIdArr_d, wordCounter*sizeof(uint32_t), cudaMemcpyDeviceToHost, c.stream));
 
   if (includeErrors) {
-      cudaCheck(cudaMemcpy(error_h, c.error_d, VSIZE, cudaMemcpyDeviceToHost));
+      cudaCheck(cudaMemcpy(error_h, c.error_d, vsize, cudaMemcpyDeviceToHost));
       error_h->set_data(data_h);
       int size = error_h->size();
-      cudaCheck(cudaMemcpy(data_h, c.data_d, size*ESIZE, cudaMemcpyDeviceToHost));
+      cudaCheck(cudaMemcpy(data_h, c.data_d, size*esize, cudaMemcpyDeviceToHost));
   }
   cudaStreamSynchronize(c.stream);
   // End  of Raw2Digi and passing data for cluserisation
