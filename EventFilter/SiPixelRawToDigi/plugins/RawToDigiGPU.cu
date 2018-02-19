@@ -613,11 +613,11 @@ void RawToDigi_wrapper(
 
   if (includeErrors) {
       cudaCheck(cudaMemcpyAsync(error_h, c.error_d, vsize, cudaMemcpyDeviceToHost, c.stream));
+      cudaStreamSynchronize(c.stream);
       error_h->set_data(data_h);
       int size = error_h->size();
       cudaCheck(cudaMemcpyAsync(data_h, c.data_d, size*esize, cudaMemcpyDeviceToHost, c.stream));
   }
-  cudaStreamSynchronize(c.stream);
   // End  of Raw2Digi and passing data for cluserisation
 
  {

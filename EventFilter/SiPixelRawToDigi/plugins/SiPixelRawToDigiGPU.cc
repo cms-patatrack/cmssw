@@ -386,8 +386,8 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
     theDigiCounter++;
   }
 
-  uint32_t size = error_h->size();
-  for (uint32_t i = 0; i < size; i++) {
+  auto size = error_h->size();
+  for (auto i = 0; i < size; i++) {
     error_obj err = (*error_h)[i];
     if (err.errorType != 0) {
         SiPixelRawDataError error(err.word, err.errorType, err.fedId + 1200);
