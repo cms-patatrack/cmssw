@@ -573,8 +573,9 @@ void RawToDigi_wrapper(
     const SiPixelFedCablingMapGPU* cablingMapDevice, SiPixelGainForHLTonGPU * const ped,
     const uint32_t wordCounter, uint32_t *word, const uint32_t fedCounter,  uint8_t *fedId_h,
     bool convertADCtoElectrons, 
-    uint32_t * pdigi_h, uint32_t *rawIdArr_h, 
+    uint32_t * pdigi_h, uint32_t *rawIdArr_h,
     GPU::SimpleVector<error_obj> *error_h, GPU::SimpleVector<error_obj> *error_h_tmp, error_obj *data_h,
+    uint16_t * adc_h, int32_t * clus_h,
     bool useQualityInfo, bool includeErrors, bool debug, uint32_t & nModulesActive)
 {
   const int threadsPerBlock = 512;

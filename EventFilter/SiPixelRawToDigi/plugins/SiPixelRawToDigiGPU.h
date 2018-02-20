@@ -74,6 +74,7 @@ private:
 
   // to store the output
   uint32_t *pdigi_h, *rawIdArr_h;                   // host copy of output
+  uint16_t * adc_h; int32_t * clus_h; // host copy of calib&clus output
   error_obj *data_h = nullptr;
   GPU::SimpleVector<error_obj> *error_h = nullptr;
   GPU::SimpleVector<error_obj> *error_h_tmp = nullptr;
