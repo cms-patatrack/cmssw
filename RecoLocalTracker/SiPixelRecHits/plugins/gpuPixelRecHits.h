@@ -32,6 +32,7 @@ namespace gpuPixelRecHits {
 			  uint32_t const * hitsModuleStart,
                           int32_t * chargeh,
 			  float * xh, float * yh, float * zh,
+                          float * xe, float * ye, uint16_t * mr,
 			  bool local // if true fill just x & y in local coord...
 			  ){
 
@@ -124,7 +125,9 @@ namespace gpuPixelRecHits {
                                               xh[h],yh[h],zh[h]
                                              );
     }
-    
+    xe[h]= clusParams.xerr[ic];
+    ye[h]= clusParams.yerr[ic];
+    mr[h]= clusParams.minRow[ic];
   }
 
 }

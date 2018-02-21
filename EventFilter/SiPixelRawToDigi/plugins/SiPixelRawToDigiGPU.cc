@@ -438,7 +438,7 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
       spc.push_back( std::move(cluster) );
       std::push_heap(spc.begin(),spc.end(),[](SiPixelCluster const & cl1,SiPixelCluster const & cl2) { return cl1.minPixelRow() < cl2.minPixelRow();});
     }
-    // sort by row (x)   maybe sorting the seed would suffice....
+    // sort by row (x)
     std::sort_heap(spc.begin(),spc.end(),[](SiPixelCluster const & cl1,SiPixelCluster const & cl2) { return cl1.minPixelRow() < cl2.minPixelRow();});
     if ( spc.empty() ) spc.abort();
    };
