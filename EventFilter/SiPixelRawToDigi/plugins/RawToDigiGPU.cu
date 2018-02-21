@@ -667,16 +667,6 @@ void RawToDigi_wrapper(
 
   cudaCheck(cudaMemsetAsync(c.clusInModule_d, 0, (MaxNumModules)*sizeof(uint32_t),c.stream));
 
-  /*
-  gpuCalibPixel::calibADCByModule<<<blocks, threadsPerBlock, 0, c.stream>>>(
-               c.moduleInd_d,
-               c.xx_d, c.yy_d, c.adc_d,
-               c.moduleStart_d,
-               ped, 
-               wordCounter
-             );
-  */
-
   findClus<<<blocks, threadsPerBlock, 0, c.stream>>>(
                c.moduleInd_d,
                c.xx_d, c.yy_d, c.adc_d,

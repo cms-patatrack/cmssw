@@ -60,6 +60,7 @@ struct AccretionCluster {
     UShort xmin=16000;
     UShort ymin=16000;
     unsigned int isize=0;
+    int charge=0;    
 
     bool add(SiPixelCluster::PixelPos const & p, UShort const iadc) {
       if (isize==MAXSIZE) return false;
@@ -68,6 +69,7 @@ struct AccretionCluster {
       adc[isize]=iadc;
       x[isize]=p.row();
       y[isize++]=p.col();
+      charge+=iadc;
       return true;
     }
   };
@@ -418,27 +420,27 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
     break;
   }
 
-  auto spc = std::make_unique<edmNew::DetSetVector<SiPixelCluster>::FastFiller>(*outputClusters, (*detDigis).detId());
-
   int32_t nclus=-1;
   std::vector<AccretionCluster> aclusters(256);
-
+  auto totCluseFilled=0;
   auto fillClusters = [&](uint32_t detId){
+    if (nclus<0) return; // this in reality should never happen
+    edmNew::DetSetVector<SiPixelCluster>::FastFiller spc(*outputClusters, detId);
     auto layer = (DetId(detId).subdetId()==1) ? tTopo_->pxbLayer(detId) : 0;
-    auto clusterThreshold = (layer==1) ? 1000 : 4000;
+    auto clusterThreshold = (layer==1) ? 2000 : 4000;
     for (int32_t ic=0; ic<nclus+1;++ic) {
       auto const & acluster = aclusters[ic];
+      if ( acluster.charge < clusterThreshold) continue;
       SiPixelCluster cluster(acluster.isize,acluster.adc, acluster.x,acluster.y, acluster.xmin,acluster.ymin);
-      if ( cluster.charge() >= clusterThreshold) {
-        // std::cout << "putting in this cluster " << ic << " " << cluster.charge() << " " << cluster.pixelADC().size() << endl;
-        // sort by row (x)
-        spc->push_back( std::move(cluster) );
-        std::push_heap(spc->begin(),spc->end(),[](SiPixelCluster const & cl1,SiPixelCluster const & cl2) { return cl1.minPixelRow() < cl2.minPixelRow();});
-      }
+      ++totCluseFilled;
+      // std::cout << "putting in this cluster " << ic << " " << cluster.charge() << " " << cluster.pixelADC().size() << endl;
+      // sort by row (x)
+      spc.push_back( std::move(cluster) );
+      std::push_heap(spc.begin(),spc.end(),[](SiPixelCluster const & cl1,SiPixelCluster const & cl2) { return cl1.minPixelRow() < cl2.minPixelRow();});
     }
     // sort by row (x)   maybe sorting the seed would suffice....
-    std::sort_heap(spc->begin(),spc->end(),[](SiPixelCluster const & cl1,SiPixelCluster const & cl2) { return cl1.minPixelRow() < cl2.minPixelRow();});
-    spc.reset();
+    std::sort_heap(spc.begin(),spc.end(),[](SiPixelCluster const & cl1,SiPixelCluster const & cl2) { return cl1.minPixelRow() < cl2.minPixelRow();});
+    if ( spc.empty() ) spc.abort();
    };
 
   for (uint32_t i = 0; i < wordCounterGPU; i++) {
@@ -447,16 +449,17 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
     if ( (*detDigis).detId() != rawIdArr_h[i])
     {
       fillClusters((*detDigis).detId());
-      nclus=0; aclusters.clear();aclusters.resize(256);
+      nclus=-1; aclusters.clear();aclusters.resize(256);
 
       detDigis = &(*collection).find_or_insert(rawIdArr_h[i]);
       if ( (*detDigis).empty() )
         (*detDigis).data.reserve(32); // avoid the first relocations
-      spc = std::make_unique<edmNew::DetSetVector<SiPixelCluster>::FastFiller>(*outputClusters, (*detDigis).detId());
+      else { std::cout << "Problem det present twice in input! " << (*detDigis).detId() << std::endl; }
     }
     (*detDigis).data.emplace_back(pdigi_h[i]);
     auto const & dig = (*detDigis).data.back();
     // fill clusters
+    assert(clus_h[i]>=0);
     nclus = std::max(clus_h[i],nclus);
     auto row = dig.row();
     auto col = dig.column();
@@ -468,7 +471,7 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
 
   // fill final clusters
   fillClusters((*detDigis).detId());
-
+  std::cout << "filled " << totCluseFilled << " clusters" << std::endl;
 
   auto size = error_h->size();
   for (auto i = 0; i < size; i++) {
