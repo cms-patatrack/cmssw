@@ -16,6 +16,7 @@
 #include "DataFormats/FEDRawData/interface/FEDRawDataCollection.h"
 
 #include "CalibTracker/SiPixelESProducers/interface/SiPixelGainCalibrationForHLTService.h"
+#include "DataFormats/TrackerCommon/interface/TrackerTopology.h"
 
 
 #include "FWCore/Framework/interface/ConsumesCollector.h"
@@ -50,6 +51,7 @@ private:
   const SiPixelQuality* badPixelInfo_;
   PixelUnpackingRegions* regions_;
   edm::EDGetTokenT<FEDRawDataCollection> tFEDRawDataCollection;
+  const TrackerTopology* tTopo_;          // needed to get correct layer number
 
   TH1D *hCPU, *hDigi;
   std::unique_ptr<edm::CPUTimer> theTimer;

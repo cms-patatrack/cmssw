@@ -638,6 +638,10 @@ void RawToDigi_wrapper(
 
   cudaCheck(cudaGetLastError());
 
+  // calibrated adc
+  cudaCheck(cudaMemcpyAsync(adc_h, c.adc_d, wordCounter*sizeof(uint32_t), cudaMemcpyDeviceToHost, c.stream));
+
+
   std::cout
     << "CUDA countModules kernel launch with " << blocks
     << " blocks of " << threadsPerBlock << " threads\n";
@@ -682,6 +686,10 @@ void RawToDigi_wrapper(
 	       c.debug_d,
                wordCounter
   );
+
+  // clusters
+  cudaCheck(cudaMemcpyAsync(clus_h, c.clus_d, wordCounter*sizeof(uint32_t), cudaMemcpyDeviceToHost, c.stream));
+
 
   cudaDeviceSynchronize();
   cudaCheck(cudaGetLastError());

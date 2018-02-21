@@ -263,6 +263,11 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
   // setup gain calibration service
   theSiPixelGainCalibration_.setESObjects( es );
 
+   edm::ESHandle<TrackerTopology> trackerTopologyHandle;
+   es.get<TrackerTopologyRcd>().get(trackerTopologyHandle);
+   tTopo_ = trackerTopologyHandle.product();
+
+
   int theWordCounter = 0;
   int theDigiCounter = 0;
   const uint32_t dummydetid = 0xffffffff;
@@ -418,8 +423,9 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
   int32_t nclus=-1;
   std::vector<AccretionCluster> aclusters(256);
 
-  auto fillClusters = [&](){
-    auto clusterThreshold = 4000;
+  auto fillClusters = [&](uint32_t detId){
+    auto layer = (DetId(detId).subdetId()==1) ? tTopo_->pxbLayer(detId) : 0;
+    auto clusterThreshold = (layer==1) ? 1000 : 4000;
     for (int32_t ic=0; ic<nclus+1;++ic) {
       auto const & acluster = aclusters[ic];
       SiPixelCluster cluster(acluster.isize,acluster.adc, acluster.x,acluster.y, acluster.xmin,acluster.ymin);
@@ -439,7 +445,7 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
     assert(rawIdArr_h[i] > 109999);
     if ( (*detDigis).detId() != rawIdArr_h[i])
     {
-      fillClusters();
+      fillClusters((*detDigis).detId());
       nclus=0; aclusters.clear();aclusters.resize(256);
 
       detDigis = &(*collection).find_or_insert(rawIdArr_h[i]);
@@ -461,7 +467,7 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
   }
 
   // fill final clusters
-  fillClusters();
+  fillClusters((*detDigis).detId());
 
 
   auto size = error_h->size();
