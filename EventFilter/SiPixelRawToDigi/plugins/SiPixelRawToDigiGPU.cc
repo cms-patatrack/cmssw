@@ -438,6 +438,7 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
     }
     // sort by row (x)   maybe sorting the seed would suffice....
     std::sort_heap(spc->begin(),spc->end(),[](SiPixelCluster const & cl1,SiPixelCluster const & cl2) { return cl1.minPixelRow() < cl2.minPixelRow();});
+    spc.reset();
    };
 
   for (uint32_t i = 0; i < wordCounterGPU; i++) {
@@ -451,7 +452,6 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
       detDigis = &(*collection).find_or_insert(rawIdArr_h[i]);
       if ( (*detDigis).empty() )
         (*detDigis).data.reserve(32); // avoid the first relocations
-
       spc = std::make_unique<edmNew::DetSetVector<SiPixelCluster>::FastFiller>(*outputClusters, (*detDigis).detId());
     }
     (*detDigis).data.emplace_back(pdigi_h[i]);
@@ -566,6 +566,7 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
   }
 
   // send digis clusters and errors back to framework
+  std::cout << "Number of Clusters from GPU to CPU " << (*outputClusters).data().size() << std::endl;
   ev.put(std::move(collection));
   ev.put(std::move(outputClusters));
   if (includeErrors) {
