@@ -160,6 +160,7 @@ using namespace std;
     std::cout << "Number of Clusers on CPU " << (*input).data().size() << std::endl;
 
     run( input, *output, geom,hoc );
+    std::cout << "Number of Hits on CPU " << (*output).data().size() << std::endl;
 
     output->shrink_to_fit();
     e.put(std::move(output));
@@ -217,7 +218,7 @@ using namespace std;
         assert(ic<ngh);
         // order is not stable... assume charge to be unique...
         auto ij = fc+ind[ic];
-        //assert( clust.minPixelRow()==hoc.mr[ij] );
+        assert( clust.minPixelRow()==hoc.mr[ij] );
         if( clust.minPixelRow()!=hoc.mr[ij] )
               std::cout << gind <<'/'<<fc<<'/'<<ic<<'/'<<ij << ' ' << clust.charge()<<"!="<<hoc.charge[ij]
                         << ' ' << clust.minPixelRow()<<'/'<< mrp[ij] << std::endl;
@@ -235,7 +236,12 @@ using namespace std;
         }
         if(clust.charge()!=hoc.charge[ij])
               std::cout << gind <<'/'<<fc<<'/'<<ic<<'/'<<ij << ' ' << clust.charge()<<"!="<<hoc.charge[ij] 
-                        << ' ' << clust.minPixelRow()<<'/'<< mrp[ij] << std::endl;             
+                        << ' ' << clust.minPixelRow()<<'/'<< mrp[ij] << std::endl;
+
+        LocalPoint lp(hoc.xl[ij],hoc.yl[ij]);
+        LocalError le(hoc.xe[ij]*hoc.xe[ij],0,hoc.ye[ij]*hoc.ye[ij]);
+        SiPixelRecHitQuality::QualWordType rqw=0;
+
 
         ++ic;
 	numberOfClusters++;
@@ -249,10 +255,10 @@ using namespace std;
 	// Create a persistent edm::Ref to the cluster
 	edm::Ref< edmNew::DetSetVector<SiPixelCluster>, SiPixelCluster > cluster = edmNew::makeRefTo( inputhandle, &clust);
 	// Make a RecHit and add it to the DetSet
-	// SiPixelRecHit hit( lp, le, rqw, *genericDet, cluster);
+	SiPixelRecHit hit( lp, le, rqw, *genericDet, cluster);
 	// 
 	// Now save it =================
-	// recHitsOnDetUnit.push_back(hit);
+	recHitsOnDetUnit.push_back(hit);
 	// =============================
 
 	// std::cout << "SiPixelRecHitGPUVI " << numberOfClusters << ' '<< lp << " " << le << std::endl;
@@ -262,8 +268,8 @@ using namespace std;
 
       //  LogDebug("SiPixelRecHitGPU")
       //std::cout << "SiPixelRecHitGPUVI "
-	//	<< " Found " << recHitsOnDetUnit.size() << " RecHits on " << detid //;
-	//	<< std::endl;
+      //	<< " Found " << recHitsOnDetUnit.size() << " RecHits on " << detid //;
+      // << std::endl;
       
       
     } //    <-- End loop on DetUnits
