@@ -112,7 +112,8 @@ namespace gpuPixelRecHits {
     assert(h<2000*256);
 
     pixelCPEforGPU::position(cpeParams->commonParams(), cpeParams->detParams(me), clusParams,ic);
-
+    pixelCPEforGPU::error(cpeParams->commonParams(), cpeParams->detParams(me), clusParams,ic);
+ 
     chargeh[h] = clusParams.charge[ic];
 
     if (local) {   

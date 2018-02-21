@@ -13,6 +13,7 @@ struct HitsOnGPU{
    uint32_t * hitsModuleStart_d;
    int32_t  * charge_d;
    float *xg_d, *yg_d, *zg_d;
+   float *xerr_d, *yerr_d;
 };
 
 HitsOnGPU allocHitsOnGPU();
