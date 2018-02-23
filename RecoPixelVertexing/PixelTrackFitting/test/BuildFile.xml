@@ -11,9 +11,14 @@
 <use   name="RecoTracker/TkTrackingRegions"/>
 <use   name="RecoPixelVertexing/PixelTriplets"/>
 <use   name="RecoPixelVertexing/PixelTrackFitting"/>
+<use name="cuda"/>
+<use name="cuda-api-wrappers"/>
+<bin file="testEigenGPU.cu" name="testEigenGPU_t">
+  <flags CXXFLAGS="-g"/>
+</bin>
 <library   file="PixelTrackTest.cc" name="PixelTrackTest">
   <flags   EDM_PLUGIN="1"/>
 </library>
 <bin file="PixelTrackRiemannFit.cc">
-  <flags   CXXFLAGS="-g -O0"/>
+  <flags   CXXFLAGS="-g"/>
 </bin>
