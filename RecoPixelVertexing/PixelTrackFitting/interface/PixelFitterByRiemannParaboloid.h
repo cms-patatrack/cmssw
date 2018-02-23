@@ -1,5 +1,5 @@
-#ifndef PixelFitterByRiemannParaboloid_H
-#define PixelFitterByRiemannParaboloid_H
+#ifndef RecoPixelVertexing_PixelTrackFitting_PixelFitterByRiemannParaboloid_H
+#define RecoPixelVertexing_PixelTrackFitting_PixelFitterByRiemannParaboloid_H
 
 #include "RecoPixelVertexing/PixelTrackFitting/interface/PixelFitterBase.h"
 #include "DataFormats/TrackingRecHit/interface/TrackingRecHit.h"
@@ -16,25 +16,13 @@ class PixelFitterByRiemannParaboloid final : public PixelFitterBase {
 public:
   explicit PixelFitterByRiemannParaboloid(const edm::EventSetup *es, const MagneticField *field,
       bool useErrors, bool useMultipleScattering);
-  virtual ~PixelFitterByRiemannParaboloid() {}
+  virtual ~PixelFitterByRiemannParaboloid() = default;
   virtual std::unique_ptr<reco::Track> run(const std::vector<const TrackingRecHit *>& hits,
                                            const TrackingRegion& region) const override;
 
 private:
-  /* these are just static and local moved to local namespace in cc ....
-   *
-  int charge(const std::vector<GlobalPoint> & points) const;
-  float cotTheta(const GlobalPoint& pinner, const GlobalPoint& pouter) const;
-  float phi(float xC, float yC, int charge) const;
-  float pt(float curvature) const;
-  float zip(float d0, float phi_p, float curv,
-    const GlobalPoint& pinner, const GlobalPoint& pouter) const;
-  double errZip2(float apt, float eta) const;
-  double errTip2(float apt, float eta) const;
-  */
-private:
-  const edm::EventSetup *theES;
-  const MagneticField *theField;
+  const edm::EventSetup *es_;
+  const MagneticField *field_;
   bool useErrors_;
   bool useMultipleScattering_;
 };

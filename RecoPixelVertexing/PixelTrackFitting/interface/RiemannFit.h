@@ -73,7 +73,7 @@ struct helix_fit {
     \brief raise to square.
 */
 
-inline double sqr(const double& a) { return a * a; }
+inline double sqr(const double a) { return a * a; }
 
 /*!
     \brief Compute cross product of two 2D vector (assuming z component 0),
@@ -239,7 +239,6 @@ MatrixNd cov_carttorad_prefit(const Matrix2xNd& p2D, const Matrix2Nd& cov_cart,
     scattering is managed.
     Further information in attached documentation.
 
-    \param p2D 2D points in transverse plane.
     \param cov_rad_inv covariance matrix inverse in radial coordinated
     (or, beter, pre-fitted circle's orthogonal system).
 
@@ -249,7 +248,7 @@ MatrixNd cov_carttorad_prefit(const Matrix2xNd& p2D, const Matrix2Nd& cov_cart,
     diagonal cov matrix. Further investigation needed.
 */
 
-inline VectorNd Weight_circle(const Matrix2xNd& p2D, const MatrixNd& cov_rad_inv) {
+inline VectorNd Weight_circle(const MatrixNd& cov_rad_inv) {
   return cov_rad_inv.colwise().sum().transpose();
 }
 
@@ -539,7 +538,7 @@ circle_fit Circle_fit(const Matrix2xNd& hits2D, const Matrix2Nd& hits_cov2D,
       G = cov_rad.inverse();
       renorm = G.sum();
       G *= 1. / renorm;
-      weight = Weight_circle(hits2D, G);
+      weight = Weight_circle(G);
     } else {
       weight = cov_rad.diagonal().cwiseInverse();
       renorm = weight.sum();

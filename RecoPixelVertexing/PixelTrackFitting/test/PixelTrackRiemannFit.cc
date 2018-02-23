@@ -4,12 +4,14 @@
 #include <iomanip>
 #include <iostream>
 #include <random>
+#include <memory>  // unique_ptr
 
 #include "RecoPixelVertexing/PixelTrackFitting/interface/RiemannFit.h"
 
 using namespace std;
 using namespace Eigen;
 using namespace Rfit;
+using std::unique_ptr;
 
 namespace Rfit {
 using Vector3i = Eigen::Matrix<int, 3, 1>;
@@ -196,7 +198,8 @@ void test_helix_fit() {
     true_par = True_par(gen_par, 1, B_field);
     Matrix3xNd hits;
     Matrix3Nd hits_cov;
-    helix_fit* helix = new helix_fit[iteration];
+    unique_ptr<helix_fit[]> helix(new helix_fit[iteration]);
+//    helix_fit* helix = new helix_fit[iteration];
     Matrix<double, 41, Dynamic, 1> score(41, iteration);
 
     for (int i = 0; i < iteration; i++) {
@@ -273,7 +276,6 @@ void test_helix_fit() {
       score(24, x) = (helix[x].par(3) - true_par(3)) * (helix[x].par(4) - true_par(4)) /
                      sqrt(helix[x].cov(3, 3)) / sqrt(helix[x].cov(4, 4));
     }
-    delete[] helix;
 
     double phi_ = score.row(0).mean();
     double a_ = score.row(1).mean();

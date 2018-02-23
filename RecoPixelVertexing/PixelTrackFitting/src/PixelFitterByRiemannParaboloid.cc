@@ -34,7 +34,7 @@ PixelFitterByRiemannParaboloid::PixelFitterByRiemannParaboloid(const edm::EventS
                                                                const MagneticField* field,
                                                                bool useErrors,
                                                                bool useMultipleScattering)
-    : theES(es), theField(field),
+    : es_(es), field_(field),
     useErrors_(useErrors), useMultipleScattering_(useMultipleScattering) {}
 
 std::unique_ptr<reco::Track> PixelFitterByRiemannParaboloid::run(
@@ -76,7 +76,7 @@ std::unique_ptr<reco::Track> PixelFitterByRiemannParaboloid::run(
     }
   }
 
-  float bField = 1 / PixelRecoUtilities::fieldInInvGev(*theES);
+  float bField = 1 / PixelRecoUtilities::fieldInInvGev(*es_);
   helix_fit fittedTrack = Rfit::Helix_fit(riemannHits, riemannHits_cov, bField, useErrors_, useMultipleScattering_);
   int iCharge = fittedTrack.q;
 
@@ -115,6 +115,6 @@ std::unique_ptr<reco::Track> PixelFitterByRiemannParaboloid::run(
   Measurement1D zip(valZip, errValZip);
 
   ret.reset(
-      builder.build(pt, phi, cotTheta, tip, zip, chi2, iCharge, hits, theField, region.origin()));
+      builder.build(pt, phi, cotTheta, tip, zip, chi2, iCharge, hits, field_, region.origin()));
   return ret;
 }
