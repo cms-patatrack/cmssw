@@ -14,6 +14,7 @@
 <use name="cuda"/>
 <use name="cuda-api-wrappers"/>
 <bin file="testEigenGPU.cu" name="testEigenGPU_t">
+  <flags CUDA_FLAGS="--expt-relaxed-constexpr -fmad=false -ftz=false -prec-div=true -prec-sqrt=true"/>
   <flags CXXFLAGS="-g"/>
 </bin>
 <library   file="PixelTrackTest.cc" name="PixelTrackTest">
