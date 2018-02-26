@@ -11,10 +11,9 @@
 <use   name="RecoTracker/TkTrackingRegions"/>
 <use   name="RecoPixelVertexing/PixelTriplets"/>
 <use   name="RecoPixelVertexing/PixelTrackFitting"/>
-<use name="cuda"/>
-<use name="cuda-api-wrappers"/>
 <bin file="testEigenGPU.cu" name="testEigenGPU_t">
-  <flags CUDA_FLAGS="--expt-relaxed-constexpr -fmad=false -ftz=false -prec-div=true -prec-sqrt=true"/>
+  <use name="cuda"/>
+  <use name="cuda-api-wrappers"/>
   <flags CXXFLAGS="-g"/>
 </bin>
 <library   file="PixelTrackTest.cc" name="PixelTrackTest">
