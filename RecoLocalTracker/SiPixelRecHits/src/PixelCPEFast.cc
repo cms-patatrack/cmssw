@@ -23,7 +23,6 @@
 
 namespace {
    constexpr float micronsToCm = 1.0e-4;
-   const bool MYDEBUG = false;
 }
 
 //-----------------------------------------------------------------------------
@@ -52,11 +51,7 @@ PixelCPEFast::PixelCPEFast(edm::ParameterSet const & conf,
             throw cms::Exception("InvalidCalibrationLoaded")
             << "ERROR: GenErrors not filled correctly. Check the sqlite file. Using SiPixelTemplateDBObject version "
             << ( *genErrorDBObject_ ).version();
-     if(MYDEBUG) std::cout<<"Loaded genErrorDBObject v"<<( *genErrorDBObject_ ).version()<< std::endl;
-   }  else {
-     if(MYDEBUG) std::cout<<" Use simple parametrised errors "<< std::endl;
-   } // if ( UseErrorsFromTemplates_ )
-   
+   }
    
    // Rechit errors in case other, more correct, errors are not vailable
    // This are constants. Maybe there is a more efficienct way to store them.
@@ -223,6 +218,7 @@ PixelCPEFast::localPosition(DetParam const & theDetParam, ClusterParam & theClus
                         UseErrorsFromTemplates_ && TruncatePixelCharge_
                         );
    
+
      // do GPU like ...
 
      pixelCPEforGPU::ClusParams cp;
