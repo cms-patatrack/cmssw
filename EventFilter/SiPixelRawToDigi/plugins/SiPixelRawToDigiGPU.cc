@@ -471,7 +471,7 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
 
   // fill final clusters
   fillClusters((*detDigis).detId());
-  std::cout << "filled " << totCluseFilled << " clusters" << std::endl;
+  //std::cout << "filled " << totCluseFilled << " clusters" << std::endl;
 
   auto size = error_h->size();
   for (auto i = 0; i < size; i++) {
@@ -569,7 +569,7 @@ SiPixelRawToDigiGPU::produce( edm::Event& ev, const edm::EventSetup& es)
   }
 
   // send digis clusters and errors back to framework
-  std::cout << "Number of Clusters from GPU to CPU " << (*outputClusters).data().size() << std::endl;
+  // std::cout << "Number of Clusters from GPU to CPU " << (*outputClusters).data().size() << std::endl;
   ev.put(std::move(collection));
   ev.put(std::move(outputClusters));
   if (includeErrors) {

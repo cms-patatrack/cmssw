@@ -641,11 +641,11 @@ void RawToDigi_wrapper(
   // calibrated adc
   cudaCheck(cudaMemcpyAsync(adc_h, c.adc_d, wordCounter*sizeof(uint32_t), cudaMemcpyDeviceToHost, c.stream));
 
-
+  /*
   std::cout
     << "CUDA countModules kernel launch with " << blocks
     << " blocks of " << threadsPerBlock << " threads\n";
-
+  */
 
   uint32_t nModules=0;
   cudaCheck(cudaMemcpyAsync(c.moduleStart_d, &nModules, sizeof(uint32_t), cudaMemcpyHostToDevice, c.stream));
@@ -655,15 +655,17 @@ void RawToDigi_wrapper(
 
   cudaCheck(cudaMemcpyAsync(&nModules, c.moduleStart_d, sizeof(uint32_t), cudaMemcpyDeviceToHost, c.stream));
 
-  std::cout << "found " << nModules << " Modules active" << std::endl;
+  // std::cout << "found " << nModules << " Modules active" << std::endl;
 
   
   threadsPerBlock = 256;
   blocks = nModules;
 
+  /*
   std::cout
     << "CUDA findClus kernel launch with " << blocks
     << " blocks of " << threadsPerBlock << " threads\n";
+  */
 
   cudaCheck(cudaMemsetAsync(c.clusInModule_d, 0, (MaxNumModules)*sizeof(uint32_t),c.stream));
 

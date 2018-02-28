@@ -46,7 +46,7 @@ pixelRecHits_wrapper(
  std::partial_sum(std::begin(hitsModuleStart),std::end(hitsModuleStart),std::begin(hitsModuleStart));
 
  auto nhits = hitsModuleStart[gpuClustering::MaxNumModules];
- std::cout << " total number of clusters " << nhits << std::endl;
+ // std::cout << " total number of clusters " << nhits << std::endl;
 
  cudaCheck(cudaMemcpyAsync(hh.hitsModuleStart_d, &hitsModuleStart, (gpuClustering::MaxNumModules+1)*sizeof(uint32_t), cudaMemcpyHostToDevice, c.stream));
 
@@ -73,10 +73,13 @@ pixelRecHits_wrapper(
   HitsOnCPU hoc(nhits);
   memcpy(hoc.hitsModuleStart,hitsModuleStart,2001*sizeof(uint32_t));
   cudaCheck(cudaMemcpyAsync(hoc.charge.data(), hh.charge_d, nhits*sizeof(uint32_t), cudaMemcpyDeviceToHost, c.stream));
+
+  /*
   int ngood=0;
   auto l1 = hitsModuleStart[96];
   for (auto i=0U; i<nhits; ++i) if( hoc.charge[i]>4000 || (i<l1 &&hoc.charge[i]>2000) ) ++ngood;
   std::cout << " total number of good clusters " << ngood << std::endl;
+  */
 
   cudaCheck(cudaMemcpyAsync(hoc.xl.data(), hh.xg_d, nhits*sizeof(uint32_t), cudaMemcpyDeviceToHost, c.stream));
   cudaCheck(cudaMemcpyAsync(hoc.yl.data(), hh.yg_d, nhits*sizeof(uint32_t), cudaMemcpyDeviceToHost, c.stream));
