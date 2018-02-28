@@ -157,10 +157,10 @@ using namespace std;
     // Step C: Iterate over DetIds and invoke the strip CPE algorithm
     // on each DetUnit
 
-    std::cout << "Number of Clusers on CPU " << (*input).data().size() << std::endl;
+    // std::cout << "Number of Clusers on CPU " << (*input).data().size() << std::endl;
 
     run( input, *output, geom,hoc );
-    std::cout << "Number of Hits on CPU " << (*output).data().size() << std::endl;
+    // std::cout << "Number of Hits on CPU " << (*output).data().size() << std::endl;
 
     output->shrink_to_fit();
     e.put(std::move(output));
@@ -177,13 +177,6 @@ using namespace std;
 				   edm::ESHandle<TrackerGeometry> & geom,
                                    HitsOnCPU const & hoc 
  ) {
-    if ( ! cpe_ ) 
-      {
-	edm::LogError("SiPixelRecHitGPU") << " at least one CPE is not ready -- can't run!";
-	// TO DO: throw an exception here?  The user may want to know...
-	assert(0);
-	return;   // clusterizer is invalid, bail out
-      }
 
     int numberOfDetUnits = 0;
     int numberOfClusters = 0;
@@ -220,7 +213,7 @@ using namespace std;
         auto ij = fc+ind[ic];
         // assert( clust.minPixelRow()==hoc.mr[ij] );
         if( clust.minPixelRow()!=hoc.mr[ij] )
-              std::cout <<"IMPOSSIBLE " 
+              edm::LogWarning("GPUHits2CPU") <<"IMPOSSIBLE " 
                         << gind <<'/'<<fc<<'/'<<ic<<'/'<<ij << ' ' << clust.charge()<<"/"<<hoc.charge[ij]
                         << ' ' << clust.minPixelRow()<<"!="<< mrp[ij] << std::endl;
 
@@ -236,7 +229,7 @@ using namespace std;
            if(fd) ij=k;
         }
         if(clust.charge()!=hoc.charge[ij])
-              std::cout << "Hits2CPU: perfect Match not found " 
+             edm::LogWarning("GPUHits2CPU") << "perfect Match not found " 
                         << gind <<'/'<<fc<<'/'<<ic<<'/'<<ij << ' ' << clust.charge()<<"!="<<hoc.charge[ij] 
                         << ' ' << clust.minPixelRow()<<'/'<< mrp[ij] <<'/'<< mrp[fc+ind[ic]] << std::endl;
 
@@ -247,7 +240,8 @@ using namespace std;
 
         ++ic;
 	numberOfClusters++;
-        /*
+
+        /*   cpu version....  (for reference)
 	std::tuple<LocalPoint, LocalError,SiPixelRecHitQuality::QualWordType> tuple = cpe_->getParameters( clust, *genericDet );
 	LocalPoint lp( std::get<0>(tuple) );
 	LocalError le( std::get<1>(tuple) );
