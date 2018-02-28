@@ -226,7 +226,7 @@ namespace pixelCPEforGPU {
      constexpr float xerr_endcap[]= {0.0020, 0.0020};
      constexpr float xerr_endcap_def=0.0020;
      constexpr float yerr_endcap[]= {0.00210};
-     constexpr float yerr_endcap_def=0.00075;
+     constexpr float yerr_endcap_def=0.00210;
 
      // is edgy?
      bool isEdgeX = cp.minRow[ic]==0 || cp.maxRow[ic]==phase1PixelTopology::lastRowInModule;
