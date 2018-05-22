@@ -33,8 +33,8 @@
 #include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuClustering.h"
 
 // local includes
-#include "RawToDigiGPU.h"
 #include "SiPixelFedCablingMapGPU.h"
+#include "SiPixelRawToDigiGPUKernel.h"
 
 context initDeviceMemory() {
 

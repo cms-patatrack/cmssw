@@ -6,32 +6,30 @@
  *  for pixel subdetector
  */
 
-#include "FWCore/Framework/interface/ESWatcher.h"
-#include "FWCore/Framework/interface/stream/EDProducer.h"
-#include "FWCore/Framework/interface/EventSetup.h"
-#include "FWCore/Framework/interface/Event.h"
-#include "FWCore/ParameterSet/interface/ParameterSet.h"
+#include "CalibTracker/SiPixelESProducers/interface/SiPixelGainCalibrationForHLTService.h"
 #include "CondFormats/DataRecord/interface/SiPixelFedCablingMapRcd.h"
 #include "CondFormats/DataRecord/interface/SiPixelQualityRcd.h"
 #include "DataFormats/FEDRawData/interface/FEDRawDataCollection.h"
-
-#include "CalibTracker/SiPixelESProducers/interface/SiPixelGainCalibrationForHLTService.h"
 #include "DataFormats/TrackerCommon/interface/TrackerTopology.h"
-
-
 #include "FWCore/Framework/interface/ConsumesCollector.h"
+#include "FWCore/Framework/interface/ESWatcher.h"
+#include "FWCore/Framework/interface/Event.h"
+#include "FWCore/Framework/interface/EventSetup.h"
+#include "FWCore/Framework/interface/stream/EDProducer.h"
+#include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/Utilities/interface/CPUTimer.h"
-#include "RawToDigiGPU.h"
+#include "SiPixelRawToDigiGPUKernel.h"
 
+class PixelUnpackingRegions;
 class SiPixelFedCablingTree;
 class SiPixelFedCabling;
 class SiPixelQuality;
 class TH1D;
-class PixelUnpackingRegions;
-
 class SiPixelGainForHLTonGPU;
 struct SiPixelGainForHLTonGPU_DecodingStructure;
-class SiPixelRawToDigiGPU : public edm::stream::EDProducer<> {
+
+class SiPixelRawToDigiGPU : public edm::stream::EDProducer<>
+{
 public:
 
   /// ctor

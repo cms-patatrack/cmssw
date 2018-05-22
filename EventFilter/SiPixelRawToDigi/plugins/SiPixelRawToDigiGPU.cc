@@ -44,9 +44,9 @@
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 
 // local includes
-#include "RawToDigiGPU.h"
 #include "SiPixelFedCablingMapGPU.h"
 #include "SiPixelRawToDigiGPU.h"
+#include "SiPixelRawToDigiGPUKernel.h"
 
 namespace {
 struct AccretionCluster {

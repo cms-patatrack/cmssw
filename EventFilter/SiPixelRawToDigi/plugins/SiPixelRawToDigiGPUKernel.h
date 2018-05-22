@@ -1,5 +1,5 @@
-#ifndef EventFilter_SiPixelRawToDigi_plugins_RawToDigiGPU_h
-#define EventFilter_SiPixelRawToDigi_plugins_RawToDigiGPU_h
+#ifndef EventFilter_SiPixelRawToDigi_plugins_SiPixelRawToDigiGPUKernel_h
+#define EventFilter_SiPixelRawToDigi_plugins_SiPixelRawToDigiGPUKernel_h
 
 #include <algorithm>
 #include <cuda_runtime.h>
@@ -205,4 +205,4 @@ struct ADCThreshold {
   const double  theElectronPerADCGain_  =  600;     // ADC to electron conversion
 };
 
-#endif // EventFilter_SiPixelRawToDigi_plugins_RawToDigiGPU_h
+#endif // EventFilter_SiPixelRawToDigi_plugins_SiPixelRawToDigiGPUKernel_h
