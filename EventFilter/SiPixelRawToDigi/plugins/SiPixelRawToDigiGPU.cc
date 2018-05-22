@@ -1,17 +1,21 @@
 // This code is an entry point for GPU based pixel track reconstruction for HLT
 // Modified by Sushil and Shashi for this purpose July-2017
 
+// C++ includes
 #include <string>
 #include <chrono>
 #include <iostream>
 #include <fstream>
 
+// CUDA kincludes
 #include <cuda.h>
 #include <cuda_runtime.h>
 
+// ROOT includes
 #include <TH1D.h>
 #include <TFile.h>
 
+// CMSSW includes
 #include "CondFormats/SiPixelObjects/interface/SiPixelFedCablingMap.h"
 #include "CondFormats/SiPixelObjects/interface/SiPixelFedCablingTree.h"
 #include "CondFormats/SiPixelObjects/interface/SiPixelQuality.h"
@@ -21,34 +25,28 @@
 #include "DataFormats/FEDRawData/interface/FEDNumbering.h"
 #include "DataFormats/FEDRawData/interface/FEDRawData.h"
 #include "DataFormats/FEDRawData/interface/FEDRawDataCollection.h"
+#include "DataFormats/SiPixelCluster/interface/SiPixelCluster.h"
 #include "DataFormats/SiPixelDetId/interface/PixelFEDChannel.h"
 #include "DataFormats/SiPixelDigi/interface/PixelDigi.h"
 #include "DataFormats/SiPixelRawData/interface/SiPixelRawDataError.h"
-
-#include "DataFormats/SiPixelCluster/interface/SiPixelCluster.h"
-
-
-
-#include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
-#include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
-
 #include "EventFilter/SiPixelRawToDigi/interface/PixelDataFormatter.h"
 #include "EventFilter/SiPixelRawToDigi/interface/PixelUnpackingRegions.h"
 #include "FWCore/Framework/interface/ConsumesCollector.h"
 #include "FWCore/Framework/interface/ESHandle.h"
 #include "FWCore/Framework/interface/ESTransientHandle.h"
+#include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "FWCore/PluginManager/interface/ModuleDef.h"
-#include "FWCore/Framework/interface/MakerMacros.h"
+#include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
+#include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 
-#include "EventInfoGPU.h"
+// local includes
 #include "RawToDigiGPU.h"
 #include "SiPixelFedCablingMapGPU.h"
 #include "SiPixelRawToDigiGPU.h"
-#include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
-
 
 namespace {
 struct AccretionCluster {

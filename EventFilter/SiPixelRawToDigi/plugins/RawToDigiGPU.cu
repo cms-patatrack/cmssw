@@ -8,22 +8,17 @@
  *
 **/
 
-#include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuCalibPixel.h"
-#include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuClustering.h"
-
-
-
-// System includes
+// C++ includes
+#include <cassert>
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
-#include <cassert>
-#include <iomanip>
-#include <string>
-#include <iostream>
 #include <fstream>
-#include <chrono>
+#include <iomanip>
+#include <iostream>
+#include <string>
 
-// CUDA runtime
+// CUDA includes
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <thrust/host_vector.h>
@@ -32,8 +27,12 @@
 #include <thrust/unique.h>
 #include <thrust/execution_policy.h>
 
+// CMSSW includes
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
-#include "EventInfoGPU.h"
+#include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuCalibPixel.h"
+#include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuClustering.h"
+
+// local includes
 #include "RawToDigiGPU.h"
 #include "SiPixelFedCablingMapGPU.h"
 

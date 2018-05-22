@@ -1,15 +1,11 @@
-/*Sushil Dubey, Shashi Dugad, TIFR
- *
- */
+#ifndef EventFilter_SiPixelRawToDigi_plugins_RawToDigiGPU_h
+#define EventFilter_SiPixelRawToDigi_plugins_RawToDigiGPU_h
 
-#ifndef RAWTODIGIGPU_H
-#define RAWTODIGIGPU_H
-
+#include <algorithm>
 #include <cuda_runtime.h>
 
-#include "SiPixelFedCablingMapGPU.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/GPUSimpleVector.h"
-#include<algorithm>
+#include "SiPixelFedCablingMapGPU.h"
 
 const uint32_t layerStartBit_   = 20;
 const uint32_t ladderStartBit_  = 12;
@@ -31,11 +27,12 @@ const uint32_t ROC_bits         = 5;
 const uint32_t DCOL_bits        = 5;
 const uint32_t PXID_bits        = 8;
 const uint32_t ADC_bits         = 8;
+
 // special for layer 1
-const uint32_t LINK_bits1       = 6;
-const uint32_t ROC_bits1        = 5;
-const uint32_t COL_bits1_l1     = 6;
-const uint32_t ROW_bits1_l1     = 7;
+const uint32_t LINK_bits_l1     = 6;
+const uint32_t ROC_bits_l1      = 5;
+const uint32_t COL_bits_l1      = 6;
+const uint32_t ROW_bits_l1      = 7;
 const uint32_t OMIT_ERR_bits    = 1;
 
 const uint32_t maxROCIndex      = 8;
@@ -48,20 +45,20 @@ const uint32_t ADC_shift  = 0;
 const uint32_t PXID_shift = ADC_shift + ADC_bits;
 const uint32_t DCOL_shift = PXID_shift + PXID_bits;
 const uint32_t ROC_shift  = DCOL_shift + DCOL_bits;
-const uint32_t LINK_shift = ROC_shift + ROC_bits1;
+const uint32_t LINK_shift = ROC_shift + ROC_bits_l1;
 // special for layer 1 ROC
 const uint32_t ROW_shift = ADC_shift + ADC_bits;
-const uint32_t COL_shift = ROW_shift + ROW_bits1_l1;
+const uint32_t COL_shift = ROW_shift + ROW_bits_l1;
 const uint32_t OMIT_ERR_shift = 20;
 
-const uint32_t LINK_mask = ~(~uint32_t(0) << LINK_bits1);
-const uint32_t ROC_mask  = ~(~uint32_t(0) << ROC_bits1);
-const uint32_t COL_mask  = ~(~uint32_t(0) << COL_bits1_l1);
-const uint32_t ROW_mask  = ~(~uint32_t(0) << ROW_bits1_l1);
+const uint32_t LINK_mask = ~(~uint32_t(0) << LINK_bits_l1);
+const uint32_t ROC_mask  = ~(~uint32_t(0) << ROC_bits_l1);
+const uint32_t COL_mask  = ~(~uint32_t(0) << COL_bits_l1);
+const uint32_t ROW_mask  = ~(~uint32_t(0) << ROW_bits_l1);
 const uint32_t DCOL_mask = ~(~uint32_t(0) << DCOL_bits);
 const uint32_t PXID_mask = ~(~uint32_t(0) << PXID_bits);
 const uint32_t ADC_mask  = ~(~uint32_t(0) << ADC_bits);
-const uint32_t ERROR_mask = ~(~uint32_t(0) << ROC_bits1);
+const uint32_t ERROR_mask = ~(~uint32_t(0) << ROC_bits_l1);
 const uint32_t OMIT_ERR_mask = ~(~uint32_t(0) << OMIT_ERR_bits);
 
 struct DetIdGPU {
@@ -78,58 +75,57 @@ struct Pixel {
 
 namespace gpudetails{
 
-class Packing {
+  class Packing {
   public:
-  using PackedDigiType = uint32_t;
-    
+    using PackedDigiType = uint32_t;
+      
     // Constructor: pre-computes masks and shifts from field widths
-__host__ __device__
-inline
-    constexpr Packing(unsigned int row_w, unsigned int column_w,
-	    unsigned int time_w, unsigned int adc_w) :
-      row_width(row_w), column_width(column_w), adc_width(adc_w)
-      ,row_shift(0)
-      ,column_shift(row_shift + row_w)
-      ,time_shift(column_shift + column_w)
-      ,adc_shift(time_shift + time_w)
-      ,row_mask(~(~0U << row_w))
-      ,column_mask( ~(~0U << column_w))
-      ,time_mask(~(~0U << time_w))
-      ,adc_mask(~(~0U << adc_w))
-      ,rowcol_mask(~(~0U << (column_w+row_w)))
-      ,max_row(row_mask)
-      ,max_column(column_mask)
-      ,max_adc(adc_mask){}
+    __host__ __device__
+    inline
+      constexpr Packing(unsigned int row_w, unsigned int column_w,
+              unsigned int time_w, unsigned int adc_w) :
+        row_width(row_w), column_width(column_w), adc_width(adc_w)
+        ,row_shift(0)
+        ,column_shift(row_shift + row_w)
+        ,time_shift(column_shift + column_w)
+        ,adc_shift(time_shift + time_w)
+        ,row_mask(~(~0U << row_w))
+        ,column_mask( ~(~0U << column_w))
+        ,time_mask(~(~0U << time_w))
+        ,adc_mask(~(~0U << adc_w))
+        ,rowcol_mask(~(~0U << (column_w+row_w)))
+        ,max_row(row_mask)
+        ,max_column(column_mask)
+        ,max_adc(adc_mask){}
 
-							   
-    uint32_t  row_width;
-    uint32_t  column_width;
-    uint32_t  adc_width;
-    
-    uint32_t  row_shift;
-    uint32_t  column_shift;
-    uint32_t  time_shift;
-    uint32_t  adc_shift;
-   
-    PackedDigiType row_mask;
-    PackedDigiType column_mask;
-    PackedDigiType time_mask;
-    PackedDigiType adc_mask;
-    PackedDigiType rowcol_mask;
-    
-    
-    uint32_t  max_row;
-    uint32_t  max_column;
-    uint32_t  max_adc;
+                                                             
+      uint32_t  row_width;
+      uint32_t  column_width;
+      uint32_t  adc_width;
+      
+      uint32_t  row_shift;
+      uint32_t  column_shift;
+      uint32_t  time_shift;
+      uint32_t  adc_shift;
+     
+      PackedDigiType row_mask;
+      PackedDigiType column_mask;
+      PackedDigiType time_mask;
+      PackedDigiType adc_mask;
+      PackedDigiType rowcol_mask;
+      
+      uint32_t  max_row;
+      uint32_t  max_column;
+      uint32_t  max_adc;
   };
 
+  // const PixelChannelIdentifier::Packing PixelChannelIdentifier::thePacking( 11, 11, 0, 10); // row, col, time, adc
 
-// const PixelChannelIdentifier::Packing PixelChannelIdentifier::thePacking( 11, 11, 0, 10); // row, col, time, adc
-
-
-__host__ __device__
-inline
-constexpr gpudetails::Packing packing() { return gpudetails::Packing(11, 11, 0, 10);}
+  __host__ __device__
+  inline
+  constexpr gpudetails::Packing packing() {
+    return gpudetails::Packing(11, 11, 0, 10);
+  }
 
 }
 
@@ -160,12 +156,11 @@ struct context {
   cudaStream_t stream;
 
   uint32_t * word_d;
-  uint8_t * fedId_d;
+  uint8_t *  fedId_d;
   uint32_t * pdigi_d;
   uint16_t * xx_d;
   uint16_t * yy_d;
   uint16_t * adc_d;
-
   uint16_t * moduleInd_d;
   uint32_t * rawIdArr_d;
 
@@ -177,7 +172,6 @@ struct context {
   int32_t *  clus_d;
   uint32_t * clusInModule_d;
   uint32_t * moduleId_d;
-
   uint32_t * debug_d;
 };
 
@@ -198,19 +192,17 @@ void RawToDigi_wrapper(context &, const SiPixelFedCablingMapGPU* cablingMapDevic
 context initDeviceMemory();
 void freeMemory(context &);
 
-// reference cmssw/RecoLocalTracker/SiPixelClusterizer
+// see RecoLocalTracker/SiPixelClusterizer
 // all are runtime const, should be specified in python _cfg.py
 struct ADCThreshold {
-  const int thePixelThreshold = 1000; // default Pixel threshold in electrons
-  const int theSeedThreshold = 1000; //seed thershold in electrons not used in our algo
-  const float theClusterThreshold = 4000; // Cluster threshold in electron
-  const int ConversionFactor = 65;  // adc to electron conversion factor
+  const int     thePixelThreshold       = 1000;     // default Pixel threshold in electrons
+  const int     theSeedThreshold        = 1000;     // seed thershold in electrons not used in our algo
+  const float   theClusterThreshold     = 4000;     // cluster threshold in electron
+  const int     ConversionFactor        =   65;     // adc to electron conversion factor
 
-  // following are the default value
-  // it should be i python script
-  const int theStackADC_  = 255; // the maximum adc count for stack layer
-  const int theFirstStack_ = 5; // the index of the fits stack layer
-  const double theElectronPerADCGain_ = 600; //ADC to electron conversion
+  const int     theStackADC_            =  255;     // the maximum adc count for stack layer
+  const int     theFirstStack_          =    5;     // the index of the fits stack layer
+  const double  theElectronPerADCGain_  =  600;     // ADC to electron conversion
 };
 
-#endif
+#endif // EventFilter_SiPixelRawToDigi_plugins_RawToDigiGPU_h
