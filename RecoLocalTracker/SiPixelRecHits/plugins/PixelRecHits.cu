@@ -35,7 +35,7 @@ HitsOnGPU allocHitsOnGPU() {
 
 HitsOnCPU
 pixelRecHits_wrapper(
-      context const & c,
+      pixelgpudetails::context const & c,
       pixelCPEforGPU::ParamsOnGPU const * cpeParams,
       uint32_t ndigis,
       uint32_t nModules, // active modules (with digis)
