@@ -1,6 +1,7 @@
 #ifndef DATAFORMATS_DETID_H
 #define DATAFORMATS_DETID_H
 
+#include "FWCore/Common/interface/CudaDecls.h"
 
 //FIXME shall be removed and implemented where the operator is defined
 #include <ostream>
@@ -27,47 +28,47 @@ public:
 		 VeryForward=7, HGCalEE=8, HGCalHSi=9, HGCalHSc=10,
 		 HGCalTrigger=11};
   /// Create an empty or null id (also for persistence)
-  DetId()  : id_(0) { }
+  HOST DEVICE DetId()  : id_(0) { }
   /// Create an id from a raw number
-  DetId(uint32_t id) : id_(id) { }
+  HOST DEVICE DetId(uint32_t id) : id_(id) { }
   /// Create an id, filling the detector and subdetector fields as specified
-  DetId(Detector det, int subdet)  {
+  HOST DEVICE DetId(Detector det, int subdet)  {
     id_=((det&kDetMask)<<kDetOffset)|((subdet&kSubdetMask)<<kSubdetOffset);
   }
 
   /// get the detector field from this detid
-  Detector det() const { return Detector((id_>>kDetOffset)&kDetMask); }
+  HOST DEVICE Detector det() const { return Detector((id_>>kDetOffset)&kDetMask); }
   /// get the contents of the subdetector field (not cast into any detector's numbering enum)
-  int subdetId() const { return ((id_>>kSubdetOffset)&kSubdetMask); }
+  HOST DEVICE int subdetId() const { return ((id_>>kSubdetOffset)&kSubdetMask); }
 
-  uint32_t operator()() const { return id_; }
-  operator uint32_t() const { return id_; }
+  HOST DEVICE uint32_t operator()() const { return id_; }
+  HOST DEVICE operator uint32_t() const { return id_; }
 
   /// get the raw id 
-  uint32_t rawId() const { return id_; }
+  HOST DEVICE uint32_t rawId() const { return id_; }
   /// is this a null id ?
-  bool null() const { return id_==0; }
+  HOST DEVICE bool null() const { return id_==0; }
   
   /// equality
-  bool operator==(DetId id) const { return id_==id.id_; }
+  HOST DEVICE bool operator==(DetId id) const { return id_==id.id_; }
   /// inequality
-  bool operator!=(DetId id) const { return id_!=id.id_; }
+  HOST DEVICE bool operator!=(DetId id) const { return id_!=id.id_; }
   /// comparison
-  bool operator<(DetId id) const { return id_<id.id_; }
+  HOST DEVICE bool operator<(DetId id) const { return id_<id.id_; }
 
 protected:
   uint32_t id_;
 };
 
 /// equality
-inline bool operator==(uint32_t i, DetId id)  { return i==id(); }
-inline bool operator==(DetId id, uint32_t i)  { return i==id(); }
+HOST DEVICE inline bool operator==(uint32_t i, DetId id)  { return i==id(); }
+HOST DEVICE inline bool operator==(DetId id, uint32_t i)  { return i==id(); }
 /// inequality
-inline bool operator!=(uint32_t i, DetId id)  { return i!=id(); }
-inline bool operator!=(DetId id, uint32_t i) { return i!=id(); }
+HOST DEVICE inline bool operator!=(uint32_t i, DetId id)  { return i!=id(); }
+HOST DEVICE inline bool operator!=(DetId id, uint32_t i) { return i!=id(); }
 /// comparison
-inline bool operator<(uint32_t i, DetId id) { return i<id(); }
-inline bool operator<(DetId id, uint32_t i) { return id()<i; }
+HOST DEVICE inline bool operator<(uint32_t i, DetId id) { return i<id(); }
+HOST DEVICE inline bool operator<(DetId id, uint32_t i) { return id()<i; }
 
 
 //std::ostream& operator<<(std::ostream& s, const DetId& id);

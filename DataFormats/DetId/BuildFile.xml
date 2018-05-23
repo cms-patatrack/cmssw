@@ -1,6 +1,7 @@
 <use   name="boost"/>
 
 <use   name="DataFormats/Common"/>
+<use name="FWCore/Common"/>
 <export>
   <lib   name="1"/>
 </export>
