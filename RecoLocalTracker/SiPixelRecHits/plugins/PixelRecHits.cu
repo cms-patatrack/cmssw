@@ -10,7 +10,7 @@
 #include <thrust/system/cuda/execution_policy.h>
 
 // CMSSW headers
-#include "EventFilter/SiPixelRawToDigi/plugins/SiPixelRawToDigiGPUKernel.h"
+#include "EventFilter/SiPixelRawToDigi/plugins/SiPixelRawToClusterGPUKernel.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 #include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuClustering.h"
 #include "PixelRecHits.h"
@@ -49,7 +49,7 @@ pixelRecHits_wrapper(
   
   int threadsPerBlock = 256;
   int blocks = nModules;
-  gpuPixelRecHits::getHits<<<blocks, threadsPerBlock, 0, c.stream>>>(
+  gpuPixelRecHits::getHits<<<blocks, threadsPerBlock, 0 /* c.stream */>>>( // TODO add stream back
       cpeParams,
       c.moduleInd_d,
       c.xx_d, c.yy_d, c.adc_d,
@@ -67,18 +67,21 @@ pixelRecHits_wrapper(
 
   // all this needed only if hits on CPU are required...
   uint32_t hitsModuleStart[gpuClustering::MaxNumModules+1];
-  cudaCheck(cudaMemcpyAsync(hitsModuleStart, hh.hitsModuleStart_d, (gpuClustering::MaxNumModules+1) * sizeof(uint32_t), cudaMemcpyDefault, c.stream));
+  //cudaCheck(cudaMemcpyAsync(hitsModuleStart, hh.hitsModuleStart_d, (gpuClustering::MaxNumModules+1) * sizeof(uint32_t), cudaMemcpyDefault, c.stream)); // TODO: add stream back
   cudaCheck(cudaDeviceSynchronize());
   auto nhits = hitsModuleStart[gpuClustering::MaxNumModules];
 
   HitsOnCPU hoc(nhits);
   memcpy(hoc.hitsModuleStart, hitsModuleStart, (gpuClustering::MaxNumModules+1) * sizeof(uint32_t));
+  /*
   cudaCheck(cudaMemcpyAsync(hoc.charge.data(), hh.charge_d, nhits*sizeof(uint32_t), cudaMemcpyDefault, c.stream));
   cudaCheck(cudaMemcpyAsync(hoc.xl.data(), hh.xg_d, nhits*sizeof(uint32_t), cudaMemcpyDefault, c.stream));
   cudaCheck(cudaMemcpyAsync(hoc.yl.data(), hh.yg_d, nhits*sizeof(uint32_t), cudaMemcpyDefault, c.stream));
   cudaCheck(cudaMemcpyAsync(hoc.xe.data(), hh.xerr_d, nhits*sizeof(uint32_t), cudaMemcpyDefault, c.stream));
   cudaCheck(cudaMemcpyAsync(hoc.ye.data(), hh.yerr_d, nhits*sizeof(uint32_t), cudaMemcpyDefault, c.stream));
   cudaCheck(cudaMemcpyAsync(hoc.mr.data(), hh.mr_d, nhits*sizeof(uint16_t), cudaMemcpyDefault, c.stream));
+  */
+  // TODO: add stream back
   cudaCheck(cudaDeviceSynchronize());
 
   return hoc;

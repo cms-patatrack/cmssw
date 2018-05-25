@@ -99,6 +99,17 @@ namespace edmNew {
 #endif
       }
 
+      void replaceFrom(const DetSetVectorTrans& rh) {
+        // better no one is filling...
+        assert(m_filling==false); assert(rh.m_filling==false);
+        m_getter = rh.m_getter;
+#ifdef DSVN_USE_ATOMIC
+        m_dataSize.store(rh.m_dataSize.load());
+#else
+        m_dataSize = rh.m_dataSize;
+#endif
+      }
+
 
       struct Item {
 
@@ -443,7 +454,16 @@ namespace edmNew {
       std::swap(m_ids,rh.m_ids);
       std::swap(m_data,rh.m_data);
     }
-    
+
+    // Allows making a copy while keeping the copy-constructor and
+    // -assignment disabled to avoid accidental copies
+    void replaceFrom(const DetSetVector& rh) {
+      DetSetVectorTrans::replaceFrom(rh);
+      m_subdetId = rh.m_subdetId;
+      m_ids = rh.m_ids;
+      m_data = rh.m_data;
+    }
+
     void swap(IdContainer & iic, DataContainer & idc) {
       std::swap(m_ids,iic);
       std::swap(m_data,idc);

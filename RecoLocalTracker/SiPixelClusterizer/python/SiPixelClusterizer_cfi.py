@@ -53,3 +53,6 @@ phase2_tracker.toModify(siPixelClusters, # FIXME
   ElectronPerADCGain = cms.double(600.) # it can be changed to something else (e.g. 135e) if needed
 )
 
+from Configuration.ProcessModifiers.gpu_cff import gpu
+from EventFilter.SiPixelRawToDigi.siPixelClusterHeterogeneousConverter_cfi import siPixelClusterHeterogeneousConverter as _siPixelClusterHeterogeneousConverter
+gpu.toReplaceWith(siPixelClusters, _siPixelClusterHeterogeneousConverter.clone())
