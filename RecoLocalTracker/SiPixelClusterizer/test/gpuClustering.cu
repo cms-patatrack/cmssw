@@ -198,13 +198,8 @@ int main(void)
 	       d_id.get(), d_moduleStart.get() ,d_clus.get(),n
 	       );
   
-  cuda::memory::copy(&nModules,d_moduleStart.get(),sizeof(uint32_t));
-		     
-  std::cout << "found " << nModules << " Modules active" << std::endl;
-
-  
   threadsPerBlock = 256;
-  blocksPerGrid = nModules;
+  blocksPerGrid = MaxNumModules;    //nModules;
 
 
 
@@ -224,6 +219,10 @@ int main(void)
 	       d_debug.get(),
 	       n
 	       );
+
+
+  cuda::memory::copy(&nModules,d_moduleStart.get(),sizeof(uint32_t));
+  std::cout << "found " << nModules << " Modules active" << std::endl;
 
 
   uint32_t nclus[MaxNumModules], moduleId[nModules];  
