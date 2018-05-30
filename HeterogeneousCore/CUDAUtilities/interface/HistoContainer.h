@@ -12,30 +12,9 @@
 #include <cuda_runtime.h>
 #endif
 
+#include "HeterogeneousCore/CUDAUtilities/interface/cudastdAlgorithm.h"
 
 #ifdef __NVCC__
-
-  template<class ForwardIt, class T>
-  __device__
-  constexpr
-  ForwardIt upper_bound(ForwardIt first, ForwardIt last, const T& value)
-  {
-    auto count = last-first;
- 
-    while (count > 0) {
-        auto it = first; 
-        auto step = count / 2; 
-        it+=step;
-        if (!(value < *it)) {
-            first = ++it;
-            count -= step + 1;
-        } 
-        else
-            count = step;
-    }
-    return first;
-  }
-
 
   template<typename Histo>
   __host__
@@ -77,7 +56,7 @@
   void fillFromVector(Histo * h,  uint32_t nh, T const * v, uint32_t * offsets) {
      auto i = blockIdx.x*blockDim.x + threadIdx.x;
      if(i>=offsets[nh]) return;
-     auto off = upper_bound(offsets,offsets+nh+1,i);
+     auto off = cuda_std::upper_bound(offsets,offsets+nh+1,i);
      assert((*off)>0);
      int32_t ih = off-offsets-1;
      assert(ih>=0);

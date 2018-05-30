@@ -1,5 +1,14 @@
 <bin file="test_GPUSimpleVector.cu" name="test_GPUSimpleVector">
 </bin>
+
+
+<bin file="cudastdAlgorithm_t.cpp"/>
+<bin file="cudastdAlgorithm_t.cu" name="gpuCudastdAlgorithm_t">
+<use name="cuda"/>
+<use name="cuda-api-wrappers"/>
+</bin>
+
+
 <bin file="radixSort_t.cu" name="gpuRadixSort_t">
 <use name="cuda"/>
 <use name="cuda-api-wrappers"/>
