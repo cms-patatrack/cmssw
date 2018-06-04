@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <cstdio>
 
+#include "gpuClusteringConstants.h"
+
 namespace gpuClustering {
 
   constexpr uint32_t MaxNumModules  = 2000;
@@ -166,6 +168,6 @@ namespace gpuClustering {
 #endif
   }
 
-} //namespace gpuClustering
+} // namespace gpuClustering
 
 #endif // RecoLocalTracker_SiPixelClusterizer_plugins_gpuClustering_h
