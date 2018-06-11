@@ -1,5 +1,6 @@
 #include "DataFormats/Common/interface/DetSetVectorNew.h"
 #include "DataFormats/Common/interface/Handle.h"
+#include "DataFormats/BeamSpot/interface/BeamSpot.h"
 #include "DataFormats/SiPixelCluster/interface/SiPixelCluster.h"
 #include "DataFormats/TrackerRecHit2D/interface/SiPixelRecHitCollection.h"
 #include "FWCore/Framework/interface/ESHandle.h"
@@ -21,7 +22,7 @@
 
 #include "EventFilter/SiPixelRawToDigi/plugins/siPixelRawToClusterHeterogeneousProduct.h" // TODO: we need a proper place for this header...
 
-#include "PixelRecHits.h"
+#include "PixelRecHits.h"  // TODO : spit product from kernel
 
 class SiPixelRecHitHeterogeneous: public HeterogeneousEDProducer<heterogeneous::HeterogeneousDevices <
                                                                    heterogeneous::GPUCuda,
@@ -53,6 +54,8 @@ private:
   // GPU
   void run(const edm::Handle<SiPixelClusterCollectionNew>& inputhandle, SiPixelRecHitCollectionNew &output, const pixelgpudetails::HitsOnCPU& hoc) const;
 
+
+  edm::EDGetTokenT<reco::BeamSpot> 	 tBeamSpot; 
   edm::EDGetTokenT<HeterogeneousProduct> token_;
   edm::EDGetTokenT<SiPixelClusterCollectionNew> clusterToken_;
   std::string cpeName_;
@@ -65,6 +68,7 @@ private:
 
 SiPixelRecHitHeterogeneous::SiPixelRecHitHeterogeneous(const edm::ParameterSet& iConfig):
   HeterogeneousEDProducer(iConfig),
+  tBeamSpot(consumes<reco::BeamSpot>(iConfig.getParameter<edm::InputTag>("beamSpot"))),
   token_(consumesHeterogeneous(iConfig.getParameter<edm::InputTag>("heterogeneousSrc"))),
   clusterToken_(consumes<SiPixelClusterCollectionNew>(iConfig.getParameter<edm::InputTag>("src"))),
   cpeName_(iConfig.getParameter<std::string>("CPE"))
@@ -75,6 +79,7 @@ SiPixelRecHitHeterogeneous::SiPixelRecHitHeterogeneous(const edm::ParameterSet& 
 void SiPixelRecHitHeterogeneous::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   edm::ParameterSetDescription desc;
 
+  desc.add<edm::InputTag>("beamSpot", edm::InputTag("offlineBeamSpot"));
   desc.add<edm::InputTag>("heterogeneousSrc", edm::InputTag("siPixelDigisHeterogeneous"));
   desc.add<edm::InputTag>("src", edm::InputTag("siPixelClusters"));
   desc.add<std::string>("CPE", "PixelCPEFast");
@@ -155,7 +160,16 @@ void SiPixelRecHitHeterogeneous::acquireGPUCuda(const edm::HeterogeneousEvent& i
   edm::Handle<siPixelRawToClusterHeterogeneousProduct::GPUProduct> hinput;
   iEvent.getByToken<Input>(token_, hinput);
 
-  gpuAlgo_->makeHitsAsync(*hinput, fcpe->d_paramsOnGPU, cudaStream);
+  edm::Handle<reco::BeamSpot> bsHandle;
+  iEvent.getByToken( tBeamSpot, bsHandle);
+  float bs[3] = {0.f};
+  if(bsHandle.isValid()) {
+    const auto  & bsh = *bsHandle;
+    bs[0]=bsh.x0(); bs[1]=bsh.y0(); bs[2]=bsh.z0();
+  }
+
+
+  gpuAlgo_->makeHitsAsync(*hinput, bs, fcpe->d_paramsOnGPU, cudaStream);
 }
 
 void SiPixelRecHitHeterogeneous::produceGPUCuda(edm::HeterogeneousEvent& iEvent, const edm::EventSetup& iSetup, cuda::stream_t<>& cudaStream) {

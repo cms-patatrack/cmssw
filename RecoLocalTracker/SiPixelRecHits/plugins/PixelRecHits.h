@@ -9,17 +9,31 @@
 #include <cstdint>
 #include <vector>
 
+
+// #include "HeterogeneousCore/CUDAUtilities/interface/HistoContainer.h"
+
+
 namespace pixelCPEforGPU {
   struct ParamsOnGPU;
 }
 
 namespace pixelgpudetails {
   struct HitsOnGPU{
-    uint32_t * hitsModuleStart_d;
-    int32_t  * charge_d;
-    float *xg_d, *yg_d, *zg_d;
-    float *xerr_d, *yerr_d;
-    uint16_t * mr_d;
+     HitsOnGPU * me_d;
+     float * bs_d;
+     uint32_t * hitsModuleStart_d;
+     uint32_t * hitsLayerStart_d;
+     int32_t  * charge_d;
+     uint16_t * detInd_d;
+     float *xg_d, *yg_d, *zg_d, *rg_d;
+     float *xl_d, *yl_d;
+     float *xerr_d, *yerr_d;
+     int16_t * iphi_d;
+     uint16_t * sortIndex_d;
+     uint16_t * mr_d;
+
+     // using Hist = HistoContainer<int16_t,7,8>;
+     // Hist * hist_d;
   };
 
   struct HitsOnCPU {
@@ -43,6 +57,7 @@ namespace pixelgpudetails {
     PixelRecHitGPUKernel& operator=(PixelRecHitGPUKernel&&) = delete;
 
     void makeHitsAsync(const siPixelRawToClusterHeterogeneousProduct::GPUProduct& input,
+                       float const * bs,
                        pixelCPEforGPU::ParamsOnGPU const * cpeParams,
                        cuda::stream_t<>& stream);
 
