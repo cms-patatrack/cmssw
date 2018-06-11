@@ -19,7 +19,6 @@ namespace pixelCPEforGPU {
 
 namespace pixelgpudetails {
   struct HitsOnGPU{
-     HitsOnGPU * me_d;
      float * bs_d;
      uint32_t * hitsModuleStart_d;
      uint32_t * hitsLayerStart_d;
@@ -64,6 +63,7 @@ namespace pixelgpudetails {
     HitsOnCPU getOutput(cuda::stream_t<>& stream) const;
 
   private:
+    HitsOnGPU * gpu_d;  // copy of the structure on the gpu itself: this is the "Product" 
     HitsOnGPU gpu_;
     uint32_t hitsModuleStart_[gpuClustering::MaxNumModules+1];
   };

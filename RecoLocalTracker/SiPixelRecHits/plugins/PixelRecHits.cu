@@ -37,8 +37,8 @@ namespace pixelgpudetails {
     cudaCheck(cudaMalloc((void**) & gpu_.mr_d,(gpuClustering::MaxNumModules*256)*sizeof(uint16_t)));
 //    cudaCheck(cudaMalloc((void**) & gpu_.hist_d, 10*sizeof(HitsOnGPU::Hist)));
 
-    cudaCheck(cudaMalloc((void**) & gpu_.me_d, sizeof(HitsOnGPU)));
-    cudaCheck(cudaMemcpy(gpu_.me_d, &gpu_, sizeof(HitsOnGPU), cudaMemcpyDefault));
+    cudaCheck(cudaMalloc((void**) & gpu_d, sizeof(HitsOnGPU)));
+    cudaCheck(cudaMemcpy(gpu_d, &gpu_, sizeof(HitsOnGPU), cudaMemcpyDefault));
     cudaCheck(cudaDeviceSynchronize());
 
   }
@@ -60,7 +60,7 @@ namespace pixelgpudetails {
     cudaCheck(cudaFree(gpu_.mr_d));
     // cudaCheck(cudaFree(gpu_.hist_d));
 
-    cudaCheck(cudaFree(gpu_.me_d));
+    cudaCheck(cudaFree(gpu_d));
   }
 
   void PixelRecHitGPUKernel::makeHitsAsync(const siPixelRawToClusterHeterogeneousProduct::GPUProduct& input,
@@ -103,6 +103,7 @@ namespace pixelgpudetails {
     uint32_t hitsLayerStart[11];
     for (int i=0;i<10;++i) hitsLayerStart[i]=hitsModuleStart_[phase1PixelTopology::layerStart[i]];
     hitsLayerStart[10]=nhits;
+
     std::cout << "hit layerStart "; 
     for (int i=0;i<10;++i) std::cout << phase1PixelTopology::layerName[i] << ':' << hitsLayerStart[i] << ' ';
     std::cout << "end:" << hitsLayerStart[10] << std::endl;
@@ -110,9 +111,9 @@ namespace pixelgpudetails {
     cudaCheck(cudaMemcpyAsync(gpu_.hitsLayerStart_d, hitsLayerStart, (11) * sizeof(uint32_t), cudaMemcpyDefault, stream.id()));
 
     // for timing test
-    // radixSortMultiWrapper<int16_t><<<10, 256, 0, c.stream>>>(hh.iphi_d,hh.sortIndex_d,hh.hitsLayerStart_d);
+    // radixSortMultiWrapper<int16_t><<<10, 256, 0, c.stream>>>(gpu_.iphi_d,gpu_.sortIndex_d,gpu_.hitsLayerStart_d);
 
-    // fillManyFromVector(hh.hist_d,10,hh.iphi_d, hh.hitsLayerStart_d, nhits,256,c.stream);
+    // fillManyFromVector(gpu_.hist_d,10,gpu_.iphi_d, gpu_.hitsLayerStart_d, nhits,256,c.stream);
 
 
   }
