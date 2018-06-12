@@ -231,28 +231,32 @@ void SiPixelRecHitHeterogeneous::run(const edm::Handle<SiPixelClusterCollectionN
     assert(ngh==DSViter->size());
     for (auto const & clust : *DSViter) {
       assert(ic<ngh);
-      // order is not stable... assume charge to be unique...
+      // order is not stable... assume minPixelCol to be unique...
       auto ij = fc+ind[ic];
       // assert( clust.minPixelRow()==hoc.mr[ij] );
       if( clust.minPixelRow()!=hoc.mr[ij] )
-        edm::LogWarning("GPUHits2CPU") <<"IMPOSSIBLE "
-                                       << gind <<'/'<<fc<<'/'<<ic<<'/'<<ij << ' ' << clust.charge()<<"/"<<hoc.charge[ij]
-                                       << ' ' << clust.minPixelRow()<<"!="<< mrp[ij] << std::endl;
+        edm::LogWarning("GPUHits2CPU") <<"Missing pixels on CPU? "
+                                       << gind <<'/'<<fc<<'/'<<ic<<'/'<<ij << ' ' << clust.size()
+                                       << ' ' << clust.charge()<<"/"<<hoc.charge[ij]
+                                       << ' ' << clust.minPixelRow()<<"!="<< mrp[ij]
+                                       << ' ' << clust.minPixelCol()<<" "<< hoc.mc[ij] << std::endl;
 
-      if(clust.charge()!=hoc.charge[ij]) {
+      if(clust.minPixelCol()!=hoc.mc[ij]) {
         auto fd=false;
         auto k = ij;
-        while (clust.minPixelRow()==hoc.mr[++k]) if(clust.charge()==hoc.charge[k]) {fd=true; break;}
+        while (clust.minPixelRow()==hoc.mr[++k]) if(clust.minPixelCol()==hoc.mc[k]) {fd=true; break;}
         if (!fd) {
           k = ij;
-          while (clust.minPixelRow()==hoc.mr[--k])  if(clust.charge()==hoc.charge[k]) {fd=true; break;}
+          while (clust.minPixelRow()==hoc.mr[--k])  if(clust.minPixelCol()==hoc.mc[k]) {fd=true; break;}
         }
         // assert(fd && k!=ij);
         if(fd) ij=k;
       }
       if(clust.charge()!=hoc.charge[ij])
         edm::LogWarning("GPUHits2CPU") << "perfect Match not found "
-                                       << gind <<'/'<<fc<<'/'<<ic<<'/'<<ij << ' ' << clust.charge()<<"!="<<hoc.charge[ij]
+                                       << gind <<'/'<<fc<<'/'<<ic<<'/'<<ij << '	' << clust.size()
+                                       << ' ' << clust.charge()<<"!="<<hoc.charge[ij]
+                                       << ' ' << clust.minPixelCol()<<"?"<< hoc.mc[ij]
                                        << ' ' << clust.minPixelRow()<<'/'<< mrp[ij] <<'/'<< mrp[fc+ind[ic]] << std::endl;
 
       LocalPoint lp(hoc.xl[ij], hoc.yl[ij]);

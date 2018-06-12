@@ -43,7 +43,8 @@ namespace gpuPixelRecHits {
                           uint16_t * detInd,
 			  float * xg, float * yg, float * zg, float * rg, int16_t * iph,
                           float * xl, float * yl,
-                          float * xe, float * ye, uint16_t * mr)
+                          float * xe, float * ye, 
+                          uint16_t * mr, uint16_t * mc)
   {
     // as usual one block per module
     __shared__ ClusParams clusParams;
@@ -126,6 +127,7 @@ namespace gpuPixelRecHits {
     xe[h]= clusParams.xerr[ic];
     ye[h]= clusParams.yerr[ic];
     mr[h]= clusParams.minRow[ic];
+    mc[h]= clusParams.minCol[ic];
   
     // to global and compute phi... 
     cpeParams->detParams(me).frame.toGlobal(xl[h],yl[h], xg[h],yg[h],zg[h]);

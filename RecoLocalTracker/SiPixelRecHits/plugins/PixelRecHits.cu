@@ -35,6 +35,7 @@ namespace pixelgpudetails {
     cudaCheck(cudaMalloc((void**) & gpu_.iphi_d,(gpuClustering::MaxNumModules*256)*sizeof(int16_t)));
     cudaCheck(cudaMalloc((void**) & gpu_.sortIndex_d,(gpuClustering::MaxNumModules*256)*sizeof(uint16_t)));
     cudaCheck(cudaMalloc((void**) & gpu_.mr_d,(gpuClustering::MaxNumModules*256)*sizeof(uint16_t)));
+    cudaCheck(cudaMalloc((void**) & gpu_.mc_d,(gpuClustering::MaxNumModules*256)*sizeof(uint16_t)));
 //    cudaCheck(cudaMalloc((void**) & gpu_.hist_d, 10*sizeof(HitsOnGPU::Hist)));
 
     cudaCheck(cudaMalloc((void**) & gpu_d, sizeof(HitsOnGPU)));
@@ -58,6 +59,7 @@ namespace pixelgpudetails {
     cudaCheck(cudaFree(gpu_.iphi_d));
     cudaCheck(cudaFree(gpu_.sortIndex_d));
     cudaCheck(cudaFree(gpu_.mr_d));
+    cudaCheck(cudaFree(gpu_.mc_d));
     // cudaCheck(cudaFree(gpu_.hist_d));
 
     cudaCheck(cudaFree(gpu_d));
@@ -92,7 +94,8 @@ namespace pixelgpudetails {
       gpu_.xg_d, gpu_.yg_d, gpu_.zg_d, gpu_.rg_d,
       gpu_.iphi_d,
       gpu_.xl_d, gpu_.yl_d,
-      gpu_.xerr_d, gpu_.yerr_d, gpu_.mr_d
+      gpu_.xerr_d, gpu_.yerr_d, 
+      gpu_.mr_d, gpu_.mc_d
     );
 
     // needed only if hits on CPU are required...
@@ -131,6 +134,7 @@ namespace pixelgpudetails {
     cudaCheck(cudaMemcpyAsync(hoc.xe.data(), gpu_.xerr_d, nhits*sizeof(uint32_t), cudaMemcpyDefault, stream.id()));
     cudaCheck(cudaMemcpyAsync(hoc.ye.data(), gpu_.yerr_d, nhits*sizeof(uint32_t), cudaMemcpyDefault, stream.id()));
     cudaCheck(cudaMemcpyAsync(hoc.mr.data(), gpu_.mr_d, nhits*sizeof(uint16_t), cudaMemcpyDefault, stream.id()));
+    cudaCheck(cudaMemcpyAsync(hoc.mc.data(), gpu_.mc_d, nhits*sizeof(uint16_t), cudaMemcpyDefault, stream.id()));
     cudaCheck(cudaStreamSynchronize(stream.id()));
     return hoc;
   }
