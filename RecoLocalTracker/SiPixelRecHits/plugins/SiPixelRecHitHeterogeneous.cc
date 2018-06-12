@@ -50,7 +50,7 @@ private:
   void beginStreamGPUCuda(edm::StreamID streamId, cuda::stream_t<>& cudaStream) override;
   void acquireGPUCuda(const edm::HeterogeneousEvent& iEvent, const edm::EventSetup& iSetup, cuda::stream_t<>& cudaStream) override;
   void produceGPUCuda(edm::HeterogeneousEvent& iEvent, const edm::EventSetup& iSetup, cuda::stream_t<>& cudaStream) override;
-  void convertGPUtoCPU(edm::HeterogeneousEvent& iEvent, const pixelgpudetails::HitsOnCPU & gpu, CPUProduct& cpu) const;
+  void convertGPUtoCPU(const edm::Handle<SiPixelClusterCollectionNew>& inputhandle, const pixelgpudetails::HitsOnCPU & gpu, CPUProduct& cpu) const;
 
     // Commonalities
   void initialize(const edm::EventSetup& es);
@@ -87,7 +87,7 @@ void SiPixelRecHitHeterogeneous::fillDescriptions(edm::ConfigurationDescriptions
 
   desc.add<edm::InputTag>("beamSpot", edm::InputTag("offlineBeamSpot"));
   desc.add<edm::InputTag>("heterogeneousSrc", edm::InputTag("siPixelDigisHeterogeneous"));
-  desc.add<edm::InputTag>("src", edm::InputTag("siPixelClusters"));
+  desc.add<edm::InputTag>("src", edm::InputTag("siPixelClustersPreSplitting"));
   desc.add<std::string>("CPE", "PixelCPEFast");
 
   HeterogeneousEDProducer::fillPSetDescription(desc);
@@ -182,20 +182,22 @@ void SiPixelRecHitHeterogeneous::produceGPUCuda(edm::HeterogeneousEvent& iEvent,
   const auto& hits = gpuAlgo_->getOutput(cudaStream);
   auto output = std::make_unique<GPUProduct>();
   output->hits_d = hits.gpu_d;
-  iEvent.put<Output>(std::move(output), [this, &hits, &iEvent](const GPUProduct&, CPUProduct& cpu) {
-      this->convertGPUtoCPU(iEvent, hits, cpu);
-    });
-}
 
-void SiPixelRecHitHeterogeneous::convertGPUtoCPU(edm::HeterogeneousEvent& iEvent, const pixelgpudetails::HitsOnCPU & hoc, SiPixelRecHitHeterogeneous::CPUProduct& cpu) const{
-
-  // Need the CPU clusters to
+ // Need the CPU clusters to
   // - properly fill the output DetSetVector of hits
   // - to set up edm::Refs to the clusters
   edm::Handle<SiPixelClusterCollectionNew> hclusters;
   iEvent.getByToken(clusterToken_, hclusters);
 
-  run(hclusters, cpu.collection, hoc);
+
+  iEvent.put<Output>(std::move(output), [this, hits, hclusters](const GPUProduct&, CPUProduct& cpu) {
+      this->convertGPUtoCPU(hclusters, hits, cpu);
+    });
+}
+
+void SiPixelRecHitHeterogeneous::convertGPUtoCPU(const edm::Handle<SiPixelClusterCollectionNew>& inputhandle, const pixelgpudetails::HitsOnCPU & hoc, SiPixelRecHitHeterogeneous::CPUProduct& cpu) const{
+  assert(hoc.gpu_d);
+  run(inputhandle, cpu.collection, hoc);
 
 }
 

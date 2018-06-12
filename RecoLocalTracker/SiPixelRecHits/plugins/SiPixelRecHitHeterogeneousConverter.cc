@@ -29,7 +29,7 @@ SiPixelRecHitHeterogeneousConverter::SiPixelRecHitHeterogeneousConverter(edm::Pa
 
 void SiPixelRecHitHeterogeneousConverter::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   edm::ParameterSetDescription desc;
-  desc.add<edm::InputTag>("src", edm::InputTag("siPixelRecHitsHeterogeneous"));
+  desc.add<edm::InputTag>("src", edm::InputTag("siPixelRecHitHeterogeneous"));
 
   descriptions.addWithDefaultLabel(desc);
 }
