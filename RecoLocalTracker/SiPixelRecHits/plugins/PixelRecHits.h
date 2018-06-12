@@ -27,6 +27,8 @@ namespace pixelgpudetails {
     std::vector<float> xl, yl;
     std::vector<float> xe, ye;
     std::vector<uint16_t> mr;
+
+    HitsOnGPU const * gpu_d=nullptr;  // does not belong here (or actually does it?) ...
   };
 
   class PixelRecHitGPUKernel {

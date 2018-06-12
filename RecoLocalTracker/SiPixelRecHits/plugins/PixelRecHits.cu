@@ -123,6 +123,7 @@ namespace pixelgpudetails {
     auto nhits = hitsModuleStart_[gpuClustering::MaxNumModules];
 
     HitsOnCPU hoc(nhits);
+    hoc.gpu_d = gpu_d;
     memcpy(hoc.hitsModuleStart, hitsModuleStart_, (gpuClustering::MaxNumModules+1) * sizeof(uint32_t));
     cudaCheck(cudaMemcpyAsync(hoc.charge.data(), gpu_.charge_d, nhits*sizeof(uint32_t), cudaMemcpyDefault, stream.id()));
     cudaCheck(cudaMemcpyAsync(hoc.xl.data(), gpu_.xg_d, nhits*sizeof(uint32_t), cudaMemcpyDefault, stream.id()));

@@ -1,14 +1,20 @@
 #ifndef RecoLocalTracker_SiPixelRecHits_plugins_siPixelRecHitsHeterogeneousProduct_h
 #define RecoLocalTracker_SiPixelRecHits_plugins_siPixelRecHitsHeterogeneousProduct_h
 
-#include <cstdint>
-#include <vector>
+#include "DataFormats/TrackerRecHit2D/interface/SiPixelRecHitCollection.h"
+#include "HeterogeneousCore/Product/interface/HeterogeneousProduct.h"
 
+
+#include <cstdint>
 
 // #include "HeterogeneousCore/CUDAUtilities/interface/HistoContainer.h"
 
 
 namespace siPixelRecHitsHeterogeneousProduct {
+
+  struct CPUProduct {
+    SiPixelRecHitCollectionNew collection;
+  };
 
   struct HitsOnGPU{
      float * bs_d;
@@ -30,6 +36,11 @@ namespace siPixelRecHitsHeterogeneousProduct {
   struct GPUProduct {
      HitsOnGPU const * hits_d;
   };
+
+
+  using HeterogeneousPixelRecHit = HeterogeneousProductImpl<heterogeneous::CPUProduct<CPUProduct>,
+                                                            heterogeneous::GPUCudaProduct<GPUProduct> >;
+
 
 }
 
