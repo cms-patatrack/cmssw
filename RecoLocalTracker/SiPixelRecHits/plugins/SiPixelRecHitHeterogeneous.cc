@@ -228,11 +228,12 @@ void SiPixelRecHitHeterogeneous::run(const edm::Handle<SiPixelClusterCollectionN
     }
     std::sort_heap(ind, ind+ngh,[&](auto a, auto b) { return mrp[a]<mrp[b];});
     uint32_t ic=0;
+    auto jnd = [&](int k) { return fc+ind[k]; };
     assert(ngh==DSViter->size());
     for (auto const & clust : *DSViter) {
       assert(ic<ngh);
       // order is not stable... assume minPixelCol to be unique...
-      auto ij = fc+ind[ic];
+      auto ij = jnd(ic);
       // assert( clust.minPixelRow()==hoc.mr[ij] );
       if( clust.minPixelRow()!=hoc.mr[ij] )
         edm::LogWarning("GPUHits2CPU") <<"Missing pixels on CPU? "
@@ -243,14 +244,14 @@ void SiPixelRecHitHeterogeneous::run(const edm::Handle<SiPixelClusterCollectionN
 
       if(clust.minPixelCol()!=hoc.mc[ij]) {
         auto fd=false;
-        auto k = ij;
-        while (clust.minPixelRow()==hoc.mr[++k]) if(clust.minPixelCol()==hoc.mc[k]) {fd=true; break;}
+        auto k = ic;
+        while (k<(ngh-1) && clust.minPixelRow()==hoc.mr[jnd(++k)]) if(clust.minPixelCol()==hoc.mc[jnd(k)]) {fd=true; break;}
         if (!fd) {
-          k = ij;
-          while (clust.minPixelRow()==hoc.mr[--k])  if(clust.minPixelCol()==hoc.mc[k]) {fd=true; break;}
+          k = ic;
+          while (k>0 && clust.minPixelRow()==hoc.mr[jnd(--k)])  if(clust.minPixelCol()==hoc.mc[jnd(k)]) {fd=true; break;}
         }
         // assert(fd && k!=ij);
-        if(fd) ij=k;
+        if(fd) ij=jnd(k);
       }
       if(clust.charge()!=hoc.charge[ij])
         edm::LogWarning("GPUHits2CPU") << "perfect Match not found "
