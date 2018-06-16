@@ -174,7 +174,7 @@ void SiPixelRecHitHeterogeneous::acquireGPUCuda(const edm::HeterogeneousEvent& i
   }
 
 
-  gpuAlgo_->makeHitsAsync(*hinput, fcpe->getGPUProductAsync(cudaStream), cudaStream);
+  gpuAlgo_->makeHitsAsync(*hinput, bs, fcpe->getGPUProductAsync(cudaStream), cudaStream);
 
 }
 
