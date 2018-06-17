@@ -10,12 +10,3 @@ siPixelRecHits = cms.EDProducer("SiPixelRecHitConverter",
 siPixelRecHitsPreSplitting = siPixelRecHits.clone(
     src = 'siPixelClustersPreSplitting'
 )
-
-
-from RecoLocalTracker.SiPixelRecHits.siPixelRecHitHeterogeneous_cfi import siPixelRecHitHeterogeneous
-
-from RecoLocalTracker.SiPixelRecHits.siPixelRecHitHeterogeneousConverter_cfi import siPixelRecHitHeterogeneousConverter as _siPixelRecHitHeterogeneousConverter
-gpu.toReplaceWith(siPixelRecHitsPreSplitting, _siPixelRecHitHeterogeneousConverter.clone())
-
-
-

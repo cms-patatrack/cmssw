@@ -22,6 +22,12 @@ from RecoLocalTracker.SiPixelClusterizer.siPixelClustersHeterogeneous_cfi import
 from RecoLocalTracker.SiPixelClusterizer.siPixelFedCablingMapGPUWrapper_cfi import *
 from CalibTracker.SiPixelESProducers.siPixelGainCalibrationForHLTGPU_cfi import *
 
+from RecoLocalTracker.SiPixelRecHits.siPixelRecHitHeterogeneous_cfi import *
+from RecoLocalTracker.SiPixelRecHits.siPixelRecHitHeterogeneousConverter_cfi import siPixelRecHitHeterogeneousConverter as _siPixelRecHitHeterogeneousConverter
+gpu.toReplaceWith(siPixelRecHitsPreSplitting, _siPixelRecHitHeterogeneousConverter.clone())
+
+
+
 from Configuration.ProcessModifiers.gpu_cff import gpu
 _pixeltrackerlocalreco_gpu = pixeltrackerlocalreco.copy()
 _pixeltrackerlocalreco_gpu.replace(siPixelClustersPreSplitting, siPixelClustersHeterogeneous+siPixelClustersPreSplitting)

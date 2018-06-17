@@ -6,6 +6,7 @@
 
 
 #include <cstdint>
+#include <vector>
 
 // #include "HeterogeneousCore/CUDAUtilities/interface/HistoContainer.h"
 
@@ -34,9 +35,23 @@ namespace siPixelRecHitsHeterogeneousProduct {
      // Hist * hist_d;
   };
 
-  struct GPUProduct {
-     HitsOnGPU const * hits_d;
+
+  struct HitsOnCPU {
+    HitsOnCPU() = default;
+    explicit HitsOnCPU(uint32_t nhits) :
+      charge(nhits),xl(nhits),yl(nhits),xe(nhits),ye(nhits), mr(nhits), mc(nhits){}
+    uint32_t hitsModuleStart[2001];
+    std::vector<int32_t> charge;
+    std::vector<float> xl, yl;
+    std::vector<float> xe, ye;
+    std::vector<uint16_t> mr;
+    std::vector<uint16_t> mc;
+
+    HitsOnGPU const * gpu_d=nullptr;
   };
+
+
+  using GPUProduct = HitsOnCPU;  // FIXME fill cpu vectors on demand
 
 
   using HeterogeneousPixelRecHit = HeterogeneousProductImpl<heterogeneous::CPUProduct<CPUProduct>,

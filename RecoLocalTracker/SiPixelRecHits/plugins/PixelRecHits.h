@@ -19,22 +19,11 @@ namespace pixelCPEforGPU {
 namespace pixelgpudetails {
   using HitsOnGPU = siPixelRecHitsHeterogeneousProduct::HitsOnGPU;
 
-  struct HitsOnCPU {
-    explicit HitsOnCPU(uint32_t nhits) :
-      charge(nhits),xl(nhits),yl(nhits),xe(nhits),ye(nhits), mr(nhits), mc(nhits){}
-    uint32_t hitsModuleStart[2001];
-    std::vector<int32_t> charge;
-    std::vector<float> xl, yl;
-    std::vector<float> xe, ye;
-    std::vector<uint16_t> mr;
-    std::vector<uint16_t> mc;
-
-    HitsOnGPU const * gpu_d=nullptr;  // does not belong here (or actually does it?) ...
-  };
+  using HitsOnCPU = siPixelRecHitsHeterogeneousProduct::HitsOnCPU;
 
   class PixelRecHitGPUKernel {
   public:
-    PixelRecHitGPUKernel();
+    PixelRecHitGPUKernel(cuda::stream_t<>& cudaStream);
     ~PixelRecHitGPUKernel();
 
     PixelRecHitGPUKernel(const PixelRecHitGPUKernel&) = delete;
@@ -53,6 +42,7 @@ namespace pixelgpudetails {
     HitsOnGPU * gpu_d;  // copy of the structure on the gpu itself: this is the "Product" 
     HitsOnGPU gpu_;
     uint32_t hitsModuleStart_[gpuClustering::MaxNumModules+1];
+    uint32_t hitsLayerStart_[11];
   };
 }
 

@@ -17,7 +17,7 @@
 #include "gpuPixelRecHits.h"
 
 namespace pixelgpudetails {
-  PixelRecHitGPUKernel::PixelRecHitGPUKernel() {
+  PixelRecHitGPUKernel::PixelRecHitGPUKernel(cuda::stream_t<>& cudaStream) {
 
     cudaCheck(cudaMalloc((void**) & gpu_.bs_d,3*sizeof(float)));
     cudaCheck(cudaMalloc((void**) & gpu_.hitsModuleStart_d,(gpuClustering::MaxNumModules+1)*sizeof(uint32_t)));
@@ -39,8 +39,7 @@ namespace pixelgpudetails {
 //    cudaCheck(cudaMalloc((void**) & gpu_.hist_d, 10*sizeof(HitsOnGPU::Hist)));
 
     cudaCheck(cudaMalloc((void**) & gpu_d, sizeof(HitsOnGPU)));
-    cudaCheck(cudaMemcpy(gpu_d, &gpu_, sizeof(HitsOnGPU), cudaMemcpyDefault));
-    cudaCheck(cudaDeviceSynchronize());
+    cudaCheck(cudaMemcpyAsync(gpu_d, &gpu_, sizeof(HitsOnGPU), cudaMemcpyDefault,cudaStream.id()));
 
   }
 
@@ -103,15 +102,14 @@ namespace pixelgpudetails {
    
     // to be moved to gpu?
     auto nhits = hitsModuleStart_[gpuClustering::MaxNumModules];
-    uint32_t hitsLayerStart[11];
-    for (int i=0;i<10;++i) hitsLayerStart[i]=hitsModuleStart_[phase1PixelTopology::layerStart[i]];
-    hitsLayerStart[10]=nhits;
+    for (int i=0;i<10;++i) hitsLayerStart_[i]=hitsModuleStart_[phase1PixelTopology::layerStart[i]];
+    hitsLayerStart_[10]=nhits;
 
     std::cout << "hit layerStart "; 
-    for (int i=0;i<10;++i) std::cout << phase1PixelTopology::layerName[i] << ':' << hitsLayerStart[i] << ' ';
-    std::cout << "end:" << hitsLayerStart[10] << std::endl;
+    for (int i=0;i<10;++i) std::cout << phase1PixelTopology::layerName[i] << ':' << hitsLayerStart_[i] << ' ';
+    std::cout << "end:" << hitsLayerStart_[10] << std::endl;
 
-    cudaCheck(cudaMemcpyAsync(gpu_.hitsLayerStart_d, hitsLayerStart, (11) * sizeof(uint32_t), cudaMemcpyDefault, stream.id()));
+    cudaCheck(cudaMemcpyAsync(gpu_.hitsLayerStart_d, hitsLayerStart_, (11) * sizeof(uint32_t), cudaMemcpyDefault, stream.id()));
 
     // for timing test
     // radixSortMultiWrapper<int16_t><<<10, 256, 0, c.stream>>>(gpu_.iphi_d,gpu_.sortIndex_d,gpu_.hitsLayerStart_d);
