@@ -6,16 +6,12 @@
 #include <cstdio>
 #include <limits>
 
+#include "DataFormats/Math/interface/approx_atan2.h"
 #include "RecoLocalTracker/SiPixelRecHits/interface/pixelCPEforGPU.h"
 
 namespace gpuPixelRecHits {
 
-  // later from Math
-  constexpr
-  short phi2short(float x) {
-    constexpr float p2i = ( (int)(std::numeric_limits<short>::max())+1 )/M_PI;
-    return std::round(x*p2i);
-  }
+
 
 
   // to be moved in common namespace...
@@ -137,7 +133,7 @@ namespace gpuPixelRecHits {
     zg[h]-=bs[2];
 
     rg[h] = std::sqrt(xg[h]*xg[h]+yg[h]*yg[h]);
-    iph[h] = phi2short(std::atan2(yg[h],xg[h]));
+    iph[h] = unsafe_atan2s<7>(yg[h],xg[h]);
     
   }
 
