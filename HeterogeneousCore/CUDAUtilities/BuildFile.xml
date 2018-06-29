@@ -1,2 +1,3 @@
 <use   name="cuda"/>
+<use   name="cuda-api-wrappers"/>
 

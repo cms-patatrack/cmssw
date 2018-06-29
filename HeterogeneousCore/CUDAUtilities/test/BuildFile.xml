@@ -1,2 +1,7 @@
 <bin file="test_GPUSimpleVector.cu" name="test_GPUSimpleVector">
 </bin>
+
+<bin file="test_GPUVector.cu test_main.cpp" name="test_GPUVector">
+  <use name="HeterogeneousCore/CUDAUtilities"/>
+  <use name="catch2"/>
+</bin>
