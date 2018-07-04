@@ -1,13 +1,12 @@
 #include "HeterogeneousCore/CUDAUtilities/interface/HistoContainer.h"
 
-#include<algorithm>
-#include<cassert>
-#include<iostream>
-#include<random>
-#include<limits>
+#include <algorithm>
+#include <cassert>
+#include <iostream>
+#include <limits>
+#include <random>
 
-#include "cuda/api_wrappers.h"
-
+#include <cuda/api_wrappers.h>
 
 template<typename T>
 void go() {
@@ -70,7 +69,7 @@ void go() {
 
     cuda::memory::copy(v_d.get(), v, N*sizeof(T));
 
-    fillManyFromVector(h_d.get(),nParts,v_d.get(),off_d.get(),offsets[10],256,0);
+    cudautils::fillManyFromVector(h_d.get(),nParts,v_d.get(),off_d.get(),offsets[10],256,0);
 
     cuda::memory::copy(&h, h_d.get(), nParts*sizeof(Hist));                                
 
