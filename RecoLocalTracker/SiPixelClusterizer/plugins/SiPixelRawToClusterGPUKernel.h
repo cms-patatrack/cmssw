@@ -208,9 +208,7 @@ namespace pixelgpudetails {
     int32_t *  clus_d;
     uint32_t * clusInModule_d;
     uint32_t * moduleId_d;
-    uint32_t * debug_d;
   };
-
   
   // configuration and memory buffers alocated on the GPU
   struct context {
