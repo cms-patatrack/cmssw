@@ -605,11 +605,11 @@ namespace pixelgpudetails {
     // wordCounter is the total no of words in each event to be trasfered on device
     cudaCheck(cudaMemcpyAsync(&word_d[0],     &word[0],     wordCounter*sizeof(uint32_t), cudaMemcpyDefault, stream.id()));
     cudaCheck(cudaMemcpyAsync(&fedId_d[0], &fedId_h[0], wordCounter*sizeof(uint8_t)/2, cudaMemcpyDefault, stream.id()));
-      
+
     constexpr uint32_t vsize = sizeof(GPU::SimpleVector<pixelgpudetails::error_obj>);
     constexpr uint32_t esize = sizeof(pixelgpudetails::error_obj);
     cudaCheck(cudaMemcpyAsync(error_d, error_h_tmp, vsize, cudaMemcpyDefault, stream.id()));
-      
+
     // Launch rawToDigi kernel
     RawToDigi_kernel<<<blocks, threadsPerBlock, 0, stream.id()>>>(
         cablingMap,
@@ -633,79 +633,78 @@ namespace pixelgpudetails {
     cudaCheck(cudaMemcpyAsync(rawIdArr_h, rawIdArr_d, wordCounter*sizeof(uint32_t), cudaMemcpyDefault, stream.id()));
 
     if (includeErrors) {
-        cudaCheck(cudaMemcpyAsync(error_h, error_d, vsize, cudaMemcpyDefault, stream.id()));
-        cudaStreamSynchronize(stream.id());
-        error_h->set_data(data_h);
-        int size = error_h->size();
-        cudaCheck(cudaMemcpyAsync(data_h, data_d, size*esize, cudaMemcpyDefault, stream.id()));
+      cudaCheck(cudaMemcpyAsync(error_h, error_d, vsize, cudaMemcpyDefault, stream.id()));
+      cudaCheck(cudaStreamSynchronize(stream.id()));
+      error_h->set_data(data_h);
+      int size = error_h->size();
+      cudaCheck(cudaMemcpyAsync(data_h, data_d, size*esize, cudaMemcpyDefault, stream.id()));
     }
     // End  of Raw2Digi and passing data for cluserisation
 
-   {
-     // clusterizer ...
-     using namespace gpuClustering;
-    int threadsPerBlock = 256;
-    int blocks = (wordCounter + threadsPerBlock - 1) / threadsPerBlock;
+    {
+      // clusterizer ...
+      using namespace gpuClustering;
+      int threadsPerBlock = 256;
+      int blocks = (wordCounter + threadsPerBlock - 1) / threadsPerBlock;
 
 
-    gpuCalibPixel::calibDigis<<<blocks, threadsPerBlock, 0, stream.id()>>>(
-                 moduleInd_d,
-                 xx_d, yy_d, adc_d,
-                 gains,
-                 wordCounter
-               );
+      gpuCalibPixel::calibDigis<<<blocks, threadsPerBlock, 0, stream.id()>>>(
+          moduleInd_d,
+          xx_d, yy_d, adc_d,
+          gains,
+          wordCounter);
+      cudaCheck(cudaGetLastError());
 
-    cudaCheck(cudaGetLastError());
+      // calibrated adc
+      cudaCheck(cudaMemcpyAsync(adc_h, adc_d, wordCounter*sizeof(uint16_t), cudaMemcpyDefault, stream.id()));
 
-    // calibrated adc
-    cudaCheck(cudaMemcpyAsync(adc_h, adc_d, wordCounter*sizeof(uint16_t), cudaMemcpyDefault, stream.id()));
+      /*
+         std::cout
+         << "CUDA countModules kernel launch with " << blocks
+         << " blocks of " << threadsPerBlock << " threads\n";
+       */
 
-    /*
-    std::cout
-      << "CUDA countModules kernel launch with " << blocks
-      << " blocks of " << threadsPerBlock << " threads\n";
-    */
+      nModulesActive = 0;
+      cudaCheck(cudaMemcpyAsync(moduleStart_d, &nModulesActive, sizeof(uint32_t), cudaMemcpyDefault, stream.id()));
 
-    nModulesActive = 0;
-    cudaCheck(cudaMemcpyAsync(moduleStart_d, &nModulesActive, sizeof(uint32_t), cudaMemcpyDefault, stream.id()));
+      countModules<<<blocks, threadsPerBlock, 0, stream.id()>>>(moduleInd_d, moduleStart_d, clus_d, wordCounter);
+      cudaCheck(cudaGetLastError());
 
-    countModules<<<blocks, threadsPerBlock, 0, stream.id()>>>(moduleInd_d, moduleStart_d, clus_d, wordCounter);
-    cudaCheck(cudaGetLastError());
+      cudaCheck(cudaMemcpyAsync(&nModulesActive, moduleStart_d, sizeof(uint32_t), cudaMemcpyDefault, stream.id()));
 
-    cudaCheck(cudaMemcpyAsync(&nModulesActive, moduleStart_d, sizeof(uint32_t), cudaMemcpyDefault, stream.id()));
+      // std::cout << "found " << nModulesActive << " Modules active" << std::endl;
 
-    // std::cout << "found " << nModulesActive << " Modules active" << std::endl;
+      // In order to avoid the cudaStreamSynchronize, create a new kernel which launches countModules and findClus.
+      cudaStreamSynchronize(stream.id());
 
-    // In order to avoid the cudaStreamSynchronize, create a new kernel which launches countModules and findClus.
-    cudaStreamSynchronize(stream.id());
-    
-    threadsPerBlock = 256;
-    blocks = nModulesActive;
+      threadsPerBlock = 256;
+      blocks = nModulesActive;
 
-    /*
-    std::cout
-      << "CUDA findClus kernel launch with " << blocks
-      << " blocks of " << threadsPerBlock << " threads\n";
-    */
+      /*
+         std::cout
+         << "CUDA findClus kernel launch with " << blocks
+         << " blocks of " << threadsPerBlock << " threads\n";
+       */
 
-    cudaCheck(cudaMemsetAsync(clusInModule_d, 0, (MaxNumModules)*sizeof(uint32_t), stream.id()));
+      cudaCheck(cudaMemsetAsync(clusInModule_d, 0, (MaxNumModules)*sizeof(uint32_t), stream.id()));
 
-    findClus<<<blocks, threadsPerBlock, 0, stream.id()>>>(
-                 moduleInd_d,
-                 xx_d, yy_d, adc_d,
-                 moduleStart_d,
-                 clusInModule_d, moduleId_d,
-                 clus_d,
-                 wordCounter
-    );
+      findClus<<<blocks, threadsPerBlock, 0, stream.id()>>>(
+          moduleInd_d,
+          xx_d, yy_d,
+          moduleStart_d,
+          clusInModule_d, moduleId_d,
+          clus_d,
+          wordCounter
+          );
+      cudaCheck(cudaGetLastError());
 
-    // clusters
-    cudaCheck(cudaMemcpyAsync(clus_h, clus_d, wordCounter*sizeof(uint32_t), cudaMemcpyDefault, stream.id()));
+      // clusters
+      cudaCheck(cudaMemcpyAsync(clus_h, clus_d, wordCounter*sizeof(uint32_t), cudaMemcpyDefault, stream.id()));
 
-    cudaStreamSynchronize(stream.id());
-    cudaCheck(cudaGetLastError());
+      cudaStreamSynchronize(stream.id());
+      cudaCheck(cudaGetLastError());
 
-   } // end clusterizer scope
+    } // end clusterizer scope
 
   }
 
