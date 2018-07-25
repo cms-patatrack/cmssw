@@ -664,46 +664,33 @@ namespace pixelgpudetails {
          << " blocks of " << threadsPerBlock << " threads\n";
        */
 
-      nModulesActive = 0;
-      cudaCheck(cudaMemcpyAsync(moduleStart_d, &nModulesActive, sizeof(uint32_t), cudaMemcpyDefault, stream.id()));
+      cudaCheck(cudaMemsetAsync(moduleStart_d, 0x00, sizeof(uint32_t), stream.id()));
 
       countModules<<<blocks, threadsPerBlock, 0, stream.id()>>>(moduleInd_d, moduleStart_d, clus_d, wordCounter);
       cudaCheck(cudaGetLastError());
 
+      // read the number of modules into a data memeber, used by getProduct())
       cudaCheck(cudaMemcpyAsync(&nModulesActive, moduleStart_d, sizeof(uint32_t), cudaMemcpyDefault, stream.id()));
 
-      // std::cout << "found " << nModulesActive << " Modules active" << std::endl;
-
-      // In order to avoid the cudaStreamSynchronize, create a new kernel which launches countModules and findClus.
-      cudaStreamSynchronize(stream.id());
-
       threadsPerBlock = 256;
-      blocks = nModulesActive;
-
+      blocks = MaxNumModules;
       /*
-         std::cout
-         << "CUDA findClus kernel launch with " << blocks
-         << " blocks of " << threadsPerBlock << " threads\n";
+         std::cout << "CUDA findClus kernel launch with " << blocks
+                   << " blocks of " << threadsPerBlock << " threads\n";
        */
-
       cudaCheck(cudaMemsetAsync(clusInModule_d, 0, (MaxNumModules)*sizeof(uint32_t), stream.id()));
-
       findClus<<<blocks, threadsPerBlock, 0, stream.id()>>>(
           moduleInd_d,
           xx_d, yy_d,
           moduleStart_d,
           clusInModule_d, moduleId_d,
           clus_d,
-          wordCounter
-          );
+          wordCounter);
       cudaCheck(cudaGetLastError());
 
       // clusters
       cudaCheck(cudaMemcpyAsync(clus_h, clus_d, wordCounter*sizeof(uint32_t), cudaMemcpyDefault, stream.id()));
-
-      cudaStreamSynchronize(stream.id());
       cudaCheck(cudaGetLastError());
-
     } // end clusterizer scope
 
   }
