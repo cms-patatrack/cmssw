@@ -8,27 +8,6 @@
 #include<atomic>
 #include <mutex>
 
-template<class ForwardIt, class T, class Compare>
-__device__
-ForwardIt lowerBound(ForwardIt first, ForwardIt last, const T& value, Compare comp)
-{
-    ForwardIt it;
-    auto count = last-first;
- 
-    while (count > 0) {
-        it = first;
-        auto step = count / 2;
-        it+=step;
-        if (comp(*it, value)) {
-            first = ++it;
-            count -= step + 1;
-        }
-        else
-            count = step;
-    }
-    return first;
-}
-
 
 using ClusterSLGPU = trackerHitAssociationHeterogeneousProduct::ClusterSLGPU;
 
@@ -59,19 +38,18 @@ void simLink(clusterSLOnGPU::DigisOnGPU const * ddp, uint32_t ndigis, clusterSLO
   
   const std::array<uint32_t,4> me{{id,ch,0,0}};
 
-  auto less = [](std::array<uint32_t,4> const & a, std::array<uint32_t,4> const & b)->bool {
+  auto less = [] __device__ __host__ (std::array<uint32_t,4> const & a, std::array<uint32_t,4> const & b)->bool {
      return a[0]<b[0] || ( !(b[0]<a[0]) && a[1]<b[1]); // in this context we do not care of [2] 
   };
 
-  auto equal = [](std::array<uint32_t,4> const & a, std::array<uint32_t,4> const & b)->bool {
+  auto equal = [] __device__ __host__ (std::array<uint32_t,4> const & a, std::array<uint32_t,4> const & b)->bool {
      return a[0]==b[0] && a[1]==b[1]; // in this context we do not care of [2]
   };
 
   auto const * b = sl.links_d;
   auto const * e = b+n;
 
-  // auto p = cuda_std::lower_bound(b,e,me,less);
-  auto p = lowerBound(b,e,me,less);
+  auto p = cuda_std::lower_bound(b,e,me,less);
   int32_t j = p-sl.links_d;
   assert(j>=0);
 
@@ -178,9 +156,18 @@ namespace clusterSLOnGPU {
 
    cudaCheck(cudaMalloc((void**) & slgpu.me_d, sizeof(ClusterSLGPU)));
    cudaCheck(cudaMemcpyAsync(slgpu.me_d, &slgpu, sizeof(ClusterSLGPU), cudaMemcpyDefault, stream.id()));
-   cudaCheck(cudaDeviceSynchronize());
-
   }
+
+ void
+  Kernel::deAlloc() {
+   cudaCheck(cudaFree(slgpu.links_d));
+   cudaCheck(cudaFree(slgpu.tkId_d));
+   cudaCheck(cudaFree(slgpu.tkId2_d));
+   cudaCheck(cudaFree(slgpu.n1_d));
+   cudaCheck(cudaFree(slgpu.n2_d));
+   cudaCheck(cudaFree(slgpu.me_d));
+}
+
 
   void
   Kernel::zero(cudaStream_t stream) {
@@ -216,9 +203,9 @@ namespace clusterSLOnGPU {
 
     assert(sl.me_d);
     simLink<<<blocks, threadsPerBlock, 0, stream.id()>>>(dd.me_d,ndigis, hh.gpu_d, sl.me_d,n);
-    cudaStreamSynchronize(stream.id());
 
     if (doDump) {
+      cudaStreamSynchronize(stream.id());	// flush previous printf
       // one line == 200B so each kernel can print only 5K lines....
       blocks = 16; // (nhits + threadsPerBlock - 1) / threadsPerBlock;
       for (int first=0; first<int(nhits); first+=blocks*threadsPerBlock) {
