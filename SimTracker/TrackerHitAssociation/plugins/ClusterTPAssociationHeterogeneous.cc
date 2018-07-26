@@ -199,7 +199,7 @@ void ClusterTPAssociationHeterogeneous::acquireGPUCuda(const edm::HeterogeneousE
    
     //  gpu stuff ------------------------
 
-    std::cout << "In tpsimlink " << mapping.size() << std::endl;
+    // std::cout << "In tpsimlink " << mapping.size() << std::endl;
 
     edm::Handle<siPixelRawToClusterHeterogeneousProduct::GPUProduct> gd;
     edm::Handle<siPixelRecHitsHeterogeneousProduct::GPUProduct> gh;
@@ -233,7 +233,7 @@ void ClusterTPAssociationHeterogeneous::acquireGPUCuda(const edm::HeterogeneousE
     }
     std::sort(digi2tp.begin(),digi2tp.end());
 
-    std::cout << "In tpsimlink found " << nn << " valid link out of " << ng << '/' << ng10 << ' ' << digi2tp.size() << std::endl;
+    // std::cout << "In tpsimlink found " << nn << " valid link out of " << ng << '/' << ng10 << ' ' << digi2tp.size() << std::endl;
 
     cudaCheck(cudaMemcpyAsync(gpuAlgo->slgpu.links_d, digi2tp.data(), sizeof(std::array<uint32_t,4>)*digi2tp.size(), cudaMemcpyDefault, cudaStream.id()));
     gpuAlgo->algo(gDigis, ndigis, gHits, nhits, digi2tp.size(),cudaStream);

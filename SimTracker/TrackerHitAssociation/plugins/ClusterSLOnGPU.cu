@@ -6,6 +6,7 @@
 #include <limits>
 #include<cassert>
 #include<atomic>
+#include <mutex>
 
 template<class ForwardIt, class T, class Compare>
 __device__
@@ -105,8 +106,8 @@ void verifyZero(int ev, clusterSLOnGPU::DigisOnGPU const * ddp, clusterSLOnGPU::
   auto i = blockIdx.x*blockDim.x + threadIdx.x;
   if (i>nhits) return;
 
-  auto const & dd = *ddp;
-  auto const & hh = *hhp;
+//  auto const & dd = *ddp;
+//  auto const & hh = *hhp;
   auto const & sl = *slp;
 
   assert(sl.tkId_d[i]==0);
@@ -147,8 +148,7 @@ namespace clusterSLOnGPU {
 
  constexpr uint32_t invTK = 0; // std::numeric_limits<int32_t>::max();
 
-  struct CSVHeader {
-     CSVHeader() {
+ void printCSVHeader() {
       printf("HIT: %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n", "ev", "ind",
          "det", "charge",	
          "xg","yg","zg","rg","iphi", 
@@ -156,10 +156,14 @@ namespace clusterSLOnGPU {
         );
      }
 
-  };
-  CSVHeader csvHeader;
 
   std::atomic<int> evId(0);
+  std::once_flag doneCSVHeader;
+
+  Kernel::Kernel(cuda::stream_t<>& stream, bool dump) : doDump(dump) {
+    if (doDump) std::call_once(doneCSVHeader,printCSVHeader);
+    alloc(stream);
+  }
 
 
   void
@@ -190,10 +194,12 @@ namespace clusterSLOnGPU {
   void 
   Kernel::algo(DigisOnGPU const & dd, uint32_t ndigis, HitsOnCPU const & hh, uint32_t nhits, uint32_t n, cuda::stream_t<>& stream) {
     
+    /*
     size_t pfs = 16*1024*1024;
     // cudaDeviceSetLimit(cudaLimitPrintfFifoSize,pfs);
     cudaDeviceGetLimit(&pfs,cudaLimitPrintfFifoSize);
     std::cout << "cudaLimitPrintfFifoSize " << pfs << std::endl;
+    */
 
     zero(stream.id());
 
