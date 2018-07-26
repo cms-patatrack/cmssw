@@ -3,6 +3,10 @@
 
 #include <cuda_runtime.h>
 
+#include "RecoLocalTracker/SiPixelRecHits/plugins/siPixelRecHitsHeterogeneousProduct.h"
+
+
+
 #include "DataFormats/SiPixelDetId/interface/PixelSubdetector.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/Utilities/interface/EDGetToken.h"
@@ -32,6 +36,11 @@ namespace edm {
 
 class CAHitQuadrupletGeneratorGPU {
 public:
+
+    using HitsOnGPU = siPixelRecHitsHeterogeneousProduct::HitsOnGPU;
+    using HitsOnCPU = siPixelRecHitsHeterogeneousProduct::HitsOnCPU;
+
+
     typedef LayerHitMapCache LayerCacheType;
 
     static constexpr unsigned int minLayers = 4;
@@ -48,6 +57,8 @@ public:
     static const char *fillDescriptionsLabel() { return "caHitQuadrupletGPU"; }
 
     void initEvent(const edm::Event& ev, const edm::EventSetup& es);
+
+    void buildDoublets(HitsOnCPU const & hh, float phicut, cudaStream_t stream);
 
     void hitNtuplets(const IntermediateHitDoublets& regionDoublets,
                      const edm::EventSetup& es,

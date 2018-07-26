@@ -144,12 +144,22 @@ namespace pixelgpudetails {
            (adc << thePacking.adc_shift);
   }
 
+  constexpr
+  uint32_t pixelToChannel( int row, int col) {
+    constexpr Packing thePacking = packing();
+    return (row << thePacking.column_width) | col;
+  }
+
+
   using error_obj = siPixelRawToClusterHeterogeneousProduct::error_obj;
 
 
   class SiPixelRawToClusterGPUKernel {
   public:
-    SiPixelRawToClusterGPUKernel();
+
+    using GPUProduct = siPixelRawToClusterHeterogeneousProduct::GPUProduct;
+
+    SiPixelRawToClusterGPUKernel(cuda::stream_t<>& cudaStream);
     ~SiPixelRawToClusterGPUKernel();
 
     
@@ -170,8 +180,9 @@ namespace pixelgpudetails {
     auto getProduct() const {
       return siPixelRawToClusterHeterogeneousProduct::GPUProduct{
         pdigi_h, rawIdArr_h, clus_h, adc_h, error_h,
-        nDigis, nModulesActive,
-        xx_d, yy_d, adc_d, moduleInd_d, moduleStart_d,clus_d, clusInModule_d, moduleId_d
+        gpuProduct_d,
+        xx_d, yy_d, adc_d, moduleInd_d, moduleStart_d,clus_d, clusInModule_d, moduleId_d,
+        nDigis, nModulesActive
       };
     }
 
@@ -181,6 +192,11 @@ namespace pixelgpudetails {
     unsigned char *fedId_h = nullptr;    // to hold fed index for each word
 
     // output
+    GPUProduct gpuProduct;
+    GPUProduct * gpuProduct_d;
+
+    // FIXME cleanup all these are in the gpuProduct above...
+    
     uint32_t *pdigi_h = nullptr, *rawIdArr_h = nullptr;                   // host copy of output
     uint16_t *adc_h = nullptr; int32_t *clus_h = nullptr; // host copy of calib&clus output
     pixelgpudetails::error_obj *data_h = nullptr;

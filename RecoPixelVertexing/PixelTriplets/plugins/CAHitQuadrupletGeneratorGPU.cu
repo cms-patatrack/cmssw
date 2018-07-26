@@ -6,6 +6,8 @@
 #include "GPUCACell.h"
 #include "CAHitQuadrupletGeneratorGPU.h"
 
+#include "gpuPixelDoublets.h"
+
 __global__ void
 kernel_debug(unsigned int numberOfLayerPairs_, unsigned int numberOfLayers_,
              const GPULayerDoublets *gpuDoublets,
@@ -489,4 +491,19 @@ CAHitQuadrupletGeneratorGPU::fetchKernelResult(int regionIndex, cudaStream_t cud
     quadsInterface.push_back(tmpQuad);
   }
   return quadsInterface;
+}
+
+
+
+
+void CAHitQuadrupletGeneratorGPU::buildDoublets(HitsOnCPU const & hh, float phicut, cudaStream_t stream) {
+   auto nhits = hh.nHits;
+
+  float phiCut=0.06;
+  int threadsPerBlock = 256;
+  int blocks = (nhits + threadsPerBlock - 1) / threadsPerBlock;
+
+  gpuPixelDoublets::getDoubletsFromHisto<<<blocks, threadsPerBlock, 0, stream>>>(hh.gpu_d,phiCut);
+
+
 }

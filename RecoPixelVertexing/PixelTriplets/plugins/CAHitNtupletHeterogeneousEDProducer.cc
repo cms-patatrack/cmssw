@@ -18,6 +18,11 @@
 
 #include "CAHitQuadrupletGeneratorGPU.h"
 
+// gpu
+#include "RecoLocalTracker/SiPixelRecHits/plugins/siPixelRecHitsHeterogeneousProduct.h" 
+
+
+
 namespace {
 void fillNtuplets(RegionsSeedingHitSets::RegionFiller &seedingHitSetsFiller,
                   const OrderedHitSeeds &quadruplets) {
@@ -31,6 +36,10 @@ class CAHitNtupletHeterogeneousEDProducer
     : public HeterogeneousEDProducer<heterogeneous::HeterogeneousDevices<
           heterogeneous::GPUCuda, heterogeneous::CPU>> {
 public:
+
+  using PixelRecHitsH = siPixelRecHitsHeterogeneousProduct::HeterogeneousPixelRecHit;
+
+
   CAHitNtupletHeterogeneousEDProducer(const edm::ParameterSet &iConfig);
   ~CAHitNtupletHeterogeneousEDProducer() = default;
 
@@ -50,6 +59,9 @@ public:
 private:
   edm::EDGetTokenT<IntermediateHitDoublets> doubletToken_;
 
+  edm::EDGetTokenT<HeterogeneousProduct> tGpuHits;
+
+
   edm::RunningAverage localRA_;
   CAHitQuadrupletGeneratorGPU GPUGenerator_;
   CAHitQuadrupletGenerator CPUGenerator_;
@@ -63,6 +75,7 @@ CAHitNtupletHeterogeneousEDProducer::CAHitNtupletHeterogeneousEDProducer(
     : HeterogeneousEDProducer(iConfig),
       doubletToken_(consumes<IntermediateHitDoublets>(
           iConfig.getParameter<edm::InputTag>("doublets"))),
+      tGpuHits(consumesHeterogeneous(iConfig.getParameter<edm::InputTag>("heterogeneousPixelRecHitSrc"))),
       GPUGenerator_(iConfig, consumesCollector()),
       CPUGenerator_(iConfig, consumesCollector()) {
   produces<RegionsSeedingHitSets>();
@@ -73,6 +86,9 @@ void CAHitNtupletHeterogeneousEDProducer::fillDescriptions(
   edm::ParameterSetDescription desc;
 
   desc.add<edm::InputTag>("doublets", edm::InputTag("hitPairEDProducer"));
+
+  desc.add<edm::InputTag>("heterogeneousPixelRecHitSrc", edm::InputTag("siPixelRecHitHeterogeneous"));
+
   CAHitQuadrupletGeneratorGPU::fillDescriptions(desc);
   HeterogeneousEDProducer::fillPSetDescription(desc);
   auto label = "caHitQuadrupletHeterogeneousEDProducer";
@@ -105,6 +121,13 @@ void CAHitNtupletHeterogeneousEDProducer::acquireGPUCuda(
   }
 
   seedingHitSets_ = std::make_unique<RegionsSeedingHitSets>();
+
+  edm::Handle<siPixelRecHitsHeterogeneousProduct::GPUProduct> gh;
+  iEvent.getByToken<siPixelRecHitsHeterogeneousProduct::HeterogeneousPixelRecHit>(tGpuHits, gh);
+  auto const & gHits = *gh;
+//  auto nhits = gHits.nHits;
+
+  GPUGenerator_.buildDoublets(gHits,0.06f,cudaStream.id());
 
   if (regionDoublets.empty()) {
     emptyRegionDoublets = true;

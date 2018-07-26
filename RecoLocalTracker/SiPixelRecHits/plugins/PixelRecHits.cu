@@ -36,9 +36,10 @@ namespace pixelgpudetails {
     cudaCheck(cudaMalloc((void**) & gpu_.sortIndex_d,(gpuClustering::MaxNumModules*256)*sizeof(uint16_t)));
     cudaCheck(cudaMalloc((void**) & gpu_.mr_d,(gpuClustering::MaxNumModules*256)*sizeof(uint16_t)));
     cudaCheck(cudaMalloc((void**) & gpu_.mc_d,(gpuClustering::MaxNumModules*256)*sizeof(uint16_t)));
-//    cudaCheck(cudaMalloc((void**) & gpu_.hist_d, 10*sizeof(HitsOnGPU::Hist)));
+    cudaCheck(cudaMalloc((void**) & gpu_.hist_d, 10*sizeof(HitsOnGPU::Hist)));
 
     cudaCheck(cudaMalloc((void**) & gpu_d, sizeof(HitsOnGPU)));
+    gpu_.me_d = gpu_d;
     cudaCheck(cudaMemcpyAsync(gpu_d, &gpu_, sizeof(HitsOnGPU), cudaMemcpyDefault,cudaStream.id()));
 
   }
@@ -59,7 +60,7 @@ namespace pixelgpudetails {
     cudaCheck(cudaFree(gpu_.sortIndex_d));
     cudaCheck(cudaFree(gpu_.mr_d));
     cudaCheck(cudaFree(gpu_.mc_d));
-    // cudaCheck(cudaFree(gpu_.hist_d));
+    cudaCheck(cudaFree(gpu_.hist_d));
 
     cudaCheck(cudaFree(gpu_d));
   }
@@ -119,7 +120,7 @@ namespace pixelgpudetails {
     // for timing test
     // radixSortMultiWrapper<int16_t><<<10, 256, 0, c.stream>>>(gpu_.iphi_d,gpu_.sortIndex_d,gpu_.hitsLayerStart_d);
 
-    // fillManyFromVector(gpu_.hist_d,10,gpu_.iphi_d, gpu_.hitsLayerStart_d, nhits,256,c.stream);
+    cudautils::fillManyFromVector(gpu_.hist_d,10,gpu_.iphi_d, gpu_.hitsLayerStart_d, nhits,256,stream.id());
 
 
   }

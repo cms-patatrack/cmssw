@@ -425,7 +425,7 @@ void SiPixelRawToClusterHeterogeneous::produceCPU(edm::HeterogeneousEvent& ev, c
 // -----------------------------------------------------------------------------
 void SiPixelRawToClusterHeterogeneous::beginStreamGPUCuda(edm::StreamID streamId, cuda::stream_t<>& cudaStream) {
   // Allocate GPU resources here
-  gpuAlgo_ = std::make_unique<pixelgpudetails::SiPixelRawToClusterGPUKernel>();
+  gpuAlgo_ = std::make_unique<pixelgpudetails::SiPixelRawToClusterGPUKernel>(cudaStream);
   gpuModulesToUnpack_ = std::make_unique<SiPixelFedCablingMapGPUWrapper::ModulesToUnpack>();
 }
 
@@ -523,6 +523,7 @@ void SiPixelRawToClusterHeterogeneous::acquireGPUCuda(const edm::HeterogeneousEv
 
 void SiPixelRawToClusterHeterogeneous::produceGPUCuda(edm::HeterogeneousEvent& ev, const edm::EventSetup& es, cuda::stream_t<>& cudaStream) {
   auto output = std::make_unique<GPUProduct>(gpuAlgo_->getProduct());
+  assert(output->me_d);
   ev.put<Output>(std::move(output), [this](const GPUProduct& gpu, CPUProduct& cpu) {
       this->convertGPUtoCPU(gpu, cpu);
     });
