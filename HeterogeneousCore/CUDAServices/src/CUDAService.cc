@@ -67,6 +67,7 @@ CUDAService::~CUDAService() {
     // Explicitly destroys and cleans up all resources associated with the current device in the
     // current process. Any subsequent API call to this device will reinitialize the device.
     // Useful to check for memory leaks with `cuda-memcheck --tool memcheck --leak-check full`.
+    cudaCheck(cudaDeviceSynchronize());
     cudaCheck(cudaDeviceReset());
   }
 }
