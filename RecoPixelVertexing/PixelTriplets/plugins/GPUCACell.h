@@ -5,6 +5,7 @@
 #define GPU_CACELL_H_
 
 #include "GPUHitsAndDoublets.h"
+#include "RecoLocalTracker/SiPixelRecHits/plugins/siPixelRecHitsHeterogeneousProduct.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/GPUVecArray.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/GPUSimpleVector.h"
 #include <cuda.h>
@@ -15,6 +16,29 @@ struct Quadruplet {
 class GPUCACell {
 public:
   __host__ __device__  GPUCACell() {}
+
+
+__host__ __device__ void init(siPixelRecHitsHeterogeneousProduct::HitsOnGPU const * hhp,
+                              int layerPairId, int doubletId, int innerHitId,int outerHitId) {
+    auto const & hh = *hhp;
+    theInnerHitId = innerHitId;
+    theOuterHitId = outerHitId;
+    theDoubletId = doubletId;
+    theLayerPairId = layerPairId;
+    theInnerX = hh.xg_d[innerHitId];
+    theOuterX = hh.xg_d[outerHitId];
+
+    theInnerY = hh.yg_d[innerHitId];
+    theOuterY = hh.yg_d[outerHitId];
+
+    theInnerZ = hh.zg_d[innerHitId];
+    theOuterZ = hh.zg_d[outerHitId];
+    theInnerR = hh.rg_d[innerHitId];
+    theOuterR = hh.rg_d[outerHitId];
+    theOuterNeighbors.reset();
+  }
+
+
 
   __host__ __device__ void init(const GPULayerDoublets *doublets,
                                 const GPULayerHits *hitsOnLayer,
