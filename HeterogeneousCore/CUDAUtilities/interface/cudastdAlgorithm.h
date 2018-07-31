@@ -1,13 +1,7 @@
 #ifndef HeterogeneousCore_CUDAUtilities_cudastdAlgorithm_h
 #define HeterogeneousCore_CUDAUtilities_cudastdAlgorithm_h
 
-#ifdef __CUDACC__
 #include <cuda_runtime.h>
-#else
-#define __device__
-#define __global__
-#define __host__
-#endif // __CUDACC__
 
 
 #include <utility>
