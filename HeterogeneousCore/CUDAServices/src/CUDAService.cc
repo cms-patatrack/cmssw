@@ -43,13 +43,14 @@ CUDAService::CUDAService(edm::ParameterSet const& config, edm::ActivityRegistry&
     edm::LogWarning("CUDAService") << "Failed to initialize the CUDA runtime.\n" << ".\n" << "Disabling the CUDAService.";
     return;
   }
-  edm::LogInfo("CUDAService") << "CUDA runtime successfully initialised, found " << numberOfDevices_ << " compute devices";
+  edm::LogInfo log("CUDAService");
   computeCapabilities_.reserve(numberOfDevices_);
+  log << "CUDA runtime successfully initialised, found " << numberOfDevices_ << " compute devices.\n\n";
 
   auto numberOfStreamsPerDevice = config.getUntrackedParameter<unsigned int>("numberOfStreamsPerDevice");
   if (numberOfStreamsPerDevice > 0) {
     numberOfStreamsTotal_ = numberOfStreamsPerDevice * numberOfDevices_;
-    edm::LogInfo("CUDAService") << "Number of edm::Streams per CUDA device has been set to " << numberOfStreamsPerDevice << ". With " << numberOfDevices_ << " CUDA devices, this means total of " << numberOfStreamsTotal_ << " edm::Streams for all CUDA devices.";
+    log << "Number of edm::Streams per CUDA device has been set to " << numberOfStreamsPerDevice << ", for a total of " << numberOfStreamsTotal_ << " edm::Streams across all CUDA device(s).\n\n";
   }
 
   auto const& limits = config.getUntrackedParameter<edm::ParameterSet>("limits");
@@ -58,8 +59,6 @@ CUDAService::CUDAService(edm::ParameterSet const& config, edm::ActivityRegistry&
   auto mallocHeapSize               = limits.getUntrackedParameter<int>("cudaLimitMallocHeapSize");
   auto devRuntimeSyncDepth          = limits.getUntrackedParameter<int>("cudaLimitDevRuntimeSyncDepth");
   auto devRuntimePendingLaunchCount = limits.getUntrackedParameter<int>("cudaLimitDevRuntimePendingLaunchCount");
-
-  edm::LogInfo log("CUDAService");
 
   for (int i = 0; i < numberOfDevices_; ++i) {
     // read information about the compute device.
@@ -71,15 +70,49 @@ CUDAService::CUDAService(edm::ParameterSet const& config, edm::ActivityRegistry&
     computeCapabilities_.emplace_back(properties.major, properties.minor);
 
     cudaCheck(cudaSetDevice(i));
+    cudaCheck(cudaSetDeviceFlags(cudaDeviceScheduleAuto | cudaDeviceMapHost));
 
     // read the free and total amount of memory available for allocation by the device, in bytes.
     // see the documentation of cudaMemGetInfo() for more information.
-    size_t free, total;
-    cudaCheck(cudaMemGetInfo(&free, &total));
-    log << "  device memory: " << free / (1 << 20) << " MB free / " << total / (1 << 20) << " MB total\n";
+    size_t freeMemory, totalMemory;
+    cudaCheck(cudaMemGetInfo(&freeMemory, &totalMemory));
+    log << "  memory: " << std::setw(6) << freeMemory / (1 << 20) << " MB free / " << std::setw(6) << totalMemory / (1 << 20) << " MB total\n";
     log << '\n';
 
-    // set and check CUDA resource limits.
+    // set and read the CUDA device flags.
+    // see the documentation of cudaSetDeviceFlags and cudaGetDeviceFlags for  more information.
+    log << "CUDA flags\n";
+    unsigned int flags;
+    cudaCheck(cudaGetDeviceFlags(&flags));
+    switch (flags & cudaDeviceScheduleMask) {
+      case cudaDeviceScheduleAuto:
+        log << "  thread policy:                   default\n";
+        break;
+      case cudaDeviceScheduleSpin:
+        log << "  thread policy:                      spin\n";
+        break;
+      case cudaDeviceScheduleYield:
+        log << "  thread policy:                     yield\n";
+        break;
+      case cudaDeviceScheduleBlockingSync:
+        log << "  thread policy:             blocking sync\n";
+        break;
+      default:
+        log << "  thread policy:                 undefined\n";
+    }
+    if (flags & cudaDeviceMapHost) {
+      log << "  pinned host memory allocations:  enabled\n";
+    } else {
+      log << "  pinned host memory allocations: disabled\n";
+    }
+    if (flags & cudaDeviceLmemResizeToMax) {
+      log << "  kernel host memory reuse:        enabled\n";
+    } else {
+      log << "  kernel host memory reuse:       disabled\n";
+    }
+    log << '\n';
+
+    // set and read the CUDA resource limits.
     // see the documentation of cudaDeviceSetLimit() for more information.
 
     // cudaLimitPrintfFifoSize controls the size in bytes of the shared FIFO used by the
@@ -172,10 +205,10 @@ int CUDAService::deviceWithMostFreeMemory() const {
     auto device = cuda::device::get(i);
     auto freeMemory = device.memory.amount_free();
     */
-    size_t freeMemory, total;
+    size_t freeMemory, totalMemory;
     cudaSetDevice(i);
-    cudaMemGetInfo(&freeMemory, &total);
-    edm::LogPrint("CUDAService") << "CUDA device " << i << ": " << freeMemory / (1 << 20) << " MB free / " << total / (1 << 20) << " MB total memory";
+    cudaMemGetInfo(&freeMemory, &totalMemory);
+    edm::LogPrint("CUDAService") << "CUDA device " << i << ": " << freeMemory / (1 << 20) << " MB free / " << totalMemory / (1 << 20) << " MB total memory";
     if (freeMemory > maxFreeMemory) {
       maxFreeMemory = freeMemory;
       device = i;
