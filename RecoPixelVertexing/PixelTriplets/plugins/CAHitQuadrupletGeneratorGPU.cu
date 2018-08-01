@@ -496,7 +496,7 @@ void CAHitQuadrupletGeneratorGPU::buildDoublets(HitsOnCPU const & hh, float phic
 
   float phiCut=0.06;
   int threadsPerBlock = 256;
-  int blocks = (nhits + threadsPerBlock - 1) / threadsPerBlock;
+  int blocks = (3*nhits + threadsPerBlock - 1) / threadsPerBlock;
 
   gpuPixelDoublets::getDoubletsFromHisto<<<blocks, threadsPerBlock, 0, stream>>>(hh.gpu_d,phiCut);
 }

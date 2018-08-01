@@ -110,51 +110,84 @@ namespace gpuPixelDoublets {
 
   template<typename Hist>
   __device__
-  void doubletsFromHisto(int16_t const * iphi, Hist const * hist, uint32_t const * offsets, float phiCut) {
+  void doubletsFromHisto(uint8_t const * layerPairs, uint32_t nPairs, 
+                         int16_t const * iphi, Hist const * hist, uint32_t const * offsets, float phiCut) {
     auto iphicut = phi2short(phiCut);
-    auto i = blockIdx.x*blockDim.x + threadIdx.x;
-    if (i>=offsets[9]) {
-      // get rid of last layer
-      return;
+
+    auto idx = blockIdx.x*blockDim.x + threadIdx.x;
+
+    auto layerSize = [=](uint8_t li) { return offsets[li+1]-offsets[li]; };
+
+    // to be optimized later
+    uint32_t innerLayerCumulaliveSize[64];
+    assert(nPairs<=64);
+    innerLayerCumulaliveSize[0] = layerSize(layerPairs[0]);
+    for (uint32_t i=1; i<nPairs; ++i) {
+       innerLayerCumulaliveSize[i] = innerLayerCumulaliveSize[i-1] + layerSize(layerPairs[2*i]);
     }
 
-    assert(0==offsets[0]);
-    int top = (i>offsets[5]) ? 5: 0;
-    while (i>=offsets[++top]){};
-    assert(top<10);
-    auto bottom = top-1;
-    if (bottom==3 || bottom==6) {
-      // do not have UP... (9 we got rid already)
-      return;
-    }
-    assert(i>=offsets[bottom]);
-    assert(i<offsets[top]);
+    auto ntot = innerLayerCumulaliveSize[nPairs-1];
+    if (idx>=ntot) return;  // will move to for(auto j=idx;j<ntot;j+=blockDim.x*gridDim.x) {
+    auto j = idx; 
+
+    uint32_t innerLayerId=0;
+    while(j>=innerLayerCumulaliveSize[innerLayerId++]);  --innerLayerId; // move to lower_bound ??
+    assert(innerLayerId<nPairs);
+    assert(j<innerLayerCumulaliveSize[innerLayerId]);
+    assert(0==innerLayerId || j>=innerLayerCumulaliveSize[innerLayerId-1]);
+
+    uint8_t inner = layerPairs[2*innerLayerId];
+    uint8_t outer = layerPairs[2*innerLayerId+1];
+
+    auto i = j-innerLayerCumulaliveSize[innerLayerId] + offsets[inner];
+
+    assert(i>=offsets[inner]);
+    assert(i<offsets[inner+1]);
+
+    // found hit corresponding to our cuda thread!!!!!
+    // do the job
 
     auto mep = iphi[i];
-    auto kl = hist[top].bin(mep-iphicut);
-    auto kh = hist[top].bin(mep+iphicut);
+    auto kl = hist[outer].bin(mep-iphicut);
+    auto kh = hist[outer].bin(mep+iphicut);
     auto incr = [](auto & k) { return k = (k+1)%Hist::nbins();};
     int tot  = 0;
     int nmin = 0;
     auto khh = kh;
     incr(khh);
     for (auto kk=kl; kk!=khh; incr(kk)) {
-      if (kk!=kl && kk!=kh) nmin+=hist[top].size(kk);
-      for (auto p=hist[top].begin(kk); p<hist[top].end(kk); ++p) {
+      if (kk!=kl && kk!=kh) nmin+=hist[outer].size(kk);
+      for (auto p=hist[outer].begin(kk); p<hist[outer].end(kk); ++p) {
         if (std::min(std::abs(int16_t(iphi[*p]-mep)), std::abs(int16_t(mep-iphi[*p]))) > iphicut)
           continue;
         ++tot;
       }
     }
-    if (0==hist[top].nspills) assert(tot>=nmin);
+    if (0==hist[outer].nspills) assert(tot>=nmin);
     // look in spill bin as well....
   }
 
   __global__
-  void getDoubletsFromHisto(siPixelRecHitsHeterogeneousProduct::HitsOnGPU const * hhp, float phiCut) {
+  void getDoubletsFromHisto(uint8_t const * layerPairs, uint32_t nPairs, 
+                            siPixelRecHitsHeterogeneousProduct::HitsOnGPU const * hhp, float phiCut) {
     auto const & hh = *hhp;
-    doubletsFromHisto(hh.iphi_d,hh.hist_d,hh.hitsLayerStart_d,phiCut);
+    doubletsFromHisto(layerPairs, nPairs, hh.iphi_d,hh.hist_d,hh.hitsLayerStart_d,phiCut);
   }
+
+
+  __global__
+  void getDoubletsFromHisto( siPixelRecHitsHeterogeneousProduct::HitsOnGPU const * hhp, float phiCut) {
+
+    uint8_t const layerPairs[2*13] = {0,1 ,1,2 ,2,3 
+                                     ,0,4 ,1,4 ,2,4 ,4,5 ,5,6  
+                                     ,0,7 ,1,7 ,2,7 ,7,8 ,8,9
+                                     };
+
+    auto const & hh = *hhp;
+    doubletsFromHisto(layerPairs, 13, hh.iphi_d,hh.hist_d,hh.hitsLayerStart_d,phiCut);
+  }
+
+
 
 } // namespace end
 
