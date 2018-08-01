@@ -49,7 +49,7 @@ CUDAService::CUDAService(edm::ParameterSet const& config, edm::ActivityRegistry&
   auto numberOfStreamsPerDevice = config.getUntrackedParameter<unsigned int>("numberOfStreamsPerDevice");
   if (numberOfStreamsPerDevice > 0) {
     numberOfStreamsTotal_ = numberOfStreamsPerDevice * numberOfDevices_;
-    edm::LogSystem("CUDAService") << "Number of edm::Streams per CUDA device has been set to " << numberOfStreamsPerDevice << ". With " << numberOfDevices_ << " CUDA devices, this means total of " << numberOfStreamsTotal_ << " edm::Streams for all CUDA devices."; // TODO: eventually silence to LogDebug
+    edm::LogInfo("CUDAService") << "Number of edm::Streams per CUDA device has been set to " << numberOfStreamsPerDevice << ". With " << numberOfDevices_ << " CUDA devices, this means total of " << numberOfStreamsTotal_ << " edm::Streams for all CUDA devices.";
   }
 
   auto const& limits = config.getUntrackedParameter<edm::ParameterSet>("limits");
@@ -59,7 +59,7 @@ CUDAService::CUDAService(edm::ParameterSet const& config, edm::ActivityRegistry&
   auto devRuntimeSyncDepth          = limits.getUntrackedParameter<int>("cudaLimitDevRuntimeSyncDepth");
   auto devRuntimePendingLaunchCount = limits.getUntrackedParameter<int>("cudaLimitDevRuntimePendingLaunchCount");
 
-  edm::LogSystem log("CUDAService");
+  edm::LogInfo log("CUDAService");
 
   for (int i = 0; i < numberOfDevices_; ++i) {
     // read information about the compute device.
