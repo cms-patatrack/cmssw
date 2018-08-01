@@ -132,6 +132,7 @@ namespace gpuPixelDoublets {
 
     uint32_t innerLayerId=0;
     while(j>=innerLayerCumulaliveSize[innerLayerId++]);  --innerLayerId; // move to lower_bound ??
+
     assert(innerLayerId<nPairs);
     assert(j<innerLayerCumulaliveSize[innerLayerId]);
     assert(0==innerLayerId || j>=innerLayerCumulaliveSize[innerLayerId-1]);
@@ -139,7 +140,10 @@ namespace gpuPixelDoublets {
     uint8_t inner = layerPairs[2*innerLayerId];
     uint8_t outer = layerPairs[2*innerLayerId+1];
 
-    auto i = j-innerLayerCumulaliveSize[innerLayerId] + offsets[inner];
+    auto i = (0==innerLayerId) ? 0 :  j-innerLayerCumulaliveSize[innerLayerId-1];
+    i += offsets[inner];
+
+    // printf("Hit in Layer %d %d %d %d\n", i, inner, innerLayerId, j);
 
     assert(i>=offsets[inner]);
     assert(i<offsets[inner+1]);
