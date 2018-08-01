@@ -182,6 +182,7 @@ private:
 
     GPUCACell* device_theCells_ = nullptr;
     GPU::VecArray< unsigned int, maxCellsPerHit_>* device_isOuterHitOfCell_ = nullptr;
+    uint32_t* device_nCells_ = nullptr;
 
     GPULayerHits* tmp_layers_ = nullptr;
     GPULayerDoublets* tmp_layerDoublets_ = nullptr;

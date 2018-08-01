@@ -18,9 +18,8 @@ public:
   __host__ __device__  GPUCACell() {}
 
 
-__host__ __device__ void init(siPixelRecHitsHeterogeneousProduct::HitsOnGPU const * hhp,
+__host__ __device__ void init(siPixelRecHitsHeterogeneousProduct::HitsOnGPU const & hh,
                               int layerPairId, int doubletId, int innerHitId,int outerHitId) {
-    auto const & hh = *hhp;
     theInnerHitId = innerHitId;
     theOuterHitId = outerHitId;
     theDoubletId = doubletId;

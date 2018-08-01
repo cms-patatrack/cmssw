@@ -381,6 +381,7 @@ void CAHitQuadrupletGeneratorGPU::deallocateOnGPU()
   cudaFree(d_rootLayerPairs_);
   cudaFree(device_theCells_);
   cudaFree(device_isOuterHitOfCell_);
+  cudaFree(device_nCells_);
 }
 
 void CAHitQuadrupletGeneratorGPU::allocateOnGPU()
@@ -406,6 +407,7 @@ void CAHitQuadrupletGeneratorGPU::allocateOnGPU()
 
   cudaCheck(cudaMalloc(&device_theCells_,
              maxNumberOfLayerPairs_ * maxNumberOfDoublets_ * sizeof(GPUCACell)));
+  cudaCheck(cudaMalloc(&device_nCells_,sizeof(uint32_t)));
 
   cudaCheck(cudaMalloc(&device_isOuterHitOfCell_,
              maxNumberOfLayers_ * maxNumberOfHits_ * sizeof(GPU::VecArray<unsigned int, maxCellsPerHit_>)));
@@ -498,5 +500,6 @@ void CAHitQuadrupletGeneratorGPU::buildDoublets(HitsOnCPU const & hh, float phic
   int threadsPerBlock = 256;
   int blocks = (3*nhits + threadsPerBlock - 1) / threadsPerBlock;
 
-  gpuPixelDoublets::getDoubletsFromHisto<<<blocks, threadsPerBlock, 0, stream>>>(hh.gpu_d,phiCut);
+  cudaCheck(cudaMemset(device_nCells_,0,sizeof(uint32_t)));
+  gpuPixelDoublets::getDoubletsFromHisto<<<blocks, threadsPerBlock, 0, stream>>>(device_theCells_,device_nCells_,hh.gpu_d,phiCut);
 }
