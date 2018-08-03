@@ -21,7 +21,8 @@ namespace gpuPixelDoublets {
   __device__
   void doubletsFromHisto(uint8_t const * layerPairs, uint32_t nPairs, GPUCACell * cells, uint32_t * nCells,
                          int16_t const * iphi, Hist const * hist, uint32_t const * offsets, float phiCut,
-                         siPixelRecHitsHeterogeneousProduct::HitsOnGPU const & hh) {
+                         siPixelRecHitsHeterogeneousProduct::HitsOnGPU const & hh,  
+                         int16_t const * phicuts, float const * minz, float const * maxz, float const * maxr) {
     auto iphicut = phi2short(phiCut);
 
     auto idx = blockIdx.x*blockDim.x + threadIdx.x;
@@ -62,6 +63,16 @@ namespace gpuPixelDoublets {
     // do the job
 
     auto mep = iphi[i];
+    auto mez = hh.zg_d[i];
+    auto mer = hh.rg_d[i];
+    auto cutoff = [&](int j) { return 
+        abs(hh.zg_d[j]-mez) > maxz[pairLayerId] ||
+      	abs(hh.zg_d[j]-mez) < minz[pairLayerId] ||
+        hh.rg_d[j]-mer > maxr[pairLayerId];
+    };
+
+    iphicut = phicuts[pairLayerId];
+
     auto kl = hist[outer].bin(mep-iphicut);
     auto kh = hist[outer].bin(mep+iphicut);
     auto incr = [](auto & k) { return k = (k+1)%Hist::nbins();};
@@ -74,26 +85,16 @@ namespace gpuPixelDoublets {
       for (auto p=hist[outer].begin(kk); p<hist[outer].end(kk); ++p) {
         if (std::min(std::abs(int16_t(iphi[*p]-mep)), std::abs(int16_t(mep-iphi[*p]))) > iphicut)
           continue;
+        if (cutoff(*p)) continue;
         auto ind = atomicInc(nCells,MaxNumOfDoublets);
         // int layerPairId, int doubletId, int innerHitId,int outerHitId)
         cells[ind].init(hh,pairLayerId,ind,i,*p);
         ++tot;
       }
     }
-    if (0==hist[outer].nspills) assert(tot>=nmin);
+    // if (0==hist[outer].nspills) assert(tot>=nmin);
     // look in spill bin as well....
   }
-
-  /*
-  __global__
-  void getDoubletsFromHisto(uint8_t const * layerPairs, uint32_t nPairs, GPUCACell * cells, uint32_t * nCells,
-                            siPixelRecHitsHeterogeneousProduct::HitsOnGPU const * hhp, float phiCut) {
-    auto const & hh = *hhp;
-    doubletsFromHisto(layerPairs, nPairs, cells, nCells, 
-                      hh.iphi_d,hh.hist_d,hh.hitsLayerStart_d,phiCut, hh);
-  }
- */
-
 
   __global__
   void getDoubletsFromHisto(GPUCACell * cells, uint32_t * nCells, siPixelRecHitsHeterogeneousProduct::HitsOnGPU const * hhp, float phiCut) {
@@ -103,9 +104,35 @@ namespace gpuPixelDoublets {
                                      ,0,7 ,1,7 ,2,7 ,7,8 ,8,9
                                      };
 
+    const int16_t phi0p05 = phi2short(0.05);
+    const int16_t phi0p06 = phi2short(0.06);
+    const int16_t phi0p07 = phi2short(0.07);
+
+    int16_t const phicuts[13] { phi0p05, phi0p05, phi0p06
+                               ,phi0p06, phi0p06, phi0p06, phi0p05, phi0p05
+                               ,phi0p06, phi0p06, phi0p06, phi0p05, phi0p05 
+                              };
+
+    float const minz[13] = { 0., 0., 0.
+                            ,0., 0., 0., 0., 0.
+      	       	       	    ,0., 0., 0., 0., 0.
+                           };
+
+    float const	maxz[13] = { 10.,10.,12.
+                            ,30.,20.,15., 50., 50.
+       	       	       	    ,30.,20.,15., 50., 50.
+                           };
+
+    float const maxr[13] = { 20., 20., 20.
+                            ,12., 10., 6., 20., 20.
+      	       	       	    ,12., 10., 6., 20., 20.
+                           };
+
+
     auto const & hh = *hhp;
     doubletsFromHisto(layerPairs, 13, cells, nCells, 
-                      hh.iphi_d,hh.hist_d,hh.hitsLayerStart_d,phiCut,hh);
+                      hh.iphi_d,hh.hist_d,hh.hitsLayerStart_d,phiCut,hh,
+                      phicuts, minz, maxz, maxr);
   }
 
 
