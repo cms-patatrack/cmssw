@@ -213,30 +213,8 @@ __global__ void debug_input_data(unsigned int numberOfLayerPairs_,
   }
 }
 
-template <int maxNumberOfQuadruplets_>
-__global__ void kernel_debug_find_ntuplets(
-    unsigned int numberOfRootLayerPairs_, const GPULayerDoublets *gpuDoublets,
-    GPUCACell *cells,
-    GPU::VecArray<Quadruplet, maxNumberOfQuadruplets_> *foundNtuplets,
-    unsigned int *rootLayerPairs, unsigned int minHitsPerNtuplet,
-    unsigned int maxNumberOfDoublets_) {
-  printf("numberOfRootLayerPairs_ = %d", numberOfRootLayerPairs_);
-  for (int rootLayerPair = 0; rootLayerPair < numberOfRootLayerPairs_;
-       ++rootLayerPair) {
-    unsigned int rootLayerPairIndex = rootLayerPairs[rootLayerPair];
-    auto globalFirstDoubletIdx = rootLayerPairIndex * maxNumberOfDoublets_;
+//    printf("found quadruplets: %d", foundNtuplets->size());
 
-    GPU::VecArray<unsigned int, 3> stack;
-    for (int i = 0; i < gpuDoublets[rootLayerPairIndex].size; i++) {
-      auto globalCellIdx = i + globalFirstDoubletIdx;
-      stack.reset();
-      stack.push_back(globalCellIdx);
-      cells[globalCellIdx].find_ntuplets(cells, foundNtuplets, stack,
-                                         minHitsPerNtuplet);
-    }
-    printf("found quadruplets: %d", foundNtuplets->size());
-  }
-}
 
 __global__ void kernel_create(
     const unsigned int numberOfLayerPairs_, const GPULayerDoublets *gpuDoublets,
@@ -302,26 +280,19 @@ kernel_connect(GPUCACell *cells, uint32_t const * nCells,
 }
 
 __global__ void kernel_find_ntuplets(
-    unsigned int numberOfRootLayerPairs_, const GPULayerDoublets *gpuDoublets,
-    GPUCACell *cells,
+    GPUCACell *cells, uint32_t const * nCells,
     GPU::SimpleVector<Quadruplet> *foundNtuplets,
     unsigned int *rootLayerPairs, unsigned int minHitsPerNtuplet,
     unsigned int maxNumberOfDoublets_)
 {
-  if (blockIdx.y < numberOfRootLayerPairs_) {
-    unsigned int cellIndexInRootLayerPair = threadIdx.x + blockIdx.x * blockDim.x;
-    unsigned int rootLayerPairIndex = rootLayerPairs[blockIdx.y];
-    auto globalFirstDoubletIdx = rootLayerPairIndex * maxNumberOfDoublets_;
-    GPU::VecArray<unsigned int, 3> stack;
-    for (int i = cellIndexInRootLayerPair;
-         i < gpuDoublets[rootLayerPairIndex].size;
-         i += gridDim.x * blockDim.x) {
-      auto globalCellIdx = i + globalFirstDoubletIdx;
-      stack.reset();
-      stack.push_back_unsafe(globalCellIdx);
-      cells[globalCellIdx].find_ntuplets(cells, foundNtuplets, stack, minHitsPerNtuplet);
-    }
-  }
+
+  auto cellIndex = threadIdx.x + blockIdx.x * blockDim.x;
+  if (cellIndex >= (*nCells) ) return;
+  auto &thisCell = cells[cellIndex];
+  if (thisCell.theLayerPairId!=0 && thisCell.theLayerPairId!=3 && thisCell.theLayerPairId!=8) return; // inner layer is 0 FIXME
+  GPU::VecArray<unsigned int, 3> stack;
+  stack.push_back_unsafe(cellIndex);
+  thisCell.find_ntuplets(cells, foundNtuplets, stack, minHitsPerNtuplet);
 }
 
 template <int maxNumberOfDoublets_>
@@ -443,8 +414,8 @@ void CAHitQuadrupletGeneratorGPU::launchKernels(const TrackingRegion &region,
       maxNumberOfHits_);
   */
 
-  auto numberOfBlocks_connect = (maxNumberOfDoublets_ + 512 - 1)/512;
-  kernel_connect<<<numberOfBlocks_connect, 512, 0, cudaStream>>>(
+  auto numberOfBlocks = (maxNumberOfDoublets_ + 512 - 1)/512;
+  kernel_connect<<<numberOfBlocks, 512, 0, cudaStream>>>(
       device_theCells_, device_nCells_,
       device_isOuterHitOfCell_,
       region.ptMin(), 
@@ -452,8 +423,8 @@ void CAHitQuadrupletGeneratorGPU::launchKernels(const TrackingRegion &region,
       maxNumberOfDoublets_, maxNumberOfHits_
   );
 
-  kernel_find_ntuplets<<<numberOfBlocks_find, 1024, 0, cudaStream>>>(
-      numberOfRootLayerPairs_, d_doublets_, device_theCells_,
+  kernel_find_ntuplets<<<numberOfBlocks, 512, 0, cudaStream>>>(
+      device_theCells_, device_nCells_,
       d_foundNtupletsVec_[regionIndex],
       d_rootLayerPairs_, 4, maxNumberOfDoublets_);
 
