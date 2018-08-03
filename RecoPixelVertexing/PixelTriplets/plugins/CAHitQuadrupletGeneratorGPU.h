@@ -137,7 +137,7 @@ private:
     };
 
     void  launchKernels(const TrackingRegion &, int, cudaStream_t);
-    std::vector<std::array<std::pair<int,int> ,3>> fetchKernelResult(int, cudaStream_t);
+    std::vector<std::array<int,4>> fetchKernelResult(int, cudaStream_t);
     const float extraHitRPhitolerance;
     std::vector<std::vector<const HitDoublets *>> hitDoublets;
 

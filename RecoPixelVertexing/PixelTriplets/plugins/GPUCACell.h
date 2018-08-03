@@ -9,9 +9,14 @@
 #include "HeterogeneousCore/CUDAUtilities/interface/GPUVecArray.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/GPUSimpleVector.h"
 #include <cuda.h>
-struct Quadruplet {
+struct QuadrupletOnCPU {
   int2 layerPairsAndCellId[3];
 };
+
+struct Quadruplet {
+  int hitId[4];
+};
+
 
 class GPUCACell {
 public:
@@ -224,35 +229,36 @@ __host__ __device__ void init(siPixelRecHitsHeterogeneousProduct::HitsOnGPU cons
     // the ntuplets is then saved if the number of hits it contains is greater
     // than a threshold
 
+    tmpNtuplet.push_back_unsafe(theInnerHitId);
 
-    if ((unsigned int)(tmpNtuplet.size()) >= minHitsPerNtuplet - 1) {
+    if ((unsigned int)(tmpNtuplet.size()) >= minHitsPerNtuplet-1) {
       Quadruplet tmpQuadruplet;
-      for (unsigned int i = 0; i < minHitsPerNtuplet - 1; ++i) {
-        tmpQuadruplet.layerPairsAndCellId[i].x = cells[tmpNtuplet[i]].theLayerPairId;
-        tmpQuadruplet.layerPairsAndCellId[i].y = tmpNtuplet[i];
+      for (unsigned int i = 0; i < minHitsPerNtuplet-1; ++i) {
+        tmpQuadruplet.hitId[i] = tmpNtuplet[i];
       }
+      tmpQuadruplet.hitId[minHitsPerNtuplet-1] = theOuterHitId;
       foundNtuplets->push_back(tmpQuadruplet);
     }
     else {
       for (int j = 0; j < theOuterNeighbors.size(); ++j) {
         auto otherCell = theOuterNeighbors[j];
-        tmpNtuplet.push_back_unsafe(otherCell);
         cells[otherCell].find_ntuplets(cells, foundNtuplets, tmpNtuplet,
                                        minHitsPerNtuplet);
-        tmpNtuplet.pop_back();
       }
     }
+    tmpNtuplet.pop_back();
+
   }
 
 #endif
   template <int maxNumberOfQuadruplets>
   __host__ inline void find_ntuplets_host(
       const GPUCACell *cells,
-      GPU::VecArray<Quadruplet, maxNumberOfQuadruplets> *foundNtuplets,
+      GPU::VecArray<QuadrupletOnCPU, maxNumberOfQuadruplets> *foundNtuplets,
       GPU::VecArray<unsigned int, 3> &tmpNtuplet,
       const unsigned int minHitsPerNtuplet) const {
 
-    Quadruplet tmpQuadruplet;
+    QuadrupletOnCPU tmpQuadruplet;
     if (tmpNtuplet.size() >= minHitsPerNtuplet - 1) {
       for (int i = 0; i < minHitsPerNtuplet - 1; ++i) {
         tmpQuadruplet.layerPairsAndCellId[i].x =
