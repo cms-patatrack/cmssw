@@ -54,7 +54,7 @@ public:
 
     void initEvent(const edm::Event& ev, const edm::EventSetup& es);
 
-    void buildDoublets(HitsOnCPU const & hh, float phicut, cudaStream_t stream);
+    void buildDoublets(HitsOnCPU const & hh, cudaStream_t stream);
 
     void hitNtuplets(const IntermediateHitDoublets& regionDoublets,
                      const edm::EventSetup& es,

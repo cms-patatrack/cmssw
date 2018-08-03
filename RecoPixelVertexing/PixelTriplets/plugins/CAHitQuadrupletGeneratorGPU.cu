@@ -274,39 +274,30 @@ __global__ void kernel_create(
 }
 
 __global__ void
-kernel_connect(unsigned int numberOfLayerPairs_,
-               const GPULayerDoublets *gpuDoublets, GPUCACell *cells,
+kernel_connect(GPUCACell *cells, uint32_t const * nCells,
                GPU::VecArray< unsigned int, 512> *isOuterHitOfCell,
-               float ptmin, float region_origin_x, float region_origin_y,
+               float ptmin, 
                float region_origin_radius, const float thetaCut,
                const float phiCut, const float hardPtCut,
                unsigned int maxNumberOfDoublets_, unsigned int maxNumberOfHits_) {
-  unsigned int layerPairIndex = blockIdx.y;
-  unsigned int cellIndexInLayerPair = threadIdx.x + blockIdx.x * blockDim.x;
-  if (layerPairIndex < numberOfLayerPairs_) {
-    int innerLayerId = gpuDoublets[layerPairIndex].innerLayerId;
-    auto globalFirstDoubletIdx = layerPairIndex * maxNumberOfDoublets_;
-    auto globalFirstHitIdx = innerLayerId * maxNumberOfHits_;
 
-    for (int i = cellIndexInLayerPair; i < gpuDoublets[layerPairIndex].size;
-         i += gridDim.x * blockDim.x) {
-      auto globalCellIdx = i + globalFirstDoubletIdx;
+  float region_origin_x =0.;
+  float region_origin_y =0.;
 
-      auto &thisCell = cells[globalCellIdx];
-      auto innerHitId = thisCell.get_inner_hit_id();
-      auto numberOfPossibleNeighbors =
-          isOuterHitOfCell[globalFirstHitIdx + innerHitId].size();
-      for (auto j = 0; j < numberOfPossibleNeighbors; ++j) {
-        unsigned int otherCell =
-            isOuterHitOfCell[globalFirstHitIdx + innerHitId][j];
+  auto cellIndex = threadIdx.x + blockIdx.x * blockDim.x;
+  if (cellIndex >= (*nCells) ) return;
+  auto &thisCell = cells[cellIndex];
+  auto innerHitId = thisCell.get_inner_hit_id();
+  auto numberOfPossibleNeighbors = isOuterHitOfCell[innerHitId].size();
+  for (auto j = 0; j < numberOfPossibleNeighbors; ++j) {
+     auto otherCell = isOuterHitOfCell[innerHitId][j];
 
-        if (thisCell.check_alignment_and_tag(
-                cells, otherCell, ptmin, region_origin_x, region_origin_y,
-                region_origin_radius, thetaCut, phiCut, hardPtCut)) {
-          cells[otherCell].theOuterNeighbors.push_back(globalCellIdx);
-        }
-      }
-    }
+     if (thisCell.check_alignment_and_tag(
+                 cells, otherCell, ptmin, region_origin_x, region_origin_y,
+                  region_origin_radius, thetaCut, phiCut, hardPtCut)
+        ) {
+          cells[otherCell].theOuterNeighbors.push_back(cellIndex);
+     }
   }
 }
 
@@ -441,21 +432,25 @@ void CAHitQuadrupletGeneratorGPU::launchKernels(const TrackingRegion &region,
 {
   assert(regionIndex < maxNumberOfRegions_);
   dim3 numberOfBlocks_create(64, numberOfLayerPairs_);
-  dim3 numberOfBlocks_connect(32, numberOfLayerPairs_);
+//  dim3 numberOfBlocks_connect(32, numberOfLayerPairs_);
   dim3 numberOfBlocks_find(16, numberOfRootLayerPairs_);
   h_foundNtupletsVec_[regionIndex]->reset();
+  /*
   kernel_create<<<numberOfBlocks_create, 32, 0, cudaStream>>>(
       numberOfLayerPairs_, d_doublets_, d_layers_, device_theCells_,
       device_isOuterHitOfCell_, d_foundNtupletsVec_[regionIndex],
       region.origin().x(), region.origin().y(), maxNumberOfDoublets_,
       maxNumberOfHits_);
+  */
 
+  auto numberOfBlocks_connect = (maxNumberOfDoublets_ + 512 - 1)/512;
   kernel_connect<<<numberOfBlocks_connect, 512, 0, cudaStream>>>(
-      numberOfLayerPairs_, d_doublets_, device_theCells_,
+      device_theCells_, device_nCells_,
       device_isOuterHitOfCell_,
-      region.ptMin(), region.origin().x(), region.origin().y(),
+      region.ptMin(), 
       region.originRBound(), caThetaCut, caPhiCut, caHardPtCut,
-      maxNumberOfDoublets_, maxNumberOfHits_);
+      maxNumberOfDoublets_, maxNumberOfHits_
+  );
 
   kernel_find_ntuplets<<<numberOfBlocks_find, 1024, 0, cudaStream>>>(
       numberOfRootLayerPairs_, d_doublets_, device_theCells_,
@@ -493,13 +488,12 @@ CAHitQuadrupletGeneratorGPU::fetchKernelResult(int regionIndex, cudaStream_t cud
   return quadsInterface;
 }
 
-void CAHitQuadrupletGeneratorGPU::buildDoublets(HitsOnCPU const & hh, float phicut, cudaStream_t stream) {
+void CAHitQuadrupletGeneratorGPU::buildDoublets(HitsOnCPU const & hh, cudaStream_t stream) {
    auto nhits = hh.nHits;
 
-  float phiCut=0.06;
   int threadsPerBlock = 256;
   int blocks = (3*nhits + threadsPerBlock - 1) / threadsPerBlock;
 
   cudaCheck(cudaMemset(device_nCells_,0,sizeof(uint32_t)));
-  gpuPixelDoublets::getDoubletsFromHisto<<<blocks, threadsPerBlock, 0, stream>>>(device_theCells_,device_nCells_,hh.gpu_d,phiCut);
+  gpuPixelDoublets::getDoubletsFromHisto<<<blocks, threadsPerBlock, 0, stream>>>(device_theCells_,device_nCells_,hh.gpu_d, device_isOuterHitOfCell_);
 }

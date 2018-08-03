@@ -122,7 +122,7 @@ void CAHitNtupletHeterogeneousEDProducer::acquireGPUCuda(
   auto const & gHits = *gh;
 //  auto nhits = gHits.nHits;
 
-  GPUGenerator_.buildDoublets(gHits,0.06f,cudaStream.id());
+  GPUGenerator_.buildDoublets(gHits,cudaStream.id());
 
   if (regionDoublets.empty()) {
     emptyRegionDoublets = true;

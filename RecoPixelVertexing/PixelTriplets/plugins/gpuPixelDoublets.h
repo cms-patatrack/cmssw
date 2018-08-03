@@ -12,6 +12,7 @@
 #include "RecoLocalTracker/SiPixelRecHits/plugins/siPixelRecHitsHeterogeneousProduct.h"
 
 #include "GPUCACell.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/GPUVecArray.h"
 
 namespace gpuPixelDoublets {
 
@@ -20,10 +21,10 @@ namespace gpuPixelDoublets {
   template<typename Hist>
   __device__
   void doubletsFromHisto(uint8_t const * layerPairs, uint32_t nPairs, GPUCACell * cells, uint32_t * nCells,
-                         int16_t const * iphi, Hist const * hist, uint32_t const * offsets, float phiCut,
-                         siPixelRecHitsHeterogeneousProduct::HitsOnGPU const & hh,  
+                         int16_t const * iphi, Hist const * hist, uint32_t const * offsets,
+                         siPixelRecHitsHeterogeneousProduct::HitsOnGPU const & hh,
+                         GPU::VecArray< unsigned int, 512>  * isOuterHitOfCell,
                          int16_t const * phicuts, float const * minz, float const * maxz, float const * maxr) {
-    auto iphicut = phi2short(phiCut);
 
     auto idx = blockIdx.x*blockDim.x + threadIdx.x;
 
@@ -71,7 +72,7 @@ namespace gpuPixelDoublets {
         hh.rg_d[j]-mer > maxr[pairLayerId];
     };
 
-    iphicut = phicuts[pairLayerId];
+    auto iphicut = phicuts[pairLayerId];
 
     auto kl = hist[outer].bin(mep-iphicut);
     auto kh = hist[outer].bin(mep+iphicut);
@@ -89,6 +90,7 @@ namespace gpuPixelDoublets {
         auto ind = atomicInc(nCells,MaxNumOfDoublets);
         // int layerPairId, int doubletId, int innerHitId,int outerHitId)
         cells[ind].init(hh,pairLayerId,ind,i,*p);
+        isOuterHitOfCell[*p].push_back(ind);
         ++tot;
       }
     }
@@ -97,7 +99,8 @@ namespace gpuPixelDoublets {
   }
 
   __global__
-  void getDoubletsFromHisto(GPUCACell * cells, uint32_t * nCells, siPixelRecHitsHeterogeneousProduct::HitsOnGPU const * hhp, float phiCut) {
+  void getDoubletsFromHisto(GPUCACell * cells, uint32_t * nCells, siPixelRecHitsHeterogeneousProduct::HitsOnGPU const * hhp,                
+                            GPU::VecArray< unsigned int, 512> *isOuterHitOfCell) {
 
     uint8_t const layerPairs[2*13] = {0,1 ,1,2 ,2,3 
                                      ,0,4 ,1,4 ,2,4 ,4,5 ,5,6  
@@ -131,7 +134,8 @@ namespace gpuPixelDoublets {
 
     auto const & hh = *hhp;
     doubletsFromHisto(layerPairs, 13, cells, nCells, 
-                      hh.iphi_d,hh.hist_d,hh.hitsLayerStart_d,phiCut,hh,
+                      hh.iphi_d,hh.hist_d,hh.hitsLayerStart_d,
+                      hh, isOuterHitOfCell,
                       phicuts, minz, maxz, maxr);
   }
 
