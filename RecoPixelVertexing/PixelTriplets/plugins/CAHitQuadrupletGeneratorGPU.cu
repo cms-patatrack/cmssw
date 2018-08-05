@@ -49,7 +49,7 @@ __global__ void kernel_find_ntuplets(
   GPU::VecArray<unsigned int, 3> stack;
   thisCell.find_ntuplets(cells, foundNtuplets, stack, minHitsPerNtuplet);
 
-  printf("in %d found quadruplets: %d\n", cellIndex, foundNtuplets->size());
+  // printf("in %d found quadruplets: %d\n", cellIndex, foundNtuplets->size());
 }
 
 template <int maxNumberOfDoublets_>

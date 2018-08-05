@@ -155,7 +155,7 @@ void CAHitNtupletHeterogeneousEDProducer::produceGPUCuda(
     for (const auto &regionLayerPairs : regionDoublets) {
       const TrackingRegion &region = regionLayerPairs.region();
       auto seedingHitSetsFiller = seedingHitSets_->beginRegion(&region);
-      GPUGenerator_.fillResults(region, ntuplets, iSetup, cudaStream.id());
+      GPUGenerator_.fillResults(region, rechits.collection, ntuplets, iSetup, cudaStream.id());
       fillNtuplets(seedingHitSetsFiller, ntuplets[index]);
       ntuplets[index].clear();
       index++;

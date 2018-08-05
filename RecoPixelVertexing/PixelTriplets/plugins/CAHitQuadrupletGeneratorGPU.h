@@ -18,6 +18,8 @@
 #include "RecoTracker/TkSeedGenerator/interface/FastCircleFit.h"
 #include "RecoTracker/TkSeedingLayers/interface/SeedComparitor.h"
 #include "RecoTracker/TkSeedingLayers/interface/SeedComparitorFactory.h"
+#include "RecoPixelVertexing/PixelTriplets/plugins/RecHitsMap.h"
+
 
 #include "GPUCACell.h"
 
@@ -55,7 +57,7 @@ public:
     void hitNtuplets(const TrackingRegion &region,
                      const edm::EventSetup& es,
                      cudaStream_t stream);
-    void fillResults(const TrackingRegion &region,
+    void fillResults(const TrackingRegion &region, SiPixelRecHitCollectionNew const & rechits,
                      std::vector<OrderedHitSeeds>& result,
                      const edm::EventSetup& es,
                      cudaStream_t stream);
@@ -134,6 +136,8 @@ private:
 
     void  launchKernels(const TrackingRegion &, int, cudaStream_t);
     std::vector<std::array<int,4>> fetchKernelResult(int, cudaStream_t);
+
+
     const float extraHitRPhitolerance;
 
     const QuantityDependsPt maxChi2;
@@ -154,12 +158,6 @@ private:
     static constexpr int maxNumberOfHits_ = 10000;
     static constexpr int maxNumberOfRegions_ = 30;
 
-    unsigned int numberOfRootLayerPairs_ = 0;
-    unsigned int numberOfLayerPairs_ = 0;
-    unsigned int numberOfLayers_ = 0;
-
-    GPULayerDoublets* h_doublets_ = nullptr;
-    GPULayerHits* h_layers_ = nullptr;
 
     std::vector<GPU::SimpleVector<Quadruplet>*> h_foundNtupletsVec_;
     std::vector<Quadruplet*> h_foundNtupletsData_;
@@ -171,7 +169,8 @@ private:
     GPU::VecArray< unsigned int, maxCellsPerHit_>* device_isOuterHitOfCell_ = nullptr;
     uint32_t* device_nCells_ = nullptr;
 
-    GPULayerHits* tmp_layers_ = nullptr;
+    RecHitsMap<TrackingRecHit const *> hitmap_ = RecHitsMap<TrackingRecHit const *>(nullptr);
+
 };
 
 #endif // RecoPixelVertexing_PixelTriplets_plugins_CAHitQuadrupletGeneratorGPU_h

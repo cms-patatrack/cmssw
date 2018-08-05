@@ -9,9 +9,6 @@
 #include "HeterogeneousCore/CUDAUtilities/interface/GPUVecArray.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/GPUSimpleVector.h"
 #include <cuda.h>
-struct QuadrupletOnCPU {
-  int2 layerPairsAndCellId[3];
-};
 
 struct Quadruplet {
   int hitId[4];
@@ -43,32 +40,6 @@ __host__ __device__ void init(siPixelRecHitsHeterogeneousProduct::HitsOnGPU cons
   }
 
 
-
-  __host__ __device__ void init(const GPULayerDoublets *doublets,
-                                const GPULayerHits *hitsOnLayer,
-                                int layerPairId, int doubletId, int innerHitId,
-                                int outerHitId, float regionX, float regionY) {
-
-    theInnerHitId = innerHitId;
-    theOuterHitId = outerHitId;
-    theDoubletId = doubletId;
-    theLayerPairId = layerPairId;
-
-    auto innerLayerId = doublets->innerLayerId;
-    auto outerLayerId = doublets->outerLayerId;
-
-    theInnerX = hitsOnLayer[innerLayerId].x[innerHitId];
-    theOuterX = hitsOnLayer[outerLayerId].x[outerHitId];
-
-    theInnerY = hitsOnLayer[innerLayerId].y[innerHitId];
-    theOuterY = hitsOnLayer[outerLayerId].y[outerHitId];
-
-    theInnerZ = hitsOnLayer[innerLayerId].z[innerHitId];
-    theOuterZ = hitsOnLayer[outerLayerId].z[outerHitId];
-    theInnerR = hypot(theInnerX - regionX, theInnerY - regionY);
-    theOuterR = hypot(theOuterX - regionX, theOuterY - regionY);
-    theOuterNeighbors.reset();
-  }
 
   constexpr float get_inner_x() const { return theInnerX; }
   constexpr float get_outer_x() const { return theOuterX; }
@@ -251,36 +222,8 @@ __host__ __device__ void init(siPixelRecHitsHeterogeneousProduct::HitsOnGPU cons
   }
 
 #endif
-  template <int maxNumberOfQuadruplets>
-  __host__ inline void find_ntuplets_host(
-      const GPUCACell *cells,
-      GPU::VecArray<QuadrupletOnCPU, maxNumberOfQuadruplets> *foundNtuplets,
-      GPU::VecArray<unsigned int, 3> &tmpNtuplet,
-      const unsigned int minHitsPerNtuplet) const {
 
-    QuadrupletOnCPU tmpQuadruplet;
-    if (tmpNtuplet.size() >= minHitsPerNtuplet - 1) {
-      for (int i = 0; i < minHitsPerNtuplet - 1; ++i) {
-        tmpQuadruplet.layerPairsAndCellId[i].x =
-            cells[tmpNtuplet[i]].theLayerPairId;
 
-        tmpQuadruplet.layerPairsAndCellId[i].y = tmpNtuplet[i];
-      }
-      foundNtuplets->push_back(tmpQuadruplet);
-
-    }
-
-    else {
-      for (int j = 0; j < theOuterNeighbors.size(); ++j) {
-        auto otherCell = theOuterNeighbors[j];
-        tmpNtuplet.push_back_unsafe(otherCell);
-        cells[otherCell].find_ntuplets_host(cells, foundNtuplets, tmpNtuplet,
-                                            minHitsPerNtuplet);
-
-        tmpNtuplet.pop_back();
-      }
-    }
-  }
   GPU::VecArray< unsigned int, 40> theOuterNeighbors;
 
   int theDoubletId;

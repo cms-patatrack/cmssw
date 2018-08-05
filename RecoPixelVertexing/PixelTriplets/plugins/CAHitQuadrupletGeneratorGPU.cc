@@ -101,10 +101,14 @@ void CAHitQuadrupletGeneratorGPU::hitNtuplets(
 }
 
 void CAHitQuadrupletGeneratorGPU::fillResults(
-    const TrackingRegion &region,
+    const TrackingRegion &region, SiPixelRecHitCollectionNew const & rechits,
     std::vector<OrderedHitSeeds> &result, const edm::EventSetup &es,
     cudaStream_t cudaStream)
 {
+    hitmap_.clear(); 
+    auto const & rcs = rechits.data();
+    for (auto const & h : rcs) hitmap_.add(h,&h);
+
 
  /*
     int index = 0;
