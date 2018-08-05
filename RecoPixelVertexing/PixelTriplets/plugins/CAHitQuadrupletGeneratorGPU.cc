@@ -110,12 +110,19 @@ void CAHitQuadrupletGeneratorGPU::fillResults(
     auto const & rcs = rechits.data();
     for (auto const & h : rcs) hitmap_.add(h,&h);
 
+    assert(hitsOnCPU);
+    auto nhits = hitsOnCPU->nHits;
 
+    std::cout << nhits << " hits on GPU" << std::endl;
+    std::cout << rcs.size() << " hits on CPU" << std::endl;
 
     int index = 0;
 
-      auto foundQuads = fetchKernelResult(index, cudaStream);
+      auto const & foundQuads = fetchKernelResult(index, cudaStream);
       unsigned int numberOfFoundQuadruplets = foundQuads.size();
+     
+      std::cout << "found " << foundQuads.size() << " quadruplets on GPU" << std::endl;
+      
       // const QuantityDependsPtEval maxChi2Eval = maxChi2.evaluator(es);
 
       // re-used thoughout
@@ -135,6 +142,8 @@ void CAHitQuadrupletGeneratorGPU::fillResults(
         bool bad = false; 
         for (unsigned int i = 0; i < 4; ++i) {
            auto k = foundQuads[quadId][i];
+           if (k>=int(nhits)) std::cout << "BAD INDEX " << k << " at " << quadId <<':'<< i << std::endl;
+           assert(k<int(nhits));
            auto hp = hitmap_.get((*hitsOnCPU).detInd[k],(*hitsOnCPU).mr[k], (*hitsOnCPU).mc[k]);
            if (hp==nullptr) { 
              bad=true;
