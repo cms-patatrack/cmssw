@@ -145,9 +145,9 @@ void CAHitNtupletHeterogeneousEDProducer::produceGPUCuda(
     iEvent.getByToken(doubletToken_, hdoublets);
     const auto &regionDoublets = *hdoublets;
 
-    edm::Handle<siPixelRecHitsHeterogeneousProduct::CPUProduct> gh;
-    iEvent.getByToken<siPixelRecHitsHeterogeneousProduct::HeterogeneousPixelRecHit>(tGpuHits, gh);
-    auto const & recHits = (*gh).collection;
+    edm::Handle<HeterogeneousProduct> gh;
+    iEvent.getByToken(tGpuHits, gh);
+    auto const & rechits = gh->get<siPixelRecHitsHeterogeneousProduct::HeterogeneousPixelRecHit>().getProduct<HeterogeneousDevice::kCPU>();
 
     std::vector<OrderedHitSeeds> ntuplets(regionDoublets.regionSize());
     for (auto &ntuplet : ntuplets) ntuplet.reserve(localRA_.upper());
