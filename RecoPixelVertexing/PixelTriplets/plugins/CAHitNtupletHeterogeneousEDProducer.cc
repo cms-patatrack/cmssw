@@ -132,7 +132,7 @@ void CAHitNtupletHeterogeneousEDProducer::acquireGPUCuda(
         << " regions, and " << regionDoublets.layerPairsSize()
         << " layer pairs";
 
-  GPUGenerator_.hitNtuplets(region, iSetup, cudaStream.id());
+  GPUGenerator_.hitNtuplets(region, gHits, iSetup, cudaStream.id());
   
 }
 

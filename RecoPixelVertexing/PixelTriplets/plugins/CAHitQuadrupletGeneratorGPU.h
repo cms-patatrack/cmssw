@@ -54,7 +54,7 @@ public:
 
     void buildDoublets(HitsOnCPU const & hh, cudaStream_t stream);
 
-    void hitNtuplets(const TrackingRegion &region,
+    void hitNtuplets(const TrackingRegion &region, HitsOnCPU const & hh,
                      const edm::EventSetup& es,
                      cudaStream_t stream);
     void fillResults(const TrackingRegion &region, SiPixelRecHitCollectionNew const & rechits,
@@ -168,6 +168,8 @@ private:
     GPUCACell* device_theCells_ = nullptr;
     GPU::VecArray< unsigned int, maxCellsPerHit_>* device_isOuterHitOfCell_ = nullptr;
     uint32_t* device_nCells_ = nullptr;
+
+    HitsOnCPU const * hitsOnCPU=nullptr;
 
     RecHitsMap<TrackingRecHit const *> hitmap_ = RecHitsMap<TrackingRecHit const *>(nullptr);
 

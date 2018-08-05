@@ -92,9 +92,10 @@ CAHitQuadrupletGeneratorGPU::~CAHitQuadrupletGeneratorGPU() {
 
 void CAHitQuadrupletGeneratorGPU::hitNtuplets(
     const TrackingRegion &region,
+    HitsOnCPU const & hh,
     const edm::EventSetup &es,
     cudaStream_t cudaStream) {
-
+    hitsOnCPU = &hh;
     int index = 0;
     launchKernels(region, index, cudaStream);
 
@@ -110,12 +111,12 @@ void CAHitQuadrupletGeneratorGPU::fillResults(
     for (auto const & h : rcs) hitmap_.add(h,&h);
 
 
- /*
+
     int index = 0;
 
       auto foundQuads = fetchKernelResult(index, cudaStream);
       unsigned int numberOfFoundQuadruplets = foundQuads.size();
-      const QuantityDependsPtEval maxChi2Eval = maxChi2.evaluator(es);
+      // const QuantityDependsPtEval maxChi2Eval = maxChi2.evaluator(es);
 
       // re-used thoughout
       std::array<float, 4> bc_r;
@@ -126,13 +127,23 @@ void CAHitQuadrupletGeneratorGPU::fillResults(
       std::array<bool, 4> barrels;
       // Loop over quadruplets
       for (unsigned int quadId = 0; quadId < numberOfFoundQuadruplets; ++quadId) {
+        /*
         auto isBarrel = [](const unsigned id) -> bool {
           return id == PixelSubdetector::PixelBarrel;
         };
-        for (unsigned int i = 0; i < 3; ++i) {
-          auto layerPair = foundQuads[quadId][i].first;
-          auto doubletId = foundQuads[quadId][i].second;
-
+        */
+        bool bad = false; 
+        for (unsigned int i = 0; i < 4; ++i) {
+           auto k = foundQuads[quadId][i];
+           auto hp = hitmap_.get((*hitsOnCPU).detInd[k],(*hitsOnCPU).mr[k], (*hitsOnCPU).mc[k]);
+           if (hp==nullptr) { 
+             bad=true;
+             break;
+           } 
+       }
+       if (bad) continue;
+     }
+/*
           auto const &ahit =
               hitDoublets[index][layerPair]->hit(doubletId, HitDoublets::inner);
           gps[i] = ahit->globalPosition();
