@@ -123,7 +123,7 @@ void CAHitQuadrupletGeneratorGPU::fillResults(
      
       std::cout << "found " << foundQuads.size() << " quadruplets on GPU" << std::endl;
       
-      // const QuantityDependsPtEval maxChi2Eval = maxChi2.evaluator(es);
+      const QuantityDependsPtEval maxChi2Eval = maxChi2.evaluator(es);
 
       // re-used thoughout
       std::array<float, 4> bc_r;
@@ -132,13 +132,12 @@ void CAHitQuadrupletGeneratorGPU::fillResults(
       std::array<GlobalPoint, 4> gps;
       std::array<GlobalError, 4> ges;
       std::array<bool, 4> barrels;
+      std::array<BaseTrackerRecHit const *,4> phits;
       // Loop over quadruplets
       for (unsigned int quadId = 0; quadId < numberOfFoundQuadruplets; ++quadId) {
-        /*
         auto isBarrel = [](const unsigned id) -> bool {
           return id == PixelSubdetector::PixelBarrel;
         };
-        */
         bool bad = false; 
         for (unsigned int i = 0; i < 4; ++i) {
            auto k = foundQuads[quadId][i];
@@ -149,25 +148,14 @@ void CAHitQuadrupletGeneratorGPU::fillResults(
              bad=true;
              break;
            } 
-       }
-       if (bad) continue;
-     }
-/*
-          auto const &ahit =
-              hitDoublets[index][layerPair]->hit(doubletId, HitDoublets::inner);
-          gps[i] = ahit->globalPosition();
-          ges[i] = ahit->globalPositionError();
-          barrels[i] = isBarrel(ahit->geographicalId().subdetId());
+          phits[i] = static_cast<BaseTrackerRecHit const *>(hp); 
+          auto const &ahit = *phits[i];
+          gps[i] = ahit.globalPosition();
+          ges[i] = ahit.globalPositionError();
+          barrels[i] = isBarrel(ahit.geographicalId().subdetId());
 
         }
-        auto layerPair = foundQuads[quadId][2].first;
-        auto doubletId = foundQuads[quadId][2].second;
-
-        auto const &ahit =
-            hitDoublets[index][layerPair]->hit(doubletId, HitDoublets::outer);
-        gps[3] = ahit->globalPosition();
-        ges[3] = ahit->globalPositionError();
-        barrels[3] = isBarrel(ahit->geographicalId().subdetId());
+        if (bad) continue;
 
         // TODO:
         // - if we decide to always do the circle fit for 4 hits, we don't
@@ -180,13 +168,7 @@ void CAHitQuadrupletGeneratorGPU::fillResults(
         const float abscurv = std::abs(curvature);
         const float thisMaxChi2 = maxChi2Eval.value(abscurv);
         if (theComparitor) {
-          SeedingHitSet tmpTriplet(
-              hitDoublets[index][foundQuads[quadId][0].first]->hit(
-                  foundQuads[quadId][0].second, HitDoublets::inner),
-              hitDoublets[index][foundQuads[quadId][2].first]->hit(
-                  foundQuads[quadId][2].second, HitDoublets::inner),
-              hitDoublets[index][foundQuads[quadId][2].first]->hit(
-                  foundQuads[quadId][2].second, HitDoublets::outer));
+          SeedingHitSet tmpTriplet(phits[0],phits[1],phits[3]);
           if (!theComparitor->compatible(tmpTriplet)) {
             continue;
           }
@@ -229,15 +211,8 @@ void CAHitQuadrupletGeneratorGPU::fillResults(
           if (fitFastCircleChi2Cut && chi2 > thisMaxChi2)
             continue;
         }
-        result[index].emplace_back(
-            hitDoublets[index][foundQuads[quadId][0].first]->hit(
-                foundQuads[quadId][0].second, HitDoublets::inner),
-            hitDoublets[index][foundQuads[quadId][1].first]->hit(
-                foundQuads[quadId][1].second, HitDoublets::inner),
-            hitDoublets[index][foundQuads[quadId][2].first]->hit(
-                foundQuads[quadId][2].second, HitDoublets::inner),
-            hitDoublets[index][foundQuads[quadId][2].first]->hit(
-                foundQuads[quadId][2].second, HitDoublets::outer));
-      }
-  */
+        result[index].emplace_back(phits[0],phits[1],phits[2],phits[3]);
+
+      } // end loop over quads
+
 }

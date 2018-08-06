@@ -201,6 +201,7 @@ __host__ __device__ void init(siPixelRecHitsHeterogeneousProduct::HitsOnGPU cons
     // than a threshold
 
     tmpNtuplet.push_back_unsafe(theInnerHitId);
+    assert(tmpNtuplet.size()<=3);
 
     if ((unsigned int)(tmpNtuplet.size()) >= minHitsPerNtuplet-1) {
       Quadruplet tmpQuadruplet;
@@ -218,7 +219,7 @@ __host__ __device__ void init(siPixelRecHitsHeterogeneousProduct::HitsOnGPU cons
       }
     }
     tmpNtuplet.pop_back();
-
+    assert(tmpNtuplet.size()<3);
   }
 
 #endif

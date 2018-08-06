@@ -47,15 +47,15 @@ __global__ void kernel_find_ntuplets(
   auto &thisCell = cells[cellIndex];
   if (thisCell.theLayerPairId!=0 && thisCell.theLayerPairId!=3 && thisCell.theLayerPairId!=8) return; // inner layer is 0 FIXME
   GPU::VecArray<unsigned int, 3> stack;
+  stack.reset();
   thisCell.find_ntuplets(cells, foundNtuplets, stack, minHitsPerNtuplet);
-
+  assert(stack.size()==0);
   // printf("in %d found quadruplets: %d\n", cellIndex, foundNtuplets->size());
 }
 
-template <int maxNumberOfDoublets_>
 __global__ void
-kernel_print_found_ntuplets(GPU::SimpleVector<Quadruplet> *foundNtuplets) {
-  for (int i = 0; i < foundNtuplets->size(); ++i) {
+kernel_print_found_ntuplets(GPU::SimpleVector<Quadruplet> *foundNtuplets, int maxPrint) {
+  for (int i = 0; i < std::min(maxPrint,foundNtuplets->size()); ++i) {
     printf("\nquadruplet %d: %d %d %d %d\n", i,
            (*foundNtuplets)[i].hitId[0],
            (*foundNtuplets)[i].hitId[1],
@@ -119,6 +119,8 @@ void CAHitQuadrupletGeneratorGPU::launchKernels(const TrackingRegion &region,
                                                 int regionIndex, cudaStream_t cudaStream)
 {
   assert(regionIndex < maxNumberOfRegions_);
+  assert(0==regionIndex);
+
   h_foundNtupletsVec_[regionIndex]->reset();
 
   auto numberOfBlocks = (maxNumberOfDoublets_ + 512 - 1)/512;
@@ -135,6 +137,8 @@ void CAHitQuadrupletGeneratorGPU::launchKernels(const TrackingRegion &region,
       d_foundNtupletsVec_[regionIndex],
       4, maxNumberOfDoublets_);
 
+  kernel_print_found_ntuplets<<<1,1,0, cudaStream>>>(d_foundNtupletsVec_[regionIndex],10);
+
   cudaCheck(cudaMemcpyAsync(h_foundNtupletsVec_[regionIndex], d_foundNtupletsVec_[regionIndex],
                             sizeof(GPU::SimpleVector<Quadruplet>),
                             cudaMemcpyDeviceToHost, cudaStream));
@@ -148,6 +152,7 @@ void CAHitQuadrupletGeneratorGPU::launchKernels(const TrackingRegion &region,
 std::vector<std::array<int, 4>>
 CAHitQuadrupletGeneratorGPU::fetchKernelResult(int regionIndex, cudaStream_t cudaStream)
 {
+  assert(0==regionIndex);
   h_foundNtupletsVec_[regionIndex]->set_data(h_foundNtupletsData_[regionIndex]);
   // this lazily resets temporary memory for the next event, and is not needed for reading the output
   cudaCheck(cudaMemsetAsync(device_isOuterHitOfCell_, 0,
