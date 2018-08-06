@@ -8,7 +8,8 @@
 #include "gpuPixelDoublets.h"
 
 __global__ void
-kernel_connect(GPUCACell *cells, uint32_t const * nCells,
+kernel_connect(GPU::SimpleVector<Quadruplet> *foundNtuplets,
+               GPUCACell *cells, uint32_t const * nCells,
                GPU::VecArray< unsigned int, 512> *isOuterHitOfCell,
                float ptmin, 
                float region_origin_radius, const float thetaCut,
@@ -19,6 +20,9 @@ kernel_connect(GPUCACell *cells, uint32_t const * nCells,
   float region_origin_y =0.;
 
   auto cellIndex = threadIdx.x + blockIdx.x * blockDim.x;
+
+  if (0==cellIndex) foundNtuplets->reset(); // ready for next kernel
+
   if (cellIndex >= (*nCells) ) return;
   auto &thisCell = cells[cellIndex];
   auto innerHitId = thisCell.get_inner_hit_id();
@@ -125,6 +129,7 @@ void CAHitQuadrupletGeneratorGPU::launchKernels(const TrackingRegion &region,
 
   auto numberOfBlocks = (maxNumberOfDoublets_ + 512 - 1)/512;
   kernel_connect<<<numberOfBlocks, 512, 0, cudaStream>>>(
+      d_foundNtupletsVec_[regionIndex], // needed only to be reset, ready for next kernel
       device_theCells_, device_nCells_,
       device_isOuterHitOfCell_,
       region.ptMin(), 
@@ -158,6 +163,8 @@ CAHitQuadrupletGeneratorGPU::fetchKernelResult(int regionIndex, cudaStream_t cud
   cudaCheck(cudaMemsetAsync(device_isOuterHitOfCell_, 0,
                             maxNumberOfLayers_ * maxNumberOfHits_ * sizeof(GPU::VecArray<unsigned int, maxCellsPerHit_>),
                             cudaStream));
+  cudaCheck(cudaMemsetAsync(device_nCells_,0,sizeof(uint32_t),cudaStream));
+
   std::vector<std::array<int, 4>> quadsInterface(h_foundNtupletsVec_[regionIndex]->size());
   for (int i = 0; i < h_foundNtupletsVec_[regionIndex]->size(); ++i) {
     for (int j = 0; j<4; ++j) quadsInterface[i][j] = (*h_foundNtupletsVec_[regionIndex])[i].hitId[j];
@@ -171,6 +178,5 @@ void CAHitQuadrupletGeneratorGPU::buildDoublets(HitsOnCPU const & hh, cudaStream
   int threadsPerBlock = 256;
   int blocks = (3*nhits + threadsPerBlock - 1) / threadsPerBlock;
 
-  cudaCheck(cudaMemset(device_nCells_,0,sizeof(uint32_t)));
   gpuPixelDoublets::getDoubletsFromHisto<<<blocks, threadsPerBlock, 0, stream>>>(device_theCells_,device_nCells_,hh.gpu_d, device_isOuterHitOfCell_);
 }
