@@ -23,7 +23,7 @@ namespace gpuPixelDoublets {
   void doubletsFromHisto(uint8_t const * layerPairs, uint32_t nPairs, GPUCACell * cells, uint32_t * nCells,
                          int16_t const * iphi, Hist const * hist, uint32_t const * offsets,
                          siPixelRecHitsHeterogeneousProduct::HitsOnGPU const & hh,
-                         GPU::VecArray< unsigned int, 512>  * isOuterHitOfCell,
+                         GPU::VecArray< unsigned int, 2048>  * isOuterHitOfCell,
                          int16_t const * phicuts, float const * minz, float const * maxz, float const * maxr) {
 
     auto idx = blockIdx.x*blockDim.x + threadIdx.x;
@@ -52,7 +52,7 @@ namespace gpuPixelDoublets {
     uint8_t inner = layerPairs[2*pairLayerId];
     uint8_t outer = layerPairs[2*pairLayerId+1];
 
-    auto i = (0==pairLayerId) ? 0 :  j-innerLayerCumulaliveSize[pairLayerId-1];
+    auto i = (0==pairLayerId) ? j :  j-innerLayerCumulaliveSize[pairLayerId-1];
     i += offsets[inner];
 
     // printf("Hit in Layer %d %d %d %d\n", i, inner, pairLayerId, j);
@@ -74,13 +74,15 @@ namespace gpuPixelDoublets {
 
     auto iphicut = phicuts[pairLayerId];
 
-    auto kl = hist[outer].bin(mep-iphicut);
-    auto kh = hist[outer].bin(mep+iphicut);
+    auto kl = hist[outer].bin(int16_t(mep-iphicut));
+    auto kh = hist[outer].bin(int16_t(mep+iphicut));
     auto incr = [](auto & k) { return k = (k+1)%Hist::nbins();};
     int tot  = 0;
     int nmin = 0;
     auto khh = kh;
     incr(khh);
+    
+    int tooMany=0;
     for (auto kk=kl; kk!=khh; incr(kk)) {
       if (kk!=kl && kk!=kh) nmin+=hist[outer].size(kk);
       for (auto p=hist[outer].begin(kk); p<hist[outer].end(kk); ++p) {
@@ -91,16 +93,19 @@ namespace gpuPixelDoublets {
         // int layerPairId, int doubletId, int innerHitId,int outerHitId)
         cells[ind].init(hh,pairLayerId,ind,i,*p);
         isOuterHitOfCell[*p].push_back(ind);
+        if (isOuterHitOfCell[*p].size()==isOuterHitOfCell[*p].capacity()) ++tooMany;
         ++tot;
       }
     }
+    if (tooMany>0) printf("OuterHitOfCell full for %d in layer %d/%d, %d:%d   %d,%d\n", i, inner,outer, kl,kh,nmin,tot);
+
     // if (0==hist[outer].nspills) assert(tot>=nmin);
     // look in spill bin as well....
   }
 
   __global__
   void getDoubletsFromHisto(GPUCACell * cells, uint32_t * nCells, siPixelRecHitsHeterogeneousProduct::HitsOnGPU const * hhp,                
-                            GPU::VecArray< unsigned int, 512> *isOuterHitOfCell) {
+                            GPU::VecArray< unsigned int, 2048> *isOuterHitOfCell) {
 
     uint8_t const layerPairs[2*13] = {0,1 ,1,2 ,2,3 
                                      ,0,4 ,1,4 ,2,4 ,4,5 ,5,6  

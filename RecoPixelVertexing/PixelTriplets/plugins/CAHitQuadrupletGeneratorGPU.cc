@@ -214,5 +214,5 @@ void CAHitQuadrupletGeneratorGPU::fillResults(
         result[index].emplace_back(phits[0],phits[1],phits[2],phits[3]);
 
       } // end loop over quads
-
+      std::cout << "final quads " << result[index].size() << std::endl;
 }

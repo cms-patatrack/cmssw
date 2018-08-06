@@ -26,6 +26,7 @@ __host__ __device__ void init(siPixelRecHitsHeterogeneousProduct::HitsOnGPU cons
     theOuterHitId = outerHitId;
     theDoubletId = doubletId;
     theLayerPairId = layerPairId;
+
     theInnerX = hh.xg_d[innerHitId];
     theOuterX = hh.xg_d[outerHitId];
 
