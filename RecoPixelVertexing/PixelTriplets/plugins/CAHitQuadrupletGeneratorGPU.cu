@@ -6,6 +6,30 @@
 #include "CAHitQuadrupletGeneratorGPU.h"
 #include "GPUCACell.h"
 #include "gpuPixelDoublets.h"
+#include <cstdint>
+
+using HitsOnCPU = siPixelRecHitsHeterogeneousProduct::HitsOnCPU;
+
+__global__ void
+kernel_checkOverflows(GPU::SimpleVector<Quadruplet> *foundNtuplets,
+               GPUCACell *cells, uint32_t const * nCells,
+               GPU::VecArray< unsigned int, 2048> *isOuterHitOfCell,
+               uint32_t nHits) {
+
+ auto idx = threadIdx.x + blockIdx.x * blockDim.x;
+ if (0==idx) printf("number of found cells %d\n",*nCells);
+ if (idx < (*nCells) ) {
+   auto &thisCell = cells[idx];
+   if (thisCell.theOuterNeighbors.full()) //++tooManyNeighbors[thisCell.theLayerPairId];
+     printf("OuterNeighbors overflow %d in %d\n",idx,thisCell.theLayerPairId);
+ }
+ if (idx < nHits) {
+   if (isOuterHitOfCell[idx].full()) // ++tooManyOuterHitOfCell;
+     printf("OuterHitOfCell overflow %d\n", idx); 
+ }
+
+}
+
 
 __global__ void
 kernel_connect(GPU::SimpleVector<Quadruplet> *foundNtuplets,
@@ -120,12 +144,15 @@ void CAHitQuadrupletGeneratorGPU::allocateOnGPU()
 }
 
 void CAHitQuadrupletGeneratorGPU::launchKernels(const TrackingRegion &region,
-                                                int regionIndex, cudaStream_t cudaStream)
+                                                int regionIndex, HitsOnCPU const & hh,
+                                                cudaStream_t cudaStream)
 {
   assert(regionIndex < maxNumberOfRegions_);
   assert(0==regionIndex);
 
   h_foundNtupletsVec_[regionIndex]->reset();
+
+  auto nhits = hh.nHits;
 
   auto numberOfBlocks = (maxNumberOfDoublets_ + 512 - 1)/512;
   kernel_connect<<<numberOfBlocks, 512, 0, cudaStream>>>(
@@ -142,7 +169,17 @@ void CAHitQuadrupletGeneratorGPU::launchKernels(const TrackingRegion &region,
       d_foundNtupletsVec_[regionIndex],
       4, maxNumberOfDoublets_);
 
-  kernel_print_found_ntuplets<<<1,1,0, cudaStream>>>(d_foundNtupletsVec_[regionIndex],10);
+
+
+  numberOfBlocks = (std::max(int(nhits),maxNumberOfDoublets_) + 512 - 1)/512;
+  kernel_checkOverflows<<<numberOfBlocks, 512, 0, cudaStream>>>(
+                        d_foundNtupletsVec_[regionIndex],
+                        device_theCells_, device_nCells_,
+                        device_isOuterHitOfCell_, nhits
+                       );
+
+
+  // kernel_print_found_ntuplets<<<1,1,0, cudaStream>>>(d_foundNtupletsVec_[regionIndex],10);
 
   cudaCheck(cudaMemcpyAsync(h_foundNtupletsVec_[regionIndex], d_foundNtupletsVec_[regionIndex],
                             sizeof(GPU::SimpleVector<Quadruplet>),

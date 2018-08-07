@@ -96,8 +96,9 @@ void CAHitQuadrupletGeneratorGPU::hitNtuplets(
     const edm::EventSetup &es,
     cudaStream_t cudaStream) {
     hitsOnCPU = &hh;
+
     int index = 0;
-    launchKernels(region, index, cudaStream);
+    launchKernels(region, index, hh, cudaStream);
 
 }
 

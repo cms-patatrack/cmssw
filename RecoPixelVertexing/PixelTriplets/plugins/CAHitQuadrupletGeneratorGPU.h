@@ -134,7 +134,7 @@ private:
         const bool enabled_;
     };
 
-    void  launchKernels(const TrackingRegion &, int, cudaStream_t);
+    void  launchKernels(const TrackingRegion &, int, HitsOnCPU const & hh, cudaStream_t);
     std::vector<std::array<int,4>> fetchKernelResult(int, cudaStream_t);
 
 
@@ -149,7 +149,7 @@ private:
     const float caPhiCut = 0.1f;
     const float caHardPtCut = 0.f;
 
-    static constexpr int maxNumberOfQuadruplets_ = 50000;
+    static constexpr int maxNumberOfQuadruplets_ = 10000;
     static constexpr int maxCellsPerHit_ = 2048; // 512;
     static constexpr int maxNumberOfLayerPairs_ = 13;
     static constexpr int maxNumberOfLayers_ = 10;
