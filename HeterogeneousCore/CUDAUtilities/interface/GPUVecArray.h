@@ -95,8 +95,11 @@ template <class T, int maxSize> struct VecArray {
 
   __inline__ constexpr void resize(int size) { m_size = size; }
 
+  __inline__ constexpr bool empty() const { return 0==m_size;}
 
-  int m_size;
+  __inline__ constexpr bool full() const { return maxSize==m_size;}       
+
+  int m_size=0;
 
   T m_data[maxSize];
 };
