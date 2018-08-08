@@ -5,8 +5,7 @@
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "HeterogeneousCore/Product/interface/HeterogeneousProduct.h"
-
-#include "siPixelRecHitsHeterogeneousProduct.h"
+#include "RecoLocalTracker/SiPixelRecHits/interface/siPixelRecHitsHeterogeneousProduct.h"
 
 class SiPixelRecHitHeterogeneousConverter: public edm::global::EDProducer<> {
 public:
@@ -49,6 +48,5 @@ void SiPixelRecHitHeterogeneousConverter::produce(edm::StreamID, edm::Event& iEv
 
   iEvent.put(copy_unique(input.collection));
 }
-
 
 DEFINE_FWK_MODULE(SiPixelRecHitHeterogeneousConverter);

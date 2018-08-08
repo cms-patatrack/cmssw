@@ -20,9 +20,9 @@
 #include "RecoLocalTracker/SiPixelRecHits/interface/PixelCPEFast.h"
 #include "RecoLocalTracker/Records/interface/TkPixelCPERecord.h"
 
-#include "RecoLocalTracker/SiPixelClusterizer/plugins/siPixelRawToClusterHeterogeneousProduct.h" // TODO: we need a proper place for this header...
+#include "RecoLocalTracker/SiPixelClusterizer/interface/siPixelRawToClusterHeterogeneousProduct.h" // TODO: we need a proper place for this header...
 
-#include "PixelRecHits.h"  // TODO : spit product from kernel
+#include "RecoLocalTracker/SiPixelRecHits/interface/PixelRecHits.h"  // TODO : spit product from kernel
 
 class SiPixelRecHitHeterogeneous: public HeterogeneousEDProducer<heterogeneous::HeterogeneousDevices <
                                                                    heterogeneous::GPUCuda,

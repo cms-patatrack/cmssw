@@ -2,51 +2,43 @@
 #include <vector>
 #include <utility>
 
-#include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/Framework/interface/stream/EDProducer.h"
-#include "FWCore/Framework/interface/Event.h"
-#include "FWCore/Framework/interface/EventSetup.h"
-#include "FWCore/Utilities/interface/InputTag.h"
-#include "FWCore/Utilities/interface/EDGetToken.h"
-#include "FWCore/ParameterSet/interface/ParameterSet.h"
-#include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
-#include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
+#include <cuda_runtime.h>
 
-#include "HeterogeneousCore/CUDACore/interface/GPUCuda.h"
-#include "HeterogeneousCore/CUDAServices/interface/CUDAService.h"
-#include "HeterogeneousCore/Producer/interface/HeterogeneousEDProducer.h"
-
-
-#include "DataFormats/Common/interface/Handle.h"
-#include "FWCore/Framework/interface/ESHandle.h"
 #include "DataFormats/Common/interface/DetSetVector.h"
 #include "DataFormats/Common/interface/DetSetVectorNew.h"
+#include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/DetId/interface/DetId.h"
-#include "DataFormats/SiPixelDetId/interface/PixelChannelIdentifier.h"
-#include "DataFormats/TrackerRecHit2D/interface/OmniClusterRef.h"
-#include "DataFormats/SiPixelCluster/interface/SiPixelCluster.h"
-#include "DataFormats/SiStripCluster/interface/SiStripCluster.h"
 #include "DataFormats/Phase2TrackerCluster/interface/Phase2TrackerCluster1D.h"
-
-#include "SimDataFormats/Track/interface/SimTrackContainer.h"
-#include "SimDataFormats/TrackerDigiSimLink/interface/StripDigiSimLink.h"
-#include "SimDataFormats/TrackerDigiSimLink/interface/PixelDigiSimLink.h"
 #include "DataFormats/Phase2TrackerDigi/interface/Phase2TrackerDigi.h"
+#include "DataFormats/SiPixelCluster/interface/SiPixelCluster.h"
+#include "DataFormats/SiPixelDetId/interface/PixelChannelIdentifier.h"
+#include "DataFormats/SiStripCluster/interface/SiStripCluster.h"
+#include "DataFormats/TrackerRecHit2D/interface/OmniClusterRef.h"
+#include "FWCore/Framework/interface/ESHandle.h"
+#include "FWCore/Framework/interface/Event.h"
+#include "FWCore/Framework/interface/EventSetup.h"
+#include "FWCore/Framework/interface/Frameworkfwd.h"
+#include "FWCore/Framework/interface/stream/EDProducer.h"
+#include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
+#include "FWCore/ParameterSet/interface/ParameterSet.h"
+#include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
+#include "FWCore/Utilities/interface/EDGetToken.h"
+#include "FWCore/Utilities/interface/InputTag.h"
+#include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
+#include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
+#include "HeterogeneousCore/CUDACore/interface/GPUCuda.h"
+#include "HeterogeneousCore/CUDAServices/interface/CUDAService.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
+#include "HeterogeneousCore/Producer/interface/HeterogeneousEDProducer.h"
+#include "RecoLocalTracker/SiPixelClusterizer/interface/siPixelRawToClusterHeterogeneousProduct.h"
+#include "RecoLocalTracker/SiPixelRecHits/interface/siPixelRecHitsHeterogeneousProduct.h" 
+#include "SimDataFormats/Track/interface/SimTrackContainer.h"
+#include "SimDataFormats/TrackerDigiSimLink/interface/PixelDigiSimLink.h"
+#include "SimDataFormats/TrackerDigiSimLink/interface/StripDigiSimLink.h"
 #include "SimDataFormats/TrackingAnalysis/interface/TrackingParticle.h"
 #include "SimDataFormats/TrackingAnalysis/interface/TrackingParticleFwd.h"
+#include "SimTracker/TrackerHitAssociation/interface/ClusterSLOnGPU.h"
 #include "SimTracker/TrackerHitAssociation/interface/ClusterTPAssociation.h"
-
-#include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
-#include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
-
-
-// gpu
-#include "RecoLocalTracker/SiPixelClusterizer/plugins/siPixelRawToClusterHeterogeneousProduct.h"
-#include "RecoLocalTracker/SiPixelRecHits/plugins/siPixelRecHitsHeterogeneousProduct.h" 
-
-#include <cuda_runtime.h>
-#include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
-#include "ClusterSLOnGPU.h"
 
 class ClusterTPAssociationHeterogeneous : public HeterogeneousEDProducer<heterogeneous::HeterogeneousDevices<
           heterogeneous::GPUCuda, heterogeneous::CPU>>

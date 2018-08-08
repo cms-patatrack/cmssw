@@ -4,8 +4,8 @@
 #ifndef GPU_CACELL_H_
 #define GPU_CACELL_H_
 
-#include "GPUHitsAndDoublets.h"
-#include "RecoLocalTracker/SiPixelRecHits/plugins/siPixelRecHitsHeterogeneousProduct.h"
+#include "RecoPixelVertexing/PixelTriplets/interface/GPUHitsAndDoublets.h"
+#include "RecoLocalTracker/SiPixelRecHits/interface/siPixelRecHitsHeterogeneousProduct.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/GPUVecArray.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/GPUSimpleVector.h"
 #include <cuda.h>
@@ -187,7 +187,7 @@ __host__ __device__ void init(siPixelRecHitsHeterogeneousProduct::HitsOnGPU cons
 
   // trying to free the track building process from hardcoded layers, leaving
   // the visit of the graph based on the neighborhood connections between cells.
-  #if defined(__NVCC__) || defined(__CUDACC__)
+  #ifdef __CUDACC__
 
   __device__ inline void find_ntuplets(
       const GPUCACell *cells,
@@ -223,8 +223,7 @@ __host__ __device__ void init(siPixelRecHitsHeterogeneousProduct::HitsOnGPU cons
     assert(tmpNtuplet.size()<3);
   }
 
-#endif
-
+#endif // __CUDACC__
 
   GPU::VecArray< unsigned int, 40> theOuterNeighbors;
 

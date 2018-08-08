@@ -15,7 +15,7 @@
 #include "RecoPixelVertexing/PixelTriplets/src/CellularAutomaton.h"
 #include "TrackingTools/DetLayers/interface/BarrelDetLayer.h"
 
-#include "CAHitQuadrupletGeneratorGPU.h"
+#include "RecoPixelVertexing/PixelTriplets/interface/CAHitQuadrupletGeneratorGPU.h"
 
 namespace {
 

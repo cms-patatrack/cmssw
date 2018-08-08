@@ -3,11 +3,11 @@
 
 #include <algorithm>
 #include <cuda_runtime.h>
-#include "cuda/api_wrappers.h"
+#include <cuda/api_wrappers.h>
 
 #include "FWCore/Utilities/interface/typedefs.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/GPUSimpleVector.h"
-#include "siPixelRawToClusterHeterogeneousProduct.h"
+#include "RecoLocalTracker/SiPixelClusterizer/interface/siPixelRawToClusterHeterogeneousProduct.h"
 
 class SiPixelFedCablingMapGPU;
 class SiPixelGainForHLTonGPU;

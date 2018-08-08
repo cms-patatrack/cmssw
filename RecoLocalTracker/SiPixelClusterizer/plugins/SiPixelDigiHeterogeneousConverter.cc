@@ -6,7 +6,7 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "HeterogeneousCore/Product/interface/HeterogeneousProduct.h"
 
-#include "siPixelRawToClusterHeterogeneousProduct.h"
+#include "RecoLocalTracker/SiPixelClusterizer/interface/siPixelRawToClusterHeterogeneousProduct.h"
 
 class SiPixelDigiHeterogeneousConverter: public edm::global::EDProducer<> {
 public:

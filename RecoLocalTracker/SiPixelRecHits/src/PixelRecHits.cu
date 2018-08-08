@@ -6,11 +6,11 @@
 #include <cuda_runtime.h>
 
 // CMSSW headers
-#include "RecoLocalTracker/SiPixelClusterizer/plugins/SiPixelRawToClusterGPUKernel.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
-#include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuClustering.h"
-#include "PixelRecHits.h"
-#include "gpuPixelRecHits.h"
+#include "RecoLocalTracker/SiPixelClusterizer/interface/SiPixelRawToClusterGPUKernel.h"
+#include "RecoLocalTracker/SiPixelClusterizer/interface/gpuClustering.h"
+#include "RecoLocalTracker/SiPixelRecHits/interface/PixelRecHits.h"
+#include "RecoLocalTracker/SiPixelRecHits/interface/gpuPixelRecHits.h"
 
 namespace {
   __global__

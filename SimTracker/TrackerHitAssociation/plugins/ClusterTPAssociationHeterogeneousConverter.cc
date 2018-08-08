@@ -6,7 +6,7 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "HeterogeneousCore/Product/interface/HeterogeneousProduct.h"
 
-#include "trackerHitAssociationHeterogeneousProduct.h"
+#include "SimTracker/TrackerHitAssociation/interface/trackerHitAssociationHeterogeneousProduct.h"
 
 
 class ClusterTPAssociationHeterogeneousConverter: public edm::global::EDProducer<> {

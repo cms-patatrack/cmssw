@@ -53,8 +53,8 @@
 #include "RecoLocalTracker/SiPixelClusterizer/interface/SiPixelFedCablingMapGPUWrapper.h"
 #include "RecoTracker/Record/interface/CkfComponentsRecord.h"
 
-#include "SiPixelRawToClusterGPUKernel.h"
-#include "siPixelRawToClusterHeterogeneousProduct.h"
+#include "RecoLocalTracker/SiPixelClusterizer/interface/SiPixelRawToClusterGPUKernel.h"
+#include "RecoLocalTracker/SiPixelClusterizer/interface/siPixelRawToClusterHeterogeneousProduct.h"
 #include "PixelThresholdClusterizer.h"
 
 namespace {

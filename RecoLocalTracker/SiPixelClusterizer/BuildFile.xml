@@ -1,9 +1,9 @@
-<use   name="FWCore/Utilities"/>
-<use   name="CalibTracker/SiPixelESProducers"/>
-<use   name="HeterogeneousCore/CUDACore"/>
-<use   name="cuda"/>
-<use   name="cuda-api-wrappers"/>
-
+<use name="cub"/>
+<use name="cuda"/>
+<use name="cuda-api-wrappers"/>
+<use name="CalibTracker/SiPixelESProducers"/>
+<use name="FWCore/Utilities"/>
+<use name="HeterogeneousCore/CUDACore"/>
 <export>
     <lib name="1"/>
 </export>
