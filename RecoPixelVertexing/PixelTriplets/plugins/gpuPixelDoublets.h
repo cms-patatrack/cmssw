@@ -29,14 +29,14 @@ namespace gpuPixelDoublets {
     auto layerSize = [=](uint8_t li) { return offsets[li+1]-offsets[li]; };
 
     // to be optimized later
-    uint32_t innerLayerCumulaliveSize[64];
+    uint32_t innerLayerCumulativeSize[64];
     assert(nPairs<=64);
-    innerLayerCumulaliveSize[0] = layerSize(layerPairs[0]);
+    innerLayerCumulativeSize[0] = layerSize(layerPairs[0]);
     for (uint32_t i=1; i<nPairs; ++i) {
-       innerLayerCumulaliveSize[i] = innerLayerCumulaliveSize[i-1] + layerSize(layerPairs[2*i]);
+       innerLayerCumulativeSize[i] = innerLayerCumulativeSize[i-1] + layerSize(layerPairs[2*i]);
     }
 
-    auto ntot = innerLayerCumulaliveSize[nPairs-1];
+    auto ntot = innerLayerCumulativeSize[nPairs-1];
 
 
     auto idx = blockIdx.x*blockDim.x + threadIdx.x;
@@ -44,17 +44,17 @@ namespace gpuPixelDoublets {
     auto j = idx; 
 
     uint32_t pairLayerId=0;
-    while(j>=innerLayerCumulaliveSize[pairLayerId++]);  --pairLayerId; // move to lower_bound ??
+    while(j>=innerLayerCumulativeSize[pairLayerId++]);  --pairLayerId; // move to lower_bound ??
 
     assert(pairLayerId<nPairs);
-    assert(j<innerLayerCumulaliveSize[pairLayerId]);
-    assert(0==pairLayerId || j>=innerLayerCumulaliveSize[pairLayerId-1]);
+    assert(j<innerLayerCumulativeSize[pairLayerId]);
+    assert(0==pairLayerId || j>=innerLayerCumulativeSize[pairLayerId-1]);
 
     uint8_t inner = layerPairs[2*pairLayerId];
     uint8_t outer = layerPairs[2*pairLayerId+1];
     assert(outer>inner);
 
-    auto i = (0==pairLayerId) ? j :  j-innerLayerCumulaliveSize[pairLayerId-1];
+    auto i = (0==pairLayerId) ? j :  j-innerLayerCumulativeSize[pairLayerId-1];
     i += offsets[inner];
 
     // printf("Hit in Layer %d %d %d %d\n", i, inner, pairLayerId, j);
