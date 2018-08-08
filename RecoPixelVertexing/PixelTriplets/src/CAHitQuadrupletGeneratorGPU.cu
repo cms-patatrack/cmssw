@@ -3,9 +3,9 @@
 //
 
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
-#include "CAHitQuadrupletGeneratorGPU.h"
-#include "GPUCACell.h"
-#include "gpuPixelDoublets.h"
+#include "RecoPixelVertexing/PixelTriplets/interface/CAHitQuadrupletGeneratorGPU.h"
+#include "RecoPixelVertexing/PixelTriplets/interface/GPUCACell.h"
+#include "RecoPixelVertexing/PixelTriplets/interface/gpuPixelDoublets.h"
 #include <cstdint>
 
 using HitsOnCPU = siPixelRecHitsHeterogeneousProduct::HitsOnCPU;

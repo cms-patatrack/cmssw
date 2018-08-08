@@ -1,15 +1,15 @@
 #ifndef RecoLocalTracker_SiPixelRecHits_plugins_PixelRecHits_h
 #define RecoLocalTracker_SiPixelRecHits_plugins_PixelRecHits_h
 
-#include "RecoLocalTracker/SiPixelClusterizer/plugins/siPixelRawToClusterHeterogeneousProduct.h"
-#include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuClusteringConstants.h"
+#include "RecoLocalTracker/SiPixelClusterizer/interface/siPixelRawToClusterHeterogeneousProduct.h"
+#include "RecoLocalTracker/SiPixelClusterizer/interface/gpuClusteringConstants.h"
 
 #include <cuda/api_wrappers.h>
 
 #include <cstdint>
 #include <vector>
 
-#include "RecoLocalTracker/SiPixelRecHits/plugins/siPixelRecHitsHeterogeneousProduct.h" 
+#include "RecoLocalTracker/SiPixelRecHits/interface/siPixelRecHitsHeterogeneousProduct.h" 
 
 
 namespace pixelCPEforGPU {

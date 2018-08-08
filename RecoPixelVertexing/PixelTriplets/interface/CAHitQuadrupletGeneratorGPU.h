@@ -7,7 +7,7 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/Utilities/interface/EDGetToken.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/GPUSimpleVector.h"
-#include "RecoLocalTracker/SiPixelRecHits/plugins/siPixelRecHitsHeterogeneousProduct.h"
+#include "RecoLocalTracker/SiPixelRecHits/interface/siPixelRecHitsHeterogeneousProduct.h"
 #include "RecoPixelVertexing/PixelTrackFitting/interface/RZLine.h"
 #include "RecoPixelVertexing/PixelTriplets/interface/OrderedHitSeeds.h"
 #include "RecoTracker/TkHitPairs/interface/HitPairGeneratorFromLayerPair.h"
@@ -21,7 +21,7 @@
 #include "RecoPixelVertexing/PixelTriplets/plugins/RecHitsMap.h"
 
 
-#include "GPUCACell.h"
+#include "RecoPixelVertexing/PixelTriplets/interface/GPUCACell.h"
 
 class TrackingRegion;
 

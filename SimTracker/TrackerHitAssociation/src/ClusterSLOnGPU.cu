@@ -1,13 +1,11 @@
-#include "ClusterSLOnGPU.h"
-
-// for the "packing"
-#include "RecoLocalTracker/SiPixelClusterizer/plugins/SiPixelRawToClusterGPUKernel.h"
-#include "HeterogeneousCore/CUDAUtilities/interface/cudastdAlgorithm.h"
+#include <atomic>
+#include <cassert>
 #include <limits>
-#include<cassert>
-#include<atomic>
 #include <mutex>
 
+#include "HeterogeneousCore/CUDAUtilities/interface/cudastdAlgorithm.h"
+#include "RecoLocalTracker/SiPixelClusterizer/interface/SiPixelRawToClusterGPUKernel.h"
+#include "SimTracker/TrackerHitAssociation/interface/ClusterSLOnGPU.h"
 
 using ClusterSLGPU = trackerHitAssociationHeterogeneousProduct::ClusterSLGPU;
 

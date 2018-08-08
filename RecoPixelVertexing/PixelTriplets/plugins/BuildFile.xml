@@ -1,5 +1,3 @@
-<use name="cuda"/>
-<use name="cuda-api-wrappers"/>
 <use name="FWCore/Framework"/>
 <use name="FWCore/ParameterSet"/>
 <use name="FWCore/PluginManager"/>
@@ -10,7 +8,7 @@
 <use name="RecoPixelVertexing/PixelTriplets"/>
 <use name="RecoTracker/TkSeedingLayers"/>
 <use name="RecoTracker/TkTrackingRegions"/>
-<library file="*.cu *.cc" name="RecoPixelVertexingPixelTripletsPlugins">
+<library file="*.cc" name="RecoPixelVertexingPixelTripletsPlugins">
   <flags EDM_PLUGIN="1"/>
 </library>
 <flags CXXFLAGS="-Ofast -fno-math-errno"/>

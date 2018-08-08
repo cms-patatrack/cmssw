@@ -32,12 +32,10 @@
 
 // CMSSW includes
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
-#include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuCalibPixel.h"
-#include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuClustering.h"
 #include "RecoLocalTracker/SiPixelClusterizer/interface/SiPixelFedCablingMapGPU.h"
-
-// local includes
-#include "SiPixelRawToClusterGPUKernel.h"
+#include "RecoLocalTracker/SiPixelClusterizer/interface/SiPixelRawToClusterGPUKernel.h"
+#include "RecoLocalTracker/SiPixelClusterizer/interface/gpuCalibPixel.h"
+#include "RecoLocalTracker/SiPixelClusterizer/interface/gpuClustering.h"
 
 namespace pixelgpudetails {
 

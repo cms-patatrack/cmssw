@@ -6,10 +6,10 @@
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 
 
-#include "trackerHitAssociationHeterogeneousProduct.h"
+#include "SimTracker/TrackerHitAssociation/interface/trackerHitAssociationHeterogeneousProduct.h"
 
-#include "RecoLocalTracker/SiPixelClusterizer/plugins/siPixelRawToClusterHeterogeneousProduct.h"
-#include "RecoLocalTracker/SiPixelRecHits/plugins/siPixelRecHitsHeterogeneousProduct.h"
+#include "RecoLocalTracker/SiPixelClusterizer/interface/siPixelRawToClusterHeterogeneousProduct.h"
+#include "RecoLocalTracker/SiPixelRecHits/interface/siPixelRecHitsHeterogeneousProduct.h"
 
 
 

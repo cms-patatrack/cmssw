@@ -5,8 +5,6 @@
 <use name="RecoLocalTracker/ClusterParameterEstimator"/>
 <use name="RecoLocalTracker/Records"/>
 <use name="RecoLocalTracker/SiPixelRecHits"/>
-<library file="*.cc *.cu" name="RecoLocalTrackerSiPixelRecHitsPlugins">
-  <use name="cuda"/>
-  <use name="cuda-api-wrappers"/>
+<library file="*.cc" name="RecoLocalTrackerSiPixelRecHitsPlugins">
   <flags EDM_PLUGIN="1"/>
 </library>

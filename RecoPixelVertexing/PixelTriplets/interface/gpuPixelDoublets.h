@@ -9,9 +9,9 @@
 #include <limits>
 
 #include "DataFormats/Math/interface/approx_atan2.h"
-#include "RecoLocalTracker/SiPixelRecHits/plugins/siPixelRecHitsHeterogeneousProduct.h"
+#include "RecoLocalTracker/SiPixelRecHits/interface/siPixelRecHitsHeterogeneousProduct.h"
 
-#include "GPUCACell.h"
+#include "RecoPixelVertexing/PixelTriplets/interface/GPUCACell.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/GPUVecArray.h"
 
 namespace gpuPixelDoublets {
