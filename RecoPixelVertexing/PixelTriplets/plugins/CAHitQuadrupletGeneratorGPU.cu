@@ -17,7 +17,10 @@ kernel_checkOverflows(GPU::SimpleVector<Quadruplet> *foundNtuplets,
                uint32_t nHits) {
 
  auto idx = threadIdx.x + blockIdx.x * blockDim.x;
- if (0==idx) printf("number of found cells %d\n",*nCells);
+ #ifdef GPU_DEBUG
+ if (0==idx)
+   printf("number of found cells %d\n",*nCells);
+ #endif
  if (idx < (*nCells) ) {
    auto &thisCell = cells[idx];
    if (thisCell.theOuterNeighbors.full()) //++tooManyNeighbors[thisCell.theLayerPairId];
