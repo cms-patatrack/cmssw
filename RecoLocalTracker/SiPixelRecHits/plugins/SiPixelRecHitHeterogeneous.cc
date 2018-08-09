@@ -86,7 +86,7 @@ void SiPixelRecHitHeterogeneous::fillDescriptions(edm::ConfigurationDescriptions
   edm::ParameterSetDescription desc;
 
   desc.add<edm::InputTag>("beamSpot", edm::InputTag("offlineBeamSpot"));
-  desc.add<edm::InputTag>("heterogeneousSrc", edm::InputTag("siPixelClustersHeterogeneous"));
+  desc.add<edm::InputTag>("heterogeneousSrc", edm::InputTag("siPixelClustersPreSplitting"));
   desc.add<edm::InputTag>("src", edm::InputTag("siPixelClustersPreSplitting"));
   desc.add<std::string>("CPE", "PixelCPEFast");
 
