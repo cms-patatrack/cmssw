@@ -76,7 +76,7 @@ __global__ void KernelFullFitAllHits(float * hits_and_covariances,
   }
 
   u_int n = hits.cols();
-  if (true)
+  if (DEBUG)
     printf("KernelFullFitAllHits using %d hits: %d\n", n, helix_start);
 
   Rfit::VectorNd rad = (hits.block(0, 0, 2, n).colwise().norm());
