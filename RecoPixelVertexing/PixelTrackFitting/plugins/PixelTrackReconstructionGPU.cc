@@ -1,28 +1,34 @@
-#include <vector>
+#include "PixelTrackReconstructionGPU.h"
 
-#include <cuda_runtime.h>
-
-#include "DataFormats/TrackReco/interface/Track.h"
-#include "DataFormats/TrackReco/interface/TrackExtra.h"
-#include "DataFormats/TrackReco/interface/TrackFwd.h"
-#include "FWCore/Framework/interface/ESHandle.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/EventSetup.h"
+#include "FWCore/Framework/interface/ESHandle.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
-#include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
-#include "RecoPixelVertexing/PixelTrackFitting/interface/PixelFitter.h"
-#include "RecoPixelVertexing/PixelTrackFitting/interface/PixelTrackBuilder.h"
-#include "RecoPixelVertexing/PixelTrackFitting/interface/PixelTrackCleaner.h"
-#include "RecoPixelVertexing/PixelTrackFitting/interface/PixelTrackCleanerWrapper.h"
-#include "RecoPixelVertexing/PixelTrackFitting/interface/PixelTrackFilter.h"
-#include "RecoPixelVertexing/PixelTrackFitting/interface/RiemannFit.h" // for helix_fit
-#include "RecoTracker/TkHitPairs/interface/RegionsSeedingHitSets.h"
-#include "RecoTracker/TkMSParametrization/interface/PixelRecoUtilities.h"
+
 #include "RecoTracker/TkTrackingRegions/interface/TrackingRegion.h"
 
-#include "PixelTrackReconstructionGPU.h"
+#include "RecoPixelVertexing/PixelTrackFitting/interface/PixelFitter.h"
+
+#include "RecoPixelVertexing/PixelTrackFitting/interface/PixelTrackFilter.h"
+#include "RecoPixelVertexing/PixelTrackFitting/interface/PixelTrackBuilder.h"
+#include "RecoTracker/TkMSParametrization/interface/PixelRecoUtilities.h"
+
+#include "RecoPixelVertexing/PixelTrackFitting/interface/PixelTrackCleaner.h"
+#include "RecoPixelVertexing/PixelTrackFitting/interface/PixelTrackCleanerWrapper.h"
+#include "RecoPixelVertexing/PixelTrackFitting/interface/RiemannFit.h" // for helix_fit
+
+#include "DataFormats/TrackReco/interface/Track.h"
+#include "DataFormats/TrackReco/interface/TrackFwd.h"
+#include "DataFormats/TrackReco/interface/TrackExtra.h"
+
+#include "RecoTracker/TkHitPairs/interface/RegionsSeedingHitSets.h"
+
+#include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
+
+#include <vector>
+#include <cuda_runtime.h>
 
 using namespace pixeltrackfitting;
 using edm::ParameterSet;
@@ -137,7 +143,11 @@ void PixelTrackReconstructionGPU::run(TracksWithTTRHs& tracks,
     const TrackingRegion& region = regionHitSets.region();
     for(const SeedingHitSet& tuplet: regionHitSets) {
       auto nHits = tuplet.size(); hits.resize(nHits);
-      for (unsigned int iHit = 0; iHit < nHits; ++iHit) hits[iHit] = tuplet[iHit];
+
+      for (unsigned int iHit = 0; iHit < nHits; ++iHit)
+      {
+          hits[iHit] = tuplet[iHit];
+      }
       auto const &fittedTrack = helix_fit_results[counter];
       counter++;
       int iCharge       = fittedTrack.q;
@@ -146,6 +156,7 @@ void PixelTrackReconstructionGPU::run(TracksWithTTRHs& tracks,
       float valPt       = fittedTrack.par(2);
       float valCotTheta = fittedTrack.par(3);
       float valZip      = fittedTrack.par(4);
+
       //
       //  PixelTrackErrorParam param(valEta, valPt);
       float errValPhi = std::sqrt(fittedTrack.cov(0, 0));
