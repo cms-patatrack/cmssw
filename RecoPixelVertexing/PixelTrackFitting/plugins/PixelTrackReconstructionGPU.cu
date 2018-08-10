@@ -2,11 +2,6 @@
 #include "PixelTrackReconstructionGPU.h"
 
 
-
-#ifndef GPU_DEBUG
-#define GPU_DEBUG 0
-#endif // GPU_DEBUG
-
 using namespace Eigen;
 
 __global__ void
