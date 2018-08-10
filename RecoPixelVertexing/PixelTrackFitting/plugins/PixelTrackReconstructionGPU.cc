@@ -27,8 +27,6 @@
 
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 
-#include <vector>
-#include <cuda_runtime.h>
 
 using namespace pixeltrackfitting;
 using edm::ParameterSet;
@@ -77,7 +75,7 @@ void PixelTrackReconstructionGPU::run(TracksWithTTRHs& tracks,
 
   std::vector<float> hits_and_covariances;
   float * hits_and_covariancesGPU = nullptr;
-  std::vector<Rfit::helix_fit> helix_fit_results;
+  Rfit::helix_fit * helix_fit_results = nullptr;
   Rfit::helix_fit * helix_fit_resultsGPU = nullptr;
 
   const int points_in_seed = 4;
@@ -107,10 +105,10 @@ void PixelTrackReconstructionGPU::run(TracksWithTTRHs& tracks,
   }
 
   // We pretend to have one fit for every seed
-  helix_fit_results.resize(total_seeds);
-
+  cudaMallocHost(&helix_fit_results, sizeof(Rfit::helix_fit)*total_seeds);
   cudaCheck(cudaMalloc((void**)&hits_and_covariancesGPU, sizeof(float)*hits_and_covariances.size()));
-  cudaCheck(cudaMalloc((void**)&helix_fit_resultsGPU, sizeof(Rfit::helix_fit)*helix_fit_results.size()));
+  cudaCheck(cudaMalloc((void**)&helix_fit_resultsGPU, sizeof(Rfit::helix_fit)*total_seeds));
+  cudaMemset(helix_fit_resultsGPU, 0x00,sizeof(Rfit::helix_fit)*total_seeds );
   // CUDA MALLOC OF HITS AND COV AND HELIX_FIT RESULTS
 
   // CUDA MEMCOPY HOST2DEVICE OF HITS AND COVS AND HELIX_FIT RESULTS
@@ -125,8 +123,8 @@ void PixelTrackReconstructionGPU::run(TracksWithTTRHs& tracks,
 //  cudaCheck(cudaMemcpy(helix_fit_results.data(), helix_fit_resultsGPU,
 //      sizeof(Rfit::helix_fit)*helix_fit_results.size(), cudaMemcpyDeviceToHost));
   cudaCheck(cudaGetLastError());
-  cudaCheck(cudaMemcpy(helix_fit_results.data(), helix_fit_resultsGPU,
-      sizeof(Rfit::helix_fit)*helix_fit_results.size(), cudaMemcpyDeviceToHost));
+  cudaCheck(cudaMemcpy(helix_fit_results, helix_fit_resultsGPU,
+      sizeof(Rfit::helix_fit)*total_seeds, cudaMemcpyDeviceToHost));
 
   cudaCheck(cudaFree(hits_and_covariancesGPU));
   cudaCheck(cudaFree(helix_fit_resultsGPU));
@@ -188,7 +186,7 @@ void PixelTrackReconstructionGPU::run(TracksWithTTRHs& tracks,
       tracks.emplace_back(track.release(), tuplet);
     }
   }
-
+  cudaFreeHost(helix_fit_results);
   // skip ovelrapped tracks
   if(!theCleanerName.empty()) {
     edm::ESHandle<PixelTrackCleaner> hcleaner;
