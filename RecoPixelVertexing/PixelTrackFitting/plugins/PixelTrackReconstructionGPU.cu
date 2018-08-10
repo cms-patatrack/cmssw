@@ -1,8 +1,7 @@
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 #include "PixelTrackReconstructionGPU.h"
 
-#include <Eigen/Core>
-#include <Eigen/Eigenvalues>
+
 
 #ifndef GPU_DEBUG
 #define GPU_DEBUG 0
@@ -30,11 +29,12 @@ KernelFastFitAllHits(float *hits_and_covariances, int hits_in_fit,
     return;
   }
 
-  if (GPU_DEBUG) {
+#ifdef GPU_DEBUG
+
     printf("BlockDim.x: %d, BlockIdx.x: %d, threadIdx.x: %d, start: %d, "
            "cumulative_size: %d\n",
            blockDim.x, blockIdx.x, threadIdx.x, start, cumulative_size);
-  }
+#endif
 
   hits[helix_start].resize(3, hits_in_fit);
   hits_cov[helix_start].resize(3 * hits_in_fit, 3 * hits_in_fit);
@@ -77,12 +77,11 @@ KernelCircleFitAllHits(float *hits_and_covariances, int hits_in_fit,
     return;
   }
 
-  if (GPU_DEBUG) {
+#ifdef GPU_DEBUG
     printf("BlockDim.x: %d, BlockIdx.x: %d, threadIdx.x: %d, start: %d, "
            "cumulative_size: %d\n",
            blockDim.x, blockIdx.x, threadIdx.x, start, cumulative_size);
-  }
-
+#endif
   u_int n = hits[helix_start].cols();
 
   Rfit::VectorNd rad = (hits[helix_start].block(0, 0, 2, n).colwise().norm());
@@ -92,14 +91,15 @@ KernelCircleFitAllHits(float *hits_and_covariances, int hits_in_fit,
                        hits_cov[helix_start].block(0, 0, 2 * n, 2 * n),
                        fast_fit[helix_start], rad, B, true, true);
 
-  if (GPU_DEBUG) {
+#ifdef GPU_DEBUG
     printf("KernelCircleFitAllHits circle.par(0): %d %f\n", helix_start,
            circle_fit[helix_start].par(0));
     printf("KernelCircleFitAllHits circle.par(1): %d %f\n", helix_start,
            circle_fit[helix_start].par(1));
     printf("KernelCircleFitAllHits circle.par(2): %d %f\n", helix_start,
            circle_fit[helix_start].par(2));
-  }
+#endif
+
 }
 
 __global__ void
@@ -122,11 +122,12 @@ KernelLineFitAllHits(float *hits_and_covariances, int hits_in_fit,
     return;
   }
 
-  if (GPU_DEBUG) {
+#ifdef GPU_DEBUG
+
     printf("BlockDim.x: %d, BlockIdx.x: %d, threadIdx.x: %d, start: %d, "
            "cumulative_size: %d\n",
            blockDim.x, blockIdx.x, threadIdx.x, start, cumulative_size);
-  }
+#endif
 
   line_fit[helix_start] =
       Rfit::Line_fit(hits[helix_start], hits_cov[helix_start],
@@ -147,12 +148,13 @@ KernelLineFitAllHits(float *hits_and_covariances, int hits_in_fit,
   helix.chi2_circle = circle_fit[helix_start].chi2;
   helix.chi2_line = line_fit[helix_start].chi2;
 
-  if (GPU_DEBUG) {
+#ifdef GPU_DEBUG
+
     printf("KernelLineFitAllHits line.par(0): %d %f\n", helix_start,
            circle_fit[helix_start].par(0));
     printf("KernelLineFitAllHits line.par(1): %d %f\n", helix_start,
            line_fit[helix_start].par(1));
-  }
+#endif
 }
 
 void PixelTrackReconstructionGPU::launchKernelFit(
