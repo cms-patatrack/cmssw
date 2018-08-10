@@ -138,11 +138,12 @@ KernelLineFitAllHits(float *hits_and_covariances, int hits_in_fit,
   // Grab helix_fit from the proper location in the output vector
   Rfit::helix_fit &helix = results[helix_start];
   helix.par << circle_fit[helix_start].par, line_fit[helix_start].par;
+
   // TODO: pass properly error booleans
 
-    helix.cov = MatrixXd::Zero(5, 5);
-    helix.cov.block(0, 0, 3, 3) = circle_fit[helix_start].cov;
-    helix.cov.block(3, 3, 2, 2) = line_fit[helix_start].cov;
+  helix.cov = MatrixXd::Zero(5, 5);
+  helix.cov.block(0, 0, 3, 3) = circle_fit[helix_start].cov;
+  helix.cov.block(3, 3, 2, 2) = line_fit[helix_start].cov;
 
   helix.q = circle_fit[helix_start].q;
   helix.chi2_circle = circle_fit[helix_start].chi2;
