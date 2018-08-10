@@ -55,6 +55,7 @@ private:
   edm::EDGetTokenT<edm::OwnVector<TrackingRegion>> regionToken_;
 
   edm::EDGetTokenT<HeterogeneousProduct> tGpuHits;
+  edm::EDGetTokenT<SiPixelRecHitCollectionNew> tCpuHits;
 
   edm::RunningAverage localRA_;
   CAHitQuadrupletGeneratorGPU GPUGenerator_;
@@ -69,6 +70,7 @@ CAHitNtupletHeterogeneousEDProducer::CAHitNtupletHeterogeneousEDProducer(
       regionToken_(consumes<edm::OwnVector<TrackingRegion>>(
           iConfig.getParameter<edm::InputTag>("trackingRegions"))),
       tGpuHits(consumesHeterogeneous(iConfig.getParameter<edm::InputTag>("heterogeneousPixelRecHitSrc"))),
+      tCpuHits(consumes<SiPixelRecHitCollectionNew>(iConfig.getParameter<edm::InputTag>("heterogeneousPixelRecHitSrc"))),
       GPUGenerator_(iConfig, consumesCollector()) {
   produces<RegionsSeedingHitSets>();
 }
@@ -80,7 +82,7 @@ void CAHitNtupletHeterogeneousEDProducer::fillDescriptions(
   desc.add<edm::InputTag>("doublets", edm::InputTag(""))->setComment("Not really used, kept to keep the python parameters");
   desc.add<edm::InputTag>("trackingRegions", edm::InputTag("globalTrackingRegionFromBeamSpot"));
 
-  desc.add<edm::InputTag>("heterogeneousPixelRecHitSrc", edm::InputTag("siPixelRecHitHeterogeneous"));
+  desc.add<edm::InputTag>("heterogeneousPixelRecHitSrc", edm::InputTag("siPixelRecHitsPreSplitting"));
 
   CAHitQuadrupletGeneratorGPU::fillDescriptions(desc);
   HeterogeneousEDProducer::fillPSetDescription(desc);
@@ -140,16 +142,16 @@ void CAHitNtupletHeterogeneousEDProducer::produceGPUCuda(
     iEvent.getByToken(regionToken_, hregions);
     const auto &regions = *hregions;
 
-    edm::Handle<HeterogeneousProduct> gh;
-    iEvent.getByToken(tGpuHits, gh);
-    auto const & rechits = gh->get<siPixelRecHitsHeterogeneousProduct::HeterogeneousPixelRecHit>().getProduct<HeterogeneousDevice::kCPU>();
+    edm::Handle<SiPixelRecHitCollectionNew> gh;
+    iEvent.getByToken(tCpuHits, gh);
+    auto const & rechits = *gh;
 
     std::vector<OrderedHitSeeds> ntuplets(regions.size());
     for (auto &ntuplet : ntuplets) ntuplet.reserve(localRA_.upper());
     int index = 0;
     for (const auto &region : regions) {
       auto seedingHitSetsFiller = seedingHitSets_->beginRegion(&region);
-      GPUGenerator_.fillResults(region, rechits.collection, ntuplets, iSetup, cudaStream.id());
+      GPUGenerator_.fillResults(region, rechits, ntuplets, iSetup, cudaStream.id());
       fillNtuplets(seedingHitSetsFiller, ntuplets[index]);
       ntuplets[index].clear();
       index++;
