@@ -152,6 +152,9 @@ std::unique_ptr<PixelUnpackingRegions> regions_;
   std::unique_ptr<pixelgpudetails::SiPixelRawToClusterGPUKernel> gpuAlgo_;
   std::unique_ptr<SiPixelFedCablingMapGPUWrapper::ModulesToUnpack> gpuModulesToUnpack_;
   PixelDataFormatter::Errors errors_;
+
+  bool enableTransfer_;
+  bool enableConversion_;
 };
 
 SiPixelRawToClusterHeterogeneous::SiPixelRawToClusterHeterogeneous(const edm::ParameterSet& iConfig):
@@ -164,18 +167,23 @@ SiPixelRawToClusterHeterogeneous::SiPixelRawToClusterHeterogeneous(const edm::Pa
   usererrorlist = iConfig.getParameter<std::vector<int> > ("UserErrorList");
   tFEDRawDataCollection = consumes <FEDRawDataCollection> (iConfig.getParameter<edm::InputTag>("InputLabel"));
 
+  enableConversion_ = iConfig.getParameter<bool>("gpuEnableConversion");
+  enableTransfer_ = enableConversion_ || iConfig.getParameter<bool>("gpuEnableTransfer");
+
   clusterizer_.setSiPixelGainCalibrationService(&theSiPixelGainCalibration_);
 
   // Products in GPU
   produces<HeterogeneousProduct>();
   // Products in CPU
-  produces<edm::DetSetVector<PixelDigi>>();
-  if(includeErrors) {
-    produces<edm::DetSetVector<SiPixelRawDataError>>();
-    produces<DetIdCollection>();
-    produces<DetIdCollection>("UserErrorModules");
-    produces<SiPixelClusterCollectionNew>();
-    produces<edmNew::DetSetVector<PixelFEDChannel>>();
+  if(enableConversion_) {
+    produces<edm::DetSetVector<PixelDigi>>();
+    if(includeErrors) {
+      produces<edm::DetSetVector<SiPixelRawDataError>>();
+      produces<DetIdCollection>();
+      produces<DetIdCollection>("UserErrorModules");
+      produces<SiPixelClusterCollectionNew>();
+      produces<edmNew::DetSetVector<PixelFEDChannel>>();
+    }
   }
 
   // regions
@@ -240,6 +248,9 @@ void SiPixelRawToClusterHeterogeneous::fillDescriptions(edm::ConfigurationDescri
   desc.add<int>("VCaltoElectronOffset_L1", -414);
   desc.addUntracked<bool>("MissCalibrate", true);
   desc.add<bool>("SplitClusters", false);
+
+  desc.add<bool>("gpuEnableTransfer", true);
+  desc.add<bool>("gpuEnableConversion", true);
 
   HeterogeneousEDProducer::fillPSetDescription(desc);
 
@@ -539,14 +550,16 @@ void SiPixelRawToClusterHeterogeneous::acquireGPUCuda(const edm::HeterogeneousEv
 
   gpuAlgo_->makeClustersAsync(gpuMap, gpuModulesToUnpack_->get(), hgains->getGPUProductAsync(cudaStream),
                               wordCounterGPU, fedCounter, convertADCtoElectrons,
-                              useQuality, includeErrors, debug, cudaStream);
+                              useQuality, includeErrors, enableTransfer_, debug, cudaStream);
 }
 
 void SiPixelRawToClusterHeterogeneous::produceGPUCuda(edm::HeterogeneousEvent& ev, const edm::EventSetup& es, cuda::stream_t<>& cudaStream) {
   auto output = std::make_unique<GPUProduct>(gpuAlgo_->getProduct());
   assert(output->me_d);
 
-  convertGPUtoCPU(ev.event(), *output);
+  if(enableConversion_) {
+    convertGPUtoCPU(ev.event(), *output);
+  }
 
   ev.put<Output>(std::move(output), heterogeneous::DisableTransfer{});
 }
