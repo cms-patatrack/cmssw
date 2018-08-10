@@ -62,6 +62,9 @@ private:
 
   bool emptyRegions = false;
   std::unique_ptr<RegionsSeedingHitSets> seedingHitSets_;
+
+  bool enableTransfer_;
+  bool enableConversion_;
 };
 
 CAHitNtupletHeterogeneousEDProducer::CAHitNtupletHeterogeneousEDProducer(
@@ -72,6 +75,10 @@ CAHitNtupletHeterogeneousEDProducer::CAHitNtupletHeterogeneousEDProducer(
       tGpuHits(consumesHeterogeneous(iConfig.getParameter<edm::InputTag>("heterogeneousPixelRecHitSrc"))),
       tCpuHits(consumes<SiPixelRecHitCollectionNew>(iConfig.getParameter<edm::InputTag>("heterogeneousPixelRecHitSrc"))),
       GPUGenerator_(iConfig, consumesCollector()) {
+
+  enableConversion_ = iConfig.getParameter<bool>("gpuEnableConversion");
+  enableTransfer_ = enableConversion_ || iConfig.getParameter<bool>("gpuEnableTransfer");
+
   produces<RegionsSeedingHitSets>();
 }
 
@@ -83,6 +90,9 @@ void CAHitNtupletHeterogeneousEDProducer::fillDescriptions(
   desc.add<edm::InputTag>("trackingRegions", edm::InputTag("globalTrackingRegionFromBeamSpot"));
 
   desc.add<edm::InputTag>("heterogeneousPixelRecHitSrc", edm::InputTag("siPixelRecHitsPreSplitting"));
+
+  desc.add<bool>("gpuEnableTransfer", true);
+  desc.add<bool>("gpuEnableConversion", true);
 
   CAHitQuadrupletGeneratorGPU::fillDescriptions(desc);
   HeterogeneousEDProducer::fillPSetDescription(desc);
@@ -129,7 +139,7 @@ void CAHitNtupletHeterogeneousEDProducer::acquireGPUCuda(
         << "Creating ntuplets for " << regions.size()
         << " regions";
 
-  GPUGenerator_.hitNtuplets(region, gHits, iSetup, cudaStream.id());
+  GPUGenerator_.hitNtuplets(region, gHits, iSetup, enableTransfer_, cudaStream.id());
   
 }
 
@@ -137,7 +147,9 @@ void CAHitNtupletHeterogeneousEDProducer::produceGPUCuda(
     edm::HeterogeneousEvent &iEvent, const edm::EventSetup &iSetup,
     cuda::stream_t<> &cudaStream) {
 
-  if (not emptyRegions) {
+  GPUGenerator_.cleanup(cudaStream.id());
+
+  if (not emptyRegions and enableConversion_) {
     edm::Handle<edm::OwnVector<TrackingRegion>> hregions;
     iEvent.getByToken(regionToken_, hregions);
     const auto &regions = *hregions;
@@ -151,7 +163,7 @@ void CAHitNtupletHeterogeneousEDProducer::produceGPUCuda(
     int index = 0;
     for (const auto &region : regions) {
       auto seedingHitSetsFiller = seedingHitSets_->beginRegion(&region);
-      GPUGenerator_.fillResults(region, rechits, ntuplets, iSetup, cudaStream.id());
+      GPUGenerator_.fillResults(region, rechits, ntuplets, iSetup);
       fillNtuplets(seedingHitSetsFiller, ntuplets[index]);
       ntuplets[index].clear();
       index++;
