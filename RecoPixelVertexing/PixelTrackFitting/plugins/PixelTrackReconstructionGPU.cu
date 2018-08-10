@@ -1,6 +1,8 @@
+#include <Eigen/Core>
+#include <Eigen/Eigenvalues>
+
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 #include "PixelTrackReconstructionGPU.h"
-
 
 using namespace Eigen;
 
