@@ -7,15 +7,20 @@
 using namespace Eigen;
 
 __global__ void
-KernelFastFitAllHits(float *hits_and_covariances, int hits_in_fit,
-                     int cumulative_size, float B, Rfit::helix_fit *results,
-                     Rfit::Matrix3xNd *hits, Rfit::Matrix3Nd *hits_cov,
-                     Rfit::circle_fit *circle_fit, Vector4d *fast_fit,
-                     Rfit::line_fit *line_fit) {
-
-  // Reshape Eigen components from hits_and_covariances, using proper thread and
-  // block indices Perform the fit Store the results in the proper vector, using
-  // again correct indices
+KernelFastFitAllHits(float *hits_and_covariances,
+    int hits_in_fit,
+    int cumulative_size,
+    float B,
+    Rfit::helix_fit *results,
+    Rfit::Matrix3xNd *hits,
+    Rfit::Matrix3Nd *hits_cov,
+    Rfit::circle_fit *circle_fit,
+    Vector4d *fast_fit,
+    Rfit::line_fit *line_fit)
+{
+  // Reshape Eigen components from hits_and_covariances, using proper thread and block indices
+  // Perform the fit
+  // Store the results in the proper vector, using again correct indices
 
   // Loop for hits_in_fit times:
   //   first 3 are the points
@@ -27,10 +32,8 @@ KernelFastFitAllHits(float *hits_and_covariances, int hits_in_fit,
   }
 
 #ifdef GPU_DEBUG
-
-    printf("BlockDim.x: %d, BlockIdx.x: %d, threadIdx.x: %d, start: %d, "
-           "cumulative_size: %d\n",
-           blockDim.x, blockIdx.x, threadIdx.x, start, cumulative_size);
+  printf("BlockDim.x: %d, BlockIdx.x: %d, threadIdx.x: %d, start: %d, cumulative_size: %d\n",
+      blockDim.x, blockIdx.x, threadIdx.x, start, cumulative_size);
 #endif
 
   hits[helix_start].resize(3, hits_in_fit);
@@ -59,11 +62,11 @@ KernelCircleFitAllHits(float *hits_and_covariances, int hits_in_fit,
                        int cumulative_size, float B, Rfit::helix_fit *results,
                        Rfit::Matrix3xNd *hits, Rfit::Matrix3Nd *hits_cov,
                        Rfit::circle_fit *circle_fit, Vector4d *fast_fit,
-                       Rfit::line_fit *line_fit) {
-
-  // Reshape Eigen components from hits_and_covariances, using proper thread and
-  // block indices Perform the fit Store the results in the proper vector, using
-  // again correct indices
+                       Rfit::line_fit *line_fit)
+{
+  // Reshape Eigen components from hits_and_covariances, using proper thread and block indices
+  // Perform the fit
+  // Store the results in the proper vector, using again correct indices
 
   // Loop for hits_in_fit times:
   //   first 3 are the points
@@ -104,11 +107,11 @@ KernelLineFitAllHits(float *hits_and_covariances, int hits_in_fit,
                      int cumulative_size, float B, Rfit::helix_fit *results,
                      Rfit::Matrix3xNd *hits, Rfit::Matrix3Nd *hits_cov,
                      Rfit::circle_fit *circle_fit, Vector4d *fast_fit,
-                     Rfit::line_fit *line_fit) {
-
-  // Reshape Eigen components from hits_and_covariances, using proper thread and
-  // block indices Perform the fit Store the results in the proper vector, using
-  // again correct indices
+                     Rfit::line_fit *line_fit)
+{
+  // Reshape Eigen components from hits_and_covariances, using proper thread and block indices
+  // Perform the fit
+  // Store the results in the proper vector, using again correct indices
 
   // Loop for hits_in_fit times:
   //   first 3 are the points
@@ -156,41 +159,38 @@ KernelLineFitAllHits(float *hits_and_covariances, int hits_in_fit,
 
 void PixelTrackReconstructionGPU::launchKernelFit(
     float *hits_and_covariancesGPU, int cumulative_size, int hits_in_fit,
-    float B, Rfit::helix_fit *results) {
+    float B, Rfit::helix_fit *results)
+{
   const dim3 threads_per_block(32, 1);
-  int num_blocks =
-      cumulative_size / (hits_in_fit * 12) / threads_per_block.x + 1;
+  int num_blocks = cumulative_size / (hits_in_fit * 12) / threads_per_block.x + 1;
   auto numberOfSeeds = cumulative_size / (hits_in_fit * 12);
+
   Rfit::Matrix3xNd *hitsGPU;
-  cudaCheck(cudaMalloc((void **)&hitsGPU,
-                       48 * numberOfSeeds * sizeof(Rfit::Matrix3xNd(3, 4))));
+  cudaCheck(cudaMalloc(&hitsGPU, 48 * numberOfSeeds * sizeof(Rfit::Matrix3xNd(3, 4))));
   cudaCheck(cudaMemset(hitsGPU, 0x00, 48 * numberOfSeeds * sizeof(Rfit::Matrix3xNd(3, 4))));
+
   Rfit::Matrix3Nd *hits_covGPU = nullptr;
-  cudaCheck(cudaMalloc((void **)&hits_covGPU,
-                       48 * numberOfSeeds * sizeof(Rfit::Matrix3Nd(12, 12))));
+  cudaCheck(cudaMalloc(&hits_covGPU, 48 * numberOfSeeds * sizeof(Rfit::Matrix3Nd(12, 12))));
   cudaCheck(cudaMemset(hits_covGPU, 0x00, 48 * numberOfSeeds * sizeof(Rfit::Matrix3Nd(12, 12))));
+
   Vector4d *fast_fit_resultsGPU = nullptr;
-  cudaCheck(cudaMalloc((void **)&fast_fit_resultsGPU,
-                       48 * numberOfSeeds * sizeof(Vector4d)));
+  cudaCheck(cudaMalloc(&fast_fit_resultsGPU, 48 * numberOfSeeds * sizeof(Vector4d)));
   cudaCheck(cudaMemset(fast_fit_resultsGPU, 0x00, 48 * numberOfSeeds * sizeof(Vector4d)));
 
   Rfit::circle_fit *circle_fit_resultsGPU = nullptr;
-  cudaCheck(cudaMalloc((void **)&circle_fit_resultsGPU,
-                       48 * numberOfSeeds * sizeof(Rfit::circle_fit)));
-
+  cudaCheck(cudaMalloc(&circle_fit_resultsGPU, 48 * numberOfSeeds * sizeof(Rfit::circle_fit)));
   cudaCheck(cudaMemset(circle_fit_resultsGPU, 0x00, 48 * numberOfSeeds * sizeof(Rfit::circle_fit)));
+
   Rfit::line_fit *line_fit_resultsGPU = nullptr;
-
-  cudaCheck(cudaMalloc((void **)&line_fit_resultsGPU,
-                       numberOfSeeds * sizeof(Rfit::line_fit)));
+  cudaCheck(cudaMalloc(&line_fit_resultsGPU, numberOfSeeds * sizeof(Rfit::line_fit)));
   cudaCheck(cudaMemset(line_fit_resultsGPU, 0x00, numberOfSeeds * sizeof(Rfit::line_fit)));
-
 
   KernelFastFitAllHits<<<num_blocks, threads_per_block>>>(
       hits_and_covariancesGPU, hits_in_fit, cumulative_size, B, results,
       hitsGPU, hits_covGPU, circle_fit_resultsGPU, fast_fit_resultsGPU,
       line_fit_resultsGPU);
   cudaCheck(cudaGetLastError());
+
   KernelCircleFitAllHits<<<num_blocks, threads_per_block>>>(
       hits_and_covariancesGPU, hits_in_fit, cumulative_size, B, results,
       hitsGPU, hits_covGPU, circle_fit_resultsGPU, fast_fit_resultsGPU,
