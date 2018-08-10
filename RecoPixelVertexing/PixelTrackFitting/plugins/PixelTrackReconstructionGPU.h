@@ -1,14 +1,13 @@
 #ifndef RecoPixelVertexing_PixelTrackFitting_PixelTrackReconstructionGPU_H
 #define RecoPixelVertexing_PixelTrackFitting_PixelTrackReconstructionGPU_H
 
-#include "FWCore/ParameterSet/interface/ParameterSet.h"
-#include "RecoPixelVertexing/PixelTrackFitting/interface/TracksWithHits.h"
-#include "RecoPixelVertexing/PixelTrackFitting/interface/RiemannFit.h"
-#include "FWCore/Framework/interface/ConsumesCollector.h"
-
-#include "FWCore/Utilities/interface/EDGetToken.h"
 #include <memory>
 
+#include "FWCore/Framework/interface/ConsumesCollector.h"
+#include "FWCore/ParameterSet/interface/ParameterSet.h"
+#include "FWCore/Utilities/interface/EDGetToken.h"
+#include "RecoPixelVertexing/PixelTrackFitting/interface/RiemannFit.h"
+#include "RecoPixelVertexing/PixelTrackFitting/interface/TracksWithHits.h"
 
 class PixelFitter;
 class PixelTrackCleaner;
@@ -36,4 +35,5 @@ private:
   edm::EDGetTokenT<PixelTrackFilter> theFilterToken;
   std::string theCleanerName;
 };
-#endif
+
+#endif // RecoPixelVertexing_PixelTrackFitting_PixelTrackReconstructionGPU_H
