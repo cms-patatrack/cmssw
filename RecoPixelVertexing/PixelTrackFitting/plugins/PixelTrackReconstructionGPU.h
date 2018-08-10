@@ -1,5 +1,5 @@
-#ifndef RecoPixelVertexing_PixelTrackFitting_PixelTrackReconstructionGPU_H
-#define RecoPixelVertexing_PixelTrackFitting_PixelTrackReconstructionGPU_H
+#ifndef RecoPixelVertexing_PixelTrackFitting_plugins_PixelTrackReconstructionGPU_h
+#define RecoPixelVertexing_PixelTrackFitting_plugins_PixelTrackReconstructionGPU_h
 
 #include <memory>
 
@@ -14,13 +14,17 @@ class PixelTrackCleaner;
 class PixelTrackFilter;
 class RegionsSeedingHitSets;
 
-namespace edm { class Event; class EventSetup; class Run; class ParameterSetDescription;}
+namespace edm {
+  class Event;
+  class EventSetup;
+  class Run;
+  class ParameterSetDescription;
+}
 
 class PixelTrackReconstructionGPU {
 public:
 
-  PixelTrackReconstructionGPU( const edm::ParameterSet& conf,
-	   edm::ConsumesCollector && iC);
+  PixelTrackReconstructionGPU( const edm::ParameterSet& conf, edm::ConsumesCollector && iC);
   ~PixelTrackReconstructionGPU();
 
   static void fillDescriptions(edm::ParameterSetDescription& desc);
@@ -36,4 +40,4 @@ private:
   std::string theCleanerName;
 };
 
-#endif // RecoPixelVertexing_PixelTrackFitting_PixelTrackReconstructionGPU_H
+#endif // RecoPixelVertexing_PixelTrackFitting_plugins_PixelTrackReconstructionGPU_h
