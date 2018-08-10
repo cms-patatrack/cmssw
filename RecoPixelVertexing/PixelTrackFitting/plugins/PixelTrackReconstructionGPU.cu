@@ -162,26 +162,26 @@ void PixelTrackReconstructionGPU::launchKernelFit(
   Rfit::Matrix3xNd *hitsGPU;
   cudaCheck(cudaMalloc((void **)&hitsGPU,
                        48 * numberOfSeeds * sizeof(Rfit::Matrix3xNd(3, 4))));
-  cudaMemset(hitsGPU, 0x00, 48 * numberOfSeeds * sizeof(Rfit::Matrix3xNd(3, 4)));
+  cudaCheck(cudaMemset(hitsGPU, 0x00, 48 * numberOfSeeds * sizeof(Rfit::Matrix3xNd(3, 4))));
   Rfit::Matrix3Nd *hits_covGPU = nullptr;
   cudaCheck(cudaMalloc((void **)&hits_covGPU,
                        48 * numberOfSeeds * sizeof(Rfit::Matrix3Nd(12, 12))));
-  cudaMemset(hits_covGPU, 0x00, 48 * numberOfSeeds * sizeof(Rfit::Matrix3Nd(12, 12)));
+  cudaCheck(cudaMemset(hits_covGPU, 0x00, 48 * numberOfSeeds * sizeof(Rfit::Matrix3Nd(12, 12))));
   Vector4d *fast_fit_resultsGPU = nullptr;
   cudaCheck(cudaMalloc((void **)&fast_fit_resultsGPU,
                        48 * numberOfSeeds * sizeof(Vector4d)));
-  cudaMemset(fast_fit_resultsGPU, 0x00, 48 * numberOfSeeds * sizeof(Vector4d));
+  cudaCheck(cudaMemset(fast_fit_resultsGPU, 0x00, 48 * numberOfSeeds * sizeof(Vector4d)));
 
   Rfit::circle_fit *circle_fit_resultsGPU = nullptr;
   cudaCheck(cudaMalloc((void **)&circle_fit_resultsGPU,
                        48 * numberOfSeeds * sizeof(Rfit::circle_fit)));
 
-  cudaMemset(circle_fit_resultsGPU, 0x00, 48 * numberOfSeeds * sizeof(Rfit::circle_fit));
+  cudaCheck(cudaMemset(circle_fit_resultsGPU, 0x00, 48 * numberOfSeeds * sizeof(Rfit::circle_fit)));
   Rfit::line_fit *line_fit_resultsGPU = nullptr;
 
   cudaCheck(cudaMalloc((void **)&line_fit_resultsGPU,
                        numberOfSeeds * sizeof(Rfit::line_fit)));
-  cudaMemset(line_fit_resultsGPU, 0x00, numberOfSeeds * sizeof(Rfit::line_fit));
+  cudaCheck(cudaMemset(line_fit_resultsGPU, 0x00, numberOfSeeds * sizeof(Rfit::line_fit)));
 
 
   KernelFastFitAllHits<<<num_blocks, threads_per_block>>>(
