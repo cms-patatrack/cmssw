@@ -70,6 +70,9 @@ private:
   const PixelClusterParameterEstimator *cpe_ = nullptr;
 
   std::unique_ptr<pixelgpudetails::PixelRecHitGPUKernel> gpuAlgo_;
+
+  bool enableTransfer_;
+  bool enableConversion_;
 };
 
 SiPixelRecHitHeterogeneous::SiPixelRecHitHeterogeneous(const edm::ParameterSet& iConfig):
@@ -79,8 +82,13 @@ SiPixelRecHitHeterogeneous::SiPixelRecHitHeterogeneous(const edm::ParameterSet& 
   clusterToken_(consumes<SiPixelClusterCollectionNew>(iConfig.getParameter<edm::InputTag>("src"))),
   cpeName_(iConfig.getParameter<std::string>("CPE"))
 {
+  enableConversion_ = iConfig.getParameter<bool>("gpuEnableConversion");
+  enableTransfer_ = enableConversion_ || iConfig.getParameter<bool>("gpuEnableTransfer");
+
   produces<HeterogeneousProduct>();
-  produces<SiPixelRecHitCollectionNew>();
+  if(enableConversion_) {
+    produces<SiPixelRecHitCollectionNew>();
+  }
 }
 
 void SiPixelRecHitHeterogeneous::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
@@ -90,6 +98,9 @@ void SiPixelRecHitHeterogeneous::fillDescriptions(edm::ConfigurationDescriptions
   desc.add<edm::InputTag>("heterogeneousSrc", edm::InputTag("siPixelClustersPreSplitting"));
   desc.add<edm::InputTag>("src", edm::InputTag("siPixelClustersPreSplitting"));
   desc.add<std::string>("CPE", "PixelCPEFast");
+
+  desc.add<bool>("gpuEnableTransfer", true);
+  desc.add<bool>("gpuEnableConversion", true);
 
   HeterogeneousEDProducer::fillPSetDescription(desc);
 
@@ -175,20 +186,22 @@ void SiPixelRecHitHeterogeneous::acquireGPUCuda(const edm::HeterogeneousEvent& i
   }
 
 
-  gpuAlgo_->makeHitsAsync(*hinput, bs, fcpe->getGPUProductAsync(cudaStream), cudaStream);
+  gpuAlgo_->makeHitsAsync(*hinput, bs, fcpe->getGPUProductAsync(cudaStream), enableTransfer_, cudaStream);
 
 }
 
 void SiPixelRecHitHeterogeneous::produceGPUCuda(edm::HeterogeneousEvent& iEvent, const edm::EventSetup& iSetup, cuda::stream_t<>& cudaStream) {
   auto output = std::make_unique<GPUProduct>(gpuAlgo_->getOutput());
 
- // Need the CPU clusters to
-  // - properly fill the output DetSetVector of hits
-  // - to set up edm::Refs to the clusters
-  edm::Handle<SiPixelClusterCollectionNew> hclusters;
-  iEvent.getByToken(clusterToken_, hclusters);
+  if(enableConversion_) {
+    // Need the CPU clusters to
+    // - properly fill the output DetSetVector of hits
+    // - to set up edm::Refs to the clusters
+    edm::Handle<SiPixelClusterCollectionNew> hclusters;
+    iEvent.getByToken(clusterToken_, hclusters);
 
-  convertGPUtoCPU(iEvent.event(), hclusters, *output);
+    convertGPUtoCPU(iEvent.event(), hclusters, *output);
+  }
 
   iEvent.put<Output>(std::move(output), heterogeneous::DisableTransfer{});
 }
