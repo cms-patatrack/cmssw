@@ -79,12 +79,11 @@ void simLink(clusterSLOnGPU::DigisOnGPU const * ddp, uint32_t ndigis, clusterSLO
 }
 
 __global__
-void verifyZero(int ev, clusterSLOnGPU::DigisOnGPU const * ddp, clusterSLOnGPU::HitsOnGPU const * hhp, uint32_t nhits, ClusterSLGPU const * slp) {
+void verifyZero(uint32_t nhits, ClusterSLGPU const * slp) {
   auto i = blockIdx.x*blockDim.x + threadIdx.x;
-  if (i>nhits) return;
+  if (i > nhits)
+    return;
 
-//  auto const & dd = *ddp;
-//  auto const & hh = *hhp;
   auto const & sl = *slp;
 
   assert(sl.tkId_d[i]==0);
@@ -93,9 +92,6 @@ void verifyZero(int ev, clusterSLOnGPU::DigisOnGPU const * ddp, clusterSLOnGPU::
   assert(tk[1]==0);
   assert(tk[2]==0);
   assert(tk[3]==0);
-
-  // if (i==0) printf("xx_d gpu %x\n",dd.xx_d);
-
 }
 
 
@@ -195,7 +191,7 @@ namespace clusterSLOnGPU {
     int threadsPerBlock = 256;
 
     int blocks = (nhits + threadsPerBlock - 1) / threadsPerBlock;
-    verifyZero<<<blocks, threadsPerBlock, 0, stream.id()>>>(ev, dd.me_d, hh.gpu_d, nhits, sl.me_d);
+    verifyZero<<<blocks, threadsPerBlock, 0, stream.id()>>>(nhits, sl.me_d);
     cudaCheck(cudaGetLastError());
 
     blocks = (ndigis + threadsPerBlock - 1) / threadsPerBlock;
