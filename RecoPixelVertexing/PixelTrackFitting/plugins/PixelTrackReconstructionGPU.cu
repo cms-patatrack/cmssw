@@ -162,13 +162,15 @@ void PixelTrackReconstructionGPU::launchKernelFit(
   Rfit::Matrix3xNd *hitsGPU;
   cudaCheck(cudaMalloc((void **)&hitsGPU,
                        48 * numberOfSeeds * sizeof(Rfit::Matrix3xNd(3, 4))));
+  cudaMemset(hitsGPU, 0x00, 48 * numberOfSeeds * sizeof(Rfit::Matrix3xNd(3, 4)));
   Rfit::Matrix3Nd *hits_covGPU = nullptr;
   cudaCheck(cudaMalloc((void **)&hits_covGPU,
                        48 * numberOfSeeds * sizeof(Rfit::Matrix3Nd(12, 12))));
-
+  cudaMemset(hits_covGPU, 0x00, 48 * numberOfSeeds * sizeof(Rfit::Matrix3Nd(12, 12)));
   Vector4d *fast_fit_resultsGPU = nullptr;
   cudaCheck(cudaMalloc((void **)&fast_fit_resultsGPU,
                        48 * numberOfSeeds * sizeof(Vector4d)));
+  cudaMemset(fast_fit_resultsGPU, 0x00, 48 * numberOfSeeds * sizeof(Vector4d));
 
   Rfit::circle_fit *circle_fit_resultsGPU = nullptr;
   cudaCheck(cudaMalloc((void **)&circle_fit_resultsGPU,
