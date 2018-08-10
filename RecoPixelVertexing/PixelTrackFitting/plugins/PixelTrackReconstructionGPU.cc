@@ -24,7 +24,6 @@
 
 #include "PixelTrackReconstructionGPU.h"
 
-
 using namespace pixeltrackfitting;
 using edm::ParameterSet;
 
@@ -103,25 +102,23 @@ void PixelTrackReconstructionGPU::run(TracksWithTTRHs& tracks,
 
   // We pretend to have one fit for every seed
   cudaCheck(cudaMallocHost(&helix_fit_results, sizeof(Rfit::helix_fit)*total_seeds));
-  cudaCheck(cudaMalloc((void**)&hits_and_covariancesGPU, sizeof(float)*hits_and_covariances.size()));
-  cudaCheck(cudaMalloc((void**)&helix_fit_resultsGPU, sizeof(Rfit::helix_fit)*total_seeds));
-  cudaCheck(cudaMemset(helix_fit_resultsGPU, 0x00,sizeof(Rfit::helix_fit)*total_seeds ));
+  cudaCheck(cudaMalloc(&hits_and_covariancesGPU, sizeof(float)*hits_and_covariances.size()));
+  cudaCheck(cudaMalloc(&helix_fit_resultsGPU, sizeof(Rfit::helix_fit)*total_seeds));
+  cudaCheck(cudaMemset(helix_fit_resultsGPU, 0x00, sizeof(Rfit::helix_fit)*total_seeds ));
   // CUDA MALLOC OF HITS AND COV AND HELIX_FIT RESULTS
 
   // CUDA MEMCOPY HOST2DEVICE OF HITS AND COVS AND HELIX_FIT RESULTS
   cudaCheck(cudaMemcpy(hits_and_covariancesGPU, hits_and_covariances.data(),
-      sizeof(float)*hits_and_covariances.size(), cudaMemcpyHostToDevice));
+      sizeof(float)*hits_and_covariances.size(), cudaMemcpyDefault));
 
   // LAUNCH THE KERNEL FIT
   launchKernelFit(hits_and_covariancesGPU, 12*4*total_seeds, 4,
       bField, helix_fit_resultsGPU);
   // CUDA MEMCOPY DEVICE2HOST OF HELIX_FIT
   cudaCheck(cudaDeviceSynchronize());
-//  cudaCheck(cudaMemcpy(helix_fit_results.data(), helix_fit_resultsGPU,
-//      sizeof(Rfit::helix_fit)*helix_fit_results.size(), cudaMemcpyDeviceToHost));
   cudaCheck(cudaGetLastError());
   cudaCheck(cudaMemcpy(helix_fit_results, helix_fit_resultsGPU,
-      sizeof(Rfit::helix_fit)*total_seeds, cudaMemcpyDeviceToHost));
+      sizeof(Rfit::helix_fit)*total_seeds, cudaMemcpyDefault));
 
   cudaCheck(cudaFree(hits_and_covariancesGPU));
   cudaCheck(cudaFree(helix_fit_resultsGPU));
@@ -152,7 +149,6 @@ void PixelTrackReconstructionGPU::run(TracksWithTTRHs& tracks,
       float valCotTheta = fittedTrack.par(3);
       float valZip      = fittedTrack.par(4);
 
-      //
       //  PixelTrackErrorParam param(valEta, valPt);
       float errValPhi = std::sqrt(fittedTrack.cov(0, 0));
       float errValTip = std::sqrt(fittedTrack.cov(1, 1));
@@ -183,8 +179,10 @@ void PixelTrackReconstructionGPU::run(TracksWithTTRHs& tracks,
       tracks.emplace_back(track.release(), tuplet);
     }
   }
-  cudaFreeHost(helix_fit_results);
-  // skip ovelrapped tracks
+
+  cudaCheck(cudaFreeHost(helix_fit_results));
+
+  // skip overlapped tracks
   if(!theCleanerName.empty()) {
     edm::ESHandle<PixelTrackCleaner> hcleaner;
     es.get<PixelTrackCleaner::Record>().get(theCleanerName, hcleaner);
