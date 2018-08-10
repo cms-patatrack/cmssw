@@ -7,11 +7,7 @@
 #include "FWCore/Framework/interface/ConsumesCollector.h"
 
 #include "FWCore/Utilities/interface/EDGetToken.h"
-#include <Eigen/Core>
-#include <Eigen/Eigenvalues>
 #include <memory>
-#include <vector>
-#include <cuda_runtime.h>
 
 
 class PixelFitter;
