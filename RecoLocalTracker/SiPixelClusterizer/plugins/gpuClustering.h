@@ -7,6 +7,8 @@
 
 #include "gpuClusteringConstants.h"
 
+#include "HeterogeneousCore/CUDAUtilities/interface/HistoContainer.h"
+
 namespace gpuClustering {
 
   __global__ void countModules(uint16_t const * id,
@@ -39,6 +41,7 @@ namespace gpuClustering {
                            int32_t *  clusterId,            // output: cluster id of each pixel
                            int numElements)
   {
+
     if (blockIdx.x >= moduleStart[0])
       return;
 
@@ -72,22 +75,32 @@ namespace gpuClustering {
       }
     }
 
+   //init hist  (ymax < 512)
+   __shared__ HistoContainer<uint16_t,8,4,9> hist;
+   hist.nspills = 0;
+   for (auto k = threadIdx.x; k<hist.nbins(); k+=blockDim.x) hist.n[k]=0;
+
     __syncthreads();
+
+
     assert((msize == numElements) or ((msize < numElements) and (id[msize] != thisModuleId)));
 
     // skip threads not assocoated to pixels in this module
     active = (first < msize);
 
-    // assume that we can cover the whole module with up to 10 blockDim.x-wide iterations
-    constexpr int maxiter = 10;
-    if (active) {
-      assert(((msize - first) / blockDim.x) <= maxiter);
-    }
-    int jmax[maxiter];
-    for (int k = 0; k < maxiter; ++k)
-      jmax[k] = msize;
+    // __syncthreads();
 
+    // fill histo
+    if (active) {
+      for (int i = first; i < msize; i += blockDim.x) {
+        if (id[i] == InvId)                 // skip invalid pixels
+          continue;
+        hist.fill(y,i);
+      }
+    }
     __syncthreads();
+
+
     // for each pixel, look at all the pixels until the end of the module;
     // when two valid pixels within +/- 1 in x or y are found, set their id to the minimum;
     // after the loop, all the pixel in each cluster should have the id equeal to the lowest
@@ -96,31 +109,34 @@ namespace gpuClustering {
     while (not __syncthreads_and(done)) {
       done = true;
       if (active) {
-        for (int i = first, k = 0; i < msize; i += blockDim.x, ++k) {
+        for (int i = first; i < msize; i += blockDim.x) {
           if (id[i] == InvId)               // skip invalid pixels
             continue;
           assert(id[i] == thisModuleId);    // same module
-          auto js = i + 1;
-          auto jm = jmax[k];
-          jmax[k] = i + 1;
-          for (int j = js; j < jm; ++j) {
-            if (id[j] == InvId)             // skip invalid pixels
-              continue;
-            if (std::abs(int(x[j]) - int(x[i])) > 1 or
-                std::abs(int(y[j]) - int(y[i])) > 1)
-              continue;
+          // loop to columns
+          auto b = hist.bin(y[i]);
+          auto bs = b==0 ? 0 : b-1;
+          auto be = std::min(hist.nbins(),b+2);
+          auto loop = [&](int j) {
+            if (i>=j or 
+                std::abs(int(x[j]) - int(x[i])) > 1 or
+                std::abs(int(y[j]) - int(y[i])) > 1) return;
             auto old = atomicMin(&clusterId[j], clusterId[i]);
             if (old != clusterId[i]) {
               // end the loop only if no changes were applied
               done = false;
             }
             atomicMin(&clusterId[i], old);
-            // update the loop boundary for the next iteration
-            jmax[k] = j + 1;
-          }
-        }
-      }
-    }
+          };
+          for (b=bs; b<be; ++b){
+          for (auto pj=hist.begin(b);pj<hist.end(b);++pj) {
+            loop(*pj);
+          }}
+          for (auto pj=hist.beginSpill();pj<hist.endSpill();++pj)
+             loop(*pj);
+         } // pixel loop
+      } // end active
+    }  // end while
 
     __shared__ int foundClusters;
     foundClusters = 0;

@@ -73,7 +73,7 @@ namespace cudautils {
 } // namespace cudautils
 #endif
 
-template<typename T, uint32_t N, uint32_t M>
+template<typename T, uint32_t N, uint32_t M, uint32_t S=sizeof(T) * 8>
 class HistoContainer {
 public:
 #ifdef __CUDACC__
@@ -82,7 +82,7 @@ public:
   using Counter = std::atomic<uint32_t>;
 #endif
 
-  static constexpr uint32_t sizeT()     { return sizeof(T) * 8; }
+  static constexpr uint32_t sizeT()     { return S; }
   static constexpr uint32_t nbins()     { return 1 << N; }
   static constexpr uint32_t shift()     { return sizeT() - N; }
   static constexpr uint32_t mask()      { return nbins() - 1; }
@@ -139,6 +139,14 @@ public:
 
   constexpr auto size(uint32_t b) const {
      return n[b];
+  }
+
+  constexpr auto const * beginSpill() const {
+     return spillBin;
+  }
+    
+  constexpr auto const * endSpill() const {
+     return beginSpill() + std::min(spillSize(), uint32_t(nspills));
   }
 
   uint32_t bins[nbins()*binSize()];
