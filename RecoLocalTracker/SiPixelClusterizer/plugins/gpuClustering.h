@@ -76,7 +76,7 @@ namespace gpuClustering {
     }
 
    //init hist  (ymax < 512)
-   __shared__ HistoContainer<uint16_t,8,4,9> hist;
+   __shared__ HistoContainer<uint16_t,8,3,9> hist;
    hist.nspills = 0;
    for (auto k = threadIdx.x; k<hist.nbins(); k+=blockDim.x) hist.n[k]=0;
 
@@ -99,6 +99,7 @@ namespace gpuClustering {
       }
     }
     __syncthreads();
+    if (threadIdx.x==0 && hist.fullSpill()) printf("histo overflow in det %d\n",thisModuleId);
 
 
     // for each pixel, look at all the pixels until the end of the module;
@@ -114,9 +115,8 @@ namespace gpuClustering {
             continue;
           assert(id[i] == thisModuleId);    // same module
           // loop to columns
-          auto b = hist.bin(y[i]);
-          auto bs = b==0 ? 0 : b-1;
-          auto be = std::min(hist.nbins(),b+2);
+          auto bs = hist.bin(y[i]>0 ? y[i]-1 : 0);
+          auto be = hist.bin(y[i]+1)+1;
           auto loop = [&](int j) {
             if (i>=j or 
                 std::abs(int(x[j]) - int(x[i])) > 1 or
@@ -128,7 +128,7 @@ namespace gpuClustering {
             }
             atomicMin(&clusterId[i], old);
           };
-          for (b=bs; b<be; ++b){
+          for (auto b=bs; b<be; ++b){
           for (auto pj=hist.begin(b);pj<hist.end(b);++pj) {
             loop(*pj);
           }}

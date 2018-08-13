@@ -87,7 +87,7 @@ public:
   static constexpr uint32_t shift()     { return sizeT() - N; }
   static constexpr uint32_t mask()      { return nbins() - 1; }
   static constexpr uint32_t binSize()   { return 1 << M; }
-  static constexpr uint32_t spillSize() { return 4 * binSize(); }
+  static constexpr uint32_t spillSize() { return 16 * binSize(); }
 
   static constexpr uint32_t bin(T t) {
     return (t >> shift()) & mask();
