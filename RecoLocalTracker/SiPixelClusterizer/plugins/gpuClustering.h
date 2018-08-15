@@ -162,11 +162,9 @@ namespace gpuClustering {
     // find the number of different clusters, identified by a pixels with clus[i] == i;
     // mark these pixels with a negative id.
     if (active) {
-      for (int i = first; i < numElements; i += blockDim.x) {
+      for (int i = first; i < msize; i += blockDim.x) {
         if (id[i] == InvId)                 // skip invalid pixels
           continue;
-        if (id[i] != thisModuleId)          // stop once in a different module
-          break;
         if (clusterId[i] == i) {
           auto old = atomicAdd(&foundClusters, 1);
           clusterId[i] = -(old + 1);
@@ -177,11 +175,9 @@ namespace gpuClustering {
 
     // propagate the negative id to all the pixels in the cluster.
     if (active) {
-      for (int i = first; i < numElements; i += blockDim.x) {
+      for (int i = first; i < msize; i += blockDim.x) {
         if (id[i] == InvId)                 // skip invalid pixels
           continue;
-        if (id[i] != thisModuleId)          // stop once in a different module
-          break;
         if (clusterId[i] >= 0) {
           // mark each pixel in a cluster with the same id as the first one
           clusterId[i] = clusterId[clusterId[i]];
@@ -192,13 +188,11 @@ namespace gpuClustering {
 
     // adjust the cluster id to be a positive value starting from 0
     if (active) {
-      for (int i = first; i < numElements; i += blockDim.x) {
+      for (int i = first; i < msize; i += blockDim.x) {
         if (id[i] == InvId) {               // skip invalid pixels
           clusterId[i] = -9999;
           continue;
         }
-        if (id[i] != thisModuleId)          // stop once in a different module
-          break;
         clusterId[i] = - clusterId[i] - 1;
       }
     }
