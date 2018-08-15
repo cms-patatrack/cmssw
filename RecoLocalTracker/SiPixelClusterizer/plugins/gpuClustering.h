@@ -76,7 +76,7 @@ namespace gpuClustering {
     }
 
    //init hist  (ymax < 512)
-   __shared__ HistoContainer<uint16_t,8,3,9> hist;
+   __shared__ HistoContainer<uint16_t,8,4,9,uint16_t> hist;
    hist.nspills = 0;
    for (auto k = threadIdx.x; k<hist.nbins(); k+=blockDim.x) hist.n[k]=0;
 
@@ -84,20 +84,32 @@ namespace gpuClustering {
 
 
     assert((msize == numElements) or ((msize < numElements) and (id[msize] != thisModuleId)));
-
+    assert(msize-firstPixel<64000);  
+ 
     // skip threads not assocoated to pixels in this module
     active = (first < msize);
 
     // __syncthreads();
+
 
     // fill histo
     if (active) {
       for (int i = first; i < msize; i += blockDim.x) {
         if (id[i] == InvId)                 // skip invalid pixels
           continue;
-        hist.fill(y,i);
+        hist.fill(y+firstPixel,i-firstPixel);
       }
     }
+
+    // assume that we can cover the whole module with up to 10 blockDim.x-wide iterations
+    constexpr int maxiter = 10;
+    if (active) {
+      assert(((msize - first) / blockDim.x) <= maxiter);
+    }
+    int jmax[maxiter];
+    for (int k = 0; k < maxiter; ++k)
+      jmax[k] = msize;
+
     __syncthreads();
     if (threadIdx.x==0 && hist.fullSpill()) printf("histo overflow in det %d\n",thisModuleId);
 
@@ -110,15 +122,18 @@ namespace gpuClustering {
     while (not __syncthreads_and(done)) {
       done = true;
       if (active) {
-        for (int i = first; i < msize; i += blockDim.x) {
+       for (int i = first, k = 0; i < msize; i += blockDim.x, ++k) {
           if (id[i] == InvId)               // skip invalid pixels
             continue;
           assert(id[i] == thisModuleId);    // same module
+          auto jm = jmax[k];
+          jmax[k] = i + 1;
           // loop to columns
           auto bs = hist.bin(y[i]>0 ? y[i]-1 : 0);
           auto be = hist.bin(y[i]+1)+1;
           auto loop = [&](int j) {
-            if (i>=j or 
+            j+=firstPixel;
+            if (i>=j or j>jm or 
                 std::abs(int(x[j]) - int(x[i])) > 1 or
                 std::abs(int(y[j]) - int(y[i])) > 1) return;
             auto old = atomicMin(&clusterId[j], clusterId[i]);
@@ -127,6 +142,8 @@ namespace gpuClustering {
               done = false;
             }
             atomicMin(&clusterId[i], old);
+            // update the loop boundary for the next iteration
+            jmax[k] = std::max(j + 1,jmax[k]);
           };
           for (auto b=bs; b<be; ++b){
           for (auto pj=hist.begin(b);pj<hist.end(b);++pj) {
