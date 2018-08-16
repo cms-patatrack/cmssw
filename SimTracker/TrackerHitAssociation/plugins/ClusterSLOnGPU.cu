@@ -23,7 +23,7 @@ void simLink(clusterSLOnGPU::DigisOnGPU const * ddp, uint32_t ndigis, clusterSLO
   auto const & sl = *slp;
   auto i = blockIdx.x * blockDim.x + threadIdx.x;
 
-  if (i > ndigis)
+  if (i >= ndigis)
     return;
 
   auto id = dd.moduleInd_d[i];
