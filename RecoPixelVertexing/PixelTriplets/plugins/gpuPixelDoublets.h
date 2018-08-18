@@ -75,6 +75,16 @@ namespace gpuPixelDoublets {
     };
 
     constexpr float z0cut = 12.f;
+    constexpr float hardPtCut = 0.5f; 
+    constexpr float minRadius = hardPtCut * 87.f;
+    constexpr float minRadius2T4 = 4.f*minRadius*minRadius;
+    auto ptcut = [&](int j) {
+      auto r2t4 = minRadius2T4;
+      auto ri = mer;
+      auto ro = hh.rg_d[j];
+      auto dphi = short2phi( min( abs(int16_t(mep-iphi[j])),abs(int16_t(iphi[j]-mep)) ) );
+      return dphi*dphi*(r2t4 -ri*ro) > (ro-ri)*(ro-ri);
+    };
     auto z0cutoff = [&](int j) {
       auto zo =	hh.zg_d[j];
       auto ro = hh.rg_d[j]; 
@@ -103,7 +113,7 @@ namespace gpuPixelDoublets {
 
         if (std::min(std::abs(int16_t(iphi[oi]-mep)), std::abs(int16_t(mep-iphi[oi]))) > iphicut)
           continue;
-        if (z0cutoff(oi)) continue;
+        if (z0cutoff(oi) || ptcut(oi)) continue;
         auto ind = atomicInc(nCells,MaxNumOfDoublets);
         // int layerPairId, int doubletId, int innerHitId,int outerHitId)
         cells[ind].init(hh,pairLayerId,ind,i,oi);
