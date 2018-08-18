@@ -97,7 +97,7 @@ namespace gpuClustering {
       for (int i = first; i < msize; i += blockDim.x) {
         if (id[i] == InvId)                 // skip invalid pixels
           continue;
-        hist.fill(y+firstPixel,i-firstPixel);
+        hist.fill(y[i],i-firstPixel);
       }
     }
 

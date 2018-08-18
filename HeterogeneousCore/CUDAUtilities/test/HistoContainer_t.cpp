@@ -22,7 +22,7 @@ void go() {
   for (int it=0; it<5; ++it) {
     for (long long j = 0; j < N; j++) v[j]=rgen(eng);
     h.zero();
-    for (long long j = 0; j < N; j++) h.fill(v,j);
+    for (long long j = 0; j < N; j++) h.fill(v[j],j);
     
     std::cout << "nspills " << h.nspills << std::endl;    
 
