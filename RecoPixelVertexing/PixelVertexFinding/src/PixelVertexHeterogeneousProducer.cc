@@ -27,6 +27,7 @@
 
 class PixelVertexHeterogeneousProducer : public HeterogeneousEDProducer<heterogeneous::HeterogeneousDevices<
           heterogeneous::GPUCuda, heterogeneous::CPU>> {
+public:
   explicit PixelVertexHeterogeneousProducer(const edm::ParameterSet&);
   ~PixelVertexHeterogeneousProducer() override = default;
 
@@ -72,7 +73,8 @@ void PixelVertexHeterogeneousProducer::fillDescriptions(edm::ConfigurationDescri
 
 
 PixelVertexHeterogeneousProducer::PixelVertexHeterogeneousProducer(const edm::ParameterSet& conf) :
-  m_ptMin  (conf.getParameter<double>("PtMin")  ) // 0.5 GeV
+  HeterogeneousEDProducer(conf)
+  ,m_ptMin  (conf.getParameter<double>("PtMin")  ) // 0.5 GeV
   , trackCollName  ( conf.getParameter<edm::InputTag>("TrackCollection") )
   , token_Tracks   ( consumes<reco::TrackCollection>(trackCollName) )
   , token_BeamSpot ( consumes<reco::BeamSpot>(conf.getParameter<edm::InputTag>("beamSpot") ) )
@@ -201,11 +203,13 @@ void PixelVertexHeterogeneousProducer::produceGPUCuda(
 }
 
 
-PixelVertexHeterogeneousProducer::produceCPU(
+void PixelVertexHeterogeneousProducer::produceCPU(
     edm::HeterogeneousEvent &iEvent, const edm::EventSetup &iSetup)
 {
   throw cms::Exception("NotImplemented") << "CPU version is no longer implemented";
 }
+
+
 
 #include "FWCore/PluginManager/interface/ModuleDef.h"
 #include "FWCore/Framework/interface/MakerMacros.h"

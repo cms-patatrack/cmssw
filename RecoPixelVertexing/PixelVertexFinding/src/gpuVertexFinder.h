@@ -3,7 +3,8 @@
 
 #include<cstdint>
 
-#include "HeterogeneousCore/CUDAUtilities/interface/HistoContainer.h"
+#include "RecoPixelVertexing/PixelVertexFinding/interface/pixelVertexHeterogeneousProduct.h"
+
 
 namespace gpuVertexFinder {
 
@@ -40,7 +41,7 @@ namespace gpuVertexFinder {
 		 uint32_t ntrks
 		 );
     
-    GPUProduct & fillResults(cudaStream_t stream);
+    GPUProduct const & fillResults(cudaStream_t stream);
     
 
     void allocateOnGPU();

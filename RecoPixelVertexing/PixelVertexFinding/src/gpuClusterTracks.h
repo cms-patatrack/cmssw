@@ -18,8 +18,8 @@ namespace gpuVertexFinder {
 		     OnGPU * pdata,
 		     int minT,  // min number of neighbours to be "core"
 		     float eps, // max absolute distance to cluster
-		     float errmax = 0.02f, // max error to be "seed"
-		     float chi2max = 12.f   // max normalized distance to cluster
+		     float errmax, // max error to be "seed"
+		     float chi2max   // max normalized distance to cluster
 		     )  {
     
     auto er2mx = errmax*errmax;

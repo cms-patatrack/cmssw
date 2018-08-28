@@ -34,7 +34,7 @@ namespace gpuVertexFinder {
     cudaCheck(cudaFree(onGPU.izt));
     cudaCheck(cudaFree(onGPU.nn));
 
-    cudaCheck(cudaFree(onGPU));
+    cudaCheck(cudaFree(onGPU_d));
 
   }
 
@@ -46,24 +46,30 @@ namespace gpuVertexFinder {
 			 ) {
     
 
-    cudaCheck(cudaMemcpyAsync((onGPU.zt,zt,ntrks*sizeof(float),
-			       cudaMemcpyHostToDevice,stream)));
-    cudaCheck(cudaMemcpyAsync((onGPU.ezt2,ezt2,ntrks*sizeof(float),
-			       cudaMemcpyHostToDevice,stream)));
-
-    clusterTracks<<<1,1024,0,stream>>>(ntrks,onGPU_d,3,0.1f);
+    cudaCheck(cudaMemcpyAsync(onGPU.zt,zt,ntrks*sizeof(float),
+			      cudaMemcpyHostToDevice,stream));
+    cudaCheck(cudaMemcpyAsync(onGPU.ezt2,ezt2,ntrks*sizeof(float),
+			      cudaMemcpyHostToDevice,stream));
     
-    cudaCheck(cudaMemcpy(&gpuProduct.nVertices,onGPU.nv, sizeof(uint32_t),
-			 cudaMemcpyDeviceToHost,));
-
+    assert(onGPU_d);
+    clusterTracks<<<1,1024,0,stream>>>(ntrks,onGPU_d,3,0.1f,0.02f,12.0f);
+    
+    cudaCheck(cudaMemcpy(&gpuProduct.nVertices, onGPU.nv, sizeof(uint32_t),
+			 cudaMemcpyDeviceToHost));
+    
     gpuProduct.z.resize(gpuProduct.nVertices);
     cudaCheck(cudaMemcpyAsync(gpuProduct.z.data(),onGPU.zv,sizeof(float)*gpuProduct.nVertices,
-			       cudaMemcpyDeviceToHost, cudaStream));
+			      cudaMemcpyDeviceToHost, stream));
     gpuProduct.zerr.resize(gpuProduct.nVertices);
     cudaCheck(cudaMemcpyAsync(gpuProduct.zerr.data(),onGPU.wv,sizeof(float)*gpuProduct.nVertices,
-			       cudaMemcpyDeviceToHost, cudaStream));
+			      cudaMemcpyDeviceToHost, stream));
     
   }
+  
+  Producer::GPUProduct const & Producer::fillResults(cudaStream_t stream) {
+    return gpuProduct;
+  }
+
   
   
 } // end namespace

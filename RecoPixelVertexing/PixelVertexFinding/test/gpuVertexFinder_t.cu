@@ -3,7 +3,7 @@
 #include<cstdint>
 #include<cmath>
 
-#include "RecoPixelVertexing/PixelVertexFinding/src/gpuVertexFinder.h"
+#include "RecoPixelVertexing/PixelVertexFinding/src/gpuClusterTracks.h"
 using namespace  gpuVertexFinder;
 #include <cuda/api_wrappers.h>
 
@@ -128,7 +128,8 @@ int main() {
 
   cuda::launch(clusterTracks,
                 { 1, 1024 },
-                ev.ztrack.size(), onGPU_d.get(),kk,eps
+                ev.ztrack.size(), onGPU_d.get(),kk,eps,
+		0.02f,12.0f
            );
 
 
