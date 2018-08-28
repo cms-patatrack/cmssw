@@ -9,7 +9,7 @@
 namespace pixelVertexHeterogeneousProduct {
 
   struct CPUProduct {
-    reco::VertexCollection; collection;
+    reco::VertexCollection collection;
   };
 
   struct VerticesOnGPU{
@@ -25,14 +25,14 @@ namespace pixelVertexHeterogeneousProduct {
     explicit VerticesOnCPU(uint32_t nvtx) :
       z(nvtx),
       zerr(nvtx),
-      ntk(nvtx),
+      ntrk(nvtx),
       nVertices(nvtx)
     { }
 
     std::vector<float,    CUDAHostAllocator<float>> z,zerr;
     std::vector<uint16_t, CUDAHostAllocator<uint16_t>> ntrk;
 
-    uint32_t nvtx;
+    uint32_t nVertices=0;
     VerticesOnGPU const * gpu_d = nullptr;
   };
 

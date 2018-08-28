@@ -4,6 +4,7 @@
 #include<cmath>
 
 #include "RecoPixelVertexing/PixelVertexFinding/src/gpuVertexFinder.h"
+using namespace  gpuVertexFinder;
 #include <cuda/api_wrappers.h>
 
 

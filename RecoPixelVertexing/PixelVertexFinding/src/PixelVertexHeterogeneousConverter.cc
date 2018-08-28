@@ -25,7 +25,7 @@ private:
 PixelVertexHeterogeneousConverter::PixelVertexHeterogeneousConverter(edm::ParameterSet const& iConfig):
   token_(consumes<HeterogeneousProduct>(iConfig.getParameter<edm::InputTag>("src")))
 {
-  produces<PixelVertexCollectionNew>(); 
+  produces<reco::VertexCollection>();
 }
 
 void PixelVertexHeterogeneousConverter::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
@@ -46,7 +46,7 @@ void PixelVertexHeterogeneousConverter::produce(edm::StreamID, edm::Event& iEven
   edm::Handle<HeterogeneousProduct> hinput;
   iEvent.getByToken(token_, hinput);
 
-  const auto& input = hinput->get<"pixelVerticesHeterogeneousProduct::HeterogeneousPixelVertices>().getProduct<HeterogeneousDevice::kCPU>();
+  const auto& input = hinput->get<pixelVertexHeterogeneousProduct::HeterogeneousPixelVertices>().getProduct<HeterogeneousDevice::kCPU>();
 
   iEvent.put(copy_unique(input.collection));
 }
