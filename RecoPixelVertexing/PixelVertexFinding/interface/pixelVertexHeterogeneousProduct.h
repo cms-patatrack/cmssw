@@ -22,15 +22,15 @@ namespace pixelVertexHeterogeneousProduct {
   struct VerticesOnCPU {
     VerticesOnCPU() = default;
 
-    explicit VerticesOnCPU(uint32_t nvtx) :
+    explicit VerticesOnCPU(uint32_t nvtx, uint32_t ntrks) :
       z(nvtx),
       zerr(nvtx),
-      ntrk(nvtx),
+      ivtx(ntrks),
       nVertices(nvtx)
     { }
 
     std::vector<float,    CUDAHostAllocator<float>> z,zerr;
-    std::vector<uint16_t, CUDAHostAllocator<uint16_t>> ntrk;
+    std::vector<int32_t, CUDAHostAllocator<int32_t>> ivtx;
 
     uint32_t nVertices=0;
     VerticesOnGPU const * gpu_d = nullptr;

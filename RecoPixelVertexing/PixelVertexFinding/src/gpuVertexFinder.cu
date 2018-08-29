@@ -63,7 +63,11 @@ namespace gpuVertexFinder {
     gpuProduct.zerr.resize(gpuProduct.nVertices);
     cudaCheck(cudaMemcpyAsync(gpuProduct.zerr.data(),onGPU.wv,sizeof(float)*gpuProduct.nVertices,
 			      cudaMemcpyDeviceToHost, stream));
-    
+    gpuProduct.ivtx.resize(ntrks);
+    cudaCheck(cudaMemcpyAsync(gpuProduct.ivtx.data(),onGPU.iv,sizeof(int32_t)*ntrks,
+			      cudaMemcpyDeviceToHost, stream));
+ 
+
   }
   
   Producer::GPUProduct const & Producer::fillResults(cudaStream_t stream) {
