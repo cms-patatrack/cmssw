@@ -67,6 +67,7 @@ void PixelVertexHeterogeneousProducer::fillDescriptions(edm::ConfigurationDescri
   desc.add<double>("PtMin", 0.5);
   desc.add<edm::InputTag>("TrackCollection", edm::InputTag("pixelTracks"));
   desc.add<edm::InputTag>("beamSpot", edm::InputTag("offlineBeamSpot"));
+  HeterogeneousEDProducer::fillPSetDescription(desc);
   auto label = "pixelVertexHeterogeneousProducer";
   descriptions.add(label, desc);
 }
