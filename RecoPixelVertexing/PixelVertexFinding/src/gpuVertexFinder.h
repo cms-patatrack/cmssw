@@ -33,6 +33,19 @@ namespace gpuVertexFinder {
     using GPUProduct = pixelVertexHeterogeneousProduct::GPUProduct;
     using OnGPU = gpuVertexFinder::OnGPU;
 
+
+    Producer(
+	     int iminT,  // min number of neighbours to be "core"
+	     float ieps, // max absolute distance to cluster
+	     float ierrmax, // max error to be "seed"
+	     float ichi2max   // max normalized distance to cluster
+	     ) :
+      minT(iminT),
+      eps(ieps),
+      errmax(ierrmax),
+      chi2max(ichi2max)  
+    {}
+    
     ~Producer() { deallocateOnGPU();}
     
     void produce(cudaStream_t stream,
@@ -51,6 +64,12 @@ namespace gpuVertexFinder {
     GPUProduct gpuProduct;
     OnGPU onGPU;
     OnGPU * onGPU_d=nullptr;
+
+    int minT;  // min number of neighbours to be "core"
+    float eps; // max absolute distance to cluster
+    float errmax; // max error to be "seed"
+    float chi2max;   // max normalized distance to cluster
+
   };
   
 } // end namespace

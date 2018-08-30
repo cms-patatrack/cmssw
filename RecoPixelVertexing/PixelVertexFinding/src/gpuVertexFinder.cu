@@ -52,7 +52,7 @@ namespace gpuVertexFinder {
 			      cudaMemcpyHostToDevice,stream));
     
     assert(onGPU_d);
-    clusterTracks<<<1,1024,0,stream>>>(ntrks,onGPU_d,3,0.1f,0.02f,12.0f);
+    clusterTracks<<<1,1024,0,stream>>>(ntrks,onGPU_d,minT,eps,errmax,chi2max);
     
     cudaCheck(cudaMemcpy(&gpuProduct.nVertices, onGPU.nv, sizeof(uint32_t),
 			 cudaMemcpyDeviceToHost));
