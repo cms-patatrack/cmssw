@@ -21,6 +21,8 @@ namespace gpuVertexFinder {
 		     float errmax, // max error to be "seed"
 		     float chi2max   // max normalized distance to cluster
 		     )  {
+
+    constexpr bool verbose = false;
     
     auto er2mx = errmax*errmax;
     
@@ -157,8 +159,8 @@ namespace gpuVertexFinder {
     foundClusters = 0;
     __syncthreads();
     
-    // find the number of different clusters, identified by a pixels with clus[i] == i;
-    // mark these pixels with a negative id.
+    // find the number of different clusters, identified by a tracks with clus[i] == i;
+    // mark these tracks with a negative id.
     for (int i = threadIdx.x; i < nt; i += blockDim.x) {
       if (iv[i] == i) {
 	if  (nn[i]>=minT) {
@@ -173,10 +175,10 @@ namespace gpuVertexFinder {
     }
     __syncthreads();
     
-    // propagate the negative id to all the pixels in the cluster.
+    // propagate the negative id to all the tracks in the cluster.
     for (int i = threadIdx.x; i < nt; i += blockDim.x) {
       if (iv[i] >= 0) {
-	// mark each pixel in a cluster with the same id as the first one
+	// mark each track in a cluster with the same id as the first one
 	iv[i] = iv[iv[i]];
       }
     }
@@ -195,7 +197,10 @@ namespace gpuVertexFinder {
     
     // compute cluster location
     for (int i = threadIdx.x; i < nt; i += blockDim.x) {
-      if (iv[i]>9990) { atomicAdd(&noise, 1); continue;}
+      if (iv[i]>9990) {
+	if (verbose) atomicAdd(&noise, 1);
+	continue;
+      }
       assert(iv[i]>=0);
       assert(iv[i]<foundClusters);
       auto w = 1.f/ezt2[i];
@@ -205,8 +210,8 @@ namespace gpuVertexFinder {
     
     __syncthreads();
     
-    if(0==threadIdx.x) printf("found %d proto clusters ",foundClusters);
-    if(0==threadIdx.x) printf("and %d noise\n",noise);
+    if(verbose && 0==threadIdx.x) printf("found %d proto clusters ",foundClusters);
+    if(verbose && 0==threadIdx.x) printf("and %d noise\n",noise);
     
     for (int i = threadIdx.x; i < foundClusters; i += blockDim.x) zv[i]/=wv[i];
     
