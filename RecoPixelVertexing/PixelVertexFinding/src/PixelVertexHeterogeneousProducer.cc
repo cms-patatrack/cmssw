@@ -154,7 +154,23 @@ void PixelVertexHeterogeneousProducer::produceGPUCuda(
     const reco::BeamSpot & bs = *bsHandle;
     x0=bs.x0();y0=bs.y0();z0=bs.z0(); dxdz=bs.dxdz();dydz=bs.dydz();
   }
+  // to be moved to gpu....
+  float pt2[gpuProduct.nVertices];
+  int ind[gpuProduct.nVertices];
   for (unsigned int i=0; i<gpuProduct.nVertices; ++i) {
+    pt2[i]=0; ind[i]=i;
+  }
+  for (auto k=0U; k<m_trks.size(); ++k) {
+    auto i = gpuProduct.ivtx[k];
+    pt2[i] += m_trks[k]->pt() > 20 ? 20*20 : m_trks[k]->pt()*m_trks[k]->pt(); 
+  }
+  // sort
+  std::sort(ind,ind+gpuProduct.nVertices,[&](int i, int j){ return pt2[i]>pt2[j];});
+  if(gpuProduct.nVertices>1) assert(pt2[ind[0]]>=pt2[ind[1]]);
+
+  // fill legacy data format
+  for (unsigned int j=0; j<gpuProduct.nVertices; ++j) {
+    auto i = ind[j];
     assert(itrk.empty());
     auto z= gpuProduct.z[i];
     auto x= x0 + dxdz*z;
@@ -170,10 +186,14 @@ void PixelVertexHeterogeneousProducer::produceGPUCuda(
     assert(nt>0);
     (*vertexes).emplace_back(reco::Vertex::Point(x,y,z), err, gpuProduct.chi2[i], nt-1, nt );
     auto & v = (*vertexes).back();
-    for (auto k: itrk) v.add(reco::TrackBaseRef(m_trks[k]));
+    pt2[i]=0;
+    for (auto k: itrk) {
+      v.add(reco::TrackBaseRef(m_trks[k]));
+    }
     itrk.clear();
   }
 
+  
   if (verbose_) {
     edm::LogInfo("PixelVertexHeterogeneousProducer") << ": Found " << vertexes->size() << " vertexes\n";
     for (unsigned int i=0; i<vertexes->size(); ++i) {
