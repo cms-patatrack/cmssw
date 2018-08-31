@@ -11,10 +11,11 @@ namespace gpuVertexFinder {
     cudaCheck(cudaMalloc(&onGPU.nv, sizeof(uint32_t)));
     cudaCheck(cudaMalloc(&onGPU.zv, OnGPU::MAXVTX*sizeof(float)));
     cudaCheck(cudaMalloc(&onGPU.wv, OnGPU::MAXVTX*sizeof(float)));
+    cudaCheck(cudaMalloc(&onGPU.chi2, OnGPU::MAXVTX*sizeof(float)));
  
 
     cudaCheck(cudaMalloc(&onGPU.izt, OnGPU::MAXTRACKS*sizeof(int8_t)));
-    cudaCheck(cudaMalloc(&onGPU.nn, OnGPU::MAXTRACKS*sizeof(uint16_t)));
+    cudaCheck(cudaMalloc(&onGPU.nn, OnGPU::MAXTRACKS*sizeof(int32_t)));
 
     cudaCheck(cudaMalloc(&onGPU_d,sizeof(OnGPU)));
     cudaCheck(cudaMemcpy(onGPU_d,&onGPU,sizeof(OnGPU),cudaMemcpyHostToDevice));
@@ -29,6 +30,7 @@ namespace gpuVertexFinder {
     cudaCheck(cudaFree(onGPU.nv));
     cudaCheck(cudaFree(onGPU.zv));
     cudaCheck(cudaFree(onGPU.wv));
+    cudaCheck(cudaFree(onGPU.chi2));
  
 
     cudaCheck(cudaFree(onGPU.izt));
@@ -62,6 +64,9 @@ namespace gpuVertexFinder {
 			      cudaMemcpyDeviceToHost, stream));
     gpuProduct.zerr.resize(gpuProduct.nVertices);
     cudaCheck(cudaMemcpyAsync(gpuProduct.zerr.data(),onGPU.wv,sizeof(float)*gpuProduct.nVertices,
+			      cudaMemcpyDeviceToHost, stream));
+   gpuProduct.chi2.resize(gpuProduct.nVertices);
+    cudaCheck(cudaMemcpyAsync(gpuProduct.chi2.data(),onGPU.chi2,sizeof(float)*gpuProduct.nVertices,
 			      cudaMemcpyDeviceToHost, stream));
     gpuProduct.ivtx.resize(ntrks);
     cudaCheck(cudaMemcpyAsync(gpuProduct.ivtx.data(),onGPU.iv,sizeof(int32_t)*ntrks,

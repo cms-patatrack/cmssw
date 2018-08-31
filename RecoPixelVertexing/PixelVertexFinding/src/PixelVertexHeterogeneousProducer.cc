@@ -168,7 +168,7 @@ void PixelVertexHeterogeneousProducer::produceGPUCuda(
     }
     auto nt = itrk.size();
     assert(nt>0);
-    (*vertexes).emplace_back(reco::Vertex::Point(x,y,z), err, 1, nt-1, nt );
+    (*vertexes).emplace_back(reco::Vertex::Point(x,y,z), err, gpuProduct.chi2[i], nt-1, nt );
     auto & v = (*vertexes).back();
     for (auto k: itrk) v.add(reco::TrackBaseRef(m_trks[k]));
     itrk.clear();
@@ -182,7 +182,8 @@ void PixelVertexHeterogeneousProducer::produceGPUCuda(
     
     std::cout << ": Found " << vertexes->size() << " vertexes\n";
     for (unsigned int i=0; i<vertexes->size(); ++i) {
-      std::cout << "Vertex number " << i << " has " << (*vertexes)[i].tracksSize() << " tracks with a position of " << (*vertexes)[i].z() << " +- " << std::sqrt( (*vertexes)[i].covariance(2,2) ) << std::endl;
+      std::cout << "Vertex number " << i << " has " << (*vertexes)[i].tracksSize() << " tracks with a position of " << (*vertexes)[i].z() << " +- " << std::sqrt( (*vertexes)[i].covariance(2,2) )
+		<< " chi2 " << (*vertexes)[i].normalizedChi2() << std::endl;
     }
     
   }

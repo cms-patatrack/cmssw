@@ -31,10 +31,11 @@ namespace gpuVertexFinder {
     float const * ezt2 = data.ezt2;
     float * zv = data.zv;
     float * wv = data.wv;
+    float * chi2 = data.chi2;
     uint32_t & nv = *data.nv;
     
     int8_t  * izt = data.izt;
-    uint16_t * nn = data.nn;
+    int32_t * nn = data.nn;
     int32_t * iv = data.iv;
     
     assert(pdata);
@@ -168,6 +169,7 @@ namespace gpuVertexFinder {
 	  iv[i] = -(old + 1);
 	  zv[old]=0;
 	  wv[old]=0;
+	  chi2[old]=0;
 	} else { // noise
 	  iv[i] = -9998;
 	}
@@ -209,11 +211,30 @@ namespace gpuVertexFinder {
     }
     
     __syncthreads();
+    // reuse nn 
+    for (int i = threadIdx.x; i < foundClusters; i += blockDim.x) {
+      zv[i]/=wv[i];
+      nn[i]=-1;
+    }
+    __syncthreads();
+ 
+    
+    // compute chi2
+    for (int i = threadIdx.x; i < nt; i += blockDim.x) {
+      if (iv[i]>9990) {
+	if (verbose) atomicAdd(&noise, 1);
+	continue;
+      }
+      auto c2 = zv[iv[i]]-zt[i]; c2 *=c2/ezt2[i];
+      // remove outliers ???? if (c2> cut) continue;????
+      atomicAdd(&chi2[iv[i]],c2);
+      atomicAdd(&nn[i],1);
+    }
+    __syncthreads();
+    for (int i = threadIdx.x; i < foundClusters; i += blockDim.x) if(nn[i]>0) wv[i] *= float(nn[i])/chi2[i];
     
     if(verbose && 0==threadIdx.x) printf("found %d proto clusters ",foundClusters);
     if(verbose && 0==threadIdx.x) printf("and %d noise\n",noise);
-    
-    for (int i = threadIdx.x; i < foundClusters; i += blockDim.x) zv[i]/=wv[i];
     
     nv = foundClusters;
   }

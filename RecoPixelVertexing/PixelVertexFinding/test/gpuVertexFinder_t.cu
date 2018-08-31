@@ -81,9 +81,10 @@ int main() {
   auto ezt2_d = cuda::memory::device::make_unique<float[]>(current_device, 64000);
   auto zv_d = cuda::memory::device::make_unique<float[]>(current_device, 256);
   auto wv_d = cuda::memory::device::make_unique<float[]>(current_device, 256);
+  auto chi2_d = cuda::memory::device::make_unique<float[]>(current_device, 256);
 
   auto izt_d = cuda::memory::device::make_unique<int8_t[]>(current_device, 64000);
-  auto nn_d = cuda::memory::device::make_unique<uint16_t[]>(current_device, 64000);
+  auto nn_d = cuda::memory::device::make_unique<int32_t[]>(current_device, 64000);
   auto iv_d = cuda::memory::device::make_unique<int32_t[]>(current_device, 64000);
 
   auto nv_d = cuda::memory::device::make_unique<uint32_t[]>(current_device, 1);
@@ -96,6 +97,7 @@ int main() {
   onGPU.ezt2 = ezt2_d.get();
   onGPU.zv = zv_d.get();
   onGPU.wv = wv_d.get();
+  onGPU.chi2 = chi2_d.get();
   onGPU.nv = nv_d.get();
   onGPU.izt = izt_d.get();
   onGPU.nn = nn_d.get();
@@ -137,13 +139,17 @@ int main() {
   cuda::memory::copy(&nv, onGPU.nv, sizeof(uint32_t));
   float zv[nv];
   float	wv[nv];
+  float	chi2[nv];
   cuda::memory::copy(&zv, onGPU.zv, nv*sizeof(float));
   cuda::memory::copy(&wv, onGPU.wv, nv*sizeof(float));
+  cuda::memory::copy(&chi2, onGPU.chi2, nv*sizeof(float));
 
   float tw=0;
   for (auto w : wv) tw+=w;
   std::cout<< "total weight " << tw << std::endl;
-  
+  tw=0;
+  for (auto w : chi2) tw+=w;
+  std::cout<< "total chi2 " << tw << std::endl;
   
 
   float dd[nv];

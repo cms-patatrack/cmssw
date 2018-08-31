@@ -17,12 +17,13 @@ namespace gpuVertexFinder {
     float * ezt2;
     float * zv;
     float * wv;
+    float * chi2;
     uint32_t * nv;
     int32_t * iv;
 
     // workspace  
     int8_t  * izt;
-    uint16_t * nn;
+    int32_t * nn;
     
   };
   
