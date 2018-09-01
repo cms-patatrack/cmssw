@@ -178,6 +178,7 @@ void PixelVertexHeterogeneousProducer::produceGPUCuda(
     z +=z0;
     reco::Vertex::Error err;
     err(2,2) = 1.f/gpuProduct.zerr[i];
+    // err(2,2) *= 4.;  // artifically inflate error
     //Copy also the tracks (no intention to be efficient....)
     for (auto k=0U; k<m_trks.size(); ++k) {
       if (gpuProduct.ivtx[k]==int(i)) itrk.push_back(k);

@@ -113,9 +113,9 @@ int main() {
 
   ClusterGenerator gen(nav,10);
 
-  for (int i=4; i<20; ++i) {
+  for (int i=8; i<20; ++i) {
 
-  auto  kk=i/2;  // M param
+  auto  kk=i/4;  // M param
 
   gen(ev);
   
@@ -125,14 +125,37 @@ int main() {
   cuda::memory::copy(onGPU.ezt2,ev.eztrack.data(),sizeof(float)*ev.eztrack.size());
 
   float eps = 0.1f;
-
+  
   std::cout << "M eps " << kk << ' ' << eps << std::endl;
-
-  cuda::launch(clusterTracks,
-                { 1, 1024 },
-                ev.ztrack.size(), onGPU_d.get(),kk,eps,
-		0.02f,12.0f
-           );
+  
+  if ( (i%4) == 0 )
+    cuda::launch(clusterTracks,
+		 { 1, 1024 },
+		 ev.ztrack.size(), onGPU_d.get(),kk,eps,
+		 0.02f,12.0f
+		 );
+  
+  if ( (i%4) == 1 )
+    cuda::launch(clusterTracks,
+		 { 1, 1024 },
+		 ev.ztrack.size(), onGPU_d.get(),kk,eps,
+		 0.02f,9.0f
+		 );
+  
+  if ( (i%4) == 2 )
+    cuda::launch(clusterTracks,
+		 { 1, 1024 },
+		 ev.ztrack.size(), onGPU_d.get(),kk,eps,
+		 0.01f,9.0f
+		 );
+  
+  if ( (i%4) == 3 )
+    cuda::launch(clusterTracks,
+		 { 1, 1024 },
+		 ev.ztrack.size(), onGPU_d.get(),kk,0.7f*eps,
+		 0.01f,9.0f
+		 );
+  
 
 
   uint32_t nv;
@@ -140,16 +163,21 @@ int main() {
   float zv[nv];
   float	wv[nv];
   float	chi2[nv];
+  int32_t nn[nv];
   cuda::memory::copy(&zv, onGPU.zv, nv*sizeof(float));
   cuda::memory::copy(&wv, onGPU.wv, nv*sizeof(float));
   cuda::memory::copy(&chi2, onGPU.chi2, nv*sizeof(float));
-
-  float tw=0;
-  for (auto w : wv) tw+=w;
-  std::cout<< "total weight " << tw << std::endl;
-  tw=0;
-  for (auto w : chi2) tw+=w;
-  std::cout<< "total chi2 " << tw << std::endl;
+  cuda::memory::copy(&nn, onGPU.nn, nv*sizeof(int32_t));
+  for (auto j=0U; j<nv; ++j) if (nn[j]>0) chi2[j]/=float(nn[j]); 
+   
+  {
+    auto mx = std::minmax_element(wv,wv+nv);
+    std::cout << "min max error " << 1./std::sqrt(*mx.first) << ' ' <<  1./std::sqrt(*mx.second) << std::endl;
+  }
+  {
+    auto mx = std::minmax_element(chi2,chi2+nv);
+    std::cout << "min max chi2 " << *mx.first << ' ' <<  *mx.second << std::endl;
+  }
   
 
   float dd[nv];

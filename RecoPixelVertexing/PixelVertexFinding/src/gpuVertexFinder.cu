@@ -56,18 +56,9 @@ namespace gpuVertexFinder {
     assert(onGPU_d);
     clusterTracks<<<1,1024,0,stream>>>(ntrks,onGPU_d,minT,eps,errmax,chi2max);
     
-    cudaCheck(cudaMemcpy(&gpuProduct.nVertices, onGPU.nv, sizeof(uint32_t),
-			 cudaMemcpyDeviceToHost));
+    cudaCheck(cudaMemcpyAsync(&gpuProduct.nVertices, onGPU.nv, sizeof(uint32_t),
+			      cudaMemcpyDeviceToHost, stream));
     
-    gpuProduct.z.resize(gpuProduct.nVertices);
-    cudaCheck(cudaMemcpyAsync(gpuProduct.z.data(),onGPU.zv,sizeof(float)*gpuProduct.nVertices,
-			      cudaMemcpyDeviceToHost, stream));
-    gpuProduct.zerr.resize(gpuProduct.nVertices);
-    cudaCheck(cudaMemcpyAsync(gpuProduct.zerr.data(),onGPU.wv,sizeof(float)*gpuProduct.nVertices,
-			      cudaMemcpyDeviceToHost, stream));
-   gpuProduct.chi2.resize(gpuProduct.nVertices);
-    cudaCheck(cudaMemcpyAsync(gpuProduct.chi2.data(),onGPU.chi2,sizeof(float)*gpuProduct.nVertices,
-			      cudaMemcpyDeviceToHost, stream));
     gpuProduct.ivtx.resize(ntrks);
     cudaCheck(cudaMemcpyAsync(gpuProduct.ivtx.data(),onGPU.iv,sizeof(int32_t)*ntrks,
 			      cudaMemcpyDeviceToHost, stream));
@@ -76,6 +67,20 @@ namespace gpuVertexFinder {
   }
   
   Producer::GPUProduct const & Producer::fillResults(cudaStream_t stream) {
+
+    // finish copy
+    gpuProduct.z.resize(gpuProduct.nVertices);
+    cudaCheck(cudaMemcpyAsync(gpuProduct.z.data(),onGPU.zv,sizeof(float)*gpuProduct.nVertices,
+			      cudaMemcpyDeviceToHost, stream));
+    gpuProduct.zerr.resize(gpuProduct.nVertices);
+    cudaCheck(cudaMemcpyAsync(gpuProduct.zerr.data(),onGPU.wv,sizeof(float)*gpuProduct.nVertices,
+			      cudaMemcpyDeviceToHost, stream));
+    gpuProduct.chi2.resize(gpuProduct.nVertices);
+    cudaCheck(cudaMemcpyAsync(gpuProduct.chi2.data(),onGPU.chi2,sizeof(float)*gpuProduct.nVertices,
+			      cudaMemcpyDeviceToHost, stream));
+    
+    cudaStreamSynchronize(stream);
+    
     return gpuProduct;
   }
 

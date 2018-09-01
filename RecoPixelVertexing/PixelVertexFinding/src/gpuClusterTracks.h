@@ -3,6 +3,7 @@
 
 #include<cstdint>
 #include<cmath>
+#include <algorithm>
 #include<cassert>
 
 #include "HeterogeneousCore/CUDAUtilities/interface/HistoContainer.h"
@@ -22,7 +23,7 @@ namespace gpuVertexFinder {
 		     float chi2max   // max normalized distance to cluster
 		     )  {
 
-    constexpr bool verbose = false;
+    constexpr bool verbose = false; // in principle the compiler should optmize out if false
     
     auto er2mx = errmax*errmax;
     
@@ -54,12 +55,12 @@ namespace gpuVertexFinder {
     //  if(0==threadIdx.x) printf("histo zeroed\n");
     
     
-  // fill hist
+  // fill hist  (bin shall be wider than "eps")
     for (int i = threadIdx.x; i < nt; i += blockDim.x) {
-      assert(i<64000);
-      int iz =  int(zt[i]*10.);
-      iz = std::max(iz,-127);
-      iz = std::min(iz,127);
+      assert(i<OnGPU::MAXTRACKS);
+      int iz =  int(zt[i]*10.); // valid if eps<=0.1
+      // iz = std::clamp(iz, INT8_MIN, INT8_MAX);  // sorry c++17 only
+      iz = std::min(std::max(iz, INT8_MIN),INT8_MAX);
       izt[i]=iz;
       hist.fill(int8_t(iz),uint16_t(i));
       iv[i]=i;
@@ -176,6 +177,8 @@ namespace gpuVertexFinder {
       }
     }
     __syncthreads();
+
+    assert(foundClusters<OnGPU::MAXVTX);
     
     // propagate the negative id to all the tracks in the cluster.
     for (int i = threadIdx.x; i < nt; i += blockDim.x) {
@@ -193,7 +196,7 @@ namespace gpuVertexFinder {
     
     // only for test
     __shared__ int noise;
-    noise = 0;
+   if(verbose && 0==threadIdx.x) noise = 0;
     
     __syncthreads();
     
@@ -205,6 +208,7 @@ namespace gpuVertexFinder {
       }
       assert(iv[i]>=0);
       assert(iv[i]<foundClusters);
+      // if (nn[i]<minT) continue;  //  ONLY?? DBSCAN core rule
       auto w = 1.f/ezt2[i];
       atomicAdd(&zv[iv[i]],zt[i]*w);
       atomicAdd(&wv[iv[i]],w); 
@@ -213,20 +217,19 @@ namespace gpuVertexFinder {
     __syncthreads();
     // reuse nn 
     for (int i = threadIdx.x; i < foundClusters; i += blockDim.x) {
+      assert(wv[i]>0.f);
       zv[i]/=wv[i];
-      nn[i]=-1;
+      nn[i]=-1;  // ndof
     }
     __syncthreads();
  
     
     // compute chi2
     for (int i = threadIdx.x; i < nt; i += blockDim.x) {
-      if (iv[i]>9990) {
-	if (verbose) atomicAdd(&noise, 1);
-	continue;
-      }
+      if (iv[i]>9990) continue;
+    
       auto c2 = zv[iv[i]]-zt[i]; c2 *=c2/ezt2[i];
-      // remove outliers ???? if (c2> cut) continue;????
+      // remove outliers ???? if (c2> cut) {iv[i] = 9999; continue;}????
       atomicAdd(&chi2[iv[i]],c2);
       atomicAdd(&nn[i],1);
     }
