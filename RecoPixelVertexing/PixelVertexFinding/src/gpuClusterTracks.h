@@ -207,7 +207,7 @@ namespace gpuVertexFinder {
       auto c2 = zv[iv[i]]-zt[i]; c2 *=c2/ezt2[i];
       // remove outliers ???? if (c2> cut) {iv[i] = 9999; continue;}????
       atomicAdd(&chi2[iv[i]],c2);
-      atomicAdd(&nn[i],1);
+      atomicAdd(&nn[iv[i]],1);
     }
     __syncthreads();
     for (int i = threadIdx.x; i < foundClusters; i += blockDim.x) if(nn[i]>0) wv[i] *= float(nn[i])/chi2[i];
