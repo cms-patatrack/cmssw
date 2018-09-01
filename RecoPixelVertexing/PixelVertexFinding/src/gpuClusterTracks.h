@@ -81,19 +81,10 @@ namespace gpuVertexFinder {
         if (dist*dist>chi2max*(ezt2[i]+ezt2[j])) return;
         nn[i]++;
       };
-      
-      int bs = hist.bin(izt[i]);
-      int be = std::min(int(hist.nbins()),bs+2);
-      bs = bs==0 ? 0 : bs-1;
-      assert(be>bs);
-      for (auto b=bs; b<be; ++b){
-	for (auto pj=hist.begin(b);pj<hist.end(b);++pj) {
-	  loop(*pj);
-	}}
-      for (auto pj=hist.beginSpill();pj<hist.endSpill();++pj)
-        loop(*pj);
+
+      forEachInBins(hist,izt[i],1,loop);
     }
-    
+      
     __syncthreads();
     
     //  if(0==threadIdx.x) printf("nn counted\n");
@@ -118,15 +109,8 @@ namespace gpuVertexFinder {
 	  }
 	  atomicMin(&iv[i], old);
 	};
-	
-	int bs = hist.bin(izt[i]);
-	int be = std::min(int(hist.nbins()),bs+2);
-	for (auto b=bs; b<be; ++b){
-	  for (auto pj=hist.begin(b);pj<hist.end(b);++pj) {
-       	    loop(*pj);
-	  }}
-	for (auto pj=hist.beginSpill();pj<hist.endSpill();++pj)
-	  loop(*pj);
+
+	forEachInBins(hist,izt[i],1,loop);
       } // for i
     } // while
     
@@ -145,15 +129,7 @@ namespace gpuVertexFinder {
 	mdist=dist;
 	iv[i] = iv[j]; // assign to cluster (better be unique??)
       };
-      int bs = hist.bin(izt[i]);
-      int be = std::min(int(hist.nbins()),bs+2);
-      bs = bs==0 ? 0 : bs-1;
-      for (auto b=bs; b<be; ++b){
-	for (auto pj=hist.begin(b);pj<hist.end(b);++pj) {
-	  loop(*pj);
-	}}
-      for (auto pj=hist.beginSpill();pj<hist.endSpill();++pj)
-        loop(*pj);
+      forEachInBins(hist,izt[i],1,loop);
     }
     
     
