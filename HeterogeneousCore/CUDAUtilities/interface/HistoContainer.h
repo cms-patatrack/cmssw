@@ -75,7 +75,32 @@ namespace cudautils {
 } // namespace cudautils
 #endif
 
-template<typename T, uint32_t N, uint32_t M, uint32_t S=sizeof(T) * 8, typename I=uint32_t>
+
+// iteratate over N bins left and right of the one containing "v"
+// including spillBin
+template<typename Hist, typename V, typename Func>
+__host__ __device__
+void forEachInBins(Hist const & hist, V value, int n, Func func) {
+   int bs = hist.bin(value);
+   int be = std::min(int(hist.nbins()),bs+n+1);
+   bs = std::max(0,bs-n);
+   assert(be>bs);
+   for (auto b=bs; b<be; ++b){
+   for (auto pj=hist.begin(b);pj<hist.end(b);++pj) {
+      func(*pj);
+   }}
+   for (auto pj=hist.beginSpill();pj<hist.endSpill();++pj)
+     func(*pj);
+}
+
+
+template<
+  typename T, // the type of the discretized input values
+  uint32_t N, // number of bins (in bits)
+  uint32_t M, // max number of element a bin can contain
+  uint32_t S=sizeof(T) * 8, // number of significant bits in T
+  typename I=uint32_t  // type stored in the container (usually an index in a vector of the input values)
+>
 class HistoContainer {
 public:
 #ifdef __CUDACC__
