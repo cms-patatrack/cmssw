@@ -9,14 +9,14 @@ template<typename T,
          typename std::enable_if<std::is_unsigned<T>::value,T>::type* = nullptr
         >
 __device__
-void reorderSigned(T * a, uint16_t * ind, uint16_t * ind2, uint32_t size) {
+void reorderSigned(T const * a, uint16_t * ind, uint16_t * ind2, uint32_t size) {
 }
 
 template<typename T, 
          typename std::enable_if<std::is_signed<T>::value,T>::type* = nullptr
         >
 __device__
-void reorderSigned(T * a, uint16_t * ind, uint16_t * ind2, uint32_t size) {
+void reorderSigned(T const * a, uint16_t * ind, uint16_t * ind2, uint32_t size) {
 
   //move negative first...
 
@@ -46,7 +46,7 @@ void reorderSigned(T * a, uint16_t * ind, uint16_t * ind2, uint32_t size) {
 
 template<typename T>
 __device__  
-void radixSort(T * a, uint16_t * ind, uint32_t size) {
+void radixSort(T const * a, uint16_t * ind, uint32_t size) {
     
   constexpr int d = 8, w = 8*sizeof(T);
   constexpr int sb = 1<<d;
