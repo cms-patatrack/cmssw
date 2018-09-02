@@ -25,8 +25,6 @@ void radixSort(T * a, uint16_t * ind, uint32_t size) {
 
   // bool debug = false; // threadIdx.x==0 && blockIdx.x==5;
 
-  firstNeg=0;
-
   p = 0;  
 
   auto j = ind;
@@ -123,11 +121,13 @@ void radixSort(T * a, uint16_t * ind, uint32_t size) {
   else
     assert(j==ind);   // w/d is even so ind is correct
 
+  // use enable_if and SFINAE (how????)
+  if (T(0)<T(-1)) return;  // no need for unsigned...
+  // now move negative first...
+  firstNeg=0;
+
   __syncthreads();
 
-  
-
-  // now move negative first...
   // find first negative  (for float ^ will not work...)
   for (auto i=first; i<size-1; i+=blockDim.x) {
     // if ( (int(a[ind[i]])*int(a[ind[i+1]])) <0 ) firstNeg=i+1;
@@ -135,7 +135,6 @@ void radixSort(T * a, uint16_t * ind, uint32_t size) {
   }
   
   __syncthreads();
-  // assert(firstNeg>0); not necessary true if all positive !
 
   auto ii=first;
   for (auto i=firstNeg+threadIdx.x; i<size; i+=blockDim.x)  { ind2[ii] = ind[i]; ii+=blockDim.x; }

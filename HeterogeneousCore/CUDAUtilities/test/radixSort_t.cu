@@ -40,8 +40,9 @@ std::uniform_int_distribution<T> rgen(std::numeric_limits<T>::min(),std::numeric
 
 
 
-
-  std::cout << "Will sort " << N << " 'ints' of size " << sizeof(T) << std::endl;
+  constexpr bool sgn = T(-1) < T(0);
+  std::cout << "Will sort " << N << (sgn ? " signed" : " unsigned")
+            << " 'ints' of size " << sizeof(T) << std::endl;
 
   for (int i=0; i<50; ++i) {
 
@@ -120,5 +121,9 @@ int main() {
   go<int16_t>();
   go<int32_t>();
   go<int64_t>();
+  go<uint8_t>();
+  go<uint16_t>();
+  go<uint32_t>();
+  // go<uint64_t>();
   return 0;
 }
