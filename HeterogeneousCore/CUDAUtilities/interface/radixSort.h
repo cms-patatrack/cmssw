@@ -4,6 +4,46 @@
 #include<cstdint>
 #include<cassert>
 
+
+template<typename T, 
+         typename std::enable_if<std::is_unsigned<T>::value,T>::type* = nullptr
+        >
+__device__
+void reorderSigned(T * a, uint16_t * ind, uint16_t * ind2, uint32_t size) {
+}
+
+template<typename T, 
+         typename std::enable_if<std::is_signed<T>::value,T>::type* = nullptr
+        >
+__device__
+void reorderSigned(T * a, uint16_t * ind, uint16_t * ind2, uint32_t size) {
+
+  //move negative first...
+
+  int32_t first = threadIdx.x;
+  __shared__ uint32_t firstNeg;
+  firstNeg=0;
+  __syncthreads();
+
+  // find first negative  (for float ^ will not work...)
+  for (auto i=first; i<size-1; i+=blockDim.x) {
+    // if ( (int(a[ind[i]])*int(a[ind[i+1]])) <0 ) firstNeg=i+1;
+   if ( (a[ind[i]]^a[ind[i+1]]) < 0 ) firstNeg=i+1;
+  }
+
+  __syncthreads();
+
+  auto ii=first;
+  for (auto i=firstNeg+threadIdx.x; i<size; i+=blockDim.x)  { ind2[ii] = ind[i]; ii+=blockDim.x; }
+  __syncthreads();
+  ii= size-firstNeg +threadIdx.x;
+  assert(ii>=0);
+  for (auto i=first;i<firstNeg;i+=blockDim.x)  { ind2[ii] = ind[i]; ii+=blockDim.x; }
+  __syncthreads();
+  for (auto i=first; i<size; i+=blockDim.x) ind[i]=ind2[i];
+
+}
+
 template<typename T>
 __device__  
 void radixSort(T * a, uint16_t * ind, uint32_t size) {
@@ -14,7 +54,6 @@ void radixSort(T * a, uint16_t * ind, uint32_t size) {
   constexpr int MaxSize = 256*32;
   __shared__ uint16_t ind2[MaxSize];
   __shared__ int32_t c[sb], ct[sb], cu[sb];
-  __shared__ uint32_t firstNeg;    
 
   __shared__ int ibs;
   __shared__ int p;
@@ -121,31 +160,9 @@ void radixSort(T * a, uint16_t * ind, uint32_t size) {
   else
     assert(j==ind);   // w/d is even so ind is correct
 
-  // use enable_if and SFINAE (how????)
-  if (T(0)<T(-1)) return;  // no need for unsigned...
-  // now move negative first...
-  firstNeg=0;
+  // now move negative first... (if signed)
+  reorderSigned(a,ind,ind2,size);
 
-  __syncthreads();
-
-  // find first negative  (for float ^ will not work...)
-  for (auto i=first; i<size-1; i+=blockDim.x) {
-    // if ( (int(a[ind[i]])*int(a[ind[i+1]])) <0 ) firstNeg=i+1;
-   if ( (a[ind[i]]^a[ind[i+1]]) < 0 ) firstNeg=i+1; 
-  }
-  
-  __syncthreads();
-
-  auto ii=first;
-  for (auto i=firstNeg+threadIdx.x; i<size; i+=blockDim.x)  { ind2[ii] = ind[i]; ii+=blockDim.x; }
-  __syncthreads();
-  ii= size-firstNeg +threadIdx.x;
-  assert(ii>=0);
-  for (auto i=first;i<firstNeg;i+=blockDim.x)  { ind2[ii] = ind[i]; ii+=blockDim.x; }
-  __syncthreads();
-  for (auto i=first; i<size; i+=blockDim.x) ind[i]=ind2[i];
-
-  
 }
 
 
