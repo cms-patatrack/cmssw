@@ -118,8 +118,11 @@ void radixSort(T * a, uint16_t * ind, uint32_t size) {
  
   }
 
-  // w/d is even so ind is correct
-  assert(j==ind);
+  if (8==w) // int8 
+     for (auto i=first; i<size; i+=blockDim.x) ind[i]=ind2[i];
+  else
+    assert(j==ind);   // w/d is even so ind is correct
+
   __syncthreads();
 
   
