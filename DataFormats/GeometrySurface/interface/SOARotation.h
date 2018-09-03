@@ -139,6 +139,22 @@ public:
        ux+=px; uy+=py; uz+=pz;
   }
 
+  constexpr inline
+  void toGlobal(
+    T cxx,
+    T cxy, 
+    T cyy,
+    T * gl) const {
+   
+    auto const & r = rot;
+    gl[0] =  r.xx()*(r.xx()*cxx+r.yx()*cxy) + r.yx()*(r.xx()*cxy+r.yx()*cyy);
+    gl[1] =  r.xx()*(r.xy()*cxx+r.yy()*cxy) + r.yx()*(r.xy()*cxy+r.yy()*cyy);
+    gl[2] =  r.xy()*(r.xy()*cxx+r.yy()*cxy) + r.yy()*(r.xy()*cxy+r.yy()*cyy);
+    gl[3] =  r.xx()*(r.xz()*cxx+r.yz()*cxy) + r.yx()*(r.xz()*cxy+r.yz()*cyy);
+    gl[4] =  r.xy()*(r.xz()*cxx+r.yz()*cxy) + r.yy()*(r.xz()*cxy+r.yz()*cyy);
+    gl[5] =  r.xz()*(r.xz()*cxx+r.yz()*cxy) + r.yz()*(r.xz()*cxy+r.yz()*cyy);
+  }
+
 
   constexpr inline
   T x() const { return px; }

@@ -96,6 +96,8 @@ namespace pixelgpudetails {
    gpu_.hitsModuleStart_d = input.clusModuleStart_d;
    cudaCheck(cudaMemcpyAsync(gpu_d, &gpu_, sizeof(HitsOnGPU), cudaMemcpyDefault, stream.id()));
 
+   gpu_.cpeParams = cpeParams; // copy it for use in clients
+
     int threadsPerBlock = 256;
     int blocks = input.nModules; // active modules (with digis)
     gpuPixelRecHits::getHits<<<blocks, threadsPerBlock, 0, stream.id()>>>(
@@ -155,6 +157,7 @@ namespace pixelgpudetails {
   }
 
   std::unique_ptr<HitsOnCPU>&& PixelRecHitGPUKernel::getOutput(cuda::stream_t<>& stream) {
+    assert(gpu_.cpeParams);
     cpu_->gpu_d = gpu_d;
     memcpy(cpu_->hitsModuleStart, h_hitsModuleStart_, (gpuClustering::MaxNumModules+1) * sizeof(uint32_t));
     return std::move(cpu_);
