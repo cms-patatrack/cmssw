@@ -64,10 +64,10 @@ public:
 
 void PixelVertexHeterogeneousProducer::fillDescriptions(edm::ConfigurationDescriptions &descriptions) {
   edm::ParameterSetDescription desc;
-  desc.add<int>("minT",3);  // min number of neighbours to be "core"
-  desc.add<double>("eps",0.1); // max absolute distance to cluster
-  desc.add<double>("errmax",0.02); // max error to be "seed"
-  desc.add<double>("chi2max",12.);   // max normalized distance to cluster
+  desc.add<int>("minT",2);  // min number of neighbours to be "core"
+  desc.add<double>("eps",0.07); // max absolute distance to cluster
+  desc.add<double>("errmax",0.01); // max error to be "seed"
+  desc.add<double>("chi2max",9.);   // max normalized distance to cluster
 
   desc.add<double>("PtMin", 0.5);
   desc.add<edm::InputTag>("TrackCollection", edm::InputTag("pixelTracks"));
