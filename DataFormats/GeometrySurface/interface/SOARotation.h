@@ -155,6 +155,32 @@ public:
     gl[5] =  r.xz()*(r.xz()*cxx+r.yz()*cxy) + r.yz()*(r.xz()*cxy+r.yz()*cyy);
   }
 
+  constexpr inline
+  void toLocal(
+    T const * ge,
+    T & lxx,
+    T & lxy,
+    T & lyy ) const {
+
+    auto const & r = rot;
+
+    T cxx = ge[0]; T cyx = ge[1]; T cyy = ge[2];
+    T czx = ge[3]; T czy = ge[4]; T czz = ge[5];
+
+    lxx 
+      = r.xx()*(r.xx()*cxx + r.xy()*cyx + r.xz()*czx)
+      + r.xy()*(r.xx()*cyx + r.xy()*cyy + r.xz()*czy)
+      + r.xz()*(r.xx()*czx + r.xy()*czy + r.xz()*czz);
+    lxy
+      = r.yx()*(r.xx()*cxx + r.xy()*cyx + r.xz()*czx)
+      + r.yy()*(r.xx()*cyx + r.xy()*cyy + r.xz()*czy)
+      + r.yz()*(r.xx()*czx + r.xy()*czy + r.xz()*czz);
+    lyy
+      = r.yx()*(r.yx()*cxx + r.yy()*cyx + r.yz()*czx)
+      + r.yy()*(r.yx()*cyx + r.yy()*cyy + r.yz()*czy)
+      + r.yz()*(r.yx()*czx + r.yy()*czy + r.yz()*czz);
+  }  
+
 
   constexpr inline
   T x() const { return px; }
