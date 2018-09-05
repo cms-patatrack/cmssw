@@ -17,6 +17,9 @@ void kernelFullFit(Rfit::Matrix3xNd * hits,
     bool errors,
     Rfit::circle_fit * circle_fit_resultsGPU,
     Rfit::line_fit * line_fit_resultsGPU) {
+
+  printf("hits size: %d,%d\n", hits->rows(), hits->cols());
+  Rfit::printIt(hits, "KernelFulFit - input hits: ");
   Vector4d fast_fit = Rfit::Fast_fit(*hits);
 
   u_int n = hits->cols();
