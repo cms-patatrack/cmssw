@@ -40,8 +40,9 @@ std::uniform_int_distribution<T> rgen(std::numeric_limits<T>::min(),std::numeric
 
 
 
-
-  std::cout << "Will sort " << N << " 'ints' of size " << sizeof(T) << std::endl;
+  constexpr bool sgn = T(-1) < T(0);
+  std::cout << "Will sort " << N << (sgn ? " signed" : " unsigned")
+            << " 'ints' of size " << sizeof(T) << std::endl;
 
   for (int i=0; i<50; ++i) {
 
@@ -50,8 +51,8 @@ std::uniform_int_distribution<T> rgen(std::numeric_limits<T>::min(),std::numeric
     } else if (i>30) {
     for (long long j = 0; j < N; j++) v[j]=rgen(eng);
     } else {
-      long long imax = (i<15) ? std::numeric_limits<T>::max() +1LL : 255;
-      for (long long j = 0; j < N; j++) {
+      uint64_t imax = (i<15) ? uint64_t(std::numeric_limits<T>::max()) +1LL : 255;
+      for (uint64_t j = 0; j < N; j++) {
         v[j]=(j%imax); if(j%2 && i%2) v[j]=-v[j];
       }
     }
@@ -93,10 +94,11 @@ std::uniform_int_distribution<T> rgen(std::numeric_limits<T>::min(),std::numeric
 
   if (i==0) std::cout << "done for " << offsets[blocks] << std::endl;
 
+  using LL=long long;
   if (32==i) {
-    std::cout << v[ind[0]] << ' ' << v[ind[1]] << ' ' << v[ind[2]] << std::endl;
-    std::cout << v[ind[3]] << ' ' << v[ind[10]] << ' ' << v[ind[blockSize-1000]] << std::endl;
-    std::cout << v[ind[blockSize/2-1]] << ' ' << v[ind[blockSize/2]] << ' ' << v[ind[blockSize/2+1]] << std::endl;
+    std::cout << LL(v[ind[0]]) << ' ' << LL(v[ind[1]]) << ' ' << LL(v[ind[2]]) << std::endl;
+    std::cout << LL(v[ind[3]]) << ' ' << LL(v[ind[10]]) << ' ' << LL(v[ind[blockSize-1000]]) << std::endl;
+    std::cout << LL(v[ind[blockSize/2-1]]) << ' ' << LL(v[ind[blockSize/2]]) << ' ' << LL(v[ind[blockSize/2+1]]) << std::endl;
   }
   for (int ib=0; ib<blocks; ++ib)
   for (auto i = offsets[ib]+1; i < offsets[ib+1]; i++) {
@@ -115,7 +117,13 @@ std::uniform_int_distribution<T> rgen(std::numeric_limits<T>::min(),std::numeric
 
 int main() {
 
+  go<int8_t>();
   go<int16_t>();
   go<int32_t>();
+  go<int64_t>();
+  go<uint8_t>();
+  go<uint16_t>();
+  go<uint32_t>();
+  // go<uint64_t>();
   return 0;
 }
