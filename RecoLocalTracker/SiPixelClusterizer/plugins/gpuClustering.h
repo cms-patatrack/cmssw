@@ -11,9 +11,9 @@
 
 namespace gpuClustering {
 
-  __global__ void countModules(uint16_t const * id,
-                               uint32_t * moduleStart,
-                               int32_t * clusterId,
+  __global__ void countModules(uint16_t const * __restrict__ id,
+                               uint32_t * __restrict__ moduleStart,
+                               int32_t * __restrict__ clusterId,
                                int numElements)
   {
     int i = blockDim.x * blockIdx.x + threadIdx.x;
@@ -32,13 +32,13 @@ namespace gpuClustering {
     }
   }
 
-  __global__ void findClus(uint16_t const * id,             // module id of each pixel
-                           uint16_t const * x,              // local coordinates of each pixel
-                           uint16_t const * y,              //
-                           uint32_t const * moduleStart,    // index of the first pixel of each module
-                           uint32_t * nClustersInModule,    // output: number of clusters found in each module
-                           uint32_t * moduleId,             // output: module id of each module
-                           int32_t *  clusterId,            // output: cluster id of each pixel
+  __global__ void findClus(uint16_t const * __restrict__ id,             // module id of each pixel
+                           uint16_t const * __restrict__ x,              // local coordinates of each pixel
+                           uint16_t const * __restrict__ y,              //
+                           uint32_t const * __restrict__ moduleStart,    // index of the first pixel of each module
+                           uint32_t * __restrict__ nClustersInModule,    // output: number of clusters found in each module
+                           uint32_t * __restrict__ moduleId,             // output: module id of each module
+                           int32_t * __restrict__  clusterId,            // output: cluster id of each pixel
                            int numElements)
   {
 

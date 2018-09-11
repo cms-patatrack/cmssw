@@ -42,8 +42,8 @@ namespace gpuVertexFinder {
 
 
   void Producer::produce(cudaStream_t stream,
-			 float const * zt,
-			 float const * ezt2,
+			 float const * __restrict__ zt,
+			 float const * __restrict__ ezt2,
 			 uint32_t ntrks
 			 ) {
     

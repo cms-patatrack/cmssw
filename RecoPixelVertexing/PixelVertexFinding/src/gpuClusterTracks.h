@@ -27,17 +27,17 @@ namespace gpuVertexFinder {
     
     auto er2mx = errmax*errmax;
     
-    auto & data = *pdata;
-    float const * zt = data.zt;
-    float const * ezt2 = data.ezt2;
-    float * zv = data.zv;
-    float * wv = data.wv;
-    float * chi2 = data.chi2;
+    auto & __restrict__ data = *pdata;
+    float const * __restrict__ zt = data.zt;
+    float const * __restrict__ ezt2 = data.ezt2;
+    float * __restrict__ zv = data.zv;
+    float * __restrict__ wv = data.wv;
+    float * __restrict__ chi2 = data.chi2;
     uint32_t & nv = *data.nv;
     
-    int8_t  * izt = data.izt;
-    int32_t * nn = data.nn;
-    int32_t * iv = data.iv;
+    int8_t  * __restrict__ izt = data.izt;
+    int32_t * __restrict__ nn = data.nn;
+    int32_t * __restrict__ iv = data.iv;
     
     assert(pdata);
     assert(zt);

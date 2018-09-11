@@ -20,9 +20,9 @@ namespace gpuPixelDoublets {
 
   template<typename Hist>
   __device__
-  void doubletsFromHisto(uint8_t const * layerPairs, uint32_t nPairs, GPUCACell * cells, uint32_t * nCells,
-                         int16_t const * iphi, Hist const * hist, uint32_t const * offsets,
-                         siPixelRecHitsHeterogeneousProduct::HitsOnGPU const & hh,
+  void doubletsFromHisto(uint8_t const * __restrict__ layerPairs, uint32_t nPairs, GPUCACell * cells, uint32_t * nCells,
+                         int16_t const * __restrict__ iphi, Hist const * __restrict__ hist, uint32_t const * __restrict__ offsets,
+                         siPixelRecHitsHeterogeneousProduct::HitsOnGPU const &  __restrict__ hh,
                          GPU::VecArray< unsigned int, 2048>  * isOuterHitOfCell,
                          int16_t const * phicuts, float const * minz, float const * maxz, float const * maxr) {
 
@@ -133,8 +133,9 @@ namespace gpuPixelDoublets {
 
   }  // loop in block...
   }
+
   __global__
-  void getDoubletsFromHisto(GPUCACell * cells, uint32_t * nCells, siPixelRecHitsHeterogeneousProduct::HitsOnGPU const * hhp,                
+  void getDoubletsFromHisto(GPUCACell * cells, uint32_t * nCells, siPixelRecHitsHeterogeneousProduct::HitsOnGPU const *  __restrict__ hhp,                
                             GPU::VecArray< unsigned int, 2048> *isOuterHitOfCell) {
 
     uint8_t const layerPairs[2*13] = {0,1 ,1,2 ,2,3 
@@ -168,7 +169,7 @@ namespace gpuPixelDoublets {
                            };
 
 
-    auto const & hh = *hhp;
+    auto const &  __restrict__ hh = *hhp;
     doubletsFromHisto(layerPairs, 13, cells, nCells, 
                       hh.iphi_d,hh.hist_d,hh.hitsLayerStart_d,
                       hh, isOuterHitOfCell,
