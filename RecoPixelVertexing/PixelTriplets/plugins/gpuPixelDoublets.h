@@ -41,7 +41,6 @@ namespace gpuPixelDoublets {
 
     auto idx = blockIdx.x*blockDim.x + threadIdx.x;
   for(auto j=idx;j<ntot;j+=blockDim.x*gridDim.x) {
-    auto j = idx; 
 
     uint32_t pairLayerId=0;
     while(j>=innerLayerCumulativeSize[pairLayerId++]);  --pairLayerId; // move to lower_bound ??
