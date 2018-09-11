@@ -23,8 +23,8 @@ namespace gpuPixelDoublets {
   void doubletsFromHisto(uint8_t const * __restrict__ layerPairs, uint32_t nPairs, GPUCACell * cells, uint32_t * nCells,
                          int16_t const * __restrict__ iphi, Hist const * __restrict__ hist, uint32_t const * __restrict__ offsets,
                          siPixelRecHitsHeterogeneousProduct::HitsOnGPU const &  __restrict__ hh,
-                         GPU::VecArray< unsigned int, 2048>  * isOuterHitOfCell,
-                         int16_t const * phicuts, float const * minz, float const * maxz, float const * maxr) {
+                         GPU::VecArray< unsigned int, 256>  * isOuterHitOfCell,
+                        int16_t const * phicuts, float const * minz, float const * maxz, float const * maxr) {
 
     auto layerSize = [=](uint8_t li) { return offsets[li+1]-offsets[li]; };
 
@@ -136,7 +136,7 @@ namespace gpuPixelDoublets {
 
   __global__
   void getDoubletsFromHisto(GPUCACell * cells, uint32_t * nCells, siPixelRecHitsHeterogeneousProduct::HitsOnGPU const *  __restrict__ hhp,                
-                            GPU::VecArray< unsigned int, 2048> *isOuterHitOfCell) {
+                            GPU::VecArray< unsigned int, 256> *isOuterHitOfCell) {
 
     uint8_t const layerPairs[2*13] = {0,1 ,1,2 ,2,3 
                                      // ,0,4 ,1,4 ,2,4 ,4,5 ,5,6  
