@@ -80,8 +80,8 @@ namespace pixelCPEforGPU {
   };
 
 
-  constexpr uint32_t MaxClusInModule=256;
-  using ClusParams = ClusParamsT<256>;
+  constexpr uint32_t MaxClusInModule = 256;
+  using ClusParams = ClusParamsT<MaxClusInModule>;
 
   constexpr inline
   void computeAnglesFromDet(DetParams const & __restrict__ detParams, float const x, float const y, float & cotalpha, float & cotbeta) {

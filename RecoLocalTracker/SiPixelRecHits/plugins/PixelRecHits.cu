@@ -36,8 +36,11 @@ namespace pixelgpudetails {
 
     constexpr auto MAX_HITS = gpuClustering::MaxNumModules * 256;
 
-    cudaCheck(cudaMalloc((void **) & gpu_.bs_d, 3 * sizeof(float)));
-    cudaCheck(cudaMalloc((void **) & gpu_.hitsLayerStart_d, 11 * sizeof(uint32_t)));
+    cudaCheck(cudaMalloc(& gpu_.bs_d, 3 * sizeof(float)));
+    cudaCheck(cudaMalloc(& gpu_.hitsLayerStart_d, 11 * sizeof(uint32_t)));
+
+    // shared memory-like: one element per module
+    cudaCheck(cudaMalloc(& clusterParams_, sizeof(pixelCPEforGPU::ClusParams) * gpuClustering::MaxNumModules));
 
     // Coalesce all 32bit and 16bit arrays to two big blobs
     //
@@ -85,7 +88,7 @@ namespace pixelgpudetails {
 
     // On CPU we can safely use MAX_HITS*sizeof as the pitch. Thanks
     // to '*256' it is even aligned by cache line
-    h_owner_32bit_pitch_ = MAX_HITS*sizeof(uint32_t); 
+    h_owner_32bit_pitch_ = MAX_HITS*sizeof(uint32_t);
     cudaCheck(cudaMallocHost(&h_owner_32bit_, h_owner_32bit_pitch_ * 5));
     h_charge_ = slicePitch<int32_t>(h_owner_32bit_, h_owner_32bit_pitch_, 0);
     h_xl_ = slicePitch<float>(h_owner_32bit_, h_owner_32bit_pitch_, 1);
@@ -111,6 +114,7 @@ namespace pixelgpudetails {
     cudaCheck(cudaFree(gpu_.hist_d));
     cudaCheck(cudaFree(gpu_d));
     cudaCheck(cudaFree(d_phase1TopologyLayerStart_));
+    cudaCheck(cudaFree(clusterParams_));
 
     cudaCheck(cudaFreeHost(h_hitsModuleStart_));
     cudaCheck(cudaFreeHost(h_owner_32bit_));
@@ -148,7 +152,8 @@ namespace pixelgpudetails {
       gpu_.iphi_d,
       gpu_.xl_d, gpu_.yl_d,
       gpu_.xerr_d, gpu_.yerr_d,
-      gpu_.mr_d, gpu_.mc_d
+      gpu_.mr_d, gpu_.mc_d,
+      clusterParams_
     );
     cudaCheck(cudaGetLastError());
 
