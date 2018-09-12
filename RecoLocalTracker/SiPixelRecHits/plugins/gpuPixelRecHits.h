@@ -11,44 +11,37 @@
 
 namespace gpuPixelRecHits {
 
-
-
-
   // to be moved in common namespace...
   constexpr uint16_t InvId=9999; // must be > MaxNumModules
 
-
   constexpr uint32_t MaxClusInModule = pixelCPEforGPU::MaxClusInModule;
 
-  using ClusParams = pixelCPEforGPU::ClusParams;
-
-
   __global__ void getHits(pixelCPEforGPU::ParamsOnGPU const * __restrict__  cpeParams,
-                          float const * __restrict__  bs,
+                          float    const * __restrict__  bs,
                           uint16_t const * __restrict__  id,
-			  uint16_t const * __restrict__  x,
-			  uint16_t const * __restrict__  y,
-			  uint16_t const * __restrict__  adc,
-			  uint32_t const * __restrict__  digiModuleStart,
-			  uint32_t const * __restrict__  clusInModule,
-			  uint32_t const * __restrict__  moduleId,
-			  int32_t  const * __restrict__  clus,
-			  int numElements,
-			  uint32_t const * __restrict__  hitsModuleStart,
-                          int32_t * chargeh,
+                          uint16_t const * __restrict__  x,
+                          uint16_t const * __restrict__  y,
+                          uint16_t const * __restrict__  adc,
+                          uint32_t const * __restrict__  digiModuleStart,
+                          uint32_t const * __restrict__  clusInModule,
+                          uint32_t const * __restrict__  moduleId,
+                          int32_t  const * __restrict__  clus,
+                          int numElements,
+                          uint32_t const * __restrict__  hitsModuleStart,
+                          int32_t  * chargeh,
                           uint16_t * detInd,
-			  float * xg, float * yg, float * zg, float * rg, int16_t * iph,
+                          float * xg, float * yg, float * zg, float * rg, int16_t * iph,
                           float * xl, float * yl,
                           float * xe, float * ye, 
-                          uint16_t * mr, uint16_t * mc)
+                          uint16_t * mr,
+                          uint16_t * mc,
+                          pixelCPEforGPU::ClusParams * clusterParams )
   {
-    // as usual one block per module
-    __shared__ ClusParams clusParams;
-
     auto first = digiModuleStart[1 + blockIdx.x];
     auto me = id[first];
     assert(moduleId[blockIdx.x] == me);
     auto nclus = clusInModule[me];
+    pixelCPEforGPU::ClusParams & clusParams = clusterParams[blockIdx.x];
 
 #ifdef GPU_DEBUG
     if (me%100==1)
