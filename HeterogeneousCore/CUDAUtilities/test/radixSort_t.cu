@@ -31,7 +31,7 @@ struct RS<float> {
 
 template<typename T, int NS=sizeof(T), 
          typename U=T, typename LL=long long>
-void go() {
+void go(bool useShared) {
 
   std::mt19937 eng;
 // std::mt19937 eng2;
@@ -89,6 +89,7 @@ void go() {
 
   auto v_d = cuda::memory::device::make_unique<U[]>(current_device, N);
   auto ind_d = cuda::memory::device::make_unique<uint16_t[]>(current_device, N);
+  auto ws_d = cuda::memory::device::make_unique<uint16_t[]>(current_device, N);
   auto off_d = cuda::memory::device::make_unique<uint32_t[]>(current_device, blocks+1);
 
   cuda::memory::copy(v_d.get(), v, N*sizeof(T));
@@ -97,11 +98,20 @@ void go() {
   if (i<2) std::cout << "lauch for " << offsets[blocks] << std::endl;
 
    delta -= (std::chrono::high_resolution_clock::now()-start);
+   constexpr int MaxSize = 256*32;
+   if (useShared)
    cuda::launch(
                 radixSortMultiWrapper<U,NS>,
-                { blocks, 256 },
-                v_d.get(),ind_d.get(),off_d.get()
+                { blocks, 256, MaxSize*2 },
+                v_d.get(),ind_d.get(),off_d.get(),nullptr
         );
+   else
+   cuda::launch(
+                radixSortMultiWrapper2<U,NS>,
+                { blocks, 256 },
+                v_d.get(),ind_d.get(),off_d.get(),ws_d.get()
+        );
+
 
  if (i==0) std::cout << "done for " << offsets[blocks] << std::endl;
 
@@ -140,17 +150,42 @@ void go() {
 
 int main() {
 
-  go<int8_t>();
-  go<int16_t>();
-  go<int32_t>();
-  go<int32_t,3>();
-  go<int64_t>();
-  go<float,4,float,double>();
-  go<float,2,float,double>();
+  bool useShared=false;
 
-  go<uint8_t>();
-  go<uint16_t>();
-  go<uint32_t>();
-  // go<uint64_t>();
+  std::cout << "using Global memory" <<    std::endl;
+
+
+  go<int8_t>(useShared);
+  go<int16_t>(useShared);
+  go<int32_t>(useShared);
+  go<int32_t,3>(useShared);
+  go<int64_t>(useShared);
+  go<float,4,float,double>(useShared);
+  go<float,2,float,double>(useShared);
+
+  go<uint8_t>(useShared);
+  go<uint16_t>(useShared);
+  go<uint32_t>(useShared);
+  // go<uint64_t>(v);
+
+  useShared=true;
+
+  std::cout << "using Shared memory" << std::endl;
+
+  go<int8_t>(useShared);
+  go<int16_t>(useShared);
+  go<int32_t>(useShared);
+  go<int32_t,3>(useShared);
+  go<int64_t>(useShared);
+  go<float,4,float,double>(useShared);
+  go<float,2,float,double>(useShared);
+
+  go<uint8_t>(useShared);
+  go<uint16_t>(useShared);
+  go<uint32_t>(useShared);
+  // go<uint64_t>(v);
+
+
+
   return 0;
 }
