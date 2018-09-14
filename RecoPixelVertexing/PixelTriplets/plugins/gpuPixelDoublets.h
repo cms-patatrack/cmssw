@@ -138,9 +138,10 @@ namespace gpuPixelDoublets {
   }
 
   constexpr auto getDoubletsFromHistoMaxBlockSize = 64;
+  constexpr auto getDoubletsFromHistoMinBlocksPerMP = 16;
 
   __global__
-  __launch_bounds__(getDoubletsFromHistoMaxBlockSize)
+  __launch_bounds__(getDoubletsFromHistoMaxBlockSize,getDoubletsFromHistoMinBlocksPerMP)
   void getDoubletsFromHisto(GPUCACell * cells,
                             uint32_t * nCells,
                             siPixelRecHitsHeterogeneousProduct::HitsOnGPU const *  __restrict__ hhp,
