@@ -34,6 +34,7 @@
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 #include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuCalibPixel.h"
 #include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuClustering.h"
+#include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuClusterChargeCut.h"
 #include "RecoLocalTracker/SiPixelClusterizer/interface/SiPixelFedCablingMapGPU.h"
 
 // local includes
@@ -716,6 +717,18 @@ namespace pixelgpudetails {
           clus_d,
           wordCounter);
       cudaCheck(cudaGetLastError());
+
+      // apply charge cut
+      clusterChargeCut<<<blocks, threadsPerBlock, 0, stream.id()>>>(
+          moduleInd_d,
+          adc_d,
+          moduleStart_d,
+          clusInModule_d, moduleId_d,
+          clus_d,
+          wordCounter);
+      cudaCheck(cudaGetLastError());
+
+
 
       // count the module start indices already here (instead of
       // rechits) so that the number of clusters/hits can be made
