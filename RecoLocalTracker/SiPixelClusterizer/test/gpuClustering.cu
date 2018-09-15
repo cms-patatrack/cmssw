@@ -12,6 +12,7 @@
 #include <cuda/api_wrappers.h>
 
 #include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuClustering.h"
+#include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuClusterChargeCut.h"
 
 int main(void)
 {
@@ -58,7 +59,7 @@ int main(void)
     h_id[n]=id;
     h_x[n]=x;
     h_y[n]=x;
-    h_adc[n]=100;
+    h_adc[n]=5000;
     ++n;
     // diagonal
     ++ncl;
@@ -66,7 +67,7 @@ int main(void)
       h_id[n]=id;
       h_x[n]=x;
       h_y[n]=x;
-      h_adc[n]=100;
+      h_adc[n]=1000;
       ++n;
     }
     ++ncl;
@@ -75,7 +76,7 @@ int main(void)
       h_id[n]=id;
       h_x[n]=x;
       h_y[n]=x;
-      h_adc[n]=100;
+      h_adc[n]=1000;
       ++n;
     }
     ++ncl;
@@ -86,7 +87,7 @@ int main(void)
       h_id[n]=id;
       h_x[n]=xx[k];
       h_y[n]=20+xx[k];
-      h_adc[n]=100;
+      h_adc[n]=1000;
       ++n;
     }
     // holes
@@ -95,13 +96,13 @@ int main(void)
       h_id[n]=id;
       h_x[n]=xx[k];
       h_y[n]=100;
-      h_adc[n]=100;
+      h_adc[n]=1000;
       ++n;
       if (xx[k]%2==0) {
         h_id[n]=id;
         h_x[n]=xx[k];
         h_y[n]=101;
-        h_adc[n]=100;
+        h_adc[n]=1000;
       ++n;
       }
     }
@@ -114,7 +115,7 @@ int main(void)
     h_id[n]=id;
     h_x[n]=x;
     h_y[n]=x;
-    h_adc[n]=100;
+    h_adc[n]=1000;
     ++n;
   }
   // all odd id
@@ -132,7 +133,7 @@ int main(void)
           h_id[n]=id;
           h_x[n]=x+1;
           h_y[n]=x+y[k]+2;
-          h_adc[n]=100;
+          h_adc[n]=1000;
           ++n;
         }
       } else {
@@ -140,14 +141,14 @@ int main(void)
           h_id[n]=id;
           h_x[n]=x;
           h_y[n]=x+y[9-k];
-          h_adc[n]=100;
+          h_adc[n]=1000;
           ++n;
           if (y[k]==3) continue; // hole
           if (id==51)  {h_id[n++]=InvId; h_id[n++]=InvId; }// error
           h_id[n]=id;
           h_x[n]=x+1;
           h_y[n]=x+y[k]+2;
-          h_adc[n]=100;
+          h_adc[n]=1000;
           ++n;
         }
       }
@@ -199,10 +200,30 @@ int main(void)
                n
                );
 
-  cuda::memory::copy(&nModules,d_moduleStart.get(),sizeof(uint32_t));
+    cuda::memory::copy(&nModules,d_moduleStart.get(),sizeof(uint32_t));
+
+    uint32_t nclus[MaxNumModules], moduleId[nModules];
+
+    cuda::memory::copy(&nclus,d_clusInModule.get(),MaxNumModules*sizeof(uint32_t));
+    std::cout << "before charge cut found " << std::accumulate(nclus,nclus+MaxNumModules,0) << " clusters" << std::endl;
+
+
+
+  cuda::launch(
+               clusterChargeCut,
+               { blocksPerGrid, threadsPerBlock },
+               d_id.get(), d_adc.get(),
+               d_moduleStart.get(),
+               d_clusInModule.get(), d_moduleId.get(),
+               d_clus.get(),
+               n
+               );
+
+
+
   std::cout << "found " << nModules << " Modules active" << std::endl;
 
-  uint32_t nclus[MaxNumModules], moduleId[nModules];
+  cuda::memory::copy(h_id.get(), d_id.get(), size16);
   cuda::memory::copy(h_clus.get(), d_clus.get(), size32);
   cuda::memory::copy(&nclus,d_clusInModule.get(),MaxNumModules*sizeof(uint32_t));
   cuda::memory::copy(&moduleId,d_moduleId.get(),nModules*sizeof(uint32_t));
