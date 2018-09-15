@@ -29,3 +29,5 @@
   <use name="cuda-api-wrappers"/>
   <flags CUDA_FLAGS="-g -G"/>
 </bin>
+
+<bin file="prefixScan_t.cu" name="gpuPrefixScan_t"/>
