@@ -45,6 +45,7 @@ namespace gpuClustering {
     for (int i=threadIdx.x; i<nclus; i += blockDim.x) {
       charge[i]=0;
     }
+    __syncthreads();
 
     for (int i = first; i < numElements; i += blockDim.x) {
       if (id[i] == InvId) continue;     // not valid
@@ -54,27 +55,29 @@ namespace gpuClustering {
     __syncthreads();
 
     auto chargeCut = thisModuleId<96 ? 2000 : 4000; // move in constants (calib?)
+    __shared__ uint8_t ok[MaxNumClustersPerModules];
     __shared__ uint16_t newclusId[MaxNumClustersPerModules];
     for (int i=threadIdx.x; i<nclus; i += blockDim.x) {
-       newclusId[i] =  charge[i]>chargeCut ? 1 : 0;
+       newclusId[i] = ok[i] =  charge[i]>chargeCut ? 1 : 0;
     }
+
+    __syncthreads();
 
     // renumber
     __shared__ uint16_t ws[32];
     blockPrefixScan(newclusId, nclus, ws);
-    
+
     assert(nclus>=newclusId[nclus-1]);
     
     if(nclus==newclusId[nclus-1]) return;
 
     nClustersInModule[thisModuleId] = newclusId[nclus-1];
 
-    // mark bad cluster with 0 again
-    for (int i=threadIdx.x+1; i<nclus; i += blockDim.x) {
-      if (newclusId[i]==newclusId[i-1]) newclusId[i]=InvId+1;
+    // mark bad cluster again
+    for (int i=threadIdx.x; i<nclus; i += blockDim.x) {
+      if (0==ok[i]) newclusId[i]=InvId+1;
     }
     __syncthreads();
-    if (newclusId[0]==0) newclusId[0]=InvId+1;
 
     // reassign id
     for (int i = first; i < numElements; i += blockDim.x) {

@@ -37,3 +37,10 @@
   <use name="cuda-api-wrappers"/>
   <flags CXXFLAGS="-g"/>
 </bin>
+
+<bin file="gpuClustering.cu" name="gpuClustering_debug">
+  <use name="cuda"/>
+  <use name="cuda-api-wrappers"/>
+  <flags CXXFLAGS="-g"/>
+  <flags CUDA_FLAGS="-g -G"/>
+</bin>

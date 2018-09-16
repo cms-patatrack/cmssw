@@ -51,6 +51,23 @@ int main(void)
   int ncl=0;
   int y[10]={5,7,9,1,3,0,4,8,2,6};
 
+  auto generateClusters = [&](bool addBigNoise) {
+  if (addBigNoise) {
+    constexpr int MaxPixels = 1000;
+    int id = 666;
+    for (int x=0; x<140; x+=3) {
+      for (int yy=0; yy<400; yy+=3) {
+       h_id[n]=id;
+       h_x[n]=x;
+       h_y[n]=yy;
+       h_adc[n]=1000;
+       ++n; ++ncl;
+       if (MaxPixels<=ncl) break;
+     }
+     if (MaxPixels<=ncl) break; 
+    }
+  }
+
   {
     // isolated
     int id = 42;
@@ -154,8 +171,15 @@ int main(void)
       }
     }
   }
+  }; // end lambda
+  for (auto kkk=0; kkk<2; ++kkk) {
+  n=0; ncl=0;
+  generateClusters(1==kkk);
+
   std::cout << "created " << n << " digis in " << ncl << " clusters" << std::endl;
   assert(n<=numElements);
+
+
   size_t size32 = n * sizeof(unsigned int);
   size_t size16 = n * sizeof(unsigned short);
   size_t size8 = n * sizeof(uint8_t);
@@ -227,24 +251,48 @@ int main(void)
   cuda::memory::copy(h_clus.get(), d_clus.get(), size32);
   cuda::memory::copy(&nclus,d_clusInModule.get(),MaxNumModules*sizeof(uint32_t));
   cuda::memory::copy(&moduleId,d_moduleId.get(),nModules*sizeof(uint32_t));
-  cuda::memory::copy(h_debug.get(), d_debug.get(), size32);
+//  cuda::memory::copy(h_debug.get(), d_debug.get(), size32);
 
-  auto p = std::minmax_element(h_debug.get(),h_debug.get()+n);
-  std::cout << "debug " << *p.first << ' ' << *p.second << std::endl;
 
   std::set<unsigned int> clids;
   std::vector<unsigned int> seeds;
   for (int i=0; i<n; ++i) {
+    assert(h_id[i]!=666);  // only noise
     if (h_id[i]==InvId) continue;
     assert(h_clus[i]>=0);
     assert(h_clus[i]<nclus[h_id[i]]);
-    clids.insert(h_id[i]*100+h_clus[i]);
+    clids.insert(h_id[i]*1000+h_clus[i]);
                  // clids.insert(h_clus[i]);
     // if (h_clus[i]==i) seeds.push_back(i); // only if no renumbering
   }
 
+  // verify no hole in numbering
+  auto p = clids.begin();
+  auto cmid = (*p)/1000;
+  assert (0==(*p)%1000);
+  auto c= p; ++c;
+  std::cout << "first clusters " << *p << ' ' << *c << ' ' << nclus[cmid] << ' ' << nclus[(*c)/1000] << std::endl;
+  for(;c!=clids.end(); ++c) {
+     auto cc = *c;
+     auto pp = *p;
+     auto mid = cc/1000;
+     auto pnc = pp%1000;
+     auto nc = cc%1000;
+     if(mid!=cmid) {
+       assert (0==cc%1000);
+       assert (nclus[cmid]-1 == pp%1000);
+       // if (nclus[cmid]-1 != pp%1000) std::cout << "error size " << mid << ": "  << nclus[mid] << ' ' << pp << std::endl;   
+       cmid=mid;
+       p=c;
+       continue;
+     }
+     p=c;
+     // assert(nc==pnc+1);
+     if (nc!=pnc+1) std::cout << "error " << mid << ": " << nc << ' ' << pnc << std::endl;
+  }
+
   std::cout << "found " << std::accumulate(nclus,nclus+MaxNumModules,0) << ' ' <<  clids.size() << " clusters" << std::endl;
   // << " and " << seeds.size() << " seeds" << std::endl;
-
+  } /// end loop kkk
   return 0;
 }
