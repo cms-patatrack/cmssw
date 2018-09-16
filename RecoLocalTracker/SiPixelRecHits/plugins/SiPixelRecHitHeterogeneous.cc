@@ -309,12 +309,13 @@ void SiPixelRecHitHeterogeneous::run(const edm::Handle<SiPixelClusterCollectionN
 
   } //    <-- End loop on DetUnits
 
+  /*
   std::cout << "SiPixelRecHitGPUVI $ det, clus, lost "
     <<  numberOfDetUnits << ' '
     << numberOfClusters  << ' '
     << numberOfLostClusters
     << std::endl;
-
+   */
 
 }
 

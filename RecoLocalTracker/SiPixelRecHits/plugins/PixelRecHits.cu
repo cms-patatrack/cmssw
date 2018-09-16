@@ -132,6 +132,10 @@ namespace pixelgpudetails {
 
     int threadsPerBlock = 256;
     int blocks = input.nModules; // active modules (with digis)
+
+#ifdef GPU_DEBUG
+    std::cout << "launching getHits kernel for " << blocks << " blocks" << std::endl;
+#endif
     gpuPixelRecHits::getHits<<<blocks, threadsPerBlock, 0, stream.id()>>>(
       cpeParams,
       gpu_.bs_d,

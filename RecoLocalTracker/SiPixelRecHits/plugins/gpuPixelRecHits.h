@@ -46,9 +46,18 @@ namespace gpuPixelRecHits {
     __shared__ ClusParams clusParams;
 
     auto first = digiModuleStart[1 + blockIdx.x];
-    auto me = id[first];
-    assert(moduleId[blockIdx.x] == me);
+    auto me = moduleId[blockIdx.x];
     auto nclus = clusInModule[me];
+
+    if (0==nclus) return;
+
+#ifdef GPU_DEBUG
+    if (threadIdx.x==0) {
+      auto k=first;
+      while (id[k]==InvId) ++k;
+      assert(id[k]==me);
+    }
+#endif
 
 #ifdef GPU_DEBUG
     if (me%100==1)

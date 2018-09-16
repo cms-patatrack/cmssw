@@ -688,11 +688,11 @@ namespace pixelgpudetails {
         cudaCheck(cudaMemcpyAsync(adc_h, adc_d, wordCounter*sizeof(uint16_t), cudaMemcpyDefault, stream.id()));
       }
 
-      /*
-         std::cout
+#ifdef GPU_DEBUG
+       std::cout
          << "CUDA countModules kernel launch with " << blocks
          << " blocks of " << threadsPerBlock << " threads\n";
-       */
+#endif
 
       cudaCheck(cudaMemsetAsync(moduleStart_d, 0x00, sizeof(uint32_t), stream.id()));
 
@@ -704,10 +704,10 @@ namespace pixelgpudetails {
 
       threadsPerBlock = 256;
       blocks = MaxNumModules;
-      /*
+#ifdef GPU_DEBUG
          std::cout << "CUDA findClus kernel launch with " << blocks
          << " blocks of " << threadsPerBlock << " threads\n";
-       */
+#endif
       cudaCheck(cudaMemsetAsync(clusInModule_d, 0, (MaxNumModules)*sizeof(uint32_t), stream.id()));
       findClus<<<blocks, threadsPerBlock, 0, stream.id()>>>(
           moduleInd_d,
