@@ -20,6 +20,7 @@ namespace gpuPixelDoublets {
 
   template<typename Hist>
   __device__
+  __forceinline__
   void doubletsFromHisto(uint8_t const * __restrict__ layerPairs,
                          uint32_t nPairs,
                          GPUCACell * cells,

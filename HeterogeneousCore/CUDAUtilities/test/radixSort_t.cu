@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <chrono>
 #include<random>
-
+#include<set>
 
 #include<cassert>
 #include<iostream>
@@ -97,18 +97,20 @@ void go(bool useShared) {
 
   if (i<2) std::cout << "lauch for " << offsets[blocks] << std::endl;
 
+   auto ntXBl = 1==i%4 ? 256 : 256;
+
    delta -= (std::chrono::high_resolution_clock::now()-start);
    constexpr int MaxSize = 256*32;
    if (useShared)
    cuda::launch(
                 radixSortMultiWrapper<U,NS>,
-                { blocks, 256, MaxSize*2 },
+                { blocks, ntXBl, MaxSize*2 },
                 v_d.get(),ind_d.get(),off_d.get(),nullptr
         );
    else
    cuda::launch(
                 radixSortMultiWrapper2<U,NS>,
-                { blocks, 256 },
+                { blocks, ntXBl },
                 v_d.get(),ind_d.get(),off_d.get(),ws_d.get()
         );
 
@@ -127,10 +129,13 @@ void go(bool useShared) {
     std::cout << LL(v[ind[3]]) << ' ' << LL(v[ind[10]]) << ' ' << LL(v[ind[blockSize-1000]]) << std::endl;
     std::cout << LL(v[ind[blockSize/2-1]]) << ' ' << LL(v[ind[blockSize/2]]) << ' ' << LL(v[ind[blockSize/2+1]]) << std::endl;
   }
-  for (int ib=0; ib<blocks; ++ib)
-  for (auto i = offsets[ib]+1; i < offsets[ib+1]; i++) {
+  for (int ib=0; ib<blocks; ++ib) {
+  std::set<uint16_t> inds;
+  if (offsets[ib+1]> offsets[ib]) inds.insert(ind[offsets[ib]]);
+  for (auto j = offsets[ib]+1; j < offsets[ib+1]; j++) {
+     inds.insert(ind[j]);
      auto a = v+offsets[ib];
-     auto k1=a[ind[i]]; auto k2=a[ind[i-1]];
+     auto k1=a[ind[j]]; auto k2=a[ind[j-1]];
      auto sh = sizeof(uint64_t)-NS; sh*=8;
      auto shorten = [sh](T& t) {
        auto k = (uint64_t *)(&t);
@@ -138,8 +143,15 @@ void go(bool useShared) {
      };
     shorten(k1);shorten(k2);
      if (k1<k2)
-      std::cout << ib << " not ordered at " << ind[i] << " : "
-  		<< a[ind[i]] <<' '<< a[ind[i-1]] << std::endl;
+      std::cout << ib << " not ordered at " << ind[j] << " : "
+  		<< a[ind[j]] <<' '<< a[ind[j-1]] << std::endl;
+  }
+  if (!inds.empty()) {
+    assert(0 == *inds.begin());
+    assert(inds.size()-1 == *inds.rbegin());
+  }
+  if(inds.size()!=(offsets[ib+1]-offsets[ib])) std::cout << "error " << i << ' ' << ib << ' ' << inds.size() <<"!=" << (offsets[ib+1]-offsets[ib]) << std::endl;
+  assert(inds.size()==(offsets[ib+1]-offsets[ib]));
   }
  }  // 50 times
      std::cout <<"cuda computation took "

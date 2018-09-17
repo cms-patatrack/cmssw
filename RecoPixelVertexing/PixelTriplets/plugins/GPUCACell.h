@@ -139,7 +139,7 @@ public:
 
       return distance_13_beamspot_squared <
              (region_origin_radius + phiCut) * (region_origin_radius + phiCut);
-    }
+    } 
 
     // 87 cm/GeV = 1/(3.8T * 0.3)
 
