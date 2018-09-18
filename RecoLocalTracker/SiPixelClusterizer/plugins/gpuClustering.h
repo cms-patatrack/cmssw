@@ -6,6 +6,7 @@
 #include <cstdio>
 
 #include "gpuClusteringConstants.h"
+#include "Geometry/TrackerGeometryBuilder/interface/phase1PixelTopology.h"
 
 #include "HeterogeneousCore/CUDAUtilities/interface/HistoContainer.h"
 
@@ -75,8 +76,9 @@ namespace gpuClustering {
       }
     }
 
-   //init hist  (ymax < 512)
-   __shared__ HistoContainer<uint16_t,8,4,9,uint16_t> hist;
+   //init hist  (ymax=416 < 512 : 9bits)
+   constexpr auto  nbins = phase1PixelTopology::numColsInModule/2+2;
+   __shared__ HistoContainer<uint16_t,nbins,4,9,uint16_t> hist;
    hist.nspills = 0;
    for (auto k = threadIdx.x; k<hist.nbins(); k+=blockDim.x) hist.n[k]=0;
 
@@ -125,12 +127,10 @@ namespace gpuClustering {
        for (int i = first, k = 0; i < msize; i += blockDim.x, ++k) {
           if (id[i] == InvId)               // skip invalid pixels
             continue;
-          assert(id[i] == thisModuleId);    // same module
+          // assert(id[i] == thisModuleId);    // same module
           auto jm = jmax[k];
           jmax[k] = i + 1;
           // loop to columns
-          auto bs = hist.bin(y[i]>0 ? y[i]-1 : 0);
-          auto be = hist.bin(y[i]+1)+1;
           auto loop = [&](int j) {
             j+=firstPixel;
             if (i>=j or j>jm or 
@@ -145,12 +145,7 @@ namespace gpuClustering {
             // update the loop boundary for the next iteration
             jmax[k] = std::max(j + 1,jmax[k]);
           };
-          for (auto b=bs; b<be; ++b){
-          for (auto pj=hist.begin(b);pj<hist.end(b);++pj) {
-            loop(*pj);
-          }}
-          for (auto pj=hist.beginSpill();pj<hist.endSpill();++pj)
-             loop(*pj);
+          forEachInWindow(hist,y[i]>0 ? y[i]-1 :0 ,y[i]+1,loop);
          } // pixel loop
       } // end active
     }  // end while

@@ -77,6 +77,47 @@ int main(void)
     h_y[n]=x;
     h_adc[n]= kn==0 ? 100 : 5000;
     ++n;
+
+   // first column
+    ++ncl;
+    h_id[n]=id;
+    h_x[n]=x;
+    h_y[n]=0;
+    h_adc[n]= 5000;
+    ++n;
+    // first columns
+    ++ncl;
+    h_id[n]=id;
+    h_x[n]=x+80;
+    h_y[n]=2;
+    h_adc[n]= 5000;
+    ++n;
+    h_id[n]=id;
+    h_x[n]=x+80;
+    h_y[n]=1;
+    h_adc[n]= 5000;
+    ++n;
+
+    // last column
+    ++ncl;
+    h_id[n]=id;
+    h_x[n]=x;
+    h_y[n]=415;
+    h_adc[n]= 5000;
+    ++n;
+   // last columns
+    ++ncl;
+    h_id[n]=id;
+    h_x[n]=x+80;
+    h_y[n]=415;
+    h_adc[n]= 2500;
+    ++n;
+    h_id[n]=id;
+    h_x[n]=x+80;
+    h_y[n]=414;
+    h_adc[n]= 2500;
+    ++n;
+
     // diagonal
     ++ncl;
     for (int x=20; x<25; ++x) {

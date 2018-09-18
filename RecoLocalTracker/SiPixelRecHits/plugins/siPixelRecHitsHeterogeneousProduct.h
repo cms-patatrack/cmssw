@@ -32,7 +32,7 @@ namespace siPixelRecHitsHeterogeneousProduct {
      uint16_t * mr_d;
      uint16_t * mc_d;
 
-     using Hist = HistoContainer<int16_t,7,8>;
+     using Hist = HistoContainer<int16_t,1<<7,8>;
      Hist * hist_d;
 
      HitsOnGPU const * me_d = nullptr;

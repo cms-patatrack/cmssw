@@ -34,7 +34,7 @@ void go() {
   constexpr uint32_t partSize = N/nParts;
   uint32_t offsets[nParts+1];
 
-  using Hist = HistoContainer<T,7,8>;
+  using Hist = HistoContainer<T,1<<7,8>;
   std::cout << "HistoContainer " << Hist::nbins() << ' ' << Hist::binSize() << ' ' << (std::numeric_limits<T>::max()-std::numeric_limits<T>::min())/Hist::nbins() << std::endl;
   
   Hist h[nParts];

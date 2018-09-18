@@ -80,7 +80,7 @@ namespace gpuVertexFinder {
     assert(pdata);
     assert(zt);
     
-    __shared__ HistoContainer<int8_t,8,5,8,uint16_t> hist;
+    __shared__ HistoContainer<int8_t,256,5,8,uint16_t> hist;
     
     //  if(0==threadIdx.x) printf("params %d %f\n",minT,eps);    
     //  if(0==threadIdx.x) printf("booked hist with %d bins, size %d for %d tracks\n",hist.nbins(),hist.binSize(),nt);
