@@ -20,11 +20,10 @@ namespace cudautils {
   __global__
   void zeroMany(Histo * h, uint32_t nh) {
     auto i  = blockIdx.x * blockDim.x + threadIdx.x;
-    auto ih = i / Histo::nbins();
-    auto k  = i - ih * Histo::nbins();
+    auto ih = i / Histo::totbins();
+    auto k  = i - ih * Histo::totbins();
     if (ih < nh) {
-      h[ih].nspills = 0;
-      if (k < Histo::nbins())
+      if (k < Histo::totbins())
         h[ih].n[k] = 0;
     }
   }
@@ -51,7 +50,7 @@ namespace cudautils {
 
   template<typename Histo>
   void zero(Histo * h, uint32_t nh, int nthreads, cudaStream_t stream) {
-    auto nblocks = (nh * Histo::nbins() + nthreads - 1) / nthreads;
+    auto nblocks = (nh * Histo::totbins() + nthreads - 1) / nthreads;
     zeroMany<<<nblocks, nthreads, 0, stream>>>(h, nh);
     cudaCheck(cudaGetLastError());
   }
@@ -154,6 +153,7 @@ public:
 
   static constexpr uint32_t sizeT()     { return S; }
   static constexpr uint32_t nbins()     { return NBINS;}
+  static constexpr uint32_t totbins()   { return NBINS+1;} // including spillbin
   static constexpr uint32_t nbits()     { return ilog2(NBINS-1)+1;}
   static constexpr uint32_t binSize()   { return 1 << M; }
   static constexpr uint32_t spillSize() { return 16 * binSize(); }
@@ -165,7 +165,6 @@ public:
   }
 
   void zero() {
-    nspills = 0;
     for (auto & i : n)
       i = 0;
   }
@@ -181,6 +180,7 @@ public:
   }
 
   __host__ __device__
+  __forceinline__
   void fill(T t, index_type j) {
     UT b = bin(t);
     assert(b<nbins());
@@ -188,14 +188,19 @@ public:
     if (w < binSize()) {
       bins[b * binSize() + w] = j;
     } else {
-      auto w = atomicIncrement(nspills);
+      auto w = atomicIncrement(n[nbins()]);
       if (w < spillSize())
-        spillBin[w] = j;
+        bins[nbins() * binSize() + w] = j;
     }
   }
 
+
+  constexpr auto nspills() const {
+   return uint32_t(n[nbins()]);
+  }
+
   constexpr bool fullSpill() const {
-    return nspills > spillSize();
+    return nspills() > spillSize();
   }
 
   constexpr bool full(uint32_t b) const {
@@ -211,21 +216,30 @@ public:
   }
 
   constexpr auto size(uint32_t b) const {
-     return n[b];
+     return uint32_t(n[b]);
+  }
+
+  constexpr auto const * spillBin() const {
+    return bins + nbins()*binSize();
   }
 
   constexpr auto const * beginSpill() const {
-     return spillBin;
+     return spillBin();
   }
     
   constexpr auto const * endSpill() const {
-     return beginSpill() + std::min(spillSize(), uint32_t(nspills));
+     return beginSpill() + std::min(spillSize(), uint32_t(nspills()));
   }
 
-  Counter  n[nbins()];
-  Counter  nspills;
-  index_type bins[nbins()*binSize()];
-  index_type spillBin[spillSize()];
+  Counter  n[nbins()+1];  // last is the spill bin
+  index_type bins[nbins()*binSize()+spillSize()];
+};
+
+// a compactified version of above resuing the very same space
+template<typename H>
+class CompactHistoContainer {
+
+
 };
 
 #endif // HeterogeneousCore_CUDAUtilities_HistoContainer_h

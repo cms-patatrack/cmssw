@@ -85,7 +85,7 @@ void go() {
     auto window = T(1300);
     
     for (uint32_t j=0; j<nParts; ++j) {
-      std::cout << j << ": nspills " << h[j].nspills << std::endl;
+      std::cout << j << ": nspills " << h[j].nspills() << std::endl;
       for (uint32_t i=0; i<Hist::nbins(); ++i) {
         if (0==h[j].size(i)) continue;
         auto k= *h[j].begin(i);
@@ -111,7 +111,7 @@ void go() {
           if (l) for (auto p=h[j].begin(kk); p<h[j].end(kk); ++p) verify(i,k,k,(*p));
           else for (auto p=h[j].begin(kk); p<h[j].end(kk); ++p) verify(i,k,(*p),k);
         }
-        if (h[j].nspills==0 && !(tot>=nm)) {
+        if (h[j].nspills()==0 && !(tot>=nm)) {
            std::cout << "too bad " << j << ' ' << i <<' ' << me << '/'<< T(me-window)<< '/'<< T(me+window) << ": " << kl << '/' << kh << ' '<< khh << ' '<< tot<<'/'<<nm << std::endl;
         }
         if (l) std::cout << "what? " << j << ' ' << i <<' ' << me << '/'<< T(me-window)<< '/'<< T(me+window) << ": " << kl << '/' << kh << ' '<< khh << ' '<< tot<<'/'<<nm << std::endl;

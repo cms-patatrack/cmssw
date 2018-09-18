@@ -129,10 +129,10 @@ namespace gpuPixelDoublets {
       if (tooMany > 0)
         printf("OuterHitOfCell full for %d in layer %d/%d, %d:%d   %d,%d\n", i, inner, outer, kl, kh, nmin, tot);
 
-      if (hist[outer].nspills > 0)
-        printf("spill bin to be checked in %d %d\n", outer, hist[outer].nspills);
+      if (hist[outer].nspills() > 0)
+        printf("spill bin to be checked in %d %d\n", outer, hist[outer].nspills());
 
-      // if (0==hist[outer].nspills) assert(tot>=nmin);
+      // if (0==hist[outer].nspills()) assert(tot>=nmin);
       // look in spill bin as well....
 
     }  // loop in block...

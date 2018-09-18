@@ -36,7 +36,7 @@ void go() {
     h.zero();
     for (long long j = 0; j < N; j++) h.fill(v[j],j);
   
-    std::cout << "nspills " << h.nspills << std::endl;    
+    std::cout << "nspills " << h.nspills() << std::endl;    
 
     auto verify = [&](uint32_t i, uint32_t j, uint32_t k, uint32_t t1, uint32_t t2) {
       assert(t1<N); assert(t2<N);

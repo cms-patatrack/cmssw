@@ -73,6 +73,7 @@ namespace gpuClustering {
     if(nclus==newclusId[nclus-1]) return;
 
     nClustersInModule[thisModuleId] = newclusId[nclus-1];
+    __syncthreads();
 
     // mark bad cluster again
     for (int i=threadIdx.x; i<nclus; i += blockDim.x) {

@@ -86,8 +86,7 @@ namespace gpuVertexFinder {
     //  if(0==threadIdx.x) printf("booked hist with %d bins, size %d for %d tracks\n",hist.nbins(),hist.binSize(),nt);
     
     // zero hist
-    hist.nspills = 0;
-    for (auto k = threadIdx.x; k<hist.nbins(); k+=blockDim.x) hist.n[k]=0;
+    for (auto k = threadIdx.x; k<hist.totbins(); k+=blockDim.x) hist.n[k]=0;
     __syncthreads();
 
     //  if(0==threadIdx.x) printf("histo zeroed\n");

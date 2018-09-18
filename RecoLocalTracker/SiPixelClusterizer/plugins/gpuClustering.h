@@ -79,9 +79,7 @@ namespace gpuClustering {
    //init hist  (ymax=416 < 512 : 9bits)
    constexpr auto  nbins = phase1PixelTopology::numColsInModule/2+2;
    __shared__ HistoContainer<uint16_t,nbins,4,9,uint16_t> hist;
-   hist.nspills = 0;
-   for (auto k = threadIdx.x; k<hist.nbins(); k+=blockDim.x) hist.n[k]=0;
-
+   for (auto k = threadIdx.x; k<hist.totbins(); k+=blockDim.x) hist.n[k]=0;
     __syncthreads();
 
 
