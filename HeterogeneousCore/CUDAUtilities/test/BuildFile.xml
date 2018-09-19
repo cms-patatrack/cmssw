@@ -31,4 +31,9 @@
   <flags CUDA_FLAGS="-g -G"/>
 </bin>
 
+<bin file="OneHistoContainer_t.cu" name="gpuOneHistoContainer_t">
+  <use name="cuda-api-wrappers"/>
+</bin>
+
+
 <bin file="prefixScan_t.cu" name="gpuPrefixScan_t"/>

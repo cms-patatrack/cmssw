@@ -13,9 +13,9 @@ void testPrefixScan(uint32_t size) {
   blockPrefixScan(c, size, ws);
 
   assert(1==c[0]);
-  for (auto i=first+1; i<size; i+=blockDim.x) {
-    if (c[i]!=c[i-1]+1) printf("failed %d %d %d: %d %d\n",size, i, blockDim.x, c[i],c[i-1]);
-    assert(c[i]==c[i-1]+1); assert(c[i]==i+1);
+  for (auto i=first; i<size-1; i+=blockDim.x) {
+    if (c[i+1]!=c[i]+1) printf("failed %d %d %d: %d %d\n",size, i, blockDim.x, c[i],c[i+1]);
+    assert(c[i+1]==c[i]+1); assert(c[i]==i+1);
   }
 }
 
