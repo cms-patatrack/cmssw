@@ -80,7 +80,7 @@ namespace gpuClustering {
 
    //init hist  (ymax=416 < 512 : 9bits)
    constexpr uint32_t maxPixInModule = 4000;
-   constexpr auto  nbins = phase1PixelTopology::numColsInModule/2+2;
+   constexpr auto  nbins = phase1PixelTopology::numColsInModule + 2;   //2+2;
    using Hist = HistoContainer<uint16_t,nbins,maxPixInModule,9,uint16_t>;
    constexpr auto wss = Hist::totbins();
     __shared__ Hist hist;
@@ -163,8 +163,8 @@ namespace gpuClustering {
 #ifdef GPU_DEBUG
             assert(m!=i);
 #endif
-            if (std::abs(int(x[m]) - int(x[i])) > 1 or
-                std::abs(int(y[m]) - int(y[i])) > 1) return;
+            if (std::abs(int(x[m]) - int(x[i])) > 1) return;
+            // if (std::abs(int(y[m]) - int(y[i])) > 1) return; // binssize is 1
             auto old = atomicMin(&clusterId[m], clusterId[i]);
             if (old != clusterId[i]) {
               // end the loop only if no changes were applied
