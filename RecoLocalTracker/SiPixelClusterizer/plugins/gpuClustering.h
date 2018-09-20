@@ -1,6 +1,8 @@
 #ifndef RecoLocalTracker_SiPixelClusterizer_plugins_gpuClustering_h
 #define RecoLocalTracker_SiPixelClusterizer_plugins_gpuClustering_h
 
+#error "old version"
+
 #include <cassert>
 #include <cstdint>
 #include <cstdio>

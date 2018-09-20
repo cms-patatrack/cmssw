@@ -13,6 +13,7 @@
 
 #include "HeterogeneousCore/CUDAUtilities/interface/FancyHistoContainer.h"
 
+
 namespace gpuClustering {
 
   __global__ void countModules(uint16_t const * __restrict__ id,

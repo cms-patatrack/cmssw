@@ -33,7 +33,7 @@
 // CMSSW includes
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 #include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuCalibPixel.h"
-#include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuClustering.h"
+#include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuFancyClustering.h"
 #include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuClusterChargeCut.h"
 #include "RecoLocalTracker/SiPixelClusterizer/interface/SiPixelFedCablingMapGPU.h"
 

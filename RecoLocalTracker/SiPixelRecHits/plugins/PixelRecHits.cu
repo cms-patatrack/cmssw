@@ -8,7 +8,7 @@
 // CMSSW headers
 #include "RecoLocalTracker/SiPixelClusterizer/plugins/SiPixelRawToClusterGPUKernel.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
-#include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuClustering.h"
+#include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuClusteringConstants.h"
 #include "PixelRecHits.h"
 #include "gpuPixelRecHits.h"
 
