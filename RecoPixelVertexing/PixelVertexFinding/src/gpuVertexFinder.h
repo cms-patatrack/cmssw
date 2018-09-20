@@ -27,7 +27,7 @@ namespace gpuVertexFinder {
     uint16_t * sortInd; // sorted index (by pt2)
 
     // workspace  
-    int8_t  * izt;  // interized z-position of input tracks
+    uint8_t * izt;  // interized z-position of input tracks
     int32_t * nn; // number of nearest neighbours (reused as number of dof for output vertices)
     
   };

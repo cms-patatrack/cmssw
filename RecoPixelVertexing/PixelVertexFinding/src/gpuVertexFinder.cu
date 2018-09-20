@@ -17,7 +17,7 @@ namespace gpuVertexFinder {
     cudaCheck(cudaMalloc(&onGPU.sortInd, OnGPU::MAXVTX*sizeof(uint16_t)));
 
 
-    cudaCheck(cudaMalloc(&onGPU.izt, OnGPU::MAXTRACKS*sizeof(int8_t)));
+    cudaCheck(cudaMalloc(&onGPU.izt, OnGPU::MAXTRACKS*sizeof(uint8_t)));
     cudaCheck(cudaMalloc(&onGPU.nn, OnGPU::MAXTRACKS*sizeof(int32_t)));
 
     cudaCheck(cudaMalloc(&onGPU_d,sizeof(OnGPU)));
@@ -64,7 +64,7 @@ namespace gpuVertexFinder {
     
 
     assert(onGPU_d);
-    clusterTracks<<<1,1024,0,stream>>>(ntrks,onGPU_d,minT,eps,errmax,chi2max);
+    clusterTracks<<<1,1024-256,0,stream>>>(ntrks,onGPU_d,minT,eps,errmax,chi2max);
     sortByPt2<<<1,256,0,stream>>>(ntrks,onGPU_d);    
 
     cudaCheck(cudaMemcpyAsync(&gpuProduct.nVertices, onGPU.nv, sizeof(uint32_t),

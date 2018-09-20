@@ -91,7 +91,7 @@ int main() {
   auto ptv2_d = cuda::memory::device::make_unique<float[]>(current_device, 256);
   auto ind_d = cuda::memory::device::make_unique<uint16_t[]>(current_device, 256);
 
-  auto izt_d = cuda::memory::device::make_unique<int8_t[]>(current_device, 64000);
+  auto izt_d = cuda::memory::device::make_unique<uint8_t[]>(current_device, 64000);
   auto nn_d = cuda::memory::device::make_unique<int32_t[]>(current_device, 64000);
   auto iv_d = cuda::memory::device::make_unique<int32_t[]>(current_device, 64000);
 
@@ -142,33 +142,33 @@ int main() {
   
   if ( (i%4) == 0 )
     cuda::launch(clusterTracks,
-		 { 1, 1024 },
+		 { 1, 512+256 },
 		 ev.ztrack.size(), onGPU_d.get(),kk,eps,
 		 0.02f,12.0f
 		 );
   
   if ( (i%4) == 1 )
     cuda::launch(clusterTracks,
-		 { 1, 1024 },
+		 { 1, 512+256 },
 		 ev.ztrack.size(), onGPU_d.get(),kk,eps,
 		 0.02f,9.0f
 		 );
   
   if ( (i%4) == 2 )
     cuda::launch(clusterTracks,
-		 { 1, 1024 },
+		 { 1, 512+256 },
 		 ev.ztrack.size(), onGPU_d.get(),kk,eps,
 		 0.01f,9.0f
 		 );
   
   if ( (i%4) == 3 )
     cuda::launch(clusterTracks,
-		 { 1, 1024 },
+		 { 1, 512+256 },
 		 ev.ztrack.size(), onGPU_d.get(),kk,0.7f*eps,
 		 0.01f,9.0f
 		 );
   
-
+  cudaDeviceSynchronize();
   cuda::launch(sortByPt2,
                { 1, 256 },
                ev.ztrack.size(), onGPU_d.get()
@@ -176,6 +176,12 @@ int main() {
 
   uint32_t nv;
   cuda::memory::copy(&nv, onGPU.nv, sizeof(uint32_t));
+
+  if (nv==0) {
+    std::cout << "NO VERTICES???" << std::endl;
+    continue;
+  }
+
   float zv[nv];
   float	wv[nv];
   float	chi2[nv];
