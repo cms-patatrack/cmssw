@@ -10,9 +10,6 @@
 #endif // __CUDA_ARCH__
 
 #include "HeterogeneousCore/CUDAUtilities/interface/cudastdAlgorithm.h"
-#ifdef __CUDACC__
-#include "HeterogeneousCore/CUDAUtilities/interface/prefixScan.h"
-#endif
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 
 
@@ -120,23 +117,6 @@ void forEachInWindow(Hist const & hist, V wmin, V wmax, Func const & func) {
    for (auto pj=hist.beginSpill();pj<hist.endSpill();++pj)
      func(*pj);
 }
-
-
-// same as above but for compactified histos
-template<typename Hist, typename V, typename Func>
-__host__ __device__
-__forceinline__
-void forEachInWindowCompact(Hist const & hist, V wmin, V wmax, Func const & func) {
-   auto bs = hist.getH().bin(wmin);
-   auto be = hist.getH().bin(wmax);
-   assert(be>=bs);
-   for (auto pj=hist.begin(bs);pj<hist.end(be);++pj) {
-      func(*pj);
-   }
-   for (auto pj=hist.beginSpill();pj<hist.endSpill();++pj)
-     func(*pj);
-}
-
 
 
 template<
@@ -254,81 +234,5 @@ public:
   Counter  n[nbins()+1];  // last is the spill bin
   index_type bins[nbins()*binSize()+spillSize()];
 };
-
-// a compactified version of above resuing the very same space
-template<typename H>
-class CompactHistoContainer {
-
-public:
-
-  using index_type = typename H::index_type;
-
-  static constexpr auto wsSize() { return std::max(H::spillSize(),32U);}
-
-  __host__ __device__
-  __forceinline__
-  H & getH() { return histo;}
-
-  __host__ __device__
-  __forceinline__
-  H const & getH() const { return histo;}
-
-
-#ifdef __CUDACC__
-  __device__
-  __forceinline__
-  void compactify(typename H::Counter * ws) {
-    auto  & h = histo;
-    // fix size
-    for (auto j=threadIdx.x; j<H::nbins(); j+=blockDim.x) h.n[j]= std::min(h.n[j],H::binSize());
-    if (threadIdx.x==0) h.n[H::nbins()] = std::min(h.n[H::nbins()],H::spillSize());
-    __syncthreads();
-    blockPrefixScan(histo.n,H::totbins(),ws);
-    __syncthreads();
-    // relocate :  the following is slow
-    __shared__ uint32_t i;
-    i=1;
-    __syncthreads();
-    while(__syncthreads_and(i<H::totbins())) {
-      auto b = h.n[i-1];
-      auto s = int(h.n[i])-int(b);
-//      assert(s>=0);
-//      assert(b<=h.begin(i)-h.begin(0));
-//      if (i<H::nbins()) assert(s<=H::binSize());
-      for (auto j=threadIdx.x; j<s; j+=blockDim.x) {
-         ws[j] = h.begin(i)[j]; 
-      }
-      __syncthreads();
-      for (auto j=threadIdx.x; j<s; j+=blockDim.x) {
-        histo.bins[b+j] = ws[j];
-      }
-      __syncthreads();
-      if (threadIdx.x==0) ++i;
-      __syncthreads();
-    }
-
-  }
-#endif
-
-  __host__
-  void compactify() {
-  }
-
-  constexpr auto size() const { return uint32_t(histo.n[H::nbins()]);}
-
-  constexpr index_type const * begin() const { return histo.bins;}
-  constexpr index_type const * end() const { return begin() + size();}
-
-
-  constexpr index_type const * begin(uint32_t b) const { return histo.bins + ( (0==b) ? 0 : histo.n[b-1]) ;}
-  constexpr index_type const * end(uint32_t b) const { return histo.bins + histo.n[b];}
-   
-  constexpr index_type const * beginSpill() const { return histo.bins + histo.n[H::nbins()-1];}
-
-  constexpr index_type const * endSpill() const { return begin() + size();}
-
-   H histo;
-};
-
 
 #endif // HeterogeneousCore_CUDAUtilities_HistoContainer_h

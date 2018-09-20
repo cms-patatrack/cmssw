@@ -212,7 +212,7 @@ int main(void)
     }
   }
   }; // end lambda
-  for (auto kkk=0; kkk<4; ++kkk) {
+  for (auto kkk=0; kkk<5; ++kkk) {
   n=0; ncl=0;
   generateClusters(kkk);
 
@@ -232,7 +232,7 @@ int main(void)
   cuda::memory::copy(d_y.get(), h_y.get(), size16);
   cuda::memory::copy(d_adc.get(), h_adc.get(), size16);
   // Launch CUDA Kernels
-  int threadsPerBlock = 256;
+  int threadsPerBlock = (kkk==5) ? 512 : ((kkk==3) ? 64 : 256);
   int blocksPerGrid = (numElements + threadsPerBlock - 1) / threadsPerBlock;
   std::cout
     << "CUDA countModules kernel launch with " << blocksPerGrid
@@ -244,7 +244,6 @@ int main(void)
                d_id.get(), d_moduleStart.get() ,d_clus.get(),n
                );
 
-  threadsPerBlock = 256;
   blocksPerGrid = MaxNumModules;    //nModules;
 
   std::cout
