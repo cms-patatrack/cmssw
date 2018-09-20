@@ -292,9 +292,9 @@ public:
     while(__syncthreads_and(i<H::totbins())) {
       auto b = h.n[i-1];
       auto s = int(h.n[i])-int(b);
-      assert(s>=0);
-      assert(b<=h.begin(i)-h.begin(0));
-      if (i<H::nbins()) assert(s<=H::binSize());
+//      assert(s>=0);
+//      assert(b<=h.begin(i)-h.begin(0));
+//      if (i<H::nbins()) assert(s<=H::binSize());
       for (auto j=threadIdx.x; j<s; j+=blockDim.x) {
          ws[j] = h.begin(i)[j]; 
       }

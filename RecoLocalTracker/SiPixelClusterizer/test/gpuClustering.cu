@@ -11,7 +11,7 @@
 
 #include <cuda/api_wrappers.h>
 
-#include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuClustering.h"
+#include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuFancyClustering.h"
 #include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuClusterChargeCut.h"
 
 int main(void)
@@ -271,7 +271,7 @@ int main(void)
     cuda::memory::copy(&nclus,d_clusInModule.get(),MaxNumModules*sizeof(uint32_t));
     std::cout << "before charge cut found " << std::accumulate(nclus,nclus+MaxNumModules,0) << " clusters" << std::endl;
     for (auto i=MaxNumModules; i>0; i--) if (nclus[i-1]>0) {std::cout << "last module is " << i-1 << ' ' << nclus[i-1] << std::endl; break;}
-
+    if (ncl!=std::accumulate(nclus,nclus+MaxNumModules,0)) std::cout << "ERROR!!!!! wrong number of cluster found" << std::endl;
 
     cuda::launch(
                clusterChargeCut,

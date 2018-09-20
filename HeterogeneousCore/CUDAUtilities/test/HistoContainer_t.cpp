@@ -1,4 +1,4 @@
-#include "HeterogeneousCore/CUDAUtilities/interface/HistoContainer.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/FancyHistoContainer.h"
 
 #include<algorithm>
 #include<cassert>
@@ -25,18 +25,25 @@ void go() {
   constexpr int N=12000;
   T v[N];
 
-  using Hist = HistoContainer<T,NBINS,8,S>;
-  std::cout << "HistoContainer " << Hist::nbits() << ' ' << Hist::nbins() << ' ' << Hist::binSize() << ' ' << (rmax-rmin)/Hist::nbins() << std::endl;
+  using Hist = HistoContainer<T,NBINS,N,S>;
+  std::cout << "HistoContainer " << Hist::nbits() << ' ' << Hist::nbins() << ' ' << Hist::capacity() << ' ' << (rmax-rmin)/Hist::nbins() << std::endl;
   std::cout << "bins " << int(Hist::bin(0)) << ' ' <<  int(Hist::bin(rmin)) << ' ' << int(Hist::bin(rmax)) << std::endl;  
 
   Hist h;
+  typename Hist::Counter ws[Hist::totbins()];
   for (int it=0; it<5; ++it) {
     for (long long j = 0; j < N; j++) v[j]=rgen(eng);
-    if (it==2) for (long long j = N/2; j < N/2+2*Hist::binSize(); j++) v[j]=4;
+    if (it==2) for (long long j = N/2; j < N/2+N/4; j++) v[j]=4;
     h.zero();
-    for (long long j = 0; j < N; j++) h.fill(v[j],j);
-  
-    std::cout << "nspills " << h.nspills() << std::endl;    
+    assert(h.size()==0);
+    for (auto & i: ws) i=0;
+    for (long long j = 0; j < N; j++) h.count(v[j]);
+    h.finalize();
+    assert(h.off[0]==0);
+    assert(h.size()==N);
+    for (long long j = 0; j < N; j++) h.fill(v[j],j,ws);
+    assert(h.size()==N);
+
 
     auto verify = [&](uint32_t i, uint32_t j, uint32_t k, uint32_t t1, uint32_t t2) {
       assert(t1<N); assert(t2<N);
@@ -44,7 +51,7 @@ void go() {
     };
 
     for (uint32_t i=0; i<Hist::nbins(); ++i) {
-      if (0==h.n[i]) continue;
+      if (0==h.size(i)) continue;
       auto k= *h.begin(i);
       assert(k<N);
       auto kl = NBINS!=128 ? h.bin(std::max(rmin,v[k]-DELTA)) : h.bin(v[k]-T(DELTA));
@@ -59,7 +66,6 @@ void go() {
 
   for (long long j = 0; j < N; j++) {
     auto b0 = h.bin(v[j]);
-    auto stot = h.endSpill()-h.beginSpill();
     int w=0;
     int tot=0;
     auto ftest = [&](int k) {
@@ -67,7 +73,7 @@ void go() {
        tot++;
     };
     forEachInBins(h,v[j],w,ftest);
-    int rtot = h.end(b0)-h.begin(b0) + stot;
+    int rtot = h.end(b0)-h.begin(b0);
     assert(tot==rtot);
     w=1; tot=0;
     forEachInBins(h,v[j],w,ftest);
