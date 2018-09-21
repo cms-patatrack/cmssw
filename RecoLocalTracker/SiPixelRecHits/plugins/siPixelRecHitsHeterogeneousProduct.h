@@ -17,8 +17,9 @@ namespace siPixelRecHitsHeterogeneousProduct {
 
   using CPUProduct = int; // dummy
 
+  static constexpr uint32_t maxHits() { return 65536;}
+
   struct HitsOnGPU{
-     constexpr auto MAX_HITS = gpuClustering::MaxNumModules * 256;
      pixelCPEforGPU::ParamsOnGPU const * cpeParams = nullptr;    // forwarded from setup, NOT owned
      float * bs_d;
      const uint32_t * hitsModuleStart_d; // forwarded from clusters
@@ -33,7 +34,7 @@ namespace siPixelRecHitsHeterogeneousProduct {
      uint16_t * mr_d;
      uint16_t * mc_d;
 
-     using Hist = HistoContainer<int16_t,128,MAX_HITS,8*sizeof(int16_t),uint32_t,10>;
+     using Hist = HistoContainer<int16_t,128,maxHits(),8*sizeof(int16_t),uint32_t,10>;
      Hist * hist_d;
      uint32_t hws_d;  
 

@@ -34,7 +34,7 @@ namespace {
 namespace pixelgpudetails {
   PixelRecHitGPUKernel::PixelRecHitGPUKernel(cuda::stream_t<>& cudaStream) {
 
-    constexpr auto MAX_HITS = gpuClustering::MaxNumModules * 256;
+    constexpr auto MAX_HITS = siPixelRecHitsHeterogeneousProduct::maxHits();
 
     cudaCheck(cudaMalloc((void **) & gpu_.bs_d, 3 * sizeof(float)));
     cudaCheck(cudaMalloc((void **) & gpu_.hitsLayerStart_d, 11 * sizeof(uint32_t)));

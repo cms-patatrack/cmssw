@@ -9,6 +9,7 @@
 
 <library file="*.cc *.cu" name="SimTrackerTrackerHitAssociationPlugins">
   <use name="cuda"/>
+  <use name="cub"/>
   <use name="cuda-api-wrappers"/>
   <flags EDM_PLUGIN="1"/>
 </library>
