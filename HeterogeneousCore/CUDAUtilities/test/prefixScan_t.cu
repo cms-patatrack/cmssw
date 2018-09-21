@@ -70,9 +70,13 @@ int main() {
   std::cout << "temp storage " << temp_storage_bytes << std::endl;
 
   // Allocate temporary storage for inclusive prefix sum
+  // fake larger ws already available
+  temp_storage_bytes *=8;
   cudaMalloc(&d_temp_storage, temp_storage_bytes);
+  std::cout << "temp storage " << temp_storage_bytes << std::endl;
   // Run inclusive prefix sum
-   CubDebugExit(cub::DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items));
+  CubDebugExit(cub::DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items));
+  std::cout << "temp storage " << temp_storage_bytes << std::endl;
 
   verify<<<nblocks, nthreads, 0>>>(d_out, num_items);
 

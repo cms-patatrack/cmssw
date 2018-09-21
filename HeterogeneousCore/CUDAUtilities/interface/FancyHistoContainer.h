@@ -2,6 +2,7 @@
 #define HeterogeneousCore_CUDAUtilities_HistoContainer_h
 
 #include <cassert>
+#include <cstddef> 
 #include <cstdint>
 #include <algorithm>
 #include <type_traits>
@@ -12,6 +13,7 @@
 #include "HeterogeneousCore/CUDAUtilities/interface/cudastdAlgorithm.h"
 #ifdef __CUDACC__
 #include "HeterogeneousCore/CUDAUtilities/interface/prefixScan.h"
+#include <cub/cub.cuh>
 #endif
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 
@@ -19,17 +21,49 @@
 #ifdef __CUDACC__
 namespace cudautils {
 
-  template<typename Histo>
+  template<typename Histo, typename T>
   __global__
-  void zeroMany(Histo * h, uint32_t nh) {
-    auto i  = blockIdx.x * blockDim.x + threadIdx.x;
-    auto ih = i / Histo::totbins();
-    auto k  = i - ih * Histo::totbins();
-    if (ih < nh) {
-      if (k < Histo::totbins())
-        h[ih].n[k] = 0;
-    }
+  void countFromVector(Histo * __restrict__ h,  uint32_t nh, T const * __restrict__ v, uint32_t const * __restrict__ offsets) {
+     auto i = blockIdx.x * blockDim.x + threadIdx.x;
+     if(i >= offsets[nh]) return;
+     auto off = cuda_std::upper_bound(offsets, offsets + nh + 1, i);
+     assert((*off) > 0);
+     int32_t ih = off - offsets - 1;
+     assert(ih >= 0);
+     assert(ih < nh);
+     (*h).count(v[i], ih);
   }
+
+  template<typename Histo, typename T>
+  __global__
+  void fillFromVector(Histo * __restrict__ h,  uint32_t nh, T const * __restrict__ v, uint32_t const * __restrict__ offsets,
+                      uint32_t * __restrict__ ws ) {
+     auto i = blockIdx.x * blockDim.x + threadIdx.x;
+     if(i >= offsets[nh]) return;
+     auto off = cuda_std::upper_bound(offsets, offsets + nh + 1, i);
+     assert((*off) > 0);
+     int32_t ih = off - offsets - 1;
+     assert(ih >= 0);
+     assert(ih < nh);
+     (*h).fill(v[i], i, ws, ih);
+  }
+
+
+  template<typename Histo, typename T>
+  void fillManyFromVector(Histo * __restrict__ h, typename Histo::Counter *  __restrict__ ws,  
+                          uint32_t nh, T const * __restrict__ v, uint32_t const * __restrict__ offsets, uint32_t totSize, 
+                          int nthreads, cudaStream_t stream) {
+    uint32_t * off = (uint32_t *)( (char*)(h) +offsetof(Histo,off));
+    cudaMemsetAsync(off,0, 4*Histo::totbins(),stream);
+    auto nblocks = (totSize + nthreads - 1) / nthreads;
+    countFromVector<<<nblocks, nthreads, 0, stream>>>(h, nh, v, offsets);
+    size_t wss = Histo::totbins();
+    CubDebugExit(cub::DeviceScan::InclusiveSum(ws, wss, off, off, Histo::totbins(), stream));
+    cudaMemsetAsync(ws,0, 4*Histo::totbins(),stream);
+    fillFromVector<<<nblocks, nthreads, 0, stream>>>(h, nh, v, offsets,ws);
+    cudaCheck(cudaGetLastError());
+  }
+
 
 } // namespace cudautils
 #endif
@@ -105,6 +139,18 @@ public:
   static constexpr uint32_t capacity()  { return SIZE; }
 
   static constexpr auto histOff(uint32_t nh) { return NBINS*nh; }
+
+#ifdef __CUDACC__
+  __host__
+  static size_t wsSize() {
+    uint32_t * v =nullptr;
+    void * d_temp_storage = nullptr;
+    size_t  temp_storage_bytes = 0;
+    cub::DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, v, v, totbins()-1);
+    return std::max(temp_storage_bytes,size_t(totbins()));
+  }
+#endif
+
 
   static constexpr UT bin(T t) {
     constexpr uint32_t shift = sizeT() - nbits();
