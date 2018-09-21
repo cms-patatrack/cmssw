@@ -26,24 +26,33 @@ void go() {
   T v[N];
 
   using Hist = HistoContainer<T,NBINS,N,S>;
-  std::cout << "HistoContainer " << Hist::nbits() << ' ' << Hist::nbins() << ' ' << Hist::capacity() << ' ' << (rmax-rmin)/Hist::nbins() << std::endl;
+  using Hist4 = HistoContainer<T,NBINS,N,S,uint16_t,4>;
+  std::cout << "HistoContainer " << Hist::nbits() << ' ' << Hist::nbins() << ' ' << Hist::totbins() << ' ' << Hist::capacity() << ' ' << (rmax-rmin)/Hist::nbins() << std::endl;
   std::cout << "bins " << int(Hist::bin(0)) << ' ' <<  int(Hist::bin(rmin)) << ' ' << int(Hist::bin(rmax)) << std::endl;  
+  std::cout << "HistoContainer4 " << Hist4::nbits() << ' ' << Hist4::nbins() << ' ' << Hist4::totbins() << ' ' << Hist4::capacity() << ' ' << (rmax-rmin)/Hist::nbins() << std::endl;
+  for (auto nh=0; nh<4; ++nh) std::cout << "bins " << int(Hist4::bin(0))+Hist4::histOff(nh) << ' ' <<  int(Hist::bin(rmin))+Hist4::histOff(nh) << ' ' << int(Hist::bin(rmax))+Hist4::histOff(nh) << std::endl;
+
 
   Hist h;
+  Hist4 h4;
   typename Hist::Counter ws[Hist::totbins()];
+  typename Hist4::Counter ws4[Hist4::totbins()];
   for (int it=0; it<5; ++it) {
     for (long long j = 0; j < N; j++) v[j]=rgen(eng);
     if (it==2) for (long long j = N/2; j < N/2+N/4; j++) v[j]=4;
-    h.zero();
-    assert(h.size()==0);
-    for (auto & i: ws) i=0;
-    for (long long j = 0; j < N; j++) h.count(v[j]);
-    h.finalize();
+    h.zero();h4.zero();
+    assert(h.size()==0);assert(h4.size()==0);
+    for (auto & i: ws) i=0; 
+    for (auto & i: ws4) i=0;
+    for (long long j = 0; j < N; j++) { h.count(v[j]); if(j<2000) h4.count(v[j],2); else h4.count(v[j],j%4); }
+    h.finalize(); h4.finalize();
     assert(h.off[0]==0);
     assert(h.size()==N);
-    for (long long j = 0; j < N; j++) h.fill(v[j],j,ws);
+    assert(h4.off[0]==0);
+    assert(h4.size()==N);
+    for (long long j = 0; j < N; j++) { h.fill(v[j],j,ws);  if(j<2000) h4.fill(v[j],j,ws4,2); else h4.fill(v[j],j,ws4,j%4); }
     assert(h.size()==N);
-
+    assert(h4.size()==N);
 
     auto verify = [&](uint32_t i, uint32_t j, uint32_t k, uint32_t t1, uint32_t t2) {
       assert(t1<N); assert(t2<N);
