@@ -1,4 +1,4 @@
-#include "HeterogeneousCore/CUDAUtilities/interface/FancyHistoContainer.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/HistoContainer.h"
 
 #include<algorithm>
 #include<cassert>
