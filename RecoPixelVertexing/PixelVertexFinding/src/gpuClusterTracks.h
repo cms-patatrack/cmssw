@@ -6,7 +6,7 @@
 #include <algorithm>
 #include<cassert>
 
-#include "HeterogeneousCore/CUDAUtilities/interface/FancyHistoContainer.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/HistoContainer.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/radixSort.h"
 
 

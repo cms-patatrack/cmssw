@@ -11,7 +11,7 @@
 
 #include <cuda/api_wrappers.h>
 
-#include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuFancyClustering.h"
+#include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuClustering.h"
 #include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuClusterChargeCut.h"
 
 int main(void)
