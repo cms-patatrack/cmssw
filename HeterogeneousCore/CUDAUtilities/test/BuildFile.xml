@@ -36,4 +36,7 @@
 </bin>
 
 
-<bin file="prefixScan_t.cu" name="gpuPrefixScan_t"/>
+<bin file="prefixScan_t.cu" name="gpuPrefixScan_t">
+  <use name="cub"/>
+</bin>
+
