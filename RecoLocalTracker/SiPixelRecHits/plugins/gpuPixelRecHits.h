@@ -14,15 +14,6 @@ namespace gpuPixelRecHits {
 
 
 
-  // to be moved in common namespace...
-  constexpr uint16_t InvId=9999; // must be > MaxNumModules
-
-
-  constexpr uint32_t MaxClusInModule = pixelCPEforGPU::MaxClusInModule;
-
-  using ClusParams = pixelCPEforGPU::ClusParams;
-
-
   __global__ void getHits(pixelCPEforGPU::ParamsOnGPU const * __restrict__  cpeParams,
                           float const * __restrict__  bs,
                           uint16_t const * __restrict__  id,
@@ -42,6 +33,14 @@ namespace gpuPixelRecHits {
                           float * xe, float * ye, 
                           uint16_t * mr, uint16_t * mc)
   {
+
+    // to be moved in common namespace...
+    constexpr uint16_t InvId=9999; // must be > MaxNumModules
+    constexpr uint32_t MaxClusInModule = pixelCPEforGPU::MaxClusInModule;
+
+    using ClusParams = pixelCPEforGPU::ClusParams;
+
+
     // as usual one block per module
     __shared__ ClusParams clusParams;
 
@@ -65,7 +64,9 @@ namespace gpuPixelRecHits {
 #endif
 
     assert(blockDim.x >= MaxClusInModule);
-    assert(nclus <= MaxClusInModule);
+
+    if (threadIdx.x==0 && nclus > MaxClusInModule) printf("WARNING: too many clusters %d in Module %d. Only first %d processed\n", nclus,me,MaxClusInModule);
+    nclus = std::min(nclus, MaxClusInModule);
 
     auto ic = threadIdx.x;
 
@@ -90,7 +91,7 @@ namespace gpuPixelRecHits {
     for (int i = first; i < numElements; i += blockDim.x) {
       if (id[i] == InvId) continue;     // not valid
       if (id[i] != me) break;           // end of module
-      assert(clus[i] < nclus);
+      if (clus[i] >= nclus) continue;
       atomicMin(&clusParams.minRow[clus[i]], x[i]);
       atomicMax(&clusParams.maxRow[clus[i]], x[i]);
       atomicMin(&clusParams.minCol[clus[i]], y[i]);
@@ -102,6 +103,7 @@ namespace gpuPixelRecHits {
     for (int i = first; i < numElements; i += blockDim.x) {
       if (id[i] == InvId) continue;     // not valid
       if (id[i] != me) break;           // end of module
+      if (clus[i] >= nclus) continue;
       atomicAdd(&clusParams.charge[clus[i]], adc[i]);
       if (clusParams.minRow[clus[i]]==x[i]) atomicAdd(&clusParams.Q_f_X[clus[i]], adc[i]);
       if (clusParams.maxRow[clus[i]]==x[i]) atomicAdd(&clusParams.Q_l_X[clus[i]], adc[i]);
