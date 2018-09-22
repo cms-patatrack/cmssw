@@ -65,7 +65,11 @@ namespace gpuPixelRecHits {
 
     assert(blockDim.x >= MaxClusInModule);
 
-    if (threadIdx.x==0 && nclus > MaxClusInModule) printf("WARNING: too many clusters %d in Module %d. Only first %d processed\n", nclus,me,MaxClusInModule);
+    if (threadIdx.x==0 && nclus > MaxClusInModule) { 
+      printf("WARNING: too many clusters %d in Module %d. Only first %d processed\n", nclus,me,MaxClusInModule);
+      // zero charge: do not bother to do it in parallel
+      for (auto d=MaxClusInModule; d<nclus; ++d) { chargeh[d]=0; detInd[d]=InvId;}
+    }
     nclus = std::min(nclus, MaxClusInModule);
 
     auto ic = threadIdx.x;
