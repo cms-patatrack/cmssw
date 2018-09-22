@@ -20,7 +20,7 @@ public:
   GPUCACell() = default;
 
   __host__ __device__
-  void init(siPixelRecHitsHeterogeneousProduct::HitsOnGPU const & hh,
+  void init(siPixelRecHitsHeterogeneousProduct::HitsOnGPU const & __restrict__ hh,
       int layerPairId, int doubletId, int innerHitId,int outerHitId)
   {
     theInnerHitId = innerHitId;
@@ -64,21 +64,20 @@ public:
   }
 
   __host__ __device__
-  bool check_alignment_and_tag(
-      const GPUCACell *cells, unsigned int innerCellId, const float ptmin,
+  bool check_alignment(
+      GPUCACell const & otherCell, const float ptmin,
       const float region_origin_x, const float region_origin_y,
       const float region_origin_radius, const float thetaCut,
-      const float phiCut, const float hardPtCut)
+      const float phiCut, const float hardPtCut) const
   {
     auto ro = get_outer_r();
     auto zo = get_outer_z();
-    const auto &otherCell = cells[innerCellId];
 
     auto r1 = otherCell.get_inner_r();
     auto z1 = otherCell.get_inner_z();
     bool aligned = areAlignedRZ(r1, z1, ro, zo, ptmin, thetaCut);
     return (aligned &&
-            haveSimilarCurvature(cells, innerCellId, ptmin, region_origin_x,
+            haveSimilarCurvature(otherCell, ptmin, region_origin_x,
                                  region_origin_y, region_origin_radius, phiCut,
                                  hardPtCut));
   }
@@ -101,13 +100,11 @@ public:
   }
 
   constexpr bool
-  haveSimilarCurvature(const GPUCACell *cells, unsigned int innerCellId,
+  haveSimilarCurvature(GPUCACell const & otherCell,
                        const float ptmin, const float region_origin_x,
                        const float region_origin_y,
                        const float region_origin_radius, const float phiCut,
                        const float hardPtCut) const {
-
-    const auto &otherCell = cells[innerCellId];
 
     auto x1 = otherCell.get_inner_x();
     auto y1 = otherCell.get_inner_y();
@@ -190,7 +187,7 @@ public:
 
   __device__
   inline void find_ntuplets(
-      const GPUCACell *cells,
+      GPUCACell const * __restrict__ cells,
       GPU::SimpleVector<Quadruplet> *foundNtuplets,
       GPU::VecArray<unsigned int,3> &tmpNtuplet,
       const unsigned int minHitsPerNtuplet) const

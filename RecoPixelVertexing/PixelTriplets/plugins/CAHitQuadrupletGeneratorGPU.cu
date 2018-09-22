@@ -12,8 +12,8 @@ using HitsOnCPU = siPixelRecHitsHeterogeneousProduct::HitsOnCPU;
 
 __global__ void
 kernel_checkOverflows(GPU::SimpleVector<Quadruplet> *foundNtuplets,
-               GPUCACell *cells, uint32_t const * nCells,
-               GPU::VecArray< unsigned int, 256> *isOuterHitOfCell,
+               GPUCACell const * __restrict__ cells, uint32_t const * __restrict__ nCells,
+               GPU::VecArray< unsigned int, 256> const * __restrict__ isOuterHitOfCell,
                uint32_t nHits, uint32_t maxNumberOfDoublets) {
 
  auto idx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -36,8 +36,8 @@ kernel_checkOverflows(GPU::SimpleVector<Quadruplet> *foundNtuplets,
 __global__ 
 void
 kernel_connect(GPU::SimpleVector<Quadruplet> *foundNtuplets,
-               GPUCACell *cells, uint32_t const * nCells,
-               GPU::VecArray< unsigned int, 256> *isOuterHitOfCell,
+               GPUCACell * cells, uint32_t const * __restrict__ nCells,
+               GPU::VecArray< unsigned int, 256> const * __restrict__ isOuterHitOfCell,
                float ptmin,
                float region_origin_radius, const float thetaCut,
                const float phiCut, const float hardPtCut,
@@ -51,14 +51,14 @@ kernel_connect(GPU::SimpleVector<Quadruplet> *foundNtuplets,
   if (0==cellIndex) foundNtuplets->reset(); // ready for next kernel
 
   if (cellIndex >= (*nCells) ) return;
-  auto &thisCell = cells[cellIndex];
+  auto const & thisCell = cells[cellIndex];
   auto innerHitId = thisCell.get_inner_hit_id();
   auto numberOfPossibleNeighbors = isOuterHitOfCell[innerHitId].size();
   for (auto j = 0; j < numberOfPossibleNeighbors; ++j) {
      auto otherCell = isOuterHitOfCell[innerHitId][j];
 
-     if (thisCell.check_alignment_and_tag(
-                 cells, otherCell, ptmin, region_origin_x, region_origin_y,
+     if (thisCell.check_alignment(
+                 cells[otherCell], ptmin, region_origin_x, region_origin_y,
                   region_origin_radius, thetaCut, phiCut, hardPtCut)
         ) {
           cells[otherCell].theOuterNeighbors.push_back(cellIndex);
@@ -67,7 +67,7 @@ kernel_connect(GPU::SimpleVector<Quadruplet> *foundNtuplets,
 }
 
 __global__ void kernel_find_ntuplets(
-    GPUCACell *cells, uint32_t const * nCells,
+    GPUCACell * const __restrict__ cells, uint32_t const * nCells,
     GPU::SimpleVector<Quadruplet> *foundNtuplets,
     unsigned int minHitsPerNtuplet,
     unsigned int maxNumberOfDoublets_)
