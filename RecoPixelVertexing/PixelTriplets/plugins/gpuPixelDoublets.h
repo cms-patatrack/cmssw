@@ -76,8 +76,8 @@ namespace gpuPixelDoublets {
 
       // found hit corresponding to our cuda thread, now do the job
       auto mep = iphi[i];
-      auto mez = hh.zg_d[i];
-      auto mer = hh.rg_d[i];
+      auto mez = __ldg(hh.zg_d+i);
+      auto mer = __ldg(hh.rg_d+i);
 
       constexpr float z0cut = 12.f;                     // cm
       constexpr float hardPtCut = 0.5f;                 // GeV
@@ -86,13 +86,13 @@ namespace gpuPixelDoublets {
       auto ptcut = [&](int j) {
         auto r2t4 = minRadius2T4;
         auto ri = mer;
-        auto ro = hh.rg_d[j];
+        auto ro = __ldg(hh.rg_d+j);
         auto dphi = short2phi( min( abs(int16_t(mep-iphi[j])), abs(int16_t(iphi[j]-mep)) ) );
         return dphi*dphi * (r2t4 - ri*ro) > (ro-ri)*(ro-ri);
       };
       auto z0cutoff = [&](int j) {
-        auto zo = hh.zg_d[j];
-        auto ro = hh.rg_d[j];
+        auto zo = __ldg(hh.zg_d+j);
+        auto ro = __ldg(hh.rg_d+j);
         auto dr = ro-mer;
         return dr > maxr[pairLayerId] ||
           dr<0 || std::abs((mez*ro - mer*zo)) > z0cut*dr;
@@ -115,7 +115,7 @@ namespace gpuPixelDoublets {
         auto const * __restrict__ p = hist.begin(kk+hoff);
         auto const * __restrict__ e = hist.end(kk+hoff);
         for (;p < e; ++p) {
-          auto oi=*p;
+          auto oi=__ldg(p);
           assert(oi>=offsets[outer]);
           assert(oi<offsets[outer+1]);
 

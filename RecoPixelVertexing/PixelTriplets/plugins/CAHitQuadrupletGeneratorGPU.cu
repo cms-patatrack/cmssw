@@ -36,12 +36,15 @@ kernel_checkOverflows(GPU::SimpleVector<Quadruplet> *foundNtuplets,
 __global__ 
 void
 kernel_connect(GPU::SimpleVector<Quadruplet> *foundNtuplets,
+               GPUCACell::Hits const *  __restrict__ hhp,
                GPUCACell * cells, uint32_t const * __restrict__ nCells,
                GPU::VecArray< unsigned int, 256> const * __restrict__ isOuterHitOfCell,
                float ptmin,
                float region_origin_radius, const float thetaCut,
                const float phiCut, const float hardPtCut,
                unsigned int maxNumberOfDoublets_, unsigned int maxNumberOfHits_) {
+
+  auto const & hh = *hhp;
 
   float region_origin_x = 0.;
   float region_origin_y = 0.;
@@ -57,7 +60,7 @@ kernel_connect(GPU::SimpleVector<Quadruplet> *foundNtuplets,
   for (auto j = 0; j < numberOfPossibleNeighbors; ++j) {
      auto otherCell = isOuterHitOfCell[innerHitId][j];
 
-     if (thisCell.check_alignment(
+     if (thisCell.check_alignment(hh,
                  cells[otherCell], ptmin, region_origin_x, region_origin_y,
                   region_origin_radius, thetaCut, phiCut, hardPtCut)
         ) {
@@ -163,6 +166,7 @@ void CAHitQuadrupletGeneratorGPU::launchKernels(const TrackingRegion &region,
   auto numberOfBlocks = (maxNumberOfDoublets_ + blockSize - 1)/blockSize;
   kernel_connect<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
       d_foundNtupletsVec_[regionIndex], // needed only to be reset, ready for next kernel
+      hh.gpu_d,
       device_theCells_, device_nCells_,
       device_isOuterHitOfCell_,
       region.ptMin(),

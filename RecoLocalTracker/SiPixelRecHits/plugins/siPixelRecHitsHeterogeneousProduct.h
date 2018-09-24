@@ -18,6 +18,7 @@ namespace siPixelRecHitsHeterogeneousProduct {
   using CPUProduct = int; // dummy
 
   static constexpr uint32_t maxHits() { return 65536;}
+  using hindex_type = uint16_t; // if above is <=2^16
 
   struct HitsOnGPU{
      pixelCPEforGPU::ParamsOnGPU const * cpeParams = nullptr;    // forwarded from setup, NOT owned
