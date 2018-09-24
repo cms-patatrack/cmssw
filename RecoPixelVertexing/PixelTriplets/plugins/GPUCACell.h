@@ -11,7 +11,8 @@
 #include "HeterogeneousCore/CUDAUtilities/interface/GPUSimpleVector.h"
 
 struct Quadruplet {
-  int hitId[4];
+   using hindex_type = siPixelRecHitsHeterogeneousProduct::hindex_type;
+   hindex_type hitId[4];
 };
 
 
@@ -55,15 +56,15 @@ public:
     return theOuterHitId;
   }
 
-/*
-  __host__ __device__
+
+  __device__
   void print_cell() const {
     printf("printing cell: %d, on layerPair: %d, innerHitId: %d, outerHitId: "
            "%d, innerradius %f, outerRadius %f \n",
            theDoubletId, theLayerPairId, theInnerHitId, theOuterHitId
     );
   }
-*/
+
 
   __device__
   bool check_alignment(Hits const & hh,
@@ -195,7 +196,7 @@ public:
   inline void find_ntuplets(
       GPUCACell const * __restrict__ cells,
       GPU::SimpleVector<Quadruplet> *foundNtuplets,
-      GPU::VecArray<unsigned int,3> &tmpNtuplet,
+      GPU::VecArray<hindex_type,3> &tmpNtuplet,
       const unsigned int minHitsPerNtuplet) const
   {
     // the building process for a track ends if:

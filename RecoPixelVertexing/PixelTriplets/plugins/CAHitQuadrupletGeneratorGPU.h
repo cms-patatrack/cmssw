@@ -38,6 +38,7 @@ public:
 
     using HitsOnGPU = siPixelRecHitsHeterogeneousProduct::HitsOnGPU;
     using HitsOnCPU = siPixelRecHitsHeterogeneousProduct::HitsOnCPU;
+    using hindex_type = siPixelRecHitsHeterogeneousProduct::hindex_type;
 
     static constexpr unsigned int minLayers = 4;
     typedef OrderedHitSeeds ResultType;

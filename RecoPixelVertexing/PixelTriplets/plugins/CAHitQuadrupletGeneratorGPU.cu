@@ -46,8 +46,8 @@ kernel_connect(GPU::SimpleVector<Quadruplet> *foundNtuplets,
 
   auto const & hh = *hhp;
 
-  float region_origin_x = 0.;
-  float region_origin_y = 0.;
+  constexpr float region_origin_x = 0.;
+  constexpr float region_origin_y = 0.;
 
   auto cellIndex = threadIdx.x + blockIdx.x * blockDim.x;
 
@@ -57,8 +57,9 @@ kernel_connect(GPU::SimpleVector<Quadruplet> *foundNtuplets,
   auto const & thisCell = cells[cellIndex];
   auto innerHitId = thisCell.get_inner_hit_id();
   auto numberOfPossibleNeighbors = isOuterHitOfCell[innerHitId].size();
+  auto vi = isOuterHitOfCell[innerHitId].data();
   for (auto j = 0; j < numberOfPossibleNeighbors; ++j) {
-     auto otherCell = isOuterHitOfCell[innerHitId][j];
+     auto otherCell = __ldg(vi+j);
 
      if (thisCell.check_alignment(hh,
                  cells[otherCell], ptmin, region_origin_x, region_origin_y,
@@ -80,7 +81,7 @@ __global__ void kernel_find_ntuplets(
   if (cellIndex >= (*nCells) ) return;
   auto &thisCell = cells[cellIndex];
   if (thisCell.theLayerPairId!=0 && thisCell.theLayerPairId!=3 && thisCell.theLayerPairId!=8) return; // inner layer is 0 FIXME
-  GPU::VecArray<unsigned int, 3> stack;
+  GPU::VecArray<CAHitQuadrupletGeneratorGPU::hindex_type, 3> stack;
   stack.reset();
   thisCell.find_ntuplets(cells, foundNtuplets, stack, minHitsPerNtuplet);
   assert(stack.size()==0);
