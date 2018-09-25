@@ -103,7 +103,6 @@ radixSortImpl(T const * __restrict__ a, uint16_t * ind, uint16_t * ind2, uint32_
   for (auto i=first; i<size; i+=blockDim.x)  j[i]=i;
   __syncthreads();
 
-
   while(__syncthreads_and(p < w/d)) {
     if (threadIdx.x<sb) c[threadIdx.x]=0;
     __syncthreads();

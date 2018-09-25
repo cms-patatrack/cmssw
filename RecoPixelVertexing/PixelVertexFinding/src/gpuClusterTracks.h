@@ -26,7 +26,7 @@ namespace gpuVertexFinder {
     float * __restrict__ ptv2 = data.ptv2;
     uint16_t * __restrict__ sortInd = data.sortInd;
 
-    if (nv<2) return;
+    if (nv<1) return;
 
     // can be done asynchronoisly at the end of previous event
     for (int i = threadIdx.x; i < nv; i += blockDim.x) {
@@ -41,6 +41,10 @@ namespace gpuVertexFinder {
     }
     __syncthreads();
 
+    if (1==nv) {
+      if (threadIdx.x==0) sortInd[0]=0;
+      return;
+    }
     __shared__ uint16_t ws[1024];
     radixSort(ptv2,sortInd,ws,nv);
     
