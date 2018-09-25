@@ -182,7 +182,6 @@ void CAHitQuadrupletGeneratorGPU::launchKernels(const TrackingRegion &region,
       4, maxNumberOfDoublets_);
   cudaCheck(cudaGetLastError());
 
-
   numberOfBlocks = (std::max(int(nhits), maxNumberOfDoublets_) + blockSize - 1)/blockSize;
   kernel_checkOverflows<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
                         d_foundNtupletsVec_[regionIndex],
@@ -190,11 +189,11 @@ void CAHitQuadrupletGeneratorGPU::launchKernels(const TrackingRegion &region,
                         device_isOuterHitOfCell_, nhits,
                         maxNumberOfDoublets_
                        );
-
+  cudaCheck(cudaGetLastError());
 
   // kernel_print_found_ntuplets<<<1, 1, 0, cudaStream>>>(d_foundNtupletsVec_[regionIndex], 10);
 
-  if(transferToCPU) {
+  if (transferToCPU) {
     cudaCheck(cudaMemcpyAsync(h_foundNtupletsVec_[regionIndex], d_foundNtupletsVec_[regionIndex],
                               sizeof(GPU::SimpleVector<Quadruplet>),
                               cudaMemcpyDeviceToHost, cudaStream));
