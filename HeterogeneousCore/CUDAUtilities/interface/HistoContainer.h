@@ -57,6 +57,7 @@ namespace cudautils {
     cudaMemsetAsync(off,0, 4*Histo::totbins(),stream);
     auto nblocks = (totSize + nthreads - 1) / nthreads;
     countFromVector<<<nblocks, nthreads, 0, stream>>>(h, nh, v, offsets);
+    cudaCheck(cudaGetLastError());
     size_t wss = Histo::totbins();
     CubDebugExit(cub::DeviceScan::InclusiveSum(ws, wss, off, off, Histo::totbins(), stream));
     cudaMemsetAsync(ws,0, 4*Histo::totbins(),stream);
