@@ -40,10 +40,28 @@ void testWarpPrefixScan(uint32_t size) {
   }
 }
 
+#include <cub/cub.cuh> 
+
+
+__global__
+void  init(uint32_t  * v, uint32_t  val, uint32_t n) {
+     auto i  = blockIdx.x * blockDim.x + threadIdx.x;
+     if(i<n) v[i]=val;
+     if (i==0) printf("init\n");
+}
+
+__global__
+void  verify(uint32_t  const * v, uint32_t n) {
+     auto i  = blockIdx.x * blockDim.x + threadIdx.x;
+     if(i<n) assert(v[i]==i+1);
+     if (i==0) printf("verify\n");
+}
+
 
 #include<iostream>
 int main() {
 
+  std::cout << "warp level" << std::endl;
   // std::cout << "warp 32" << std::endl;
   testWarpPrefixScan<int><<<1,32>>>(32);
   cudaDeviceSynchronize();
@@ -54,6 +72,7 @@ int main() {
   testWarpPrefixScan<int><<<1,32>>>(5);
   cudaDeviceSynchronize();
 
+  std::cout << "block level" << std::endl;
   for(int bs=32; bs<=1024; bs+=32) {
 //  std::cout << "bs " << bs << std::endl;
   for (int j=1;j<=1024; ++j) {
@@ -64,6 +83,44 @@ int main() {
   cudaDeviceSynchronize();
   }}
   cudaDeviceSynchronize();
+
+
+  // test cub
+  std::cout << "cub" << std::endl;
+// Declare, allocate, and initialize device-accessible pointers for input and output
+   int  num_items = 10000;
+   uint32_t  *d_in;         
+   uint32_t  *d_out;
+
+
+   cudaMalloc(&d_in,num_items*sizeof(uint32_t));
+   // cudaMalloc(&d_out,num_items*sizeof(uint32_t));
+
+   d_out = d_in;
+  
+   auto nthreads = 256;
+   auto nblocks = (num_items + nthreads - 1) / nthreads;
+
+   init<<<nblocks, nthreads, 0>>>(d_in, 1, num_items);
+
+   // Determine temporary device storage requirements for inclusive prefix sum
+   void     *d_temp_storage = nullptr;
+   size_t   temp_storage_bytes = 0;
+   cub::DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items);
+
+   std::cout << "temp storage " << temp_storage_bytes << std::endl;
+
+   // Allocate temporary storage for inclusive prefix sum
+   // fake larger ws already available
+   temp_storage_bytes *=8;
+   cudaMalloc(&d_temp_storage, temp_storage_bytes);
+   std::cout << "temp storage " << temp_storage_bytes << std::endl;
+   // Run inclusive prefix sum
+   CubDebugExit(cub::DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items));
+   std::cout << "temp storage " << temp_storage_bytes << std::endl;
+
+   verify<<<nblocks, nthreads, 0>>>(d_out, num_items);
+   cudaDeviceSynchronize();
 
   return 0;
 }
