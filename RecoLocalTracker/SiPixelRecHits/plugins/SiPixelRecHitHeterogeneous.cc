@@ -242,9 +242,9 @@ void SiPixelRecHitHeterogeneous::run(const edm::Handle<SiPixelClusterCollectionN
     std::sort_heap(ind, ind+ngh,[&](auto a, auto b) { return mrp[a]<mrp[b];});
     uint32_t ic=0;
     auto jnd = [&](int k) { return fc+ind[k]; };
-    assert(ngh==DSViter->size());
+    assert(ngh<=DSViter->size());
     for (auto const & clust : *DSViter) {
-      assert(ic<ngh);
+      if(ic>=ngh) break;
       // order is not stable... assume minPixelCol to be unique...
       auto ij = jnd(ic);
       // assert( clust.minPixelRow()==hoc.mr[ij] );
@@ -309,13 +309,13 @@ void SiPixelRecHitHeterogeneous::run(const edm::Handle<SiPixelClusterCollectionN
 
   } //    <-- End loop on DetUnits
 
-  /*
+  /*  
   std::cout << "SiPixelRecHitGPUVI $ det, clus, lost "
     <<  numberOfDetUnits << ' '
     << numberOfClusters  << ' '
     << numberOfLostClusters
     << std::endl;
-   */
+  */
 
 }
 
