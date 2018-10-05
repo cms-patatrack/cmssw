@@ -21,7 +21,7 @@ namespace gpuVertexFinder {
                    float maxChi2
                   )  {
 
-    constexpr bool verbose = false; // in principle the compiler should optmize out if false
+    constexpr bool verbose = true; // in principle the compiler should optmize out if false
 
 
     auto & __restrict__ data = *pdata;
@@ -68,10 +68,6 @@ namespace gpuVertexFinder {
     
     __shared__ float znew[2], wnew[2];  // the new vertices
     
-    znew[0]=0; znew[1]=0;
-    wnew[0]=0; wnew[1]=0;
-    
-    
     __syncthreads();
     assert(nq==nn[kv]+1);
     
@@ -80,6 +76,12 @@ namespace gpuVertexFinder {
     // kt-min....
     bool more = true;
     while(__syncthreads_or(more) ) {
+      more = false;
+      if(0==threadIdx.x) {
+        znew[0]=0; znew[1]=0;
+        wnew[0]=0; wnew[1]=0;
+      }
+      __syncthreads();
       for (auto k = threadIdx.x; k<nq; k+=blockDim.x) {
         auto i = newV[k];
         atomicAdd(&znew[i],zz[k]*ww[k]);
@@ -92,10 +94,10 @@ namespace gpuVertexFinder {
       }
       __syncthreads();
       for (auto k = threadIdx.x; k<nq; k+=blockDim.x) {
-        auto d1 = fabs(zz[k]-znew[0]);
-        auto d2 = fabs(zz[k]-znew[1]);
-        auto newer = d1<d2 ? 0 : 1;
-        more = newer != newV[k];
+        auto d0 = fabs(zz[k]-znew[0]);
+        auto d1 = fabs(zz[k]-znew[1]);
+        auto newer = d0<d1 ? 0 : 1;
+        more |= newer != newV[k];
         newV[k] = newer;
       }
       --maxiter;
