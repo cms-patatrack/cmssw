@@ -1,6 +1,14 @@
 #ifndef HeterogeneousCore_CUDAUtilities_HistoContainer_h
 #define HeterogeneousCore_CUDAUtilities_HistoContainer_h
 
+#ifdef __CUDA_ARCH__
+#ifndef GPU_DEBUG
+#ifndef NDEBUG
+#define NDEBUG
+#endif // NDEBUG
+#endif // GPU_DEBUG
+#endif // __CUDA_ARCH__
+
 #include <cassert>
 #include <cstddef> 
 #include <cstdint>

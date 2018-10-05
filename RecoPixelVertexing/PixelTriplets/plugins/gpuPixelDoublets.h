@@ -1,6 +1,14 @@
 #ifndef RecoLocalTracker_SiPixelRecHits_plugins_gpuPixelDoublets_h
 #define RecoLocalTracker_SiPixelRecHits_plugins_gpuPixelDouplets_h
 
+#ifdef __CUDA_ARCH__
+#ifndef GPU_DEBUG
+#ifndef NDEBUG
+#define NDEBUG
+#endif // NDEBUG
+#endif // GPU_DEBUG
+#endif // __CUDA_ARCH__
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>

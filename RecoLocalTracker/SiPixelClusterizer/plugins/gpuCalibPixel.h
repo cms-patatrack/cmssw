@@ -1,6 +1,14 @@
 #ifndef RecoLocalTracker_SiPixelClusterizer_plugins_gpuCalibPixel_h
 #define RecoLocalTracker_SiPixelClusterizer_plugins_gpuCalibPixel_h
 
+#ifdef __CUDA_ARCH__
+#ifndef GPU_DEBUG
+#ifndef NDEBUG
+#define NDEBUG
+#endif // NDEBUG
+#endif // GPU_DEBUG
+#endif // __CUDA_ARCH__
+
 #include <cassert>
 #include <cstdint>
 #include <cstdio>

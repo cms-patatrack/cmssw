@@ -1,6 +1,14 @@
 #ifndef HeterogeneousCoreCUDAUtilities_radixSort_H
 #define HeterogeneousCoreCUDAUtilities_radixSort_H 
 
+#ifdef __CUDA_ARCH__
+#ifndef GPU_DEBUG
+#ifndef NDEBUG
+#define NDEBUG
+#endif // NDEBUG
+#endif // GPU_DEBUG
+#endif // __CUDA_ARCH__
+
 #include<cstdint>
 #include<cassert>
 
