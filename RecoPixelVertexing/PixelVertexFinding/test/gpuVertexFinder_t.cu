@@ -4,6 +4,11 @@
 #include<cmath>
 
 #include "RecoPixelVertexing/PixelVertexFinding/src/gpuClusterTracks.h"
+#include "RecoPixelVertexing/PixelVertexFinding/src/gpuFitVertices.h"
+#include "RecoPixelVertexing/PixelVertexFinding/src/gpuSortByPt2.h"
+#include "RecoPixelVertexing/PixelVertexFinding/src/gpuSplitVertices.h"
+
+
 using namespace  gpuVertexFinder;
 #include <cuda/api_wrappers.h>
 
@@ -96,6 +101,7 @@ int main() {
   auto iv_d = cuda::memory::device::make_unique<int32_t[]>(current_device, 64000);
 
   auto nv_d = cuda::memory::device::make_unique<uint32_t[]>(current_device, 1);
+  auto nv2_d = cuda::memory::device::make_unique<uint32_t[]>(current_device, 1);
  
   auto onGPU_d = cuda::memory::device::make_unique<OnGPU[]>(current_device, 1);
 
@@ -110,6 +116,7 @@ int main() {
   onGPU.ptv2 = ptv2_d.get();
   onGPU.sortInd = ind_d.get();
   onGPU.nv = nv_d.get();
+  onGPU.nv2 = nv2_d.get();
   onGPU.izt = izt_d.get();
   onGPU.nn = nn_d.get();
   onGPU.iv = iv_d.get();
@@ -167,14 +174,69 @@ int main() {
 		 ev.ztrack.size(), onGPU_d.get(),kk,0.7f*eps,
 		 0.01f,9.0f
 		 );
-  
+  cudaCheck(cudaGetLastError());
   cudaDeviceSynchronize();
+
+  cuda::launch(fitVertices, 
+               { 1,1024-256 },
+               ev.ztrack.size(), onGPU_d.get()
+              );
+  cudaCheck(cudaGetLastError());
+
+  uint32_t nv;
+  cuda::memory::copy(&nv, onGPU.nv, sizeof(uint32_t));
+  if (nv==0) {
+    std::cout << "NO VERTICES???" << std::endl;
+    continue;
+  }
+  float chi2[2*nv];  // make space for splitting...
+  float zv[2*nv];
+  float wv[2*nv];
+  float ptv2[2*nv];
+  int32_t nn[2*nv];
+  uint16_t ind[2*nv];
+
+  cuda::memory::copy(&nn, onGPU.nn, nv*sizeof(int32_t));
+  cuda::memory::copy(&chi2, onGPU.chi2, nv*sizeof(float));
+  for (auto j=0U; j<nv; ++j) if (nn[j]>0) chi2[j]/=float(nn[j]);
+  {
+    auto mx = std::minmax_element(chi2,chi2+nv);
+    std::cout << "after fit min max chi2 " << nv << " " << *mx.first << ' ' <<  *mx.second << std::endl;
+  }
+
+  cuda::launch(fitVertices,
+               { 1,1024-256 },
+               ev.ztrack.size(), onGPU_d.get()
+              );
+  cuda::memory::copy(&nv, onGPU.nv, sizeof(uint32_t));
+  cuda::memory::copy(&nn, onGPU.nn, nv*sizeof(int32_t));
+  cuda::memory::copy(&chi2, onGPU.chi2, nv*sizeof(float));
+  for (auto j=0U; j<nv; ++j) if (nn[j]>0) chi2[j]/=float(nn[j]);
+  {
+    auto mx = std::minmax_element(chi2,chi2+nv);
+    std::cout << "before splitting min max chi2 " << nv << " " << *mx.first << ' ' <<  *mx.second << std::endl;
+  }
+
+  cuda::launch(splitVertices,
+               { 1024, 64 },
+               ev.ztrack.size(), onGPU_d.get(),
+               9.f
+              );
+ cuda::memory::copy(&nv, onGPU.nv2, sizeof(uint32_t));
+ std::cout << "after split " << nv << std::endl; 
+
+  cuda::launch(fitVertices,
+               { 1,1024-256 },
+               ev.ztrack.size(), onGPU_d.get()
+              );
+  cudaCheck(cudaGetLastError());
+
+
   cuda::launch(sortByPt2,
                { 1, 256 },
                ev.ztrack.size(), onGPU_d.get()
               );
 
-  uint32_t nv;
   cuda::memory::copy(&nv, onGPU.nv, sizeof(uint32_t));
 
   if (nv==0) {
@@ -182,12 +244,7 @@ int main() {
     continue;
   }
 
-  float zv[nv];
-  float	wv[nv];
-  float	chi2[nv];
-  float ptv2[nv];
-  int32_t nn[nv];
-  uint16_t ind[nv];
+
   cuda::memory::copy(&zv, onGPU.zv, nv*sizeof(float));
   cuda::memory::copy(&wv, onGPU.wv, nv*sizeof(float));
   cuda::memory::copy(&chi2, onGPU.chi2, nv*sizeof(float));
@@ -195,15 +252,16 @@ int main() {
   cuda::memory::copy(&nn, onGPU.nn, nv*sizeof(int32_t));
   cuda::memory::copy(&ind, onGPU.sortInd, nv*sizeof(uint16_t));
   for (auto j=0U; j<nv; ++j) if (nn[j]>0) chi2[j]/=float(nn[j]); 
-   
+  {
+    auto mx = std::minmax_element(chi2,chi2+nv);
+    std::cout << "min max chi2 " << nv << " " << *mx.first << ' ' <<  *mx.second << std::endl;
+  }
+
   {
     auto mx = std::minmax_element(wv,wv+nv);
     std::cout << "min max error " << 1./std::sqrt(*mx.first) << ' ' <<  1./std::sqrt(*mx.second) << std::endl;
   }
-  {
-    auto mx = std::minmax_element(chi2,chi2+nv);
-    std::cout << "min max chi2 " << *mx.first << ' ' <<  *mx.second << std::endl;
-  }
+
   {
     auto mx = std::minmax_element(ptv2,ptv2+nv);
     std::cout << "min max ptv2 " << *mx.first << ' ' <<  *mx.second << std::endl;
@@ -212,16 +270,15 @@ int main() {
   }  
 
   float dd[nv];
-  uint32_t ii=0;
-  for (auto zr : zv) {
+  for (auto kv=0U; kv<nv; ++kv) {
+   auto zr = zv[kv];
    auto md=500.0f;
    for (auto zs : ev.ztrack) { 
      auto d = std::abs(zr-zs);
      md = std::min(d,md);
    }
-   dd[ii++] = md;
+   dd[kv] = md;
   }
-  assert(ii==nv);
   if (i==6) {
     for (auto d:dd) std::cout << d << ' ';
     std::cout << std::endl;
