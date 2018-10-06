@@ -1,16 +1,9 @@
 #ifndef HeterogeneousCore_CUDAUtilities_prefixScan_h
 #define HeterogeneousCore_CUDAUtilities_prefixScan_h
 
-#ifdef __CUDA_ARCH__
-#ifndef GPU_DEBUG
-#ifndef NDEBUG
-#define NDEBUG
-#endif // NDEBUG
-#endif // GPU_DEBUG
-#endif // __CUDA_ARCH__
-
 #include <cstdint>
-#include <cassert>
+
+#include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
 
 template<typename T>
 __device__

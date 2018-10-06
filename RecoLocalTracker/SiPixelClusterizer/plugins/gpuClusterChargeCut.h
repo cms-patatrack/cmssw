@@ -1,21 +1,13 @@
 #ifndef RecoLocalTracker_SiPixelClusterizer_plugins_gpuClusterChargeCut_h
 #define RecoLocalTracker_SiPixelClusterizer_plugins_gpuClusterChargeCut_h
 
-#ifdef __CUDA_ARCH__
-#ifndef GPU_DEBUG
-#ifndef NDEBUG
-#define NDEBUG
-#endif // NDEBUG
-#endif // GPU_DEBUG
-#endif // __CUDA_ARCH__
-
-#include <cassert>
 #include <cstdint>
 #include <cstdio>
 
-#include "gpuClusteringConstants.h"
-
+#include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/prefixScan.h"
+
+#include "gpuClusteringConstants.h"
 
 namespace gpuClustering {
 

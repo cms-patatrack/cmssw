@@ -1,20 +1,12 @@
 #ifndef RecoLocalTracker_SiPixelRecHits_plugins_gpuPixelRecHits_h
 #define RecoLocalTracker_SiPixelRecHits_plugins_gpuPixelRecHits_h
 
-#ifdef __CUDA_ARCH__
-#ifndef GPU_DEBUG
-#ifndef NDEBUG
-#define NDEBUG
-#endif // NDEBUG
-#endif // GPU_DEBUG
-#endif // __CUDA_ARCH__
-
-#include <cassert>
 #include <cstdint>
 #include <cstdio>
 #include <limits>
 
 #include "DataFormats/Math/interface/approx_atan2.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
 #include "RecoLocalTracker/SiPixelRecHits/interface/pixelCPEforGPU.h"
 
 namespace gpuPixelRecHits {

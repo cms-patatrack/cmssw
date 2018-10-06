@@ -1,16 +1,9 @@
 #ifndef HeterogeneousCoreCUDAUtilities_radixSort_H
 #define HeterogeneousCoreCUDAUtilities_radixSort_H 
 
-#ifdef __CUDA_ARCH__
-#ifndef GPU_DEBUG
-#ifndef NDEBUG
-#define NDEBUG
-#endif // NDEBUG
-#endif // GPU_DEBUG
-#endif // __CUDA_ARCH__
+#include <cstdint>
 
-#include<cstdint>
-#include<cassert>
+#include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
 
 template<typename T>
 __device__

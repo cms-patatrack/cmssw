@@ -1,20 +1,12 @@
 #ifndef RecoPixelVertexing_PixelVertexFinding_clusterTracks_H
 #define RecoPixelVertexing_PixelVertexFinding_clusterTracks_H
 
-#ifdef __CUDA_ARCH__
-#ifndef GPU_DEBUG
-#ifndef NDEBUG
-#define NDEBUG
-#endif // NDEBUG
-#endif // GPU_DEBUG
-#endif // __CUDA_ARCH__
-
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 #include <cstdint>
 
 #include "HeterogeneousCore/CUDAUtilities/interface/HistoContainer.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/radixSort.h"
 
 #include "gpuVertexFinder.h"

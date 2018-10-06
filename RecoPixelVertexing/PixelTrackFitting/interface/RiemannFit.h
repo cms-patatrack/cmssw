@@ -1,20 +1,13 @@
 #ifndef RecoPixelVertexing_PixelTrackFitting_interface_RiemannFit_h
 #define RecoPixelVertexing_PixelTrackFitting_interface_RiemannFit_h
 
-#ifdef __CUDA_ARCH__
-#ifndef GPU_DEBUG
-#ifndef NDEBUG
-#define NDEBUG
-#endif // NDEBUG
-#endif // GPU_DEBUG
-#endif // __CUDA_ARCH__
-
-#include <cassert>
 #include <cmath>
 
 #include <cuda_runtime.h>
 #include <Eigen/Core>
 #include <Eigen/Eigenvalues>
+
+#include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
 
 #ifndef RFIT_DEBUG
 #define RFIT_DEBUG 0

@@ -4,20 +4,12 @@
 #ifndef RecoPixelVertexing_PixelTriplets_plugins_GPUCACell_h
 #define RecoPixelVertexing_PixelTriplets_plugins_GPUCACell_h
 
-#ifdef __CUDA_ARCH__
-#ifndef GPU_DEBUG
-#ifndef NDEBUG
-#define NDEBUG
-#endif // NDEBUG
-#endif // GPU_DEBUG
-#endif // __CUDA_ARCH__
-
-#include <cassert>
 #include <cuda_runtime.h>
 
-#include "RecoLocalTracker/SiPixelRecHits/plugins/siPixelRecHitsHeterogeneousProduct.h"
-#include "HeterogeneousCore/CUDAUtilities/interface/GPUVecArray.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/GPUSimpleVector.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/GPUVecArray.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
+#include "RecoLocalTracker/SiPixelRecHits/plugins/siPixelRecHitsHeterogeneousProduct.h"
 
 struct Quadruplet {
    using hindex_type = siPixelRecHitsHeterogeneousProduct::hindex_type;
