@@ -179,7 +179,7 @@ int main() {
 
   cuda::launch(fitVertices, 
                { 1,1024-256 },
-               ev.ztrack.size(), onGPU_d.get()
+               ev.ztrack.size(), onGPU_d.get(),50.f
               );
   cudaCheck(cudaGetLastError());
 
@@ -206,7 +206,7 @@ int main() {
 
   cuda::launch(fitVertices,
                { 1,1024-256 },
-               ev.ztrack.size(), onGPU_d.get()
+               ev.ztrack.size(), onGPU_d.get(), 50.f
               );
   cuda::memory::copy(&nv, onGPU.nv, sizeof(uint32_t));
   cuda::memory::copy(&nn, onGPU.nn, nv*sizeof(int32_t));
@@ -227,7 +227,7 @@ int main() {
 
   cuda::launch(fitVertices,
                { 1,1024-256 },
-               ev.ztrack.size(), onGPU_d.get()
+               ev.ztrack.size(), onGPU_d.get(),5000.f
               );
   cudaCheck(cudaGetLastError());
 

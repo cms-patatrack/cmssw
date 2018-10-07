@@ -68,12 +68,12 @@ namespace gpuVertexFinder {
     assert(onGPU_d);
     clusterTracks<<<1,1024-256,0,stream>>>(ntrks,onGPU_d,minT,eps,errmax,chi2max);
     cudaCheck(cudaGetLastError());
-    fitVertices<<<1,1024-256,0,stream>>>(ntrks,onGPU_d);
+    fitVertices<<<1,1024-256,0,stream>>>(ntrks,onGPU_d,50.);
     cudaCheck(cudaGetLastError());
 
     splitVertices<<<1024,128,0,stream>>>(ntrks,onGPU_d,9.f);
     cudaCheck(cudaGetLastError());
-    fitVertices<<<1,1024-256,0,stream>>>(ntrks,onGPU_d);
+    fitVertices<<<1,1024-256,0,stream>>>(ntrks,onGPU_d,5000.);
     cudaCheck(cudaGetLastError());
 
     sortByPt2<<<1,256,0,stream>>>(ntrks,onGPU_d);

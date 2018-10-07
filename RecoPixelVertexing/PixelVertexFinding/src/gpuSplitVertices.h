@@ -28,7 +28,7 @@ namespace gpuVertexFinder {
     float const * __restrict__ zt = data.zt;
     float const * __restrict__ ezt2 = data.ezt2;
     float * __restrict__ zv = data.zv;
-    // float * __restrict__ wv = data.wv;
+    float * __restrict__ wv = data.wv;
     float const * __restrict__ chi2 = data.chi2;
     uint32_t & nv  = *data.nv;
 
@@ -105,11 +105,13 @@ namespace gpuVertexFinder {
     }
     
     // quality cut
-    auto chi2Dist = (znew[0]-znew[1])*(znew[0]-znew[1])/(1.f/wnew[0]+1.f/wnew[1]);
+    auto dist2 = (znew[0]-znew[1])*(znew[0]-znew[1]);
 
-    if(verbose && 0==threadIdx.x) printf("inter %d %f\n",20-maxiter,chi2Dist);
+    auto chi2Dist = dist2/(1.f/wnew[0]+1.f/wnew[1]);
+
+    if(verbose && 0==threadIdx.x) printf("inter %d %f %f\n",20-maxiter,chi2Dist, dist2*wv[kv]);
     
-    if (chi2Dist<2) return;
+    if (chi2Dist<4) return;
     
     // get a new global vertex
     __shared__ uint32_t igv;

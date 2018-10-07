@@ -17,7 +17,8 @@ namespace gpuVertexFinder {
 
   __global__
   void fitVertices(int nt,
-                   OnGPU * pdata
+                   OnGPU * pdata,
+                   float chi2Max // for outlier rejection
                   )  {
 
     constexpr bool verbose = false; // in principle the compiler should optmize out if false
@@ -83,7 +84,7 @@ namespace gpuVertexFinder {
       if (iv[i]>9990) continue;
 
       auto c2 = zv[iv[i]]-zt[i]; c2 *=c2/ezt2[i];
-      // remove outliers ???? if (c2> cut) {iv[i] = 9999; continue;}????
+      if (c2 > chi2Max ) {iv[i] = 9999; continue;}
       atomicAdd(&chi2[iv[i]],c2);
       atomicAdd(&nn[iv[i]],1);
     }
