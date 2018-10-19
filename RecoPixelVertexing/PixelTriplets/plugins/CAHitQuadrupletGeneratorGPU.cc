@@ -118,6 +118,8 @@ void CAHitQuadrupletGeneratorGPU::fillResults(
   std::array<bool, 4> barrels;
   std::array<BaseTrackerRecHit const*, 4> phits;
 
+
+  int nbad=0;
   // loop over quadruplets
   for (unsigned int quadId = 0; quadId < numberOfFoundQuadruplets; ++quadId) {
     auto isBarrel = [](const unsigned id) -> bool {
@@ -139,7 +141,7 @@ void CAHitQuadrupletGeneratorGPU::fillResults(
       barrels[i] = isBarrel(ahit.geographicalId().subdetId());
 
     }
-    if (bad) continue;
+    if (bad) { nbad++; continue;}
 
     // TODO:
     // - if we decide to always do the circle fit for 4 hits, we don't
@@ -198,4 +200,7 @@ void CAHitQuadrupletGeneratorGPU::fillResults(
     result[index].emplace_back(phits[0],  phits[1],  phits[2],  phits[3]);
 
   } // end loop over quads
+
+  std::cout << "Q Final quads " << result[index].size() << ' ' << nbad << std::endl; 
+
 }
