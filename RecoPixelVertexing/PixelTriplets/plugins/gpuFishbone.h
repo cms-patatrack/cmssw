@@ -55,7 +55,7 @@ namespace gpuPixelDoublets {
         if (d[ic]==d[jc]) continue;
         auto cos12 = x[ic]*x[jc]+y[ic]*y[jc]+z[ic]*z[jc];
         // assert(cos12*cos12<1.01f*n1*n2);
-        if (cos12*cos12>0.99999f*n[ic]*n[jc]) {
+        if (cos12*cos12>0.999999f*n[ic]*n[jc]) {
          // alligned (kill closest)
          if (n[ic]<n[jc]) {
            ci.theDoubletId=-1; 
