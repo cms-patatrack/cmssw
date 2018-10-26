@@ -49,6 +49,9 @@ public:
   __device__ __forceinline__ float get_inner_r(Hits const & hh) const { return theInnerR; } // { return __ldg(hh.rg_d+theInnerHitId); } // { return theInnerR; }
   __device__ __forceinline__ float get_outer_r(Hits const & hh) const { return __ldg(hh.rg_d+theOuterHitId); }
 
+  __device__ __forceinline__ float get_inner_detId(Hits const & hh) const { return __ldg(hh.detInd_d+theInnerHitId); }
+  __device__ __forceinline__ float get_outer_detId(Hits const & hh) const { return __ldg(hh.detInd_d+theOuterHitId); }
+
   constexpr unsigned int get_inner_hit_id() const {
     return theInnerHitId;
   }

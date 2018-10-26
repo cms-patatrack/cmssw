@@ -10,6 +10,8 @@
 #include "CAHitQuadrupletGeneratorGPU.h"
 #include "GPUCACell.h"
 #include "gpuPixelDoublets.h"
+#include"gpuFishbone.h"
+using namespace gpuPixelDoublets;
 
 using HitsOnCPU = siPixelRecHitsHeterogeneousProduct::HitsOnCPU;
 using namespace Eigen;
@@ -157,6 +159,10 @@ void kernel_checkOverflows(GPU::SimpleVector<Quadruplet> *foundNtuplets,
                GPU::VecArray< unsigned int, 256> const * __restrict__ isOuterHitOfCell,
                uint32_t nHits, uint32_t maxNumberOfDoublets) {
 
+ __shared__ uint32_t killedCell;
+ killedCell=0;
+ __syncthreads();
+  
  auto idx = threadIdx.x + blockIdx.x * blockDim.x;
  #ifdef GPU_DEBUG
  if (0==idx)
@@ -166,11 +172,15 @@ void kernel_checkOverflows(GPU::SimpleVector<Quadruplet> *foundNtuplets,
    auto &thisCell = cells[idx];
    if (thisCell.theOuterNeighbors.full()) //++tooManyNeighbors[thisCell.theLayerPairId];
      printf("OuterNeighbors overflow %d in %d\n", idx, thisCell.theLayerPairId);
+   if (thisCell.theDoubletId<0) atomicInc(&killedCell,maxNumberOfDoublets);
  }
  if (idx < nHits) {
    if (isOuterHitOfCell[idx].full()) // ++tooManyOuterHitOfCell;
      printf("OuterHitOfCell overflow %d\n", idx);
  }
+
+ __syncthreads();
+// if (threadIdx.x==0) printf("number of killed cells %d\n",killedCell);
 }
 
 
@@ -196,12 +206,13 @@ kernel_connect(GPU::SimpleVector<Quadruplet> *foundNtuplets,
 
   if (cellIndex >= (*nCells) ) return;
   auto const & thisCell = cells[cellIndex];
+  if (thisCell.theDoubletId<0) return;
   auto innerHitId = thisCell.get_inner_hit_id();
   auto numberOfPossibleNeighbors = isOuterHitOfCell[innerHitId].size();
   auto vi = isOuterHitOfCell[innerHitId].data();
   for (auto j = 0; j < numberOfPossibleNeighbors; ++j) {
      auto otherCell = __ldg(vi+j);
-
+     if (cells[otherCell].theDoubletId<0) continue;
      if (thisCell.check_alignment(hh,
                  cells[otherCell], ptmin, region_origin_x, region_origin_y,
                   region_origin_radius, thetaCut, phiCut, hardPtCut)
@@ -331,7 +342,17 @@ void CAHitQuadrupletGeneratorGPU::launchKernels(const TrackingRegion &region,
   auto nhits = hh.nHits;
   assert(nhits <= PixelGPUConstants::maxNumberOfHits);
   auto blockSize = 64;
-  auto numberOfBlocks = (maxNumberOfDoublets_ + blockSize - 1)/blockSize;
+
+  auto numberOfBlocks = (nhits + blockSize - 1)/blockSize;
+
+  fishbone<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
+      hh.gpu_d,
+      device_theCells_, device_nCells_,
+      device_isOuterHitOfCell_,
+      nhits
+  );
+
+  numberOfBlocks = (maxNumberOfDoublets_ + blockSize - 1)/blockSize;
   kernel_connect<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
       d_foundNtupletsVec_[regionIndex], // needed only to be reset, ready for next kernel
       hh.gpu_d,
