@@ -2,6 +2,7 @@
 #define Geometry_TrackerGeometryBuilder_phase1PixelTopology_h
 
 #include <cstdint>
+#include <array>
 
 namespace phase1PixelTopology {
 
@@ -29,6 +30,29 @@ namespace phase1PixelTopology {
                                           };
 
 
+  template<class Function, std::size_t... Indices>
+  constexpr auto make_array_helper(Function f, std::index_sequence<Indices...>)
+  -> std::array<typename std::result_of<Function(std::size_t)>::type, sizeof...(Indices)>
+  {
+    return {{ f(Indices)... }};
+  }
+
+  template<int N, class Function>
+  constexpr auto make_array(Function f)
+  -> std::array<typename std::result_of<Function(std::size_t)>::type, N>
+  {
+    return make_array_helper(f, std::make_index_sequence<N>{});
+  }
+
+
+  constexpr uint8_t findLayer(uint32_t detId) {
+    for  (uint8_t i=0; i<11; ++i) if (detId<layerStart[i+1]) return i;
+    return 11;
+  }
+
+  constexpr std::array<uint8_t,numberOfModules> layer = make_array<numberOfModules>(findLayer);
+
+ 
   // this is for the ROC n<512 (upgrade 1024)
   constexpr inline
   uint16_t  divu52(uint16_t n) {

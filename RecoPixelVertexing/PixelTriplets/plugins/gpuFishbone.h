@@ -10,6 +10,7 @@
 
 #include "DataFormats/Math/interface/approx_atan2.h"
 #include "RecoLocalTracker/SiPixelRecHits/plugins/siPixelRecHitsHeterogeneousProduct.h"
+#include "Geometry/TrackerGeometryBuilder/interface/phase1PixelTopology.h"
 
 #include "GPUCACell.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/GPUVecArray.h"
@@ -23,7 +24,8 @@ namespace gpuPixelDoublets {
                GPUCACell::Hits const *  __restrict__ hhp,
                GPUCACell * cells, uint32_t const * __restrict__ nCells,
                GPU::VecArray< unsigned int, 256> const * __restrict__ isOuterHitOfCell,
-               uint32_t nHits) {
+               uint32_t nHits,
+               uint8_t const * __restrict__ layer) {
     auto idx = threadIdx.x + blockIdx.x * blockDim.x;
     if (idx>=nHits) return;
     auto const & vc = isOuterHitOfCell[idx];
@@ -37,9 +39,10 @@ namespace gpuPixelDoublets {
     auto yo = c0.get_outer_y(hh);
     auto zo = c0.get_outer_z(hh);
     float x[256], y[256],z[256], n[256];
-    uint16_t d[256];
+    uint16_t d[256]; bool kill[256];
     for (uint32_t ic=0; ic<s; ++ic) {
       auto & ci = cells[vc[ic]];
+      kill[ic]=false;
       d[ic] = ci.get_inner_detId(hh);
       x[ic] = ci.get_inner_x(hh) -xo;
       y[ic] = ci.get_inner_y(hh) -yo;
@@ -48,25 +51,38 @@ namespace gpuPixelDoublets {
     }
     for (uint32_t ic=0; ic<s-1; ++ic) {
       auto & ci = cells[vc[ic]];
+      if (kill[ic]) continue;
       // if (ci.theDoubletId<0) continue;
       for    (auto jc=ic+1; jc<s; ++jc) {
         auto & cj = cells[vc[jc]];
+        if (kill[jc]) continue;
         // if (cj.theDoubletId<0) continue;
+        // must be different detectors in the same layer
         if (d[ic]==d[jc]) continue;
+        if (layer[d[ic]]!=layer[d[jc]]) continue;
+        // if (phase1PixelTopology::layer[d[ic]]!=phase1PixelTopology::layer[d[jc]]) continue;
         auto cos12 = x[ic]*x[jc]+y[ic]*y[jc]+z[ic]*z[jc];
         // assert(cos12*cos12<1.01f*n1*n2);
-        if (cos12*cos12>0.999999f*n[ic]*n[jc]) {
+        if (cos12*cos12 >= 0.999999f*n[ic]*n[jc]) {
          // alligned (kill closest)
          if (n[ic]<n[jc]) {
-           ci.theDoubletId=-1; 
+           kill[ic]=true;
+           // ci.theDoubletId=-1; 
            break;
          } else {
-           cj.theDoubletId=-1;
+           kill[jc]=true;
+           // cj.theDoubletId=-1;
          }
         }
       } //cj   
     } // ci
-
+    bool ok=false;
+    for (uint32_t ic=0; ic<s; ++ic) {
+      auto & ci = cells[vc[ic]];
+      if (kill[ic])  ci.theDoubletId=-1;
+      else ok=true;
+    }
+    assert(ok);
   }
 
 }
