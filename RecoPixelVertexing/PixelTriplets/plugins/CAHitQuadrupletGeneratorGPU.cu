@@ -349,8 +349,7 @@ void CAHitQuadrupletGeneratorGPU::launchKernels(const TrackingRegion &region,
       hh.gpu_d,
       device_theCells_, device_nCells_,
       device_isOuterHitOfCell_,
-      nhits,
-      phase1PixelTopology::layer.data()
+      nhits
   );
 
   numberOfBlocks = (maxNumberOfDoublets_ + blockSize - 1)/blockSize;

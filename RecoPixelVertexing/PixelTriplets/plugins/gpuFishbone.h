@@ -24,14 +24,15 @@ namespace gpuPixelDoublets {
                GPUCACell::Hits const *  __restrict__ hhp,
                GPUCACell * cells, uint32_t const * __restrict__ nCells,
                GPU::VecArray< unsigned int, 256> const * __restrict__ isOuterHitOfCell,
-               uint32_t nHits,
-               uint8_t const * __restrict__ layer) {
+               uint32_t nHits) {
+    auto const & hh = *hhp;
+    uint8_t const * __restrict__ layer =  hh.phase1TopologyLayer_d;
+
     auto idx = threadIdx.x + blockIdx.x * blockDim.x;
     if (idx>=nHits) return;
     auto const & vc = isOuterHitOfCell[idx];
     auto s = vc.size();
     if (s<2) return;
-    auto const & hh = *hhp;
     // if alligned kill one of the two.
     auto const & c0 = cells[vc[0]];
     // auto d0 = c0.get_outer_detId(hh);
@@ -63,7 +64,7 @@ namespace gpuPixelDoublets {
         // if (phase1PixelTopology::layer[d[ic]]!=phase1PixelTopology::layer[d[jc]]) continue;
         auto cos12 = x[ic]*x[jc]+y[ic]*y[jc]+z[ic]*z[jc];
         // assert(cos12*cos12<1.01f*n1*n2);
-        if (cos12*cos12 >= 0.999999f*n[ic]*n[jc]) {
+        if (cos12*cos12 >= 0.9999f*n[ic]*n[jc]) {
          // alligned (kill closest)
          if (n[ic]<n[jc]) {
            kill[ic]=true;

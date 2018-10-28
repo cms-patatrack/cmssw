@@ -81,6 +81,14 @@ namespace pixelgpudetails {
     // Would it be better to use "constant memory"?
     cudaCheck(cudaMalloc((void **) & d_phase1TopologyLayerStart_, 11 * sizeof(uint32_t)));
     cudaCheck(cudaMemcpyAsync(d_phase1TopologyLayerStart_, phase1PixelTopology::layerStart, 11 * sizeof(uint32_t), cudaMemcpyDefault, cudaStream.id()));
+    cudaCheck(cudaMalloc((void **) & d_phase1TopologyLayer_, phase1PixelTopology::layer.size() * sizeof(uint8_t)));
+    cudaCheck(cudaMemcpyAsync(d_phase1TopologyLayer_, phase1PixelTopology::layer.data(), phase1PixelTopology::layer.size() * sizeof(uint8_t), cudaMemcpyDefault, cudaStream.id()));
+
+    gpu_.phase1TopologyLayerStart_d = d_phase1TopologyLayerStart_;
+    gpu_.phase1TopologyLayer_d = d_phase1TopologyLayer_;
+
+    gpu_.me_d = gpu_d;
+    cudaCheck(cudaMemcpyAsync(gpu_d, &gpu_, sizeof(HitsOnGPU), cudaMemcpyDefault, cudaStream.id()));
 
     cudaCheck(cudaMallocHost(&h_hitsModuleStart_, (gpuClustering::MaxNumModules+1) * sizeof(uint32_t)));
 

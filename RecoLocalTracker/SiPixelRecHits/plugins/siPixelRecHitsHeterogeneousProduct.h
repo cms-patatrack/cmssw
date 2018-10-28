@@ -46,6 +46,11 @@ namespace siPixelRecHitsHeterogeneousProduct {
     size_t owner_32bit_pitch_;
     void *owner_16bit_;
     size_t owner_16bit_pitch_;
+
+    // forwarded from PixelRecHit (FIXME)
+    uint32_t const * phase1TopologyLayerStart_d;
+    uint8_t const * phase1TopologyLayer_d;
+
   };
 
   struct HitsOnCPU {
