@@ -45,12 +45,49 @@ namespace phase1PixelTopology {
   }
 
 
+  constexpr uint32_t findMaxModuleStride() {
+    bool go = true;
+    int n=2;
+    while (go) {
+      for  (uint8_t i=1; i<11; ++i) {
+        if (layerStart[i]%n !=0) {go=false; break;}
+      }
+      if(!go) break;
+      n*=2;
+    }
+    return n/2;
+  }
+
+  constexpr uint32_t maxModuleStride = findMaxModuleStride();
+
+
   constexpr uint8_t findLayer(uint32_t detId) {
     for  (uint8_t i=0; i<11; ++i) if (detId<layerStart[i+1]) return i;
     return 11;
   }
 
-  constexpr std::array<uint8_t,numberOfModules> layer = make_array<numberOfModules>(findLayer);
+  constexpr uint8_t findLayerFromCompact(uint32_t detId) {
+    detId*=maxModuleStride;
+    for  (uint8_t i=0; i<11; ++i) if (detId<layerStart[i+1]) return i;
+    return 11;
+  }
+
+
+  constexpr uint32_t layerIndexSize = numberOfModules/maxModuleStride;
+  constexpr std::array<uint8_t,layerIndexSize> layer = make_array<layerIndexSize>(findLayerFromCompact);
+
+  constexpr bool validateLayerIndex() {
+    bool res=true;
+    for (auto i=0U; i<numberOfModules; ++i)  {
+      auto j = i/maxModuleStride;
+      res &=(layer[j]<10);
+      res &=(i>=layerStart[layer[j]]);
+      res &=(i<layerStart[layer[j]+1]);
+    }
+    return res;
+  }
+
+  static_assert(validateLayerIndex(),"Vincenzo's algo is buggy");
 
  
   // this is for the ROC n<512 (upgrade 1024)

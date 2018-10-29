@@ -84,7 +84,7 @@ public:
 
     auto r1 = otherCell.get_inner_r(hh);
     auto z1 = otherCell.get_inner_z(hh);
-    bool aligned = areAlignedRZ(r1, z1, ri, zi, ro, zo, ptmin, thetaCut);
+    bool aligned = areAlignedRZ(r1, z1, ri, zi, ro, zo, ptmin, 2*thetaCut);
     return (aligned &&
             haveSimilarCurvature(hh, otherCell, ptmin, region_origin_x,
                                  region_origin_y, region_origin_radius, phiCut,
