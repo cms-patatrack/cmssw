@@ -342,14 +342,14 @@ void CAHitQuadrupletGeneratorGPU::launchKernels(const TrackingRegion &region,
   auto nhits = hh.nHits;
   assert(nhits <= PixelGPUConstants::maxNumberOfHits);
   auto blockSize = 64;
-
+  auto stride = 4;
   auto numberOfBlocks = (nhits + blockSize - 1)/blockSize;
-
+  numberOfBlocks *=stride;
   fishbone<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
       hh.gpu_d,
       device_theCells_, device_nCells_,
       device_isOuterHitOfCell_,
-      nhits
+      nhits, stride
   );
 
   numberOfBlocks = (maxNumberOfDoublets_ + blockSize - 1)/blockSize;

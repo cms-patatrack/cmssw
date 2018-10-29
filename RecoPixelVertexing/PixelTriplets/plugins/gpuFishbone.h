@@ -24,12 +24,17 @@ namespace gpuPixelDoublets {
                GPUCACell::Hits const *  __restrict__ hhp,
                GPUCACell * cells, uint32_t const * __restrict__ nCells,
                GPU::VecArray< unsigned int, 256> const * __restrict__ isOuterHitOfCell,
-               uint32_t nHits) {
+               uint32_t nHits,
+               uint32_t stride) {
     auto const & hh = *hhp;
     uint8_t const * __restrict__ layerp =  hh.phase1TopologyLayer_d;
     auto layer = [&](uint16_t id) { return __ldg(layerp+id/phase1PixelTopology::maxModuleStride);};
 
-    auto idx = threadIdx.x + blockIdx.x * blockDim.x;
+    auto ldx = threadIdx.x + blockIdx.x * blockDim.x;
+    auto idx = ldx/stride;
+    auto first = ldx - idx*stride;
+    assert(first<stride);
+
     if (idx>=nHits) return;
     auto const & vc = isOuterHitOfCell[idx];
     auto s = vc.size();
@@ -53,7 +58,9 @@ namespace gpuPixelDoublets {
       z[ic] = ci.get_inner_z(hh) -zo;
       n[ic] = x[ic]*x[ic]+y[ic]*y[ic]+z[ic]*z[ic];
     }
-    for (uint32_t ic=0; ic<s-1; ++ic) {
+
+    // here we parallelize
+    for (uint32_t ic=first; ic<s-1;  ic+=stride) {
       auto & ci = cells[vc[ic]];
       // if (kill[ic]) continue;
       // if (ci.theDoubletId<0) continue;   // expensive
