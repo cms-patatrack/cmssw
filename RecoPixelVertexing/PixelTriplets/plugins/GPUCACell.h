@@ -19,6 +19,10 @@ struct Quadruplet {
 class GPUCACell {
 public:
 
+  static constexpr int maxCellsPerHit = 128; // was 256
+  using OuterHitOfCell = GPU::VecArray< unsigned int, maxCellsPerHit>;
+
+
   using Hits = siPixelRecHitsHeterogeneousProduct::HitsOnGPU;
   using hindex_type = siPixelRecHitsHeterogeneousProduct::hindex_type;
 

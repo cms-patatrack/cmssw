@@ -16,7 +16,7 @@
 
 namespace gpuPixelDoublets {
 
-  constexpr uint32_t MaxNumOfDoublets = 1024*1024*256;
+  constexpr uint32_t MaxNumOfDoublets = 1024*1024*128; // was 256;
 
   template<typename Hist>
   __device__
@@ -29,7 +29,7 @@ namespace gpuPixelDoublets {
                          Hist const & __restrict__ hist,
                          uint32_t const * __restrict__ offsets,
                          siPixelRecHitsHeterogeneousProduct::HitsOnGPU const &  __restrict__ hh,
-                         GPU::VecArray< unsigned int, 256> * isOuterHitOfCell,
+                         GPUCACell::OuterHitOfCell * isOuterHitOfCell,
                          int16_t const * __restrict__ phicuts,
                          float const * __restrict__ minz,
                          float const * __restrict__ maxz,
@@ -144,7 +144,7 @@ namespace gpuPixelDoublets {
   void getDoubletsFromHisto(GPUCACell * cells,
                             uint32_t * nCells,
                             siPixelRecHitsHeterogeneousProduct::HitsOnGPU const *  __restrict__ hhp,
-                            GPU::VecArray<unsigned int, 256> * isOuterHitOfCell)
+                            GPUCACell::OuterHitOfCell * isOuterHitOfCell)
   {
     constexpr int nPairs = 13;
     constexpr const uint8_t layerPairs[2*nPairs] = {

@@ -156,7 +156,7 @@ void kernelLineFitAllHits(GPU::SimpleVector<Quadruplet> * foundNtuplets,
 __global__
 void kernel_checkOverflows(GPU::SimpleVector<Quadruplet> *foundNtuplets,
                GPUCACell const * __restrict__ cells, uint32_t const * __restrict__ nCells,
-               GPU::VecArray< unsigned int, 256> const * __restrict__ isOuterHitOfCell,
+               GPUCACell::OuterHitOfCell const * __restrict__ isOuterHitOfCell,
                uint32_t nHits, uint32_t maxNumberOfDoublets) {
 
  __shared__ uint32_t killedCell;
@@ -189,7 +189,7 @@ void
 kernel_connect(GPU::SimpleVector<Quadruplet> *foundNtuplets,
                GPUCACell::Hits const *  __restrict__ hhp,
                GPUCACell * cells, uint32_t const * __restrict__ nCells,
-               GPU::VecArray< unsigned int, 256> const * __restrict__ isOuterHitOfCell,
+               GPUCACell::OuterHitOfCell const * __restrict__ isOuterHitOfCell,
                float ptmin,
                float region_origin_radius, const float thetaCut,
                const float phiCut, const float hardPtCut,

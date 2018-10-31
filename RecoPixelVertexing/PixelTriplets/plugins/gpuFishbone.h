@@ -23,9 +23,13 @@ namespace gpuPixelDoublets {
   void fishbone(
                GPUCACell::Hits const *  __restrict__ hhp,
                GPUCACell * cells, uint32_t const * __restrict__ nCells,
-               GPU::VecArray< unsigned int, 256> const * __restrict__ isOuterHitOfCell,
+               GPUCACell::OuterHitOfCell const * __restrict__ isOuterHitOfCell,
                uint32_t nHits,
                uint32_t stride) {
+
+    constexpr auto maxCellsPerHit = GPUCACell::maxCellsPerHit;
+
+
     auto const & hh = *hhp;
     uint8_t const * __restrict__ layerp =  hh.phase1TopologyLayer_d;
     auto layer = [&](uint16_t id) { return __ldg(layerp+id/phase1PixelTopology::maxModuleStride);};
@@ -44,8 +48,8 @@ namespace gpuPixelDoublets {
     auto xo = c0.get_outer_x(hh);
     auto yo = c0.get_outer_y(hh);
     auto zo = c0.get_outer_z(hh);
-    float x[256], y[256],z[256], n[256];
-    uint16_t d[256]; uint8_t l[256];
+    float x[maxCellsPerHit], y[maxCellsPerHit],z[maxCellsPerHit], n[maxCellsPerHit];
+    uint16_t d[maxCellsPerHit]; uint8_t l[maxCellsPerHit];
     for (uint32_t ic=0; ic<s; ++ic) {
       auto & ci = cells[vc[ic]];
       d[ic] = ci.get_inner_detId(hh);
