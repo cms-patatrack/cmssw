@@ -87,7 +87,7 @@ namespace phase1PixelTopology {
     return res;
   }
 
-  static_assert(validateLayerIndex(),"Vincenzo's algo is buggy");
+  static_assert(validateLayerIndex(),"layer from detIndex algo is buggy");
 
  
   // this is for the ROC n<512 (upgrade 1024)

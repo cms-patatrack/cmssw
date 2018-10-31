@@ -113,5 +113,6 @@ void PixelTrackCleanerBySharedHits::cleanTracks(TracksWithTTRHs & trackHitPairs)
   }  //tk1
 
   trackHitPairs.erase(std::remove_if(trackHitPairs.begin(),trackHitPairs.end(),[&](TrackWithTTRHs & v){ return nullptr==v.first;}),trackHitPairs.end());
-  std::cout << "Q after clean " << trackHitPairs.size() << ' ' << killed << std::endl;
+
+  LogDebug("PixelTrackCleanerBySharedHits") << "Q after clean " << trackHitPairs.size() << ' ' << killed << std::endl;
 }

@@ -431,8 +431,9 @@ CAHitQuadrupletGeneratorGPU::fetchKernelResult(int regionIndex)
   for (int i = 0; i < h_foundNtupletsVec_[regionIndex]->size(); ++i) {
     for (int j = 0; j<4; ++j) quadsInterface[i][j] = (*h_foundNtupletsVec_[regionIndex])[i].hitId[j];
   }
+#ifdef GPU_DEBUG
   std::cout << "Q Produced " << quadsInterface.size() << " quadruplets" << std::endl;
-
+#endif
   return quadsInterface;
 }
 

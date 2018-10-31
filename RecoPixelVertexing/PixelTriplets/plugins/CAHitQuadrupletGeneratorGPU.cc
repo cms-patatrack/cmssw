@@ -201,6 +201,8 @@ void CAHitQuadrupletGeneratorGPU::fillResults(
 
   } // end loop over quads
 
+#ifdef GPU_DEBUG
   std::cout << "Q Final quads " << result[index].size() << ' ' << nbad << std::endl; 
+#endif
 
 }
