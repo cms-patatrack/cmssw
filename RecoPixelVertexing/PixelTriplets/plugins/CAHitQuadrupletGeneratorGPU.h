@@ -161,7 +161,7 @@ private:
     static constexpr int maxNumberOfLayerPairs_ = 13;
     static constexpr int maxNumberOfLayers_ = 10;
     static constexpr int maxNumberOfDoublets_ = 262144;
-    static constexpr int maxNumberOfRegions_ = 2;
+    static constexpr int maxNumberOfRegions_ = 1;
 
     std::vector<GPU::SimpleVector<Quadruplet>*> h_foundNtupletsVec_;
     std::vector<Quadruplet*> h_foundNtupletsData_;

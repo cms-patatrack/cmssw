@@ -16,7 +16,7 @@
 
 namespace gpuPixelDoublets {
 
-  constexpr uint32_t MaxNumOfDoublets = 1024*1024*128; // was 256;
+  constexpr uint32_t MaxNumOfDoublets = 1024*1024*256;  // not really relevant
 
   template<typename Hist>
   __device__
