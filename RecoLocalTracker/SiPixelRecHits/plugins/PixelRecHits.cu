@@ -73,8 +73,6 @@ namespace pixelgpudetails {
     cudaCheck(cudaMalloc((void **) & gpu_.hist_d, sizeof(HitsOnGPU::Hist)));
     cudaCheck(cudaMalloc((void **) & gpu_.hws_d, 4*HitsOnGPU::Hist::totbins()));
     cudaCheck(cudaMalloc((void **) & gpu_d, sizeof(HitsOnGPU)));
-    gpu_.me_d = gpu_d;
-    cudaCheck(cudaMemcpyAsync(gpu_d, &gpu_, sizeof(HitsOnGPU), cudaMemcpyDefault, cudaStream.id()));
 
     // Feels a bit dumb but constexpr arrays are not supported for device code
     // TODO: should be moved to EventSetup (or better ideas?)
