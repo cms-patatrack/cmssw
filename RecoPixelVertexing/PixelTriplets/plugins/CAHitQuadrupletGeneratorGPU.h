@@ -157,11 +157,11 @@ private:
     const float caHardPtCut = 0.f;
 
     static constexpr int maxNumberOfQuadruplets_ = 10000;
-    static constexpr int maxCellsPerHit_ = 256;
+    static constexpr int maxCellsPerHit_ = GPUCACell::maxCellsPerHit;
     static constexpr int maxNumberOfLayerPairs_ = 13;
     static constexpr int maxNumberOfLayers_ = 10;
     static constexpr int maxNumberOfDoublets_ = 262144;
-    static constexpr int maxNumberOfRegions_ = 2;
+    static constexpr int maxNumberOfRegions_ = 1;
 
     std::vector<GPU::SimpleVector<Quadruplet>*> h_foundNtupletsVec_;
     std::vector<Quadruplet*> h_foundNtupletsData_;
@@ -170,7 +170,7 @@ private:
     std::vector<Quadruplet*> d_foundNtupletsData_;
 
     GPUCACell* device_theCells_ = nullptr;
-    GPU::VecArray< unsigned int, maxCellsPerHit_>* device_isOuterHitOfCell_ = nullptr;
+    GPUCACell::OuterHitOfCell* device_isOuterHitOfCell_ = nullptr;
     uint32_t* device_nCells_ = nullptr;
 
     HitsOnCPU const * hitsOnCPU=nullptr;

@@ -73,14 +73,20 @@ namespace pixelgpudetails {
     cudaCheck(cudaMalloc((void **) & gpu_.hist_d, sizeof(HitsOnGPU::Hist)));
     cudaCheck(cudaMalloc((void **) & gpu_.hws_d, 4*HitsOnGPU::Hist::totbins()));
     cudaCheck(cudaMalloc((void **) & gpu_d, sizeof(HitsOnGPU)));
-    gpu_.me_d = gpu_d;
-    cudaCheck(cudaMemcpyAsync(gpu_d, &gpu_, sizeof(HitsOnGPU), cudaMemcpyDefault, cudaStream.id()));
 
     // Feels a bit dumb but constexpr arrays are not supported for device code
     // TODO: should be moved to EventSetup (or better ideas?)
     // Would it be better to use "constant memory"?
     cudaCheck(cudaMalloc((void **) & d_phase1TopologyLayerStart_, 11 * sizeof(uint32_t)));
     cudaCheck(cudaMemcpyAsync(d_phase1TopologyLayerStart_, phase1PixelTopology::layerStart, 11 * sizeof(uint32_t), cudaMemcpyDefault, cudaStream.id()));
+    cudaCheck(cudaMalloc((void **) & d_phase1TopologyLayer_, phase1PixelTopology::layer.size() * sizeof(uint8_t)));
+    cudaCheck(cudaMemcpyAsync(d_phase1TopologyLayer_, phase1PixelTopology::layer.data(), phase1PixelTopology::layer.size() * sizeof(uint8_t), cudaMemcpyDefault, cudaStream.id()));
+
+    gpu_.phase1TopologyLayerStart_d = d_phase1TopologyLayerStart_;
+    gpu_.phase1TopologyLayer_d = d_phase1TopologyLayer_;
+
+    gpu_.me_d = gpu_d;
+    cudaCheck(cudaMemcpyAsync(gpu_d, &gpu_, sizeof(HitsOnGPU), cudaMemcpyDefault, cudaStream.id()));
 
     cudaCheck(cudaMallocHost(&h_hitsModuleStart_, (gpuClustering::MaxNumModules+1) * sizeof(uint32_t)));
 

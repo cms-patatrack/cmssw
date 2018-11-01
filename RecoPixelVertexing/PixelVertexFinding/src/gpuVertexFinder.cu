@@ -1,4 +1,7 @@
 #include "gpuClusterTracks.h"
+#include "gpuFitVertices.h"
+#include "gpuSortByPt2.h"
+#include "gpuSplitVertices.h"
 
 namespace gpuVertexFinder {
 
@@ -10,6 +13,7 @@ namespace gpuVertexFinder {
     cudaCheck(cudaMalloc(&onGPU.iv, OnGPU::MAXTRACKS*sizeof(int32_t)));
 
     cudaCheck(cudaMalloc(&onGPU.nv, sizeof(uint32_t)));
+    cudaCheck(cudaMalloc(&onGPU.nv2, sizeof(uint32_t)));
     cudaCheck(cudaMalloc(&onGPU.zv, OnGPU::MAXVTX*sizeof(float)));
     cudaCheck(cudaMalloc(&onGPU.wv, OnGPU::MAXVTX*sizeof(float)));
     cudaCheck(cudaMalloc(&onGPU.chi2, OnGPU::MAXVTX*sizeof(float)));
@@ -32,6 +36,7 @@ namespace gpuVertexFinder {
     cudaCheck(cudaFree(onGPU.iv));
 
     cudaCheck(cudaFree(onGPU.nv));
+    cudaCheck(cudaFree(onGPU.nv2));
     cudaCheck(cudaFree(onGPU.zv));
     cudaCheck(cudaFree(onGPU.wv));
     cudaCheck(cudaFree(onGPU.chi2));
@@ -63,6 +68,14 @@ namespace gpuVertexFinder {
     assert(onGPU_d);
     clusterTracks<<<1,1024-256,0,stream>>>(ntrks,onGPU_d,minT,eps,errmax,chi2max);
     cudaCheck(cudaGetLastError());
+    fitVertices<<<1,1024-256,0,stream>>>(ntrks,onGPU_d,50.);
+    cudaCheck(cudaGetLastError());
+
+    splitVertices<<<1024,128,0,stream>>>(ntrks,onGPU_d,9.f);
+    cudaCheck(cudaGetLastError());
+    fitVertices<<<1,1024-256,0,stream>>>(ntrks,onGPU_d,5000.);
+    cudaCheck(cudaGetLastError());
+
     sortByPt2<<<1,256,0,stream>>>(ntrks,onGPU_d);
     cudaCheck(cudaGetLastError());
 
