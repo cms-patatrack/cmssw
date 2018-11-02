@@ -234,7 +234,7 @@ __global__ void kernel_find_ntuplets(
   if (cellIndex >= (*nCells) ) return;
   auto &thisCell = cells[cellIndex];
   if (thisCell.theLayerPairId!=0 && thisCell.theLayerPairId!=3 && thisCell.theLayerPairId!=8) return; // inner layer is 0 FIXME
-  GPU::VecArray<CAHitQuadrupletGeneratorGPU::hindex_type, 3> stack;
+  GPUCACell::TmpTuple stack;
   stack.reset();
   thisCell.find_ntuplets(cells, foundNtuplets, stack, minHitsPerNtuplet);
   assert(stack.size()==0);
@@ -431,13 +431,17 @@ CAHitQuadrupletGeneratorGPU::fetchKernelResult(int regionIndex)
   assert(0==regionIndex);
   h_foundNtupletsVec_[regionIndex]->set_data(h_foundNtupletsData_[regionIndex]);
 
+  uint32_t sizes[7]={0};
   std::vector<std::array<int, 4>> quadsInterface(h_foundNtupletsVec_[regionIndex]->size());
   for (int i = 0; i < h_foundNtupletsVec_[regionIndex]->size(); ++i) {
+    ++sizes[(*h_foundNtupletsVec_[regionIndex])[i].size()];
     for (int j = 0; j<4; ++j) quadsInterface[i][j] = (*h_foundNtupletsVec_[regionIndex])[i].hitId[j];
   }
-#ifdef GPU_DEBUG
-  std::cout << "Q Produced " << quadsInterface.size() << " quadruplets" << std::endl;
-#endif
+//#ifdef GPU_DEBUG
+  std::cout << "Q Produced " << quadsInterface.size() << " quadruplets: ";
+  for (auto i=3; i<7; ++i) std::cout << sizes[i] << ' ';
+  std::cout << std::endl;
+//#endif
   return quadsInterface;
 }
 

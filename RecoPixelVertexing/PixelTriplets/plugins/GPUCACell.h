@@ -12,8 +12,14 @@
 #include "RecoLocalTracker/SiPixelRecHits/plugins/siPixelRecHitsHeterogeneousProduct.h"
 
 struct Quadruplet {
+   static constexpr uint32_t capacity() { return 6;}
    using hindex_type = siPixelRecHitsHeterogeneousProduct::hindex_type;
-   hindex_type hitId[4];
+   static constexpr auto invalid() { return std::numeric_limits<hindex_type>::max();}
+   hindex_type hitId[6];
+   uint32_t size() const {
+     for (auto i=capacity()-1; i>0; --i) if (hitId[i]!=invalid()) return i+1;
+     return 0;
+   }
 };
 
 
@@ -26,6 +32,9 @@ public:
 
   using Hits = siPixelRecHitsHeterogeneousProduct::HitsOnGPU;
   using hindex_type = siPixelRecHitsHeterogeneousProduct::hindex_type;
+
+  using TmpTuple = GPU::VecArray<hindex_type,6>;
+
 
   GPUCACell() = default;
 #ifdef __CUDACC__
@@ -204,7 +213,7 @@ public:
   inline void find_ntuplets(
       GPUCACell const * __restrict__ cells,
       GPU::SimpleVector<Quadruplet> *foundNtuplets,
-      GPU::VecArray<hindex_type,3> &tmpNtuplet,
+      TmpTuple & tmpNtuplet,
       const unsigned int minHitsPerNtuplet) const
   {
     // the building process for a track ends if:
@@ -214,25 +223,27 @@ public:
     // than a threshold
 
     tmpNtuplet.push_back_unsafe(theInnerHitId);
-    assert(tmpNtuplet.size()<=3);
+    assert(tmpNtuplet.size()<=5);
 
-    if ((unsigned int)(tmpNtuplet.size()) >= minHitsPerNtuplet-1) {
-      Quadruplet tmpQuadruplet;
-      for (unsigned int i = 0; i < minHitsPerNtuplet-1; ++i) {
-        tmpQuadruplet.hitId[i] = tmpNtuplet[i];
-      }
-      tmpQuadruplet.hitId[minHitsPerNtuplet-1] = theOuterHitId;
-      foundNtuplets->push_back(tmpQuadruplet);
-    }
-    else {
+    if(theOuterNeighbors.size()>0) { // continue
       for (int j = 0; j < theOuterNeighbors.size(); ++j) {
         auto otherCell = theOuterNeighbors[j];
         cells[otherCell].find_ntuplets(cells, foundNtuplets, tmpNtuplet,
                                        minHitsPerNtuplet);
       }
+    } else {  // if long enough save...
+      if ((unsigned int)(tmpNtuplet.size()) >= minHitsPerNtuplet-1) {
+        Quadruplet tmpQuadruplet;
+        for (unsigned int i = 0; i < tmpNtuplet.size(); ++i) {
+          tmpQuadruplet.hitId[i] = tmpNtuplet[i];
+        }
+        tmpQuadruplet.hitId[tmpNtuplet.size()] = theOuterHitId;
+        for (unsigned int i = tmpNtuplet.size()+1; i<Quadruplet::capacity(); ++i) {tmpQuadruplet.hitId[i] = Quadruplet::invalid();}
+        foundNtuplets->push_back(tmpQuadruplet);
+      }
     }
     tmpNtuplet.pop_back();
-    assert(tmpNtuplet.size() < 3);
+    assert(tmpNtuplet.size() < 5);
   }
 
 #endif // __CUDACC__

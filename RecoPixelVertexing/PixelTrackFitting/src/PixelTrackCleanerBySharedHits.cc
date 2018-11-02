@@ -60,6 +60,25 @@ void PixelTrackCleanerBySharedHits::cleanTracks(TracksWithTTRHs & trackHitPairs)
   } // tk1
 
 
+  // third loop: third and forth hits....  (targetting region around eta=2)
+  for (auto i = 0U; i < size; ++i) {
+    auto iTrack1 = ind[i];
+    auto track1 = trackHitPairs[iTrack1].first;
+    if (!track1) continue;
+    auto const & recHits1 = trackHitPairs[iTrack1].second;
+    if (recHits1.size()<4) continue;
+    for (auto j = i+1; j < size; ++j) {
+      auto iTrack2 = ind[j];
+      auto track2 = trackHitPairs[iTrack2].first;
+      if (!track2) continue;
+      auto const & recHits2 = trackHitPairs[iTrack2].second;
+      if (recHits2.size()<4) continue;
+      if (recHits1[3] != recHits2[3]) continue;
+      if (recHits1[2] != recHits2[2]) continue;
+      kill(iTrack2);
+    }  // tk2
+  } // tk1
+
   // second loop: first and third hits....
   for (auto i = 0U; i < size; ++i) {
     auto iTrack1 = ind[i];
@@ -73,11 +92,17 @@ void PixelTrackCleanerBySharedHits::cleanTracks(TracksWithTTRHs & trackHitPairs)
       if (!track2) continue;
       auto const & recHits2 = trackHitPairs[iTrack2].second;
       if (recHits2.size()<3) continue;
-      if (recHits1[0] != recHits2[0]) continue;
-      if (recHits1[2] != recHits2[2]) continue;
-      kill(iTrack2);
+      if (recHits1[1] == recHits2[2]
+          &&
+          recHits1[2] == recHits2[3]) kill(iTrack2);
+      if (recHits2[1] == recHits1[2]
+          &&
+          recHits2[2] == recHits1[3]) kill(iTrack2);
     }  // tk2
   } // tk1
+
+
+
 
 
   // final loop: all the rest
