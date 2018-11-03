@@ -434,8 +434,13 @@ CAHitQuadrupletGeneratorGPU::fetchKernelResult(int regionIndex)
   uint32_t sizes[7]={0};
   std::vector<std::array<int, 4>> quadsInterface(h_foundNtupletsVec_[regionIndex]->size());
   for (int i = 0; i < h_foundNtupletsVec_[regionIndex]->size(); ++i) {
-    ++sizes[(*h_foundNtupletsVec_[regionIndex])[i].size()];
-    for (int j = 0; j<4; ++j) quadsInterface[i][j] = (*h_foundNtupletsVec_[regionIndex])[i].hitId[j];
+    auto sz = (*h_foundNtupletsVec_[regionIndex])[i].size();
+    ++sizes[sz];
+    quadsInterface[i][0] = (*h_foundNtupletsVec_[regionIndex])[i].hitId[0];
+    quadsInterface[i][1] = (*h_foundNtupletsVec_[regionIndex])[i].hitId[1];
+    quadsInterface[i][2] = (*h_foundNtupletsVec_[regionIndex])[i].hitId[2];   // [sz-2];
+    quadsInterface[i][3] = (*h_foundNtupletsVec_[regionIndex])[i].hitId[3];   // [sz-1];
+
   }
 //#ifdef GPU_DEBUG
   std::cout << "Q Produced " << quadsInterface.size() << " quadruplets: ";
