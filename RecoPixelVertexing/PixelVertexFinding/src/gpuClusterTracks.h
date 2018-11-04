@@ -46,10 +46,9 @@ namespace gpuVertexFinder {
     assert(zt);
     
     using Hist=HistoContainer<uint8_t,256,16000,8,uint16_t>;
-    constexpr auto wss = Hist::totbins();
     __shared__ Hist hist;
-    __shared__ typename Hist::Counter ws[wss];
-    for (auto j=threadIdx.x; j<Hist::totbins(); j+=blockDim.x) { hist.off[j]=0; ws[j]=0;}
+    __shared__ typename Hist::Counter ws[32];
+    for (auto j=threadIdx.x; j<Hist::totbins(); j+=blockDim.x) { hist.off[j]=0;}
     __syncthreads();
     
     if(verbose && 0==threadIdx.x) printf("booked hist with %d bins, size %d for %d tracks\n",hist.nbins(),hist.capacity(),nt);
@@ -70,13 +69,13 @@ namespace gpuVertexFinder {
       nn[i]=0;
     }
     __syncthreads();
+    if (threadIdx.x<32) ws[threadIdx.x]=0;  // used by prefix scan...
+    __syncthreads();
     hist.finalize(ws);
     __syncthreads();
     assert(hist.size()==nt);
-    if (threadIdx.x<32) ws[threadIdx.x]=0;  // used by prefix scan...
-    __syncthreads();
     for (int i = threadIdx.x; i < nt; i += blockDim.x) {
-      hist.fill(izt[i],uint16_t(i),ws);
+      hist.fill(izt[i],uint16_t(i));
     }
     __syncthreads();    
 

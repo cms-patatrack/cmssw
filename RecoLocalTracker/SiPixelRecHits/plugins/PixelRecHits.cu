@@ -71,7 +71,7 @@ namespace pixelgpudetails {
     gpu_.sortIndex_d = slicePitch<uint16_t>(gpu_.owner_16bit_, gpu_.owner_16bit_pitch_, 4);
 
     cudaCheck(cudaMalloc((void **) & gpu_.hist_d, sizeof(HitsOnGPU::Hist)));
-    cudaCheck(cudaMalloc((void **) & gpu_.hws_d, 4*HitsOnGPU::Hist::totbins()));
+    cudaCheck(cudaMalloc((void **) & gpu_.hws_d, HitsOnGPU::Hist::wsSize()));
     cudaCheck(cudaMalloc((void **) & gpu_d, sizeof(HitsOnGPU)));
 
     // Feels a bit dumb but constexpr arrays are not supported for device code

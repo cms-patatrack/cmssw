@@ -38,8 +38,7 @@ namespace cudautils {
 
   template<typename Histo, typename T>
   __global__
-  void fillFromVector(Histo * __restrict__ h,  uint32_t nh, T const * __restrict__ v, uint32_t const * __restrict__ offsets,
-                      uint32_t * __restrict__ ws ) {
+  void fillFromVector(Histo * __restrict__ h,  uint32_t nh, T const * __restrict__ v, uint32_t const * __restrict__ offsets) {
      auto i = blockIdx.x * blockDim.x + threadIdx.x;
      if(i >= offsets[nh]) return;
      auto off = cuda_std::upper_bound(offsets, offsets + nh + 1, i);
@@ -47,12 +46,12 @@ namespace cudautils {
      int32_t ih = off - offsets - 1;
      assert(ih >= 0);
      assert(ih < nh);
-     (*h).fill(v[i], i, ws, ih);
+     (*h).fill(v[i], i, ih);
   }
 
 
   template<typename Histo, typename T>
-  void fillManyFromVector(Histo * __restrict__ h, typename Histo::Counter *  __restrict__ ws,  
+  void fillManyFromVector(Histo * __restrict__ h, uint8_t *  __restrict__ ws,  
                           uint32_t nh, T const * __restrict__ v, uint32_t const * __restrict__ offsets, uint32_t totSize, 
                           int nthreads, cudaStream_t stream) {
     uint32_t * off = (uint32_t *)( (char*)(h) +offsetof(Histo,off));
@@ -60,10 +59,9 @@ namespace cudautils {
     auto nblocks = (totSize + nthreads - 1) / nthreads;
     countFromVector<<<nblocks, nthreads, 0, stream>>>(h, nh, v, offsets);
     cudaCheck(cudaGetLastError());
-    size_t wss = Histo::totbins();
+    size_t wss = Histo::wsSize();
     CubDebugExit(cub::DeviceScan::InclusiveSum(ws, wss, off, off, Histo::totbins(), stream));
-    cudaMemsetAsync(ws,0, 4*Histo::totbins(),stream);
-    fillFromVector<<<nblocks, nthreads, 0, stream>>>(h, nh, v, offsets,ws);
+    fillFromVector<<<nblocks, nthreads, 0, stream>>>(h, nh, v, offsets);
     cudaCheck(cudaGetLastError());
   }
 
@@ -149,8 +147,8 @@ public:
     uint32_t * v =nullptr;
     void * d_temp_storage = nullptr;
     size_t  temp_storage_bytes = 0;
-    cub::DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, v, v, totbins()-1);
-    return std::max(temp_storage_bytes,size_t(totbins()));
+    cub::DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, v, v, totbins());
+    return temp_storage_bytes;
   }
 #endif
 
@@ -176,22 +174,33 @@ public:
     #endif
   }
 
+  static __host__ __device__
+  __forceinline__
+  uint32_t atomicDecrement(Counter & x) {
+    #ifdef __CUDA_ARCH__
+    return atomicSub(&x, 1);
+    #else
+    return x--;
+    #endif
+  }
+
+
   __host__ __device__
   __forceinline__
   void count(T t) {
     uint32_t b = bin(t);
     assert(b<nbins());
-    atomicIncrement(off[b+1]);
+    atomicIncrement(off[b]);
   }
 
   __host__ __device__
   __forceinline__
-  void fill(T t, index_type j, Counter * ws) {
+  void fill(T t, index_type j) {
     uint32_t b = bin(t);
     assert(b<nbins());
-    auto w = atomicIncrement(ws[b]);
-    assert(w < size(b));
-    bins[off[b] + w] = j;
+    auto w = atomicDecrement(off[b]);
+    assert(w>0);
+    bins[w-1] = j;
   }
 
 
@@ -202,31 +211,35 @@ public:
     assert(b<nbins());
     b+=histOff(nh);
     assert(b<totbins());
-    atomicIncrement(off[b+1]);
+    atomicIncrement(off[b]);
   }
 
   __host__ __device__
   __forceinline__
-  void fill(T t, index_type j, Counter * ws, uint32_t nh) {
+  void fill(T t, index_type j, uint32_t nh) {
     uint32_t b = bin(t);
     assert(b<nbins());
     b+=histOff(nh);
     assert(b<totbins());
-    auto w = atomicIncrement(ws[b]);
-    assert(w < size(b));
-    bins[off[b] + w] = j;
+    auto w = atomicDecrement(off[b]);
+    assert(w>0);
+    bins[w-1] = j;
   }
 
 #ifdef __CUDACC__
   __device__
   __forceinline__
   void finalize(Counter * ws) {
-    blockPrefixScan(off+1,totbins()-1,ws);
+    assert(off[totbins()-1]==0);
+    blockPrefixScan(off,totbins(),ws);
+    assert(off[totbins()-1]==off[totbins()-2]);
   }
   __host__
 #endif
   void finalize() {
-    for(uint32_t i=2; i<totbins(); ++i) off[i]+=off[i-1];
+    assert(off[totbins()-1]==0);
+    for(uint32_t i=1; i<totbins(); ++i) off[i]+=off[i-1];
+    assert(off[totbins()-1]==off[totbins()-2]);
   }
 
   constexpr auto size() const { return uint32_t(off[totbins()-1]);}

@@ -37,7 +37,7 @@ namespace siPixelRecHitsHeterogeneousProduct {
 
      using Hist = HistoContainer<int16_t,128,maxHits(),8*sizeof(int16_t),uint16_t,10>;
      Hist * hist_d;
-     typename Hist::Counter *  hws_d;  
+     uint8_t * hws_d;  
 
      HitsOnGPU const * me_d = nullptr;
 
