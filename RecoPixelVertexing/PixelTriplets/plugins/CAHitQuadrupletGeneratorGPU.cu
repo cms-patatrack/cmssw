@@ -432,10 +432,13 @@ CAHitQuadrupletGeneratorGPU::fetchKernelResult(int regionIndex)
   h_foundNtupletsVec_[regionIndex]->set_data(h_foundNtupletsData_[regionIndex]);
 
   uint32_t sizes[7]={0};
+  std::vector<int> ntk(10000);
+  auto add = [&](uint32_t hi) { if (hi>=ntk.size()) ntk.resize(hi+1); ++ntk[hi];};
   std::vector<std::array<int, 4>> quadsInterface(h_foundNtupletsVec_[regionIndex]->size());
   for (int i = 0; i < h_foundNtupletsVec_[regionIndex]->size(); ++i) {
     auto sz = (*h_foundNtupletsVec_[regionIndex])[i].size();
     ++sizes[sz];
+    for (auto j=0U; j<sz; ++j) add((*h_foundNtupletsVec_[regionIndex])[i].hitId[j]);
     quadsInterface[i][0] = (*h_foundNtupletsVec_[regionIndex])[i].hitId[0];
     quadsInterface[i][1] = (*h_foundNtupletsVec_[regionIndex])[i].hitId[1];
     quadsInterface[i][2] = (*h_foundNtupletsVec_[regionIndex])[i].hitId[2];   // [sz-2];
@@ -443,9 +446,10 @@ CAHitQuadrupletGeneratorGPU::fetchKernelResult(int regionIndex)
 
   }
 //#ifdef GPU_DEBUG
+  long long ave =0; int nn=0; for (auto k : ntk) if(k>0){ave+=k; ++nn;}
   std::cout << "Q Produced " << quadsInterface.size() << " quadruplets: ";
   for (auto i=3; i<7; ++i) std::cout << sizes[i] << ' ';
-  std::cout << std::endl;
+  std::cout << "max/ave " << *std::max_element(ntk.begin(),ntk.end())<<'/'<<float(ave)/float(nn) << std::endl;
 //#endif
   return quadsInterface;
 }
