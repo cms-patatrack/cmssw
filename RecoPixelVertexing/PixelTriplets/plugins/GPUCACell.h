@@ -10,6 +10,7 @@
 #include "HeterogeneousCore/CUDAUtilities/interface/GPUVecArray.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
 #include "RecoLocalTracker/SiPixelRecHits/plugins/siPixelRecHitsHeterogeneousProduct.h"
+#include "RecoPixelVertexing/PixelTriplets/interface/CircleEq.h"
 
 struct Quadruplet {
    static constexpr uint32_t capacity() { return 6;}
@@ -99,10 +100,13 @@ public:
     auto r1 = otherCell.get_inner_r(hh);
     auto z1 = otherCell.get_inner_z(hh);
     bool aligned = areAlignedRZ(r1, z1, ri, zi, ro, zo, ptmin, 2*thetaCut); // FIXME tune cuts
-    return (aligned &&
+    return (aligned &&  dcaCut(hh, otherCell, ptmin, region_origin_radius, phiCut,
+                                 0.3f)); //hardPtCut));
+/*
             haveSimilarCurvature(hh, otherCell, ptmin, region_origin_x,
                                  region_origin_y, region_origin_radius, phiCut,
                                  0.3f)); //hardPtCut));
+*/
   }
 
   __device__ __forceinline__
@@ -120,6 +124,37 @@ public:
     float tan_12_13_half_mul_distance_13_squared =
         fabs(z1 * (ri - ro) + zi * (ro - r1) + zo * (r1 - ri));
     return tan_12_13_half_mul_distance_13_squared * pMin <= thetaCut * distance_13_squared * radius_diff;
+  }
+
+  
+  __device__
+  bool
+  dcaCut(Hits const & hh, GPUCACell const & otherCell,
+                       const float ptmin,
+                       const float region_origin_radius, const float phiCut,
+                       const float hardPtCut) const {
+
+    auto region_origin_radius_plus_tolerance = region_origin_radius + phiCut;
+
+    auto x1 = otherCell.get_inner_x(hh);
+    auto y1 = otherCell.get_inner_y(hh);
+
+    auto x2 = get_inner_x(hh);
+    auto y2 = get_inner_y(hh);
+
+    auto x3 = get_outer_x(hh);
+    auto y3 = get_outer_y(hh);
+
+    // 87 cm/GeV = 1/(3.8T * 0.3)
+    // take less than radius given by the hardPtCut and reject everything below
+    float maxCurv = 1.f/(hardPtCut * 87.f); // FIXME move out and use real MagField
+
+    CircleEq<float> eq(x1,y1,x2,y2,x3,y3);  
+
+    if (eq.curvature() > maxCurv) return false;
+
+    return std::abs(eq.dca0()) < region_origin_radius_plus_tolerance*std::abs(eq.curvature());
+
   }
 
   __device__ 

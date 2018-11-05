@@ -31,6 +31,7 @@ void PixelTrackCleanerBySharedHits::cleanTracks(TracksWithTTRHs & trackHitPairs)
   uint16_t score[size]; 
   unsigned int ind[size];
   for (auto i = 0U; i < size; ++i) {
+     // assert(trackHitPairs[i].second[0]-> detUnit()->index()<96);   0 is on BPIX1
      ind[i]=i; 
      score[i]= 32000-std::min(32000, int(trackHitPairs[i].first->chi2()*100.f));  // chi2: smaller is better
      if (trackHitPairs[i].second.size()==4) score[i]+=32001; //  s4 always better than s3
@@ -42,44 +43,51 @@ void PixelTrackCleanerBySharedHits::cleanTracks(TracksWithTTRHs & trackHitPairs)
 
   // sorted: first is always better!
 
-  // first loop: only first    two hits....
+  // by doublets inner to outer
+  for (auto id = 0U; id <3; ++id) {
   for (auto i = 0U; i < size; ++i) {
     auto iTrack1 = ind[i];
     auto track1 = trackHitPairs[iTrack1].first;
     if (!track1) continue;
     auto const & recHits1 = trackHitPairs[iTrack1].second;
+    if (recHits1.size()<id+2) continue;
     for (auto j = i+1; j < size; ++j) {
       auto iTrack2 = ind[j];
       auto track2 = trackHitPairs[iTrack2].first;
       if (!track2) continue;
       auto const & recHits2 = trackHitPairs[iTrack2].second;
-      if (recHits1[0] != recHits2[0]) continue;	
-      if (recHits1[1] != recHits2[1]) continue;
-      kill(iTrack2);	
-    }  // tk2
-  } // tk1
-
-
- // second loop: only last two hits hit
-  for (auto i = 0U; i < size; ++i) {
-    auto iTrack1 = ind[i];
-    auto track1 = trackHitPairs[iTrack1].first;
-    if (!track1) continue;
-    auto const & recHits1 = trackHitPairs[iTrack1].second;
-    auto s1 = recHits1.size();
-    for (auto j = i+1; j < size; ++j) {
-      auto iTrack2 = ind[j];
-      auto track2 = trackHitPairs[iTrack2].first;
-      if (!track2) continue;
-      auto const & recHits2 = trackHitPairs[iTrack2].second;
-      auto s2 = recHits2.size();
-      if (recHits1[s1-1] != recHits2[s2-1]) continue;
-      if (recHits1[s1-2] != recHits2[s2-2]) continue;
+      if (recHits2.size()<id+2) continue;
+      if (recHits1[id] != recHits2[id]) continue;
+      if (recHits1[id+1] != recHits2[id+1]) continue;
       kill(iTrack2);
     }  // tk2
   } // tk1
+  } // doublets
 
+  // look in the pentuplet region
+  for (auto i = 0U; i < size; ++i) {
+    auto iTrack1 = ind[i];
+    auto track1 = trackHitPairs[iTrack1].first;
+    if (!track1) continue;
+    auto const & recHits1 = trackHitPairs[iTrack1].second;
+    if (recHits1.size()<4) continue;
+    for (auto j = i+1; j < size; ++j) {
+      auto iTrack2 = ind[j];
+      auto track2 = trackHitPairs[iTrack2].first;
+      if (!track2) continue;
+      auto const & recHits2 = trackHitPairs[iTrack2].second;
+      if (recHits2.size()<4) continue;
+      if (recHits1[1] == recHits2[2] &&
+          recHits1[2] == recHits2[3]
+         ) kill(iTrack1);
+      if (recHits1[2] == recHits2[1] &&
+          recHits1[3] == recHits2[2]
+         ) kill(iTrack2);
 
+    }  // tk2
+  } // tk1
+
+  
   // final loop: all the rest
   for (auto i = 0U; i < size; ++i) {
     auto iTrack1 = ind[i];
@@ -111,6 +119,8 @@ void PixelTrackCleanerBySharedHits::cleanTracks(TracksWithTTRHs & trackHitPairs)
       }
     } // tk2
   }  //tk1
+ 
+  
 
   trackHitPairs.erase(std::remove_if(trackHitPairs.begin(),trackHitPairs.end(),[&](TrackWithTTRHs & v){ return nullptr==v.first;}),trackHitPairs.end());
 
