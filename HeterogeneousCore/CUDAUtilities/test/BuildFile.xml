@@ -1,5 +1,13 @@
 <use name="HeterogeneousCore/CUDAUtilities"/>
 
+
+<bin file="assert_t.cu" name="cudaAssert_t">
+</bin>
+
+<bin file="assert_t.cu"    name="cudaAssert_debug">
+  <flags CUDA_FLAGS="-g -DGPU_DEBUG"/>
+</bin>
+
 <bin file="test_GPUSimpleVector.cu" name="test_GPUSimpleVector">
   <flags CUDA_FLAGS="-g -DGPU_DEBUG"/>
 </bin>

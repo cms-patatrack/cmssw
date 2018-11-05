@@ -102,7 +102,7 @@ public:
     return (aligned &&
             haveSimilarCurvature(hh, otherCell, ptmin, region_origin_x,
                                  region_origin_y, region_origin_radius, phiCut,
-                                 hardPtCut));
+                                 0.3f)); //hardPtCut));
   }
 
   __device__ __forceinline__
