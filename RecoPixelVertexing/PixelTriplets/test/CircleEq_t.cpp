@@ -81,6 +81,8 @@ int main() {
       // std::cout << "r " << ori.radius <<' '<< eq.radius() << std::endl;
       assert( equal(ori.radius, std::abs(eq.radius())) );
       auto c = eq.center();
+      auto dir = eq.cosdir();
+      assert (equal(1.f,dir.first*dir.first+dir.second*dir.second));
       assert( equal(ori.x_center,c.first) );
       assert( equal(ori.y_center,c.second) );
       // std::cout << "dca " << ori.dca0() <<' '<< eq.radius()*eq.dca0() << std::endl;

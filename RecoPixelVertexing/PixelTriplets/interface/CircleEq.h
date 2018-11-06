@@ -3,13 +3,13 @@
 /**
 | 1) circle is parameterized as:                                              |
 |    C*[(X-Xp)**2+(Y-Yp)**2] - 2*alpha*(X-Xp) - 2*beta*(Y-Yp) = 0             |
-|    Xp,Yp is a point on the track (Yp is at the center of the chamber);      |
+|    Xp,Yp is a point on the track;                                           |
 |    C = 1/r0 is the curvature  ( sign of C is charge of particle );          |
 |    alpha & beta are the direction cosines of the radial vector at Xp,Yp     |
 |    i.e.  alpha = C*(X0-Xp),                                                 |
 |          beta  = C*(Y0-Yp),                                                 |
 |    where center of circle is at X0,Y0.                                      |
-|    Alpha > 0                                                                |
+|                                                                             |
 |    Slope dy/dx of tangent at Xp,Yp is -alpha/beta.                          |
 | 2) the z dimension of the helix is parameterized by gamma = dZ/dSperp       |
 |    this is also the tangent of the pitch angle of the helix.                |
@@ -54,6 +54,12 @@ public:
 
   // curvature
   constexpr auto curvature() const { return m_c;}
+
+
+  // alpha and beta
+  constexpr std::pair<T,T> cosdir() const {
+    return std::make_pair(m_alpha, m_beta);
+  }
 
 
   // alpha and beta af given point
