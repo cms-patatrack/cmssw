@@ -49,11 +49,11 @@ namespace gpuPixelDoublets {
     auto yo = c0.get_outer_y(hh);
     auto zo = c0.get_outer_z(hh);
     float x[maxCellsPerHit], y[maxCellsPerHit],z[maxCellsPerHit], n[maxCellsPerHit];
-    uint16_t d[maxCellsPerHit]; uint8_t l[maxCellsPerHit];
+    uint16_t d[maxCellsPerHit]; // uint8_t l[maxCellsPerHit];
     for (uint32_t ic=0; ic<s; ++ic) {
       auto & ci = cells[vc[ic]];
       d[ic] = ci.get_inner_detId(hh);
-      l[ic] = layer(d[ic]);
+//      l[ic] = layer(d[ic]);
       x[ic] = ci.get_inner_x(hh) -xo;
       y[ic] = ci.get_inner_y(hh) -yo;
       z[ic] = ci.get_inner_z(hh) -zo;
@@ -65,12 +65,12 @@ namespace gpuPixelDoublets {
       auto & ci = cells[vc[ic]];
       for    (auto jc=ic+1; jc<s; ++jc) {
         auto & cj = cells[vc[jc]];
-        // must be different detectors in the same layer
-        if (d[ic]==d[jc]) continue;
+        // must be different detectors (in the same layer)
+//        if (d[ic]==d[jc]) continue;
         // || l[ic]!=l[jc]) continue;
         auto cos12 = x[ic]*x[jc]+y[ic]*y[jc]+z[ic]*z[jc];
-        if (cos12*cos12 >= 0.99999f*n[ic]*n[jc]) {
-         // alligned:  kill closest
+        if (d[ic]!=d[jc] && cos12*cos12 >= 0.99999f*n[ic]*n[jc]) {
+         // alligned:  kill farthest  (prefer consecutive layers)
          if (n[ic]>n[jc]) {
            ci.theDoubletId=-1; 
            break;

@@ -198,8 +198,10 @@ kernel_connect(GPU::SimpleVector<Quadruplet> *foundNtuplets,
 
   auto const & hh = *hhp;
 
-  constexpr float region_origin_x = 0.;
-  constexpr float region_origin_y = 0.;
+  // 87 cm/GeV = 1/(3.8T * 0.3)
+  // take less than radius given by the hardPtCut and reject everything below
+  // auto hardCurvCut = 1.f/(hardPtCut * 87.f);
+  constexpr auto hardCurvCut = 1.f/(0.35f * 87.f); // VI tune
 
   auto cellIndex = threadIdx.x + blockIdx.x * blockDim.x;
 
@@ -215,8 +217,8 @@ kernel_connect(GPU::SimpleVector<Quadruplet> *foundNtuplets,
      auto otherCell = __ldg(vi+j);
      if (cells[otherCell].theDoubletId<0) continue;
      if (thisCell.check_alignment(hh,
-                 cells[otherCell], ptmin, region_origin_x, region_origin_y,
-                  region_origin_radius, thetaCut, phiCut, hardPtCut)
+                 cells[otherCell], ptmin,
+                  region_origin_radius+phiCut, thetaCut, hardCurvCut)
         ) {
           cells[otherCell].theOuterNeighbors.push_back(cellIndex);
      }

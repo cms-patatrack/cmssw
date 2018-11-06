@@ -87,9 +87,8 @@ public:
   __device__
   bool check_alignment(Hits const & hh,
       GPUCACell const & otherCell, const float ptmin,
-      const float region_origin_x, const float region_origin_y,
-      const float region_origin_radius, const float thetaCut,
-      const float phiCut, const float hardPtCut) const
+      const float region_origin_radius_plus_tolerance, const float thetaCut,
+      const float hardCurvCut) const
   {
     auto ri = get_inner_r(hh);
     auto zi = get_inner_z(hh);
@@ -100,13 +99,8 @@ public:
     auto r1 = otherCell.get_inner_r(hh);
     auto z1 = otherCell.get_inner_z(hh);
     bool aligned = areAlignedRZ(r1, z1, ri, zi, ro, zo, ptmin, 2*thetaCut); // FIXME tune cuts
-    return (aligned &&  dcaCut(hh, otherCell, ptmin, region_origin_radius, phiCut,
-                                 0.3f)); //hardPtCut));
-/*
-            haveSimilarCurvature(hh, otherCell, ptmin, region_origin_x,
-                                 region_origin_y, region_origin_radius, phiCut,
-                                 0.3f)); //hardPtCut));
-*/
+    return (aligned &&  dcaCut(hh, otherCell, ptmin, region_origin_radius_plus_tolerance,
+                               hardCurvCut));
   }
 
   __device__ __forceinline__
@@ -131,10 +125,8 @@ public:
   bool
   dcaCut(Hits const & hh, GPUCACell const & otherCell,
                        const float ptmin,
-                       const float region_origin_radius, const float phiCut,
-                       const float hardPtCut) const {
-
-    auto region_origin_radius_plus_tolerance = region_origin_radius + phiCut;
+                       const float region_origin_radius_plus_tolerance,
+                       const float maxCurv) const {
 
     auto x1 = otherCell.get_inner_x(hh);
     auto y1 = otherCell.get_inner_y(hh);
@@ -144,10 +136,6 @@ public:
 
     auto x3 = get_outer_x(hh);
     auto y3 = get_outer_y(hh);
-
-    // 87 cm/GeV = 1/(3.8T * 0.3)
-    // take less than radius given by the hardPtCut and reject everything below
-    float maxCurv = 1.f/(hardPtCut * 87.f); // FIXME move out and use real MagField
 
     CircleEq<float> eq(x1,y1,x2,y2,x3,y3);  
 
