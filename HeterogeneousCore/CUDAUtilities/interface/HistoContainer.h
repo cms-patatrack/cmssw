@@ -49,18 +49,29 @@ namespace cudautils {
      (*h).fill(v[i], i, ih);
   }
 
+  template<typename Histo>
+  void launchZero(Histo * __restrict__ h, cudaStream_t stream) {
+    uint32_t * off = (uint32_t *)( (char*)(h) +offsetof(Histo,off));
+    cudaMemsetAsync(off,0, 4*Histo::totbins(),stream);
+  }
+
+  template<typename Histo>
+  void launchFinalize(Histo * __restrict__ h, uint8_t *  __restrict__ ws, cudaStream_t stream) {
+    uint32_t * off = (uint32_t *)( (char*)(h) +offsetof(Histo,off));
+    size_t wss = Histo::wsSize();
+    CubDebugExit(cub::DeviceScan::InclusiveSum(ws, wss, off, off, Histo::totbins(), stream));
+  }
+
 
   template<typename Histo, typename T>
   void fillManyFromVector(Histo * __restrict__ h, uint8_t *  __restrict__ ws,  
                           uint32_t nh, T const * __restrict__ v, uint32_t const * __restrict__ offsets, uint32_t totSize, 
                           int nthreads, cudaStream_t stream) {
-    uint32_t * off = (uint32_t *)( (char*)(h) +offsetof(Histo,off));
-    cudaMemsetAsync(off,0, 4*Histo::totbins(),stream);
+    launchZero(h,stream); 
     auto nblocks = (totSize + nthreads - 1) / nthreads;
     countFromVector<<<nblocks, nthreads, 0, stream>>>(h, nh, v, offsets);
     cudaCheck(cudaGetLastError());
-    size_t wss = Histo::wsSize();
-    CubDebugExit(cub::DeviceScan::InclusiveSum(ws, wss, off, off, Histo::totbins(), stream));
+    launchFinalize(h,ws,stream);
     fillFromVector<<<nblocks, nthreads, 0, stream>>>(h, nh, v, offsets);
     cudaCheck(cudaGetLastError());
   }
@@ -184,6 +195,23 @@ public:
     #endif
   }
 
+ __host__ __device__
+  __forceinline__
+  void countDirect(T b) {
+    assert(b<nbins());
+    atomicIncrement(off[b]);
+  }
+
+  __host__ __device__
+  __forceinline__
+  void fillDirect(T b, index_type j) {
+    assert(b<nbins());
+    auto w = atomicDecrement(off[b]);
+    assert(w>0);
+    bins[w-1] = j;
+  }
+
+
 
   __host__ __device__
   __forceinline__
@@ -257,5 +285,14 @@ public:
   Counter  off[totbins()];
   index_type bins[capacity()];
 };
+
+
+
+template<
+  typename I, // type stored in the container (usually an index in a vector of the input values)
+  uint32_t MAXONES, // max number of "ones"
+  uint32_t MAXMANYS // max number of "manys"
+>
+using OneToManyAssoc = HistoContainer<uint32_t, MAXONES, MAXMANYS, sizeof(uint32_t) * 8, I, 1>;
 
 #endif // HeterogeneousCore_CUDAUtilities_HistoContainer_h
