@@ -18,6 +18,7 @@
 #include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
 #ifdef __CUDACC__
 #include "HeterogeneousCore/CUDAUtilities/interface/prefixScan.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/AtomicPairCounter.h"
 #endif
 
 #ifdef __CUDACC__
@@ -211,6 +212,34 @@ public:
     bins[w-1] = j;
   }
 
+
+#ifdef __CUDACC__
+  __device__
+  __forceinline__
+  void bulkFill(AtomicPairCounter & apc, index_type const * v, uint32_t n) {
+    auto c = apc.add(n);
+    off[c.m] = c.n;
+    for(int j=0; j<n; ++j) bins[c.n+j]=v[j];
+  }
+
+  __device__
+  __forceinline__
+  void bulkFinalize(AtomicPairCounter const & apc) {
+     off[apc.get().m]=apc.get().n;
+  }
+
+  __device__
+  __forceinline__
+  void bulkFinalizeFill(AtomicPairCounter const & apc) {
+     auto m = apc.get().m;
+     auto n = apc.get().n;
+     auto i = m + blockIdx.x * blockDim.x + threadIdx.x;
+     if (i>=totbins()) return;
+     off[i]=n;
+  }
+
+
+#endif
 
 
   __host__ __device__

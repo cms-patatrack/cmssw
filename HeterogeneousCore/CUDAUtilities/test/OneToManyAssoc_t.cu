@@ -24,7 +24,8 @@ void count(TK const * __restrict__ tk, Assoc * __restrict__ assoc, uint32_t n) {
    auto j = i - 4*k;
    assert(j<4);
    if (k>=n) return;
-   assoc->countDirect(tk[k][j]);
+   if (tk[k][j]<MaxElem)
+     assoc->countDirect(tk[k][j]);
 
 }
 
@@ -35,13 +36,28 @@ void fill(TK const * __restrict__ tk, Assoc * __restrict__ assoc, uint32_t n) {
    auto    j = i - 4*k;
    assert(j<4);
    if (k>=n) return;
-   assoc->fillDirect(tk[k][j],k);
+   if (tk[k][j]<MaxElem)
+     assoc->fillDirect(tk[k][j],k);
 
 }
 
 __global__
 void verify(Assoc * __restrict__ assoc) {
    assert(assoc->size()<Assoc::capacity());
+}
+
+
+__global__
+void fillBulk(AtomicPairCounter * apc, TK const * __restrict__ tk, Assoc * __restrict__ assoc, uint32_t n) {
+   auto k = blockIdx.x * blockDim.x + threadIdx.x;
+   if (k>=n) return;
+   auto m = tk[k][3]<MaxElem ? 4 : 3;
+   assoc->bulkFill(*apc,&tk[k][0],m);
+}
+
+__global__
+void finalizeBulk(AtomicPairCounter const * apc, Assoc * __restrict__ assoc) {
+   assoc->bulkFinalizeFill(*apc);
 }
 
 
@@ -79,11 +95,16 @@ int main() {
     while(j<N && n<MaxElem) {
       if (z==11) { ++n; z=0; ++nz; continue;} // a bit of not assoc 
       auto x = rdm(eng);
-      ave+=x+1;
-      imax = std::max(imax,x);
       auto k = std::min(j+x+1,N);
-      for (;j<k; ++j) tr[j][i] = n;
-      ++n; ++z;
+      if (i==3 && z==3) { // some triplets time to time
+        for (;j<k; ++j) tr[j][i] = MaxElem+1;
+      } else {
+        ave+=x+1;
+        imax = std::max(imax,x);
+        for (;j<k; ++j) tr[j][i] = n;
+        ++n; 
+      }
+      ++z;
     }
     assert(n<=MaxElem);
     assert(j<=N);
@@ -124,6 +145,33 @@ int main() {
   assert(0==la.size(n));
   std::cout << "found with "<< n << " elements " << double(ave)/n <<' '<< imax << ' ' << z << std::endl;
 
+  // now the inverse map (actually this is the direct....)
+  AtomicPairCounter * dc_d;
+  cudaMalloc(&dc_d, sizeof(AtomicPairCounter));
+  cudaMemset(dc_d, 0, sizeof(AtomicPairCounter));
+  nBlocks = (N + nThreads - 1) / nThreads;
+  fillBulk<<<nThreads,nBlocks>>>(dc_d,v_d.get(),a_d.get(),N);
+  finalizeBulk<<<nThreads,nBlocks>>>(dc_d,a_d.get());
+
+   AtomicPairCounter dc;
+   cudaMemcpy(&dc, dc_d, sizeof(AtomicPairCounter), cudaMemcpyDeviceToHost);
+
+    std::cout << "final counter value " << dc.get().n << ' ' << dc.get().m << std::endl;
+
+  
+  cuda::memory::copy(&la,a_d.get(),sizeof(Assoc));
+  std::cout << la.size() << std::endl;
+  imax = 0;
+  ave=0;
+  for (auto i=0U; i<N; ++i) {
+    auto x = la.size(i);
+    if (!(x==4 || x==3)) std::cout << i << ' ' << x << std::endl;
+    assert(x==4 || x==3);
+    ave+=x;
+    imax = std::max(imax,int(x));
+  }
+  assert(0==la.size(N));
+  std::cout << "found with ave occupancy " << double(ave)/N <<' '<< imax << std::endl;
 
 
   cudaCheck(cudaGetLastError());

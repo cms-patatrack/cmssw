@@ -54,6 +54,9 @@
   <flags CUDA_FLAGS="-g -DGPU_DEBUG"/>
 </bin>
 
+<bin file="AtomicPairCounter_t.cu" name="gpuAtomicPairCounter_t">
+  <flags CUDA_FLAGS="-g -DGPU_DEBUG"/>
+</bin>
 
 <bin file="OneToManyAssoc_t.cu" name="gpuOneToManyAssoc_t">
   <use name="cuda-api-wrappers"/>
