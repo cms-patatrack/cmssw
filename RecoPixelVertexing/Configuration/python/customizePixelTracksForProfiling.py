@@ -6,6 +6,7 @@ def customizePixelTracksForProfiling(process):
     process.out = cms.OutputModule("AsciiOutputModule",
         outputCommands = cms.untracked.vstring(
             "keep *_pixelTracks_*_*",
+            "keep *_pixelVertices_*_*",
         ),
         verbosity = cms.untracked.uint32(0),
     )
