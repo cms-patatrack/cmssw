@@ -98,9 +98,9 @@ public:
 
     auto r1 = otherCell.get_inner_r(hh);
     auto z1 = otherCell.get_inner_z(hh);
-    bool aligned = areAlignedRZ(r1, z1, ri, zi, ro, zo, ptmin, 2*thetaCut); // FIXME tune cuts
-    return (aligned &&  dcaCut(hh, otherCell, ptmin, region_origin_radius_plus_tolerance,
-                               hardCurvCut));
+    bool aligned = areAlignedRZ(r1, z1, ri, zi, ro, zo, ptmin, 0.003f); // 2.f*thetaCut); // FIXME tune cuts
+    return (aligned &&  dcaCut(hh, otherCell, otherCell.get_inner_detId(hh)<96 ? 0.15f : 0.25f, hardCurvCut));  // FIXME tune cuts
+                            // region_origin_radius_plus_tolerance,  hardCurvCut));
   }
 
   __device__ __forceinline__
@@ -124,7 +124,6 @@ public:
   __device__
   bool
   dcaCut(Hits const & hh, GPUCACell const & otherCell,
-                       const float ptmin,
                        const float region_origin_radius_plus_tolerance,
                        const float maxCurv) const {
 
@@ -143,88 +142,6 @@ public:
 
     return std::abs(eq.dca0()) < region_origin_radius_plus_tolerance*std::abs(eq.curvature());
 
-  }
-
-  __device__ 
-  bool
-  haveSimilarCurvature(Hits const & hh, GPUCACell const & otherCell,
-                       const float ptmin, const float region_origin_x,
-                       const float region_origin_y,
-                       const float region_origin_radius, const float phiCut,
-                       const float hardPtCut) const {
-
-    auto x1 = otherCell.get_inner_x(hh);
-    auto y1 = otherCell.get_inner_y(hh);
-
-    auto x2 = get_inner_x(hh);
-    auto y2 = get_inner_y(hh);
-
-    auto x3 = get_outer_x(hh);
-    auto y3 = get_outer_y(hh);
-
-    float distance_13_squared = (x1 - x3) * (x1 - x3) + (y1 - y3) * (y1 - y3);
-    float tan_12_13_half_mul_distance_13_squared =
-        fabs(y1 * (x2 - x3) + y2 * (x3 - x1) + y3 * (x1 - x2));
-    // high pt : just straight
-    if (tan_12_13_half_mul_distance_13_squared * ptmin <=
-        1.0e-4f * distance_13_squared) {
-
-      float distance_3_beamspot_squared =
-          (x3 - region_origin_x) * (x3 - region_origin_x) +
-          (y3 - region_origin_y) * (y3 - region_origin_y);
-
-      float dot_bs3_13 = ((x1 - x3) * (region_origin_x - x3) +
-                          (y1 - y3) * (region_origin_y - y3));
-      float proj_bs3_on_13_squared =
-          dot_bs3_13 * dot_bs3_13 / distance_13_squared;
-
-      float distance_13_beamspot_squared =
-          distance_3_beamspot_squared - proj_bs3_on_13_squared;
-
-      return distance_13_beamspot_squared <
-             (region_origin_radius + phiCut) * (region_origin_radius + phiCut);
-    } 
-
-    // 87 cm/GeV = 1/(3.8T * 0.3)
-
-    // take less than radius given by the hardPtCut and reject everything below
-    float minRadius = hardPtCut * 87.f; // FIXME move out and use real MagField
-
-    auto det = (x1 - x2) * (y2 - y3) - (x2 - x3) * (y1 - y2);
-
-    auto offset = x2 * x2 + y2 * y2;
-
-    auto bc = (x1 * x1 + y1 * y1 - offset) * 0.5f;
-
-    auto cd = (offset - x3 * x3 - y3 * y3) * 0.5f;
-
-    auto idet = 1.f / det;
-
-    auto x_center = (bc * (y2 - y3) - cd * (y1 - y2)) * idet;
-    auto y_center = (cd * (x1 - x2) - bc * (x2 - x3)) * idet;
-
-    auto radius = std::sqrt((x2 - x_center) * (x2 - x_center) +
-                            (y2 - y_center) * (y2 - y_center));
-
-    if (radius < minRadius)
-      return false; // hard cut on pt
-
-    auto centers_distance_squared =
-        (x_center - region_origin_x) * (x_center - region_origin_x) +
-        (y_center - region_origin_y) * (y_center - region_origin_y);
-    auto region_origin_radius_plus_tolerance = region_origin_radius + phiCut;
-    auto minimumOfIntersectionRange =
-        (radius - region_origin_radius_plus_tolerance) *
-        (radius - region_origin_radius_plus_tolerance);
-
-    if (centers_distance_squared >= minimumOfIntersectionRange) {
-      auto maximumOfIntersectionRange =
-          (radius + region_origin_radius_plus_tolerance) *
-          (radius + region_origin_radius_plus_tolerance);
-      return centers_distance_squared <= maximumOfIntersectionRange;
-    }
-
-    return false;
   }
 
   // trying to free the track building process from hardcoded layers, leaving

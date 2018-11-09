@@ -447,12 +447,12 @@ CAHitQuadrupletGeneratorGPU::fetchKernelResult(int regionIndex)
     quadsInterface[i][3] = (*h_foundNtupletsVec_[regionIndex])[i].hitId[3];   // [sz-1];
 
   }
-//#ifdef GPU_DEBUG
+#ifdef GPU_DEBUG
   long long ave =0; int nn=0; for (auto k : ntk) if(k>0){ave+=k; ++nn;}
   std::cout << "Q Produced " << quadsInterface.size() << " quadruplets: ";
   for (auto i=3; i<7; ++i) std::cout << sizes[i] << ' ';
   std::cout << "max/ave " << *std::max_element(ntk.begin(),ntk.end())<<'/'<<float(ave)/float(nn) << std::endl;
-//#endif
+#endif
   return quadsInterface;
 }
 
