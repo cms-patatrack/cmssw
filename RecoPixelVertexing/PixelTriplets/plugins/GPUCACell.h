@@ -12,6 +12,10 @@
 #include "RecoLocalTracker/SiPixelRecHits/plugins/siPixelRecHitsHeterogeneousProduct.h"
 #include "RecoPixelVertexing/PixelTriplets/interface/CircleEq.h"
 
+
+#include "RecoPixelVertexing/PixelTriplets/plugins/pixelTuplesHeterogeneousProduct.h"
+
+
 struct Quadruplet {
    static constexpr uint32_t capacity() { return 6;}
    using hindex_type = siPixelRecHitsHeterogeneousProduct::hindex_type;
@@ -36,6 +40,7 @@ public:
 
   using TmpTuple = GPU::VecArray<hindex_type,6>;
 
+  using TuplesOnGPU = pixelTuplesHeterogeneousProduct::TuplesOnGPU;
 
   GPUCACell() = default;
 #ifdef __CUDACC__
@@ -152,7 +157,8 @@ public:
   __device__
   inline void find_ntuplets(
       GPUCACell const * __restrict__ cells,
-      GPU::SimpleVector<Quadruplet> *foundNtuplets,
+      TuplesOnGPU::Container & foundNtuplets, 
+      AtomicPairCounter & apc,
       TmpTuple & tmpNtuplet,
       const unsigned int minHitsPerNtuplet) const
   {
@@ -168,18 +174,14 @@ public:
     if(theOuterNeighbors.size()>0) { // continue
       for (int j = 0; j < theOuterNeighbors.size(); ++j) {
         auto otherCell = theOuterNeighbors[j];
-        cells[otherCell].find_ntuplets(cells, foundNtuplets, tmpNtuplet,
+        cells[otherCell].find_ntuplets(cells, foundNtuplets, apc, tmpNtuplet,
                                        minHitsPerNtuplet);
       }
     } else {  // if long enough save...
       if ((unsigned int)(tmpNtuplet.size()) >= minHitsPerNtuplet-1) {
-        Quadruplet tmpQuadruplet;
-        for (unsigned int i = 0; i < tmpNtuplet.size(); ++i) {
-          tmpQuadruplet.hitId[i] = tmpNtuplet[i];
-        }
-        tmpQuadruplet.hitId[tmpNtuplet.size()] = theOuterHitId;
-        for (unsigned int i = tmpNtuplet.size()+1; i<Quadruplet::capacity(); ++i) {tmpQuadruplet.hitId[i] = Quadruplet::invalid();}
-        foundNtuplets->push_back(tmpQuadruplet);
+        tmpNtuplet.push_back_unsafe(theOuterHitId);
+        foundNtuplets.bulkFill(apc,tmpNtuplet.data(),tmpNtuplet.size());
+        tmpNtuplet.pop_back();
       }
     }
     tmpNtuplet.pop_back();

@@ -18,8 +18,9 @@
 #include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
 #ifdef __CUDACC__
 #include "HeterogeneousCore/CUDAUtilities/interface/prefixScan.h"
-#include "HeterogeneousCore/CUDAUtilities/interface/AtomicPairCounter.h"
 #endif
+#include "HeterogeneousCore/CUDAUtilities/interface/AtomicPairCounter.h"
+
 
 #ifdef __CUDACC__
 namespace cudautils {

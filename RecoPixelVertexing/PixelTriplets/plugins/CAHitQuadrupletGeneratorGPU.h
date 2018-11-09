@@ -24,6 +24,8 @@
 #include "RecoPixelVertexing/PixelTrackFitting/interface/RiemannFit.h"
 
 
+#include "RecoPixelVertexing/PixelTriplets/plugins/pixelTuplesHeterogeneousProduct.h"
+
 // FIXME  (split header???)
 #include "GPUCACell.h"
 
@@ -42,8 +44,12 @@ public:
     using HitsOnCPU = siPixelRecHitsHeterogeneousProduct::HitsOnCPU;
     using hindex_type = siPixelRecHitsHeterogeneousProduct::hindex_type;
 
+    using TuplesOnGPU = pixelTuplesHeterogeneousProduct::TuplesOnGPU;
+    using TuplesOnCPU = pixelTuplesHeterogeneousProduct::TuplesOnCPU;
+    using Output = pixelTuplesHeterogeneousProduct::HeterogeneousPixelTuples;
+
     static constexpr unsigned int minLayers = 4;
-    typedef OrderedHitSeeds ResultType;
+    using  ResultType = OrderedHitSeeds;
 
 public:
 
@@ -64,6 +70,11 @@ public:
                      bool doRiemannFit,
                      bool transferToCPU,
                      cudaStream_t stream);
+
+    TuplesOnCPU getOutput() const {
+       return TuplesOnCPU { tuples_,  gpu_d, nTuples_};
+    }
+
     void cleanup(cudaStream_t stream);
     void fillResults(const TrackingRegion &region, SiPixelRecHitCollectionNew const & rechits,
                      std::vector<OrderedHitSeeds>& result,
@@ -141,6 +152,8 @@ private:
     };
 
     void launchKernels(const TrackingRegion &, int, HitsOnCPU const & hh, bool doRiemannFit, bool transferToCPU, cudaStream_t);
+    void launchFit(int regionIndex, HitsOnCPU const & hh, uint32_t nhits, cudaStream_t cudaStream);
+
     std::vector<std::array<int,4>> fetchKernelResult(int);
 
     float bField_;
@@ -162,6 +175,15 @@ private:
     static constexpr int maxNumberOfLayers_ = 10;
     static constexpr int maxNumberOfDoublets_ = 262144;
     static constexpr int maxNumberOfRegions_ = 1;
+
+
+    // products
+    TuplesOnGPU * gpu_d = nullptr;   // copy of the structure on the gpu itself: this is the "Product"
+    TuplesOnGPU::Container * tuples_ = nullptr;
+    uint32_t nTuples_ = 0;
+    TuplesOnGPU gpu_;
+
+    
 
     std::vector<GPU::SimpleVector<Quadruplet>*> h_foundNtupletsVec_;
     std::vector<Quadruplet*> h_foundNtupletsData_;

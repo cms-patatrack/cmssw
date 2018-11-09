@@ -10,7 +10,11 @@ public:
 
   AtomicPairCounter(){}
   AtomicPairCounter(c_type i) { counter.ac=i;}
+
+#ifdef __CUDACC__
+  __device__ __host__
   AtomicPairCounter & operator=(c_type i) { counter.ac=i; return *this;}
+#endif
 
   struct Counters {
     uint32_t n;  // total size
@@ -21,6 +25,8 @@ public:
     Counters counters;
     c_type ac;
   };
+
+#ifdef __CUDACC__
 
   static constexpr c_type incr = 1UL<<32;
 
@@ -35,6 +41,8 @@ public:
     ret.ac = atomicAdd(&counter.ac,i);
     return ret.counters;
   }
+
+#endif
 
 private:
 
