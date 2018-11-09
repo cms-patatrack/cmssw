@@ -190,7 +190,7 @@ void CAHitQuadrupletGeneratorGPU::allocateOnGPU()
 
   cudaCheck(cudaMalloc(&gpu_d, sizeof(TuplesOnGPU)));
   gpu_.me_d = gpu_d;
-  cudaCheck(cudaMemcpy(gpu_d, &gpu_, sizeof(HitsOnGPU), cudaMemcpyDefault));
+  cudaCheck(cudaMemcpy(gpu_d, &gpu_, sizeof(TuplesOnGPU), cudaMemcpyDefault));
 
   cudaCheck(cudaMallocHost(&tuples_, sizeof(TuplesOnGPU::Container)));
 
@@ -256,7 +256,7 @@ void CAHitQuadrupletGeneratorGPU::launchKernels(const TrackingRegion &region,
       4, maxNumberOfDoublets_);
   cudaCheck(cudaGetLastError());
 
-  
+  cudautils::finalizeBulk<<<numberOfBlocks, blockSize, 0, cudaStream>>>(gpu_.apc_d,gpu_.tuples_d);
 
   numberOfBlocks = (std::max(int(nhits), maxNumberOfDoublets_) + blockSize - 1)/blockSize;
   kernel_checkOverflows<<<numberOfBlocks, blockSize, 0, cudaStream>>>(

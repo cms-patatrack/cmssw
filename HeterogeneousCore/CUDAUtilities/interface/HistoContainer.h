@@ -79,6 +79,12 @@ namespace cudautils {
   }
 
 
+  template<typename Assoc>
+  __global__
+  void finalizeBulk(AtomicPairCounter const * apc, Assoc * __restrict__ assoc) {
+     assoc->bulkFinalizeFill(*apc);
+  }
+
 } // namespace cudautils
 #endif
 

@@ -55,10 +55,6 @@ void fillBulk(AtomicPairCounter * apc, TK const * __restrict__ tk, Assoc * __res
    assoc->bulkFill(*apc,&tk[k][0],m);
 }
 
-__global__
-void finalizeBulk(AtomicPairCounter const * apc, Assoc * __restrict__ assoc) {
-   assoc->bulkFinalizeFill(*apc);
-}
 
 
 
@@ -124,11 +120,11 @@ int main() {
   auto nThreads = 256;
   auto nBlocks = (4*N + nThreads - 1) / nThreads;
 
-  count<<<nThreads,nBlocks>>>(v_d.get(),a_d.get(),N);
+  count<<<nBlocks,nThreads>>>(v_d.get(),a_d.get(),N);
   
   cudautils::launchFinalize(a_d.get(),ws_d.get(),0);
   verify<<<1,1>>>(a_d.get());
-  fill<<<nThreads,nBlocks>>>(v_d.get(),a_d.get(),N);
+  fill<<<nBlocks,nThreads>>>(v_d.get(),a_d.get(),N);
 
   Assoc la;
   cuda::memory::copy(&la,a_d.get(),sizeof(Assoc));
@@ -150,8 +146,8 @@ int main() {
   cudaMalloc(&dc_d, sizeof(AtomicPairCounter));
   cudaMemset(dc_d, 0, sizeof(AtomicPairCounter));
   nBlocks = (N + nThreads - 1) / nThreads;
-  fillBulk<<<nThreads,nBlocks>>>(dc_d,v_d.get(),a_d.get(),N);
-  finalizeBulk<<<nThreads,nBlocks>>>(dc_d,a_d.get());
+  fillBulk<<<nBlocks,nThreads>>>(dc_d,v_d.get(),a_d.get(),N);
+  cudautils::finalizeBulk<<<nBlocks,nThreads>>>(dc_d,a_d.get());
 
    AtomicPairCounter dc;
    cudaMemcpy(&dc, dc_d, sizeof(AtomicPairCounter), cudaMemcpyDeviceToHost);
