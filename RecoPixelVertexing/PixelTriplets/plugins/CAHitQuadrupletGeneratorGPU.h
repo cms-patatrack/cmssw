@@ -72,7 +72,7 @@ public:
                      cudaStream_t stream);
 
     TuplesOnCPU getOutput() const {
-       return TuplesOnCPU { tuples_,  gpu_d, nTuples_};
+       return TuplesOnCPU { hitsOnCPU->gpu_d, tuples_,  gpu_d, nTuples_};
     }
 
     void cleanup(cudaStream_t stream);

@@ -200,7 +200,7 @@ void test_helix_fit() {
     Matrix3Nd hits_cov;
     unique_ptr<helix_fit[]> helix(new helix_fit[iteration]);
 //    helix_fit* helix = new helix_fit[iteration];
-    Matrix<double, 41, Dynamic, 1> score(41, iteration);
+    Eigen::Matrix<double, 41, Eigen::Dynamic, 1> score(41, iteration);
 
     for (int i = 0; i < iteration; i++) {
       if (debug2 == 1 && i == (iteration - 1)) {

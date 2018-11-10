@@ -1,13 +1,7 @@
 #ifndef RecoPixelVertexing_PixelTrackFitting_interface_RiemannFit_h
 #define RecoPixelVertexing_PixelTrackFitting_interface_RiemannFit_h
 
-#include <cmath>
-
-#include <cuda_runtime.h>
-#include <Eigen/Core>
-#include <Eigen/Eigenvalues>
-
-#include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
+#include "RecoPixelVertexing/PixelTrackFitting/interface/FitResult.h"
 
 #ifndef RFIT_DEBUG
 #define RFIT_DEBUG 0
@@ -15,71 +9,9 @@
 
 namespace Rfit
 {
-using namespace Eigen;
 
-constexpr double d = 1.e-4;          //!< used in numerical derivative (J2 in Circle_fit())
-constexpr unsigned int max_nop = 4;  //!< In order to avoid use of dynamic memory
 
-using MatrixNd = Eigen::Matrix<double, Dynamic, Dynamic, 0, max_nop, max_nop>;
-using ArrayNd = Eigen::Array<double, Dynamic, Dynamic, 0, max_nop, max_nop>;
-using Matrix2Nd = Eigen::Matrix<double, Dynamic, Dynamic, 0, 2 * max_nop, 2 * max_nop>;
-using Matrix3Nd = Eigen::Matrix<double, Dynamic, Dynamic, 0, 3 * max_nop, 3 * max_nop>;
-using Matrix2xNd = Eigen::Matrix<double, 2, Dynamic, 0, 2, max_nop>;
-using Array2xNd = Eigen::Array<double, 2, Dynamic, 0, 2, max_nop>;
-using Matrix3xNd = Eigen::Matrix<double, 3, Dynamic, 0, 3, max_nop>;
-using MatrixNx3d = Eigen::Matrix<double, Dynamic, 3, 0, max_nop, 3>;
-using MatrixNx5d = Eigen::Matrix<double, Dynamic, 5, 0, max_nop, 5>;
-using VectorNd = Eigen::Matrix<double, Dynamic, 1, 0, max_nop, 1>;
-using Vector2Nd = Eigen::Matrix<double, Dynamic, 1, 0, 2 * max_nop, 1>;
-using Vector3Nd = Eigen::Matrix<double, Dynamic, 1, 0, 3 * max_nop, 1>;
-using RowVectorNd = Eigen::Matrix<double, 1, Dynamic, 1, 1, max_nop>;
-using RowVector2Nd = Eigen::Matrix<double, 1, Dynamic, 1, 1, 2 * max_nop>;
-using Matrix5d = Eigen::Matrix<double, 5, 5>;
-using Matrix6d = Eigen::Matrix<double, 6, 6>;
-using Vector5d = Eigen::Matrix<double, 5, 1>;
-using u_int = unsigned int;
-
-struct circle_fit
-{
-    Vector3d par;  //!< parameter: (X0,Y0,R)
-    Matrix3d cov;
-    /*!< covariance matrix: \n
-      |cov(X0,X0)|cov(Y0,X0)|cov( R,X0)| \n
-      |cov(X0,Y0)|cov(Y0,Y0)|cov( R,Y0)| \n
-      |cov(X0, R)|cov(Y0, R)|cov( R, R)|
-  */
-    int64_t q;  //!< particle charge
-    double chi2 = 0.0;
-};
-
-struct line_fit
-{
-    Vector2d par;  //!<(cotan(theta),Zip)
-    Matrix2d cov;
-    /*!<
-      |cov(c_t,c_t)|cov(Zip,c_t)| \n
-      |cov(c_t,Zip)|cov(Zip,Zip)|
-  */
-    double chi2 = 0.0;
-};
-
-struct helix_fit
-{
-    Vector5d par;  //!<(phi,Tip,pt,cotan(theta)),Zip)
-    Matrix5d cov;
-    /*!< ()->cov() \n
-      |(phi,phi)|(Tip,phi)|(p_t,phi)|(c_t,phi)|(Zip,phi)| \n
-      |(phi,Tip)|(Tip,Tip)|(p_t,Tip)|(c_t,Tip)|(Zip,Tip)| \n
-      |(phi,p_t)|(Tip,p_t)|(p_t,p_t)|(c_t,p_t)|(Zip,p_t)| \n
-      |(phi,c_t)|(Tip,c_t)|(p_t,c_t)|(c_t,c_t)|(Zip,c_t)| \n
-      |(phi,Zip)|(Tip,Zip)|(p_t,Zip)|(c_t,Zip)|(Zip,Zip)|
-  */
-    double chi2_circle = 0.0;
-    double chi2_line = 0.0;
-    Vector4d fast_fit;
-    int64_t q;  //!< particle charge
-                //  VectorXd time;  // TO FIX just for profiling
-} __attribute__((aligned(16)));
+// using namespace Eigen;
 
 template <class C>
 __host__ __device__ void printIt(C* m, const char* prefix = "")
@@ -529,7 +461,7 @@ __host__ __device__ inline Vector3d min_eigen3D(const Matrix3d& A, double& chi2)
 #if RFIT_DEBUG
     printf("min_eigen3D - enter\n");
 #endif
-    SelfAdjointEigenSolver<Matrix3d> solver(3);
+    Eigen::SelfAdjointEigenSolver<Matrix3d> solver(3);
     solver.computeDirect(A);
     int min_index;
     chi2 = solver.eigenvalues().minCoeff(&min_index);
@@ -555,7 +487,7 @@ __host__ __device__ inline Vector3d min_eigen3D(const Matrix3d& A, double& chi2)
 
 __host__ __device__ inline Vector3d min_eigen3D_fast(const Matrix3d& A)
 {
-    SelfAdjointEigenSolver<Matrix3f> solver(3);
+    Eigen::SelfAdjointEigenSolver<Matrix3f> solver(3);
     solver.computeDirect(A.cast<float>());
     int min_index;
     solver.eigenvalues().minCoeff(&min_index);
@@ -577,7 +509,7 @@ __host__ __device__ inline Vector3d min_eigen3D_fast(const Matrix3d& A)
 
 __host__ __device__ inline Vector2d min_eigen2D(const Matrix2d& A, double& chi2)
 {
-    SelfAdjointEigenSolver<Matrix2d> solver(2);
+    Eigen::SelfAdjointEigenSolver<Matrix2d> solver(2);
     solver.computeDirect(A);
     int min_index;
     chi2 = solver.eigenvalues().minCoeff(&min_index);
@@ -803,7 +735,7 @@ __host__ __device__ inline circle_fit Circle_fit(const Matrix2xNd& hits2D,
 #if RFIT_DEBUG
     printf("circle_fit - AFTER MIN_EIGEN 1\n");
 #endif
-    Matrix<double, 1, 1> cm;
+    Eigen::Matrix<double, 1, 1> cm;
 #if RFIT_DEBUG
     printf("circle_fit - AFTER MIN_EIGEN 2\n");
 #endif
@@ -850,8 +782,8 @@ __host__ __device__ inline circle_fit Circle_fit(const Matrix2xNd& hits2D,
         printf("circle_fit - ERROR PRPAGATION ACTIVATED 2\n");
 #endif
         {
-            Matrix<double, 1, 1> cm;
-            Matrix<double, 1, 1> cm2;
+            Eigen::Matrix<double, 1, 1> cm;
+            Eigen::Matrix<double, 1, 1> cm2;
             cm = mc.transpose() * V * mc;
             //      cm2 = mc * mc.transpose();
             const double c = cm(0, 0);
@@ -891,7 +823,7 @@ __host__ __device__ inline circle_fit Circle_fit(const Matrix2xNd& hits2D,
         {
             for (u_int j = i; j < 3; ++j)
             {
-                Matrix<double, 1, 1> tmp;
+                Eigen::Matrix<double, 1, 1> tmp;
                 tmp = weight.transpose() * C[i][j] * weight;
                 const double c = tmp(0, 0);
                 C0(i, j) = c;  //weight.transpose() * C[i][j] * weight;
@@ -951,14 +883,14 @@ __host__ __device__ inline circle_fit Circle_fit(const Matrix2xNd& hits2D,
 
                 if (i == j)
                 {
-                    Matrix<double, 1, 1> cm;
+                    Eigen::Matrix<double, 1, 1> cm;
                     cm = s_v.col(i).transpose() * (t0 + t1);
                     const double c = cm(0, 0);
                     E(a, b) = 0. + c;
                 }
                 else
                 {
-                    Matrix<double, 1, 1> cm;
+                    Eigen::Matrix<double, 1, 1> cm;
                     cm = (s_v.col(i).transpose() * t0) + (s_v.col(j).transpose() * t1);
                     const double c = cm(0, 0);
                     E(a, b) = 0. + c;  //(s_v.col(i).transpose() * t0) + (s_v.col(j).transpose() * t1);
@@ -969,7 +901,7 @@ __host__ __device__ inline circle_fit Circle_fit(const Matrix2xNd& hits2D,
         }
         printIt(&E, "circle_fit - E:");
 
-        Matrix<double, 3, 6> J2;  // Jacobian of min_eigen() (numerically computed)
+        Eigen::Matrix<double, 3, 6> J2;  // Jacobian of min_eigen() (numerically computed)
         for (u_int a = 0; a < 6; ++a)
         {
             const u_int i = nu[a][0], j = nu[a][1];
@@ -988,9 +920,9 @@ __host__ __device__ inline circle_fit Circle_fit(const Matrix2xNd& hits2D,
             Cvc.block(0, 0, 3, 3) = t0;
             Cvc.block(0, 3, 3, 1) = t1;
             Cvc.block(3, 0, 1, 3) = t1.transpose();
-            Matrix<double, 1, 1> cm1;
+            Eigen::Matrix<double, 1, 1> cm1;
             //      Matrix<double, 1, 1> cm2;
-            Matrix<double, 1, 1> cm3;
+            Eigen::Matrix<double, 1, 1> cm3;
             cm1 = (v.transpose() * C0 * v);
             //      cm2 = (C0.cwiseProduct(t0)).sum();
             cm3 = (r0.transpose() * t0 * r0);
@@ -1000,7 +932,7 @@ __host__ __device__ inline circle_fit Circle_fit(const Matrix2xNd& hits2D,
         }
         printIt(&Cvc, "circle_fit - Cvc:");
 
-        Matrix<double, 3, 4> J3;  // Jacobian (v0,v1,v2,c)->(X0,Y0,R)
+        Eigen::Matrix<double, 3, 4> J3;  // Jacobian (v0,v1,v2,c)->(X0,Y0,R)
         {
             const double t = 1. / h;
             J3 << -v2x2_inv, 0, v(0) * sqr(v2x2_inv) * 2., 0, 0, -v2x2_inv, v(1) * sqr(v2x2_inv) * 2., 0,
@@ -1182,7 +1114,7 @@ __host__ __device__ inline line_fit Line_fit(const Matrix3xNd& hits,
     // n *= (chi2>0) ? 1 : -1; //TO FIX
     // This hack to be able to run on GPU where the automatic assignment to a
     // double from the vector multiplication is not working.
-    Matrix<double, 1, 1> cm;
+    Eigen::Matrix<double, 1, 1> cm;
     cm = -v.transpose() * r0;
     const double c = cm(0, 0);
 
@@ -1217,14 +1149,14 @@ __host__ __device__ inline line_fit Line_fit(const Matrix3xNd& hits,
             const VectorNd weight_2 = (weight).array().square();
             const Vector2d C0(weight_2.dot(x_err2), weight_2.dot(y_err2));
             C.block(0, 2, 2, 1) = C.block(2, 0, 1, 2).transpose() = -C.block(0, 0, 2, 2) * r0;
-            Matrix<double, 1, 1> tmp = (r0.transpose() * C.block(0, 0, 2, 2) * r0);
+            Eigen::Matrix<double, 1, 1> tmp = (r0.transpose() * C.block(0, 0, 2, 2) * r0);
             C(2, 2) = v0_2 * C0(0) + v1_2 * C0(1) + C0(0) * C(0, 0) + C0(1) * C(1, 1) + tmp(0, 0);
         }
 #if RFIT_DEBUG
         printIt(&C, "line_fit - C:");
 #endif
 
-        Matrix<double, 2, 3> J;  // Jacobian of (v,c) -> (cotan(theta)),Zip)
+        Eigen::Matrix<double, 2, 3> J;  // Jacobian of (v,c) -> (cotan(theta)),Zip)
         {
             const double t0 = 1. / v(1);
             const double t1 = sqr(t0);
@@ -1232,7 +1164,7 @@ __host__ __device__ inline line_fit Line_fit(const Matrix3xNd& hits,
             const double t2 = 1. / sqrt_;
             J << -t0, v(0) * t1, 0, -c * v(0) * t0 * t2, v0_2 * c * t1 * t2, -sqrt_ * t0;
         }
-        Matrix<double, 3, 2> JT = J.transpose().eval();
+        Eigen::Matrix<double, 3, 2> JT = J.transpose().eval();
 #if RFIT_DEBUG
         printIt(&J, "line_fit - J:");
 #endif
