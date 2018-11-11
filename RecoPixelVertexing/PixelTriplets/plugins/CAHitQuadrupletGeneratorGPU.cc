@@ -73,7 +73,7 @@ void CAHitQuadrupletGeneratorGPU::fillDescriptions(edm::ParameterSetDescription 
 void CAHitQuadrupletGeneratorGPU::initEvent(edm::Event const& ev, edm::EventSetup const& es) {
   if (theComparitor)
     theComparitor->init(ev, es);
-  bField_ = 1 / PixelRecoUtilities::fieldInInvGev(es);
+  fitter.setBField(1 / PixelRecoUtilities::fieldInInvGev(es));
 }
 
 

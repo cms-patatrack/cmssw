@@ -122,13 +122,8 @@ void kernel_print_found_ntuplets(GPU::SimpleVector<Quadruplet> *foundNtuplets, i
 
 void CAHitQuadrupletGeneratorGPU::deallocateOnGPU()
 {
-  for (size_t i = 0; i < h_foundNtupletsVec_.size(); ++i)
-  {
-    cudaFreeHost(h_foundNtupletsVec_[i]);
-    cudaFreeHost(h_foundNtupletsData_[i]);
-    cudaFree(d_foundNtupletsVec_[i]);
-    cudaFree(d_foundNtupletsData_[i]);
-  }
+
+  fitter.deallocateOnGPU();
 
   cudaFree(device_theCells_);
   cudaFree(device_isOuterHitOfCell_);
@@ -136,17 +131,11 @@ void CAHitQuadrupletGeneratorGPU::deallocateOnGPU()
 
   //product
   cudaFree(gpu_.tuples_d);
+  cudaFree(gpu_.helix_fit_results_d);
   cudaFree(gpu_.apc_d);
   cudaFree(gpu_d);
   cudaFree(tuples_);
-
-  // Free Riemann Fit stuff
-  cudaFree(hitsGPU_);
-  cudaFree(hits_covGPU_);
-  cudaFree(fast_fit_resultsGPU_);
-  cudaFree(circle_fit_resultsGPU_);
-  cudaFree(line_fit_resultsGPU_);
-  cudaFree(helix_fit_resultsGPU_);
+  cudaFree(helix_fit_results_);
 }
 
 void CAHitQuadrupletGeneratorGPU::allocateOnGPU()
@@ -165,53 +154,22 @@ void CAHitQuadrupletGeneratorGPU::allocateOnGPU()
   cudaCheck(cudaMemset(device_isOuterHitOfCell_, 0,
              PixelGPUConstants::maxNumberOfHits * sizeof(GPU::VecArray<unsigned int, maxCellsPerHit_>)));
 
-  h_foundNtupletsVec_.resize(maxNumberOfRegions_);
-  h_foundNtupletsData_.resize(maxNumberOfRegions_);
-  d_foundNtupletsVec_.resize(maxNumberOfRegions_);
-  d_foundNtupletsData_.resize(maxNumberOfRegions_);
-
-  // FIXME this could be rewritten with a single pair of cudaMallocHost / cudaMalloc
-  for (int i = 0; i < maxNumberOfRegions_; ++i) {
-    cudaCheck(cudaMallocHost(&h_foundNtupletsData_[i],  sizeof(Quadruplet) * maxNumberOfQuadruplets_));
-    cudaCheck(cudaMallocHost(&h_foundNtupletsVec_[i],   sizeof(GPU::SimpleVector<Quadruplet>)));
-    new(h_foundNtupletsVec_[i]) GPU::SimpleVector<Quadruplet>(maxNumberOfQuadruplets_, h_foundNtupletsData_[i]);
-    cudaCheck(cudaMalloc(&d_foundNtupletsData_[i],      sizeof(Quadruplet) * maxNumberOfQuadruplets_));
-    cudaCheck(cudaMemset(d_foundNtupletsData_[i], 0x00, sizeof(Quadruplet) * maxNumberOfQuadruplets_));
-    cudaCheck(cudaMalloc(&d_foundNtupletsVec_[i],       sizeof(GPU::SimpleVector<Quadruplet>)));
-    GPU::SimpleVector<Quadruplet> tmp_foundNtuplets(maxNumberOfQuadruplets_, d_foundNtupletsData_[i]);
-    cudaCheck(cudaMemcpy(d_foundNtupletsVec_[i], & tmp_foundNtuplets, sizeof(GPU::SimpleVector<Quadruplet>), cudaMemcpyDefault));
-  }
-
 
   //product
   cudaCheck(cudaMalloc(&gpu_.tuples_d, sizeof(TuplesOnGPU::Container)));
   cudaCheck(cudaMalloc(&gpu_.apc_d, sizeof(AtomicPairCounter)));
-  cudaCheck(cudaMemset(gpu_.apc_d, 0, sizeof(AtomicPairCounter)));
+  cudaCheck(cudaMalloc(&gpu_.helix_fit_results_d, sizeof(Rfit::helix_fit)*maxNumberOfQuadruplets_));
 
   cudaCheck(cudaMalloc(&gpu_d, sizeof(TuplesOnGPU)));
   gpu_.me_d = gpu_d;
   cudaCheck(cudaMemcpy(gpu_d, &gpu_, sizeof(TuplesOnGPU), cudaMemcpyDefault));
 
   cudaCheck(cudaMallocHost(&tuples_, sizeof(TuplesOnGPU::Container)));
+  cudaCheck(cudaMallocHost(&helix_fit_results_, sizeof(Rfit::helix_fit)*maxNumberOfQuadruplets_));
 
-  // Riemann-Fit related allocations
-  cudaCheck(cudaMalloc(&hitsGPU_, 48 * maxNumberOfQuadruplets_ * sizeof(Rfit::Matrix3xNd(3, 4))));
-  cudaCheck(cudaMemset(hitsGPU_, 0x00, 48 * maxNumberOfQuadruplets_ * sizeof(Rfit::Matrix3xNd(3, 4))));
+  fitter.allocateOnGPU(gpu_.tuples_d, gpu_.helix_fit_results_d);
 
-  cudaCheck(cudaMalloc(&hits_covGPU_, 48 * maxNumberOfQuadruplets_ * sizeof(Rfit::Matrix3Nd(12, 12))));
-  cudaCheck(cudaMemset(hits_covGPU_, 0x00, 48 * maxNumberOfQuadruplets_ * sizeof(Rfit::Matrix3Nd(12, 12))));
 
-  cudaCheck(cudaMalloc(&fast_fit_resultsGPU_, 48 * maxNumberOfQuadruplets_ * sizeof(Eigen::Vector4d)));
-  cudaCheck(cudaMemset(fast_fit_resultsGPU_, 0x00, 48 * maxNumberOfQuadruplets_ * sizeof(Eigen::Vector4d)));
-
-  cudaCheck(cudaMalloc(&circle_fit_resultsGPU_, 48 * maxNumberOfQuadruplets_ * sizeof(Rfit::circle_fit)));
-  cudaCheck(cudaMemset(circle_fit_resultsGPU_, 0x00, 48 * maxNumberOfQuadruplets_ * sizeof(Rfit::circle_fit)));
-
-  cudaCheck(cudaMalloc(&line_fit_resultsGPU_, maxNumberOfQuadruplets_ * sizeof(Rfit::line_fit)));
-  cudaCheck(cudaMemset(line_fit_resultsGPU_, 0x00, maxNumberOfQuadruplets_ * sizeof(Rfit::line_fit)));
-
-  cudaCheck(cudaMalloc(&helix_fit_resultsGPU_, sizeof(Rfit::helix_fit)*maxNumberOfQuadruplets_));
-  cudaCheck(cudaMemset(helix_fit_resultsGPU_, 0x00, sizeof(Rfit::helix_fit)*maxNumberOfQuadruplets_));
 }
 
 void CAHitQuadrupletGeneratorGPU::launchKernels(const TrackingRegion &region,
@@ -270,14 +228,19 @@ void CAHitQuadrupletGeneratorGPU::launchKernels(const TrackingRegion &region,
   // kernel_print_found_ntuplets<<<1, 1, 0, cudaStream>>>(gpu_.tuples_d, 10);
 
   if (doRiemannFit) {
-    launchFit(regionIndex, hh, nhits, cudaStream);
+    launchFit(hh, nhits, cudaStream);
   }
 
   if (transferToCPU) {
     cudaCheck(cudaMemcpyAsync(tuples_,gpu_.tuples_d,
                               sizeof(TuplesOnGPU::Container),
                               cudaMemcpyDeviceToHost, cudaStream));
+
+    cudaCheck(cudaMemcpyAsync(helix_fit_results_,gpu_.helix_fit_results_d, 
+                              sizeof(Rfit::helix_fit)*maxNumberOfQuadruplets_,
+                              cudaMemcpyDeviceToHost, cudaStream));
   }
+
 }
 
 void CAHitQuadrupletGeneratorGPU::cleanup(cudaStream_t cudaStream) {

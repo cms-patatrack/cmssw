@@ -18,7 +18,6 @@ namespace pixelTrackHeterogeneousProduct {
   };
 
   struct TracksOnCPU {
-    using Container = TracksOnGPU::Container;
 
     Rfit::helix_fit * helix_fit_results;
     TracksOnGPU const * gpu_d = nullptr;

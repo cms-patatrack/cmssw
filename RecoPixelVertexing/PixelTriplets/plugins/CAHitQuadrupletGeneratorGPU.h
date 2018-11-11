@@ -23,6 +23,7 @@
 #include "RecoPixelVertexing/PixelTriplets/plugins/RecHitsMap.h"
 #include "RecoPixelVertexing/PixelTrackFitting/interface/RiemannFit.h"
 
+#include "RiemannFitOnGPU.h"
 
 #include "RecoPixelVertexing/PixelTriplets/plugins/pixelTuplesHeterogeneousProduct.h"
 
@@ -72,7 +73,7 @@ public:
                      cudaStream_t stream);
 
     TuplesOnCPU getOutput() const {
-       return TuplesOnCPU { hitsOnCPU->gpu_d, tuples_,  gpu_d, nTuples_};
+       return TuplesOnCPU { hitsOnCPU->gpu_d, tuples_,  helix_fit_results_, gpu_d, nTuples_};
     }
 
     void cleanup(cudaStream_t stream);
@@ -84,6 +85,8 @@ public:
     void deallocateOnGPU();
 
 private:
+
+    // cpu stuff
 
     std::unique_ptr<SeedComparitor> theComparitor;
 
@@ -151,12 +154,21 @@ private:
         const bool enabled_;
     };
 
+    // end cpu stuff
+
+
     void launchKernels(const TrackingRegion &, int, HitsOnCPU const & hh, bool doRiemannFit, bool transferToCPU, cudaStream_t);
-    void launchFit(int regionIndex, HitsOnCPU const & hh, uint32_t nhits, cudaStream_t cudaStream);
+    void launchFit(HitsOnCPU const & hh, uint32_t nhits, cudaStream_t cudaStream) {
+        fitter.launchKernels(hh, nhits, maxNumberOfQuadruplets_, cudaStream);
+    }
+
 
     std::vector<std::array<int,4>> fetchKernelResult(int);
 
-    float bField_;
+
+
+    RiemannFitOnGPU fitter;
+
 
     const float extraHitRPhitolerance;
 
@@ -177,35 +189,24 @@ private:
     static constexpr int maxNumberOfRegions_ = 1;
 
 
+
     // products
     TuplesOnGPU * gpu_d = nullptr;   // copy of the structure on the gpu itself: this is the "Product"
     TuplesOnGPU::Container * tuples_ = nullptr;
+    Rfit::helix_fit * helix_fit_results_ = nullptr;
     uint32_t nTuples_ = 0;
     TuplesOnGPU gpu_;
 
     
-
-    std::vector<GPU::SimpleVector<Quadruplet>*> h_foundNtupletsVec_;
-    std::vector<Quadruplet*> h_foundNtupletsData_;
-
-    std::vector<GPU::SimpleVector<Quadruplet>*> d_foundNtupletsVec_;
-    std::vector<Quadruplet*> d_foundNtupletsData_;
-
     GPUCACell* device_theCells_ = nullptr;
     GPUCACell::OuterHitOfCell* device_isOuterHitOfCell_ = nullptr;
     uint32_t* device_nCells_ = nullptr;
 
+    // input
     HitsOnCPU const * hitsOnCPU=nullptr;
 
     RecHitsMap<TrackingRecHit const *> hitmap_ = RecHitsMap<TrackingRecHit const *>(nullptr);
 
-    // Riemann Fit stuff
-    Rfit::Matrix3xNd *hitsGPU_ = nullptr;
-    Rfit::Matrix3Nd *hits_covGPU_ = nullptr;
-    Eigen::Vector4d *fast_fit_resultsGPU_ = nullptr;
-    Rfit::circle_fit *circle_fit_resultsGPU_ = nullptr;
-    Rfit::line_fit *line_fit_resultsGPU_ = nullptr;
-    Rfit::helix_fit * helix_fit_resultsGPU_ = nullptr;
 };
 
 #endif // RecoPixelVertexing_PixelTriplets_plugins_CAHitQuadrupletGeneratorGPU_h
