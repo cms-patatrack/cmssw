@@ -84,11 +84,10 @@ struct helix_fit
       |(phi,c_t)|(Tip,c_t)|(p_t,c_t)|(c_t,c_t)|(Zip,c_t)| \n
       |(phi,Zip)|(Tip,Zip)|(p_t,Zip)|(c_t,Zip)|(Zip,Zip)|
   */
-    double chi2_circle = 0.0;
-    double chi2_line = 0.0;
-    Vector4d fast_fit;
-    int64_t q;  //!< particle charge
-                //  VectorXd time;  // TO FIX just for profiling
+    float chi2_circle;
+    float chi2_line;
+//    Vector4d fast_fit;
+    int32_t q;  //!< particle charge
 } __attribute__((aligned(16)));
 
 } // namespace RFit
