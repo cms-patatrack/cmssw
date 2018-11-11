@@ -5,6 +5,8 @@ void RiemannFitOnGPU::allocateOnGPU(TuplesOnGPU::Container const * tuples, Rfit:
   tuples_d = tuples;
   helix_fit_results_d = helix_fit_results;
 
+  assert(tuples_d); assert(helix_fit_results_d);
+
   cudaCheck(cudaMalloc(&hitsGPU_, 48 * maxNumberOfConcurrentFits_ * sizeof(Rfit::Matrix3xNd(3, 4))));
   cudaCheck(cudaMemset(hitsGPU_, 0x00, 48 * maxNumberOfConcurrentFits_ * sizeof(Rfit::Matrix3xNd(3, 4))));
 

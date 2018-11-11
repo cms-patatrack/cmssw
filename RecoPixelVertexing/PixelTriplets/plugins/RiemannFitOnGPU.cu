@@ -5,7 +5,6 @@
 #include "RiemannFitOnGPU.h"
 #include "RecoPixelVertexing/PixelTrackFitting/interface/RiemannFit.h"
 
-
 #include <cstdint>
 #include <cuda_runtime.h>
 
@@ -30,7 +29,12 @@ void kernelFastFitAllHits(TuplesOnGPU::Container const * __restrict__ foundNtupl
     Rfit::Matrix3Nd *hits_cov,
     Rfit::Vector4d *fast_fit)
 {
+
+  assert(fast_fit); assert(foundNtuplets);
+
   int helix_start = (blockIdx.x * blockDim.x + threadIdx.x);
+
+  if (helix_start>=foundNtuplets->nbins()) return;
   if (foundNtuplets->size(helix_start)<hits_in_fit) {
     return;
   }
@@ -70,19 +74,28 @@ void kernelFastFitAllHits(TuplesOnGPU::Container const * __restrict__ foundNtupl
     }
   }
   fast_fit[helix_start] = Rfit::Fast_fit(hits[helix_start]);
+
+  assert(fast_fit[helix_start](0)==fast_fit[helix_start](0));
+  assert(fast_fit[helix_start](1)==fast_fit[helix_start](1));
+  assert(fast_fit[helix_start](2)==fast_fit[helix_start](2));
+  assert(fast_fit[helix_start](3)==fast_fit[helix_start](3));
+
 }
 
 __global__
 void kernelCircleFitAllHits(TuplesOnGPU::Container const * __restrict__ foundNtuplets,
     int hits_in_fit,
     double B,
-    Rfit::Matrix3xNd const * hits,
-    Rfit::Matrix3Nd  const * hits_cov,
+    Rfit::Matrix3xNd const * __restrict__ hits,
+    Rfit::Matrix3Nd  const * __restrict__ hits_cov,
     Rfit::circle_fit *circle_fit,
-    Rfit::Vector4d * fast_fit)
+    Rfit::Vector4d const * __restrict__ fast_fit)
 {
+  assert(circle_fit); 
   int helix_start = (blockIdx.x * blockDim.x + threadIdx.x);
-   if (foundNtuplets->size(helix_start)<hits_in_fit) {
+
+  if (helix_start>=foundNtuplets->nbins()) return;
+  if (foundNtuplets->size(helix_start)<hits_in_fit) {
     return;
   }
 
@@ -107,14 +120,19 @@ void kernelLineFitAllHits(TuplesOnGPU::Container const * __restrict__ foundNtupl
     int hits_in_fit,
     double B,
     Rfit::helix_fit *results,
-    Rfit::Matrix3xNd *hits,
-    Rfit::Matrix3Nd *hits_cov,
-    Rfit::circle_fit *circle_fit,
-    Rfit::Vector4d *fast_fit,
+    Rfit::Matrix3xNd const * __restrict__ hits,
+    Rfit::Matrix3Nd const * __restrict__ hits_cov,
+    Rfit::circle_fit * __restrict__ circle_fit,
+    Rfit::Vector4d const * __restrict__ fast_fit,
     Rfit::line_fit *line_fit)
 {
+
+  assert(results); assert(line_fit);
+
   int helix_start = (blockIdx.x * blockDim.x + threadIdx.x);
-   if (foundNtuplets->size(helix_start)<hits_in_fit) {
+
+  if (helix_start>=foundNtuplets->nbins()) return;
+  if (foundNtuplets->size(helix_start)<hits_in_fit) {
     return;
   }
 
@@ -145,6 +163,7 @@ void kernelLineFitAllHits(TuplesOnGPU::Container const * __restrict__ foundNtupl
 
 void RiemannFitOnGPU::launchKernels(HitsOnCPU const & hh, uint32_t nhits, uint32_t maxNumberOfTuples, cudaStream_t cudaStream)
 {
+    assert(tuples_d); assert(fast_fit_resultsGPU_);
 
     auto blockSize = 128;
     auto numberOfBlocks = (maxNumberOfConcurrentFits_ + blockSize - 1) / blockSize;
@@ -158,6 +177,7 @@ void RiemannFitOnGPU::launchKernels(HitsOnCPU const & hh, uint32_t nhits, uint32
         tuples_d, 4, bField_,
         hitsGPU_, hits_covGPU_, circle_fit_resultsGPU_, fast_fit_resultsGPU_);
     cudaCheck(cudaGetLastError());
+
 
     kernelLineFitAllHits<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
            tuples_d, 4,  bField_, helix_fit_results_d,

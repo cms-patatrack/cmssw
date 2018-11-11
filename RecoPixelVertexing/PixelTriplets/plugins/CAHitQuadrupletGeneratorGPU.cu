@@ -18,7 +18,7 @@ using HitsOnCPU = siPixelRecHitsHeterogeneousProduct::HitsOnCPU;
 using TuplesOnGPU = pixelTuplesHeterogeneousProduct::TuplesOnGPU;
 
 __global__
-void kernel_checkOverflows(TuplesOnGPU::Container * foundNtuplets,
+void kernel_checkOverflows(TuplesOnGPU::Container * foundNtuplets, AtomicPairCounter * apc,
                GPUCACell const * __restrict__ cells, uint32_t const * __restrict__ nCells,
                GPUCACell::OuterHitOfCell const * __restrict__ isOuterHitOfCell,
                uint32_t nHits, uint32_t maxNumberOfDoublets) {
@@ -29,9 +29,20 @@ void kernel_checkOverflows(TuplesOnGPU::Container * foundNtuplets,
   
  auto idx = threadIdx.x + blockIdx.x * blockDim.x;
  #ifdef GPU_DEBUG
- if (0==idx)
-   printf("number of found cells %d\n",*nCells);
+ if (0==idx) {
+   printf("number of found cells %d, found tuples %d with total hits %d,%d\n",*nCells, apc->get().m, foundNtuplets->size(), apc->get().n);
+   assert(foundNtuplets->size(apc->get().m)==0);
+   assert(foundNtuplets->size()==apc->get().n);
+ }
+
+ if(idx<foundNtuplets->nbins()) {
+   if (foundNtuplets->size(idx)>5) printf("ERROR %d, %d\n", idx, foundNtuplets->size(idx));
+   assert(foundNtuplets->size(idx)<6);
+   for (auto ih = foundNtuplets->begin(idx); ih!=foundNtuplets->end(idx); ++ih) assert(*ih<nHits);
+ }
  #endif
+
+
  if (idx < (*nCells) ) {
    auto &thisCell = cells[idx];
    if (thisCell.theOuterNeighbors.full()) //++tooManyNeighbors[thisCell.theLayerPairId];
@@ -214,11 +225,12 @@ void CAHitQuadrupletGeneratorGPU::launchKernels(const TrackingRegion &region,
       4, maxNumberOfDoublets_);
   cudaCheck(cudaGetLastError());
 
+  numberOfBlocks = (TuplesOnGPU::Container::totbins() + blockSize - 1)/blockSize;
   cudautils::finalizeBulk<<<numberOfBlocks, blockSize, 0, cudaStream>>>(gpu_.apc_d,gpu_.tuples_d);
 
   numberOfBlocks = (std::max(int(nhits), maxNumberOfDoublets_) + blockSize - 1)/blockSize;
   kernel_checkOverflows<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
-                        gpu_.tuples_d,
+                        gpu_.tuples_d, gpu_.apc_d,
                         device_theCells_, device_nCells_,
                         device_isOuterHitOfCell_, nhits,
                         maxNumberOfDoublets_
