@@ -28,7 +28,7 @@ public:
 
 private:
 
-    static constexpr uint32_t maxNumberOfConcurrentFits_ = 10000;
+    static constexpr uint32_t maxNumberOfConcurrentFits_ = 2000;
 
     // fowarded
     TuplesOnGPU::Container const * tuples_d = nullptr;
