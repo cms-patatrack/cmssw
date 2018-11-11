@@ -126,7 +126,7 @@ void CAHitQuadrupletGeneratorGPU::fillResults(
     auto isBarrel = [](const unsigned id) -> bool {
       return id == PixelSubdetector::PixelBarrel;
     };
-    bool bad = false;
+    bool bad = quality_[quadId] == pixelTuplesHeterogeneousProduct::bad;
     for (unsigned int i = 0; i < 4; ++i) {
       auto k = foundQuads[quadId][i];
       assert(k<int(nhits));
@@ -202,8 +202,8 @@ void CAHitQuadrupletGeneratorGPU::fillResults(
 
   } // end loop over quads
 
-#ifdef GPU_DEBUG
+// #ifdef GPU_DEBUG
   std::cout << "Q Final quads " << result[index].size() << ' ' << nbad << std::endl; 
-#endif
+// #endif
 
 }

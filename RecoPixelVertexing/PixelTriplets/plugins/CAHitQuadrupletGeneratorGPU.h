@@ -47,6 +47,7 @@ public:
 
     using TuplesOnGPU = pixelTuplesHeterogeneousProduct::TuplesOnGPU;
     using TuplesOnCPU = pixelTuplesHeterogeneousProduct::TuplesOnCPU;
+    using Quality = pixelTuplesHeterogeneousProduct::Quality;
     using Output = pixelTuplesHeterogeneousProduct::HeterogeneousPixelTuples;
 
     static constexpr unsigned int minLayers = 4;
@@ -73,7 +74,7 @@ public:
                      cudaStream_t stream);
 
     TuplesOnCPU getOutput() const {
-       return TuplesOnCPU { hitsOnCPU->gpu_d, tuples_,  helix_fit_results_, gpu_d, nTuples_};
+       return TuplesOnCPU { hitsOnCPU->gpu_d, tuples_,  helix_fit_results_, quality_, gpu_d, nTuples_};
     }
 
     void cleanup(cudaStream_t stream);
@@ -194,6 +195,7 @@ private:
     TuplesOnGPU * gpu_d = nullptr;   // copy of the structure on the gpu itself: this is the "Product"
     TuplesOnGPU::Container * tuples_ = nullptr;
     Rfit::helix_fit * helix_fit_results_ = nullptr;
+    Quality * quality_ =  nullptr;
     uint32_t nTuples_ = 0;
     TuplesOnGPU gpu_;
 

@@ -16,6 +16,9 @@ using namespace gpuPixelDoublets;
 
 using HitsOnCPU = siPixelRecHitsHeterogeneousProduct::HitsOnCPU;
 using TuplesOnGPU = pixelTuplesHeterogeneousProduct::TuplesOnGPU;
+using Quality = pixelTuplesHeterogeneousProduct::Quality;
+
+
 
 __global__
 void kernel_checkOverflows(TuplesOnGPU::Container * foundNtuplets, AtomicPairCounter * apc,
@@ -118,6 +121,34 @@ void kernel_find_ntuplets(
   // printf("in %d found quadruplets: %d\n", cellIndex, apc->get());
 }
 
+
+__global__
+void kernel_VerifyFit(TuplesOnGPU::Container const * __restrict__ tuples,
+                 Rfit::helix_fit const *  __restrict__ fit_results,
+                 Quality *  __restrict__ quality) {
+
+  auto idx = blockIdx.x * blockDim.x + threadIdx.x;
+  if (idx>= tuples->nbins()) return;
+  if (tuples->size(idx)==0) {
+    return;
+  }
+
+  quality[idx] = pixelTuplesHeterogeneousProduct::bad;
+
+  // only quadruplets
+  if (tuples->size(idx)<4) { 
+    return;
+  }
+
+  bool isNaN = false;
+  for (int i=0; i<5; ++i) {
+    isNaN |=  fit_results[idx].par(i)!=fit_results[idx].par(i);
+  }
+
+  quality[idx] = isNaN ? quality[idx] : pixelTuplesHeterogeneousProduct::loose;
+
+}
+
 __global__
 void kernel_print_found_ntuplets(GPU::SimpleVector<Quadruplet> *foundNtuplets, int maxPrint) {
   for (int i = 0; i < std::min(maxPrint, foundNtuplets->size()); ++i) {
@@ -170,6 +201,7 @@ void CAHitQuadrupletGeneratorGPU::allocateOnGPU()
   cudaCheck(cudaMalloc(&gpu_.tuples_d, sizeof(TuplesOnGPU::Container)));
   cudaCheck(cudaMalloc(&gpu_.apc_d, sizeof(AtomicPairCounter)));
   cudaCheck(cudaMalloc(&gpu_.helix_fit_results_d, sizeof(Rfit::helix_fit)*maxNumberOfQuadruplets_));
+  cudaCheck(cudaMalloc(&gpu_.quality_d, sizeof(Quality)*maxNumberOfQuadruplets_));
 
   cudaCheck(cudaMalloc(&gpu_d, sizeof(TuplesOnGPU)));
   gpu_.me_d = gpu_d;
@@ -177,6 +209,7 @@ void CAHitQuadrupletGeneratorGPU::allocateOnGPU()
 
   cudaCheck(cudaMallocHost(&tuples_, sizeof(TuplesOnGPU::Container)));
   cudaCheck(cudaMallocHost(&helix_fit_results_, sizeof(Rfit::helix_fit)*maxNumberOfQuadruplets_));
+  cudaCheck(cudaMallocHost(&quality_, sizeof(Quality)*maxNumberOfQuadruplets_));
 
   fitter.allocateOnGPU(gpu_.tuples_d, gpu_.helix_fit_results_d);
 
@@ -241,7 +274,10 @@ void CAHitQuadrupletGeneratorGPU::launchKernels(const TrackingRegion &region,
 
   if (doRiemannFit) {
     launchFit(hh, nhits, cudaStream);
+    numberOfBlocks = (maxNumberOfQuadruplets_ + blockSize - 1)/blockSize;
+    kernel_VerifyFit<<<numberOfBlocks, blockSize, 0, cudaStream>>>(gpu_.tuples_d, gpu_.helix_fit_results_d, gpu_.quality_d);
   }
+
 
   if (transferToCPU) {
     cudaCheck(cudaMemcpyAsync(tuples_,gpu_.tuples_d,
@@ -251,6 +287,11 @@ void CAHitQuadrupletGeneratorGPU::launchKernels(const TrackingRegion &region,
     cudaCheck(cudaMemcpyAsync(helix_fit_results_,gpu_.helix_fit_results_d, 
                               sizeof(Rfit::helix_fit)*maxNumberOfQuadruplets_,
                               cudaMemcpyDeviceToHost, cudaStream));
+
+    cudaCheck(cudaMemcpyAsync(quality_,gpu_.quality_d,
+                              sizeof(Quality)*maxNumberOfQuadruplets_,
+                              cudaMemcpyDeviceToHost, cudaStream));
+
   }
 
 }
@@ -276,7 +317,7 @@ CAHitQuadrupletGeneratorGPU::fetchKernelResult(int)
   std::vector<std::array<int, 4>> quadsInterface; quadsInterface.reserve(10000);
 
   nTuples_=0;
-  for (auto i = 0U; i < tuples.totbins(); ++i) {
+  for (auto i = 0U; i < tuples.nbins(); ++i) {
     auto sz = tuples.size(i);
     if (sz==0) break;  // we know cannot be less then 3
     ++nTuples_;
