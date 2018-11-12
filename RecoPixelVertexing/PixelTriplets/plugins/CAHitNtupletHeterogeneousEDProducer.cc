@@ -150,9 +150,6 @@ void CAHitNtupletHeterogeneousEDProducer::produceGPUCuda(
     edm::HeterogeneousEvent &iEvent, const edm::EventSetup &iSetup,
     cuda::stream_t<> &cudaStream) {
 
-  auto output = std::make_unique<GPUProduct>(GPUGenerator_.getOutput());
-  GPUGenerator_.cleanup(cudaStream.id());
-
   if (not emptyRegions and enableConversion_) {
     edm::Handle<edm::OwnVector<TrackingRegion>> hregions;
     iEvent.getByToken(regionToken_, hregions);
@@ -176,7 +173,9 @@ void CAHitNtupletHeterogeneousEDProducer::produceGPUCuda(
     iEvent.put(std::move(seedingHitSets_));
   }
 
+  auto output = std::make_unique<GPUProduct>(GPUGenerator_.getOutput());
   iEvent.put<Output>(std::move(output), heterogeneous::DisableTransfer{});
+  GPUGenerator_.cleanup(cudaStream.id());
 
 }
 

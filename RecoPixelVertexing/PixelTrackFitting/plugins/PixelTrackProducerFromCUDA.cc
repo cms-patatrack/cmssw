@@ -20,6 +20,9 @@
 #include "DataFormats/TrackerCommon/interface/TrackerTopology.h"
 #include "Geometry/Records/interface/TrackerTopologyRcd.h"
 
+#include "RecoPixelVertexing/PixelTriplets/plugins/pixelTuplesHeterogeneousProduct.h"
+#include "storeTracks.h"
+
 
 /**
  * This class will eventually be the one creating the reco::Track
@@ -29,6 +32,10 @@
 class PixelTrackProducerFromCUDA: public HeterogeneousEDProducer<heterogeneous::HeterogeneousDevices<
           heterogeneous::GPUCuda, heterogeneous::CPU>> {
  public:
+
+  using Input = pixelTuplesHeterogeneousProduct::HeterogeneousPixelTuples;
+  using TuplesOnCPU = pixelTuplesHeterogeneousProduct::TuplesOnCPU;
+
 
   using Output = HeterogeneousProductImpl<heterogeneous::CPUProduct<int>,
                                                                    heterogeneous::GPUCudaProduct<int> >;
@@ -43,7 +50,7 @@ class PixelTrackProducerFromCUDA: public HeterogeneousEDProducer<heterogeneous::
   }
   void acquireGPUCuda(const edm::HeterogeneousEvent &iEvent,
                       const edm::EventSetup &iSetup,
-                      cuda::stream_t<> &cudaStream) override {}
+                      cuda::stream_t<> &cudaStream) override;
   void produceGPUCuda(edm::HeterogeneousEvent &iEvent,
                       const edm::EventSetup &iSetup,
                       cuda::stream_t<> &cudaStream) override;
@@ -82,10 +89,34 @@ void PixelTrackProducerFromCUDA::fillDescriptions(edm::ConfigurationDescriptions
   descriptions.addWithDefaultLabel(desc);
 }
 
+void  PixelTrackProducerFromCUDA::acquireGPUCuda(const edm::HeterogeneousEvent &iEvent,
+                      const edm::EventSetup &iSetup,
+                      cuda::stream_t<> &cudaStream) {
+
+  edm::Handle<TuplesOnCPU> gh;
+  iEvent.getByToken<Input>(gpuToken_, gh);
+  auto const & gTuples = *gh;
+  std::cout << "tuples from gpu " << gTuples.nTuples << std::endl;
+
+  std::cout << "point on gpu " << gTuples.gpu_d << std::endl;
+
+}
+
+
 void PixelTrackProducerFromCUDA::produceGPUCuda(edm::HeterogeneousEvent &iEvent,
                       const edm::EventSetup &iSetup,
                       cuda::stream_t<> &cudaStream) {
   iEvent.put(std::make_unique<int>(0));
+  if (!enableConversion_) return;
+
+  std::cout << "Converting gpu helix in reco tracks" << std::endl;
+
+  pixeltrackfitting::TracksWithTTRHs tracks;
+  edm::ESHandle<TrackerTopology> httopo;
+  iSetup.get<TrackerTopologyRcd>().get(httopo);
+
+  // store tracks
+  storeTracks(iEvent, tracks, *httopo);
 }
 
 

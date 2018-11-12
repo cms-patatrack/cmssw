@@ -67,6 +67,10 @@ pixelTracks = _pixelTracks.clone(
 )
 trackingLowPU.toModify(pixelTracks, SeedingHitSets = "pixelTracksHitTriplets")
 
+from Configuration.ProcessModifiers.gpu_cff import gpu
+from RecoPixelVertexing.PixelTrackFitting.pixelTrackProducerFromCUDA_cfi import pixelTrackProducerFromCUDA as _pixelTrackProducerFromCUDA
+gpu.toReplaceWith(pixelTracks, _pixelTrackProducerFromCUDA)
+
 pixelTracksSequence = cms.Sequence(
     pixelTracksTrackingRegions +
     pixelFitterByHelixProjections +

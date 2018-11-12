@@ -16,8 +16,8 @@
 #include "DataFormats/TrackerCommon/interface/TrackerTopology.h"
 #include "Geometry/Records/interface/TrackerTopologyRcd.h"
 
-
-void storeTracks(edm::Event& ev, const pixeltrackfitting::TracksWithTTRHs& tracksWithHits, const TrackerTopology& ttopo)
+template<typename Ev>
+void storeTracks(Ev & ev, const pixeltrackfitting::TracksWithTTRHs& tracksWithHits, const TrackerTopology& ttopo)
 {
   auto tracks = std::make_unique<reco::TrackCollection>();
   auto recHits = std::make_unique<TrackingRecHitCollection>();

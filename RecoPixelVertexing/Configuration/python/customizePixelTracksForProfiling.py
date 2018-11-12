@@ -30,6 +30,7 @@ def customizePixelTracksForProfilingDisableConversion(process):
     process.siPixelClustersPreSplitting.gpuEnableConversion = False
     process.siPixelRecHitsPreSplitting.gpuEnableConversion = False
     process.pixelTracksHitQuadruplets.gpuEnableConversion = False
+    process.pixelTracks.gpuEnableConversion = False
 
     return process
 
