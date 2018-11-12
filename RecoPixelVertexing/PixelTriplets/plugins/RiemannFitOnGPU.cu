@@ -49,34 +49,45 @@ void kernelFastFitAllHits(TuplesOnGPU::Container const * __restrict__ foundNtupl
   auto const * hitId = foundNtuplets->begin(helix_start);
   for (unsigned int i = 0; i < hits_in_fit; ++i) {
     auto hit = hitId[i];
-    //  printf("Hit global_x: %f\n", hhp->xg_d[hit]);
+    // printf("Hit global: %f,%f,%f\n", hhp->xg_d[hit],hhp->yg_d[hit],hhp->zg_d[hit]);
     float ge[6];
     hhp->cpeParams->detParams(hhp->detInd_d[hit]).frame.toGlobal(hhp->xerr_d[hit], 0, hhp->yerr_d[hit], ge);
-    //  printf("Error: %d: %f,%f,%f,%f,%f,%f\n",hhp->detInd_d[hit],ge[0],ge[1],ge[2],ge[3],ge[4],ge[5]);
+    // printf("Error: %d: %f,%f,%f,%f,%f,%f\n",hhp->detInd_d[hit],ge[0],ge[1],ge[2],ge[3],ge[4],ge[5]);
 
     hits[local_start].col(i) << hhp->xg_d[hit], hhp->yg_d[hit], hhp->zg_d[hit];
 
-    for (auto j = 0; j < 3; ++j) {
-      for (auto l = 0; l < 3; ++l) {
         // Index numerology:
         // i: index of the hits/point (0,..,3)
         // j: index of space component (x,y,z)
         // l: index of space components (x,y,z)
         // ge is always in sync with the index i and is formatted as:
-        // ge[] ==> [xx, xy, xz, yy, yz, zz]
+        // ge[] ==> [xx, xy, yy, xz, yz, zz]
         // in (j,l) notation, we have:
-        // ge[] ==> [(0,0), (0,1), (0,2), (1,1), (1,2), (2,2)]
+        // ge[] ==> [(0,0), (0,1), (1,1), (0,2), (1,2), (2,2)]
         // so the index ge_idx corresponds to the matrix elements:
-        // | 0  1  2 |
-        // | 1  3  4 |
-        // | 2  4  5 |
-        auto ge_idx = j + l + (j > 0 and l > 0);
+        // | 0  1  3 |
+        // | 1  2  4 |
+        // | 3  4  5 |
+        auto ge_idx = 0; auto j=0; auto l=0;
         hits_cov[local_start](i + j * hits_in_fit, i + l * hits_in_fit) = ge[ge_idx];
-      }
-    }
+        ge_idx = 2; j=1; l=1;
+        hits_cov[local_start](i + j * hits_in_fit, i + l * hits_in_fit) = ge[ge_idx];
+        ge_idx = 5; j=2; l=2;
+        hits_cov[local_start](i + j * hits_in_fit, i + l * hits_in_fit) = ge[ge_idx];
+        ge_idx = 1; j=1; l=0;
+        hits_cov[local_start](i + l * hits_in_fit, i + j * hits_in_fit) =
+        hits_cov[local_start](i + j * hits_in_fit, i + l * hits_in_fit) = ge[ge_idx];
+        ge_idx = 3; j=2; l=0;
+        hits_cov[local_start](i + l * hits_in_fit, i + j * hits_in_fit) =
+        hits_cov[local_start](i + j * hits_in_fit, i + l * hits_in_fit) = ge[ge_idx];
+        ge_idx = 4; j=2; l=1;
+        hits_cov[local_start](i + l * hits_in_fit, i + j * hits_in_fit) =
+        hits_cov[local_start](i + j * hits_in_fit, i + l * hits_in_fit) = ge[ge_idx];
+
   }
   fast_fit[local_start] = Rfit::Fast_fit(hits[local_start]);
 
+  // no NaN here....
   assert(fast_fit[local_start](0)==fast_fit[local_start](0));
   assert(fast_fit[local_start](1)==fast_fit[local_start](1));
   assert(fast_fit[local_start](2)==fast_fit[local_start](2));
@@ -114,9 +125,8 @@ void kernelCircleFitAllHits(TuplesOnGPU::Container const * __restrict__ foundNtu
                        fast_fit[local_start], rad, B, true);
 
 #ifdef GPU_DEBUG
-  printf("kernelCircleFitAllHits circle.par(0): %d %f\n", helix_start, circle_fit[local_start].par(0));
-  printf("kernelCircleFitAllHits circle.par(1): %d %f\n", helix_start, circle_fit[local_start].par(1));
-  printf("kernelCircleFitAllHits circle.par(2): %d %f\n", helix_start, circle_fit[local_start].par(2));
+  printf("kernelCircleFitAllHits circle.par(0,1,2): %d %f,%f,%f\n", helix_start, 
+         circle_fit[local_start].par(0), circle_fit[local_start].par(1), circle_fit[local_start].par(2));
 #endif
 }
 
@@ -162,8 +172,9 @@ void kernelLineFitAllHits(TuplesOnGPU::Container const * __restrict__ foundNtupl
   helix.chi2_line = line_fit[local_start].chi2;
 
 #ifdef GPU_DEBUG
-  printf("kernelLineFitAllHits line.par(0): %d %f\n", helix_start, circle_fit[local_start].par(0));
-  printf("kernelLineFitAllHits line.par(1): %d %f\n", helix_start, line_fit[local_start].par(1));
+  printf("kernelLineFitAllHits circle.par(0,1,2): %d %f,%f,%f\n", helix_start,
+         circle_fit[local_start].par(0), circle_fit[local_start].par(1), circle_fit[local_start].par(2));
+  printf("kernelLineFitAllHits line.par(0,1): %d %f,%f\n", helix_start, line_fit[local_start].par(0),line_fit[local_start].par(1));
 #endif
 }
 

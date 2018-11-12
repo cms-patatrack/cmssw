@@ -10,6 +10,9 @@
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "RecoTracker/TkHitPairs/interface/RegionsSeedingHitSets.h"
 
+#include "RecoPixelVertexing/PixelTrackFitting/interface/PixelTrackBuilder.h"
+#include "RecoPixelVertexing/PixelTrackFitting/interface/PixelTrackCleaner.h"
+
 // track stuff
 #include "DataFormats/TrajectoryState/interface/LocalTrajectoryParameters.h"
 #include "DataFormats/TrackReco/interface/Track.h"
@@ -115,17 +118,73 @@ void PixelTrackProducerFromCUDA::produceGPUCuda(edm::HeterogeneousEvent &iEvent,
 
   std::cout << "Converting gpu helix in reco tracks" << std::endl;
 
+  edm::ESHandle<MagneticField> fieldESH;
+  iSetup.get<IdealMagneticFieldRecord>().get(fieldESH);
+
+
+  PixelTrackBuilder builder;
+
   pixeltrackfitting::TracksWithTTRHs tracks;
   edm::ESHandle<TrackerTopology> httopo;
   iSetup.get<TrackerTopologyRcd>().get(httopo);
 
 
-  edm::Handle<RegionsSeedingHitSets> hhitSets;
-  iEvent.getByToken(srcToken_, hhitSets);
-  const auto & hitSet =  *hhitSets->begin();
+  edm::Handle<RegionsSeedingHitSets> hitSets;
+  iEvent.getByToken(srcToken_, hitSets);
+  const auto & hitSet =  *hitSets->begin();
   auto b = hitSet.begin();  auto e = hitSet.end(); 
   std::cout << "reading hitset " << e-b << std::endl;
 
+  const auto & region = hitSet.region();
+
+  std::vector<const TrackingRecHit *> hits;
+  hits.reserve(4);
+
+  uint32_t nh=0; // current hitset
+  for (uint32_t it=0; it<tuples_->nTuples; ++it) {
+    auto q = tuples_->quality[it];
+    if (q == pixelTuplesHeterogeneousProduct::bad ) continue;
+    auto const & shits = *(b+nh);
+    auto nHits = shits.size(); hits.resize(nHits);
+    for (unsigned int iHit = 0; iHit < nHits; ++iHit) hits[iHit] = shits[iHit];
+
+    // mind: this values are respect the beamspot!
+    auto const &fittedTrack = tuples_->helix_fit_results[it];
+
+    // std::cout << "tk " << it << ": " << fittedTrack.q << ' ' << fittedTrack.par[2] << ' ' << std::sqrt(fittedTrack.cov(2, 2)) << std::endl;
+
+    int iCharge       = fittedTrack.q;
+    float valPhi      = fittedTrack.par(0);
+    float valTip      = fittedTrack.par(1);
+    float valPt       = fittedTrack.par(2);
+    float valCotTheta = fittedTrack.par(3);
+    float valZip      = fittedTrack.par(4);
+
+    float errValPhi = std::sqrt(fittedTrack.cov(0, 0));
+    float errValTip = std::sqrt(fittedTrack.cov(1, 1));
+    float errValPt = std::sqrt(fittedTrack.cov(2, 2));
+    float errValCotTheta = std::sqrt(fittedTrack.cov(3, 3));
+    float errValZip = std::sqrt(fittedTrack.cov(4, 4));
+
+    float chi2 = fittedTrack.chi2_line + fittedTrack.chi2_circle;
+
+    Measurement1D phi(valPhi, errValPhi);
+    Measurement1D tip(valTip, errValTip);
+
+    Measurement1D pt(valPt, errValPt);
+    Measurement1D cotTheta(valCotTheta, errValCotTheta);
+    Measurement1D zip(valZip, errValZip);
+
+    std::unique_ptr<reco::Track> track(
+          builder.build(pt, phi, cotTheta, tip, zip, chi2, iCharge, hits,
+            fieldESH.product(), region.origin()));
+    if (!track) continue;
+    // filter???
+    tracks.emplace_back(track.release(), shits);
+    ++nh;
+  }
+  assert(nh==e-b);
+  std::cout << "processed " << nh << " good tuples " << tracks.size() << std::endl;
 
   // store tracks
   storeTracks(iEvent, tracks, *httopo);
