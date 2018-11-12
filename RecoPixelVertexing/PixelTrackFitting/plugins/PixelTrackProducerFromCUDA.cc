@@ -59,6 +59,9 @@ class PixelTrackProducerFromCUDA: public HeterogeneousEDProducer<heterogeneous::
 
 
  private:
+
+  TuplesOnCPU const * tuples_=nullptr;
+
   edm::EDGetTokenT<HeterogeneousProduct> gpuToken_;
   edm::EDGetTokenT<RegionsSeedingHitSets> srcToken_;
   bool enableConversion_;
@@ -98,7 +101,8 @@ void  PixelTrackProducerFromCUDA::acquireGPUCuda(const edm::HeterogeneousEvent &
   auto const & gTuples = *gh;
   std::cout << "tuples from gpu " << gTuples.nTuples << std::endl;
 
-  std::cout << "point on gpu " << gTuples.gpu_d << std::endl;
+
+  tuples_ = gh.product();
 
 }
 
@@ -114,6 +118,14 @@ void PixelTrackProducerFromCUDA::produceGPUCuda(edm::HeterogeneousEvent &iEvent,
   pixeltrackfitting::TracksWithTTRHs tracks;
   edm::ESHandle<TrackerTopology> httopo;
   iSetup.get<TrackerTopologyRcd>().get(httopo);
+
+
+  edm::Handle<RegionsSeedingHitSets> hhitSets;
+  iEvent.getByToken(srcToken_, hhitSets);
+  const auto & hitSet =  *hhitSets->begin();
+  auto b = hitSet.begin();  auto e = hitSet.end(); 
+  std::cout << "reading hitset " << e-b << std::endl;
+
 
   // store tracks
   storeTracks(iEvent, tracks, *httopo);
