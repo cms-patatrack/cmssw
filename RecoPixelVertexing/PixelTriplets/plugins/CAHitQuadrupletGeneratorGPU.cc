@@ -126,7 +126,7 @@ void CAHitQuadrupletGeneratorGPU::fillResults(
     auto isBarrel = [](const unsigned id) -> bool {
       return id == PixelSubdetector::PixelBarrel;
     };
-    bool bad = quality_[quadId] == pixelTuplesHeterogeneousProduct::bad;
+    bool bad = pixelTuplesHeterogeneousProduct::bad == quality_[quadId];
     for (unsigned int i = 0; i < 4; ++i) {
       auto k = foundQuads[quadId][i];
       assert(k<int(nhits));
@@ -142,7 +142,10 @@ void CAHitQuadrupletGeneratorGPU::fillResults(
       barrels[i] = isBarrel(ahit.geographicalId().subdetId());
 
     }
-    if (bad) { nbad++; continue;}
+    if (bad) { nbad++; quality_[quadId] = pixelTuplesHeterogeneousProduct::bad; continue;}
+
+    // this part shall not be run anymore...
+    quality_[quadId] = pixelTuplesHeterogeneousProduct::bad;
 
     // TODO:
     // - if we decide to always do the circle fit for 4 hits, we don't
@@ -200,6 +203,7 @@ void CAHitQuadrupletGeneratorGPU::fillResults(
     }
     result[index].emplace_back(phits[0],  phits[1],  phits[2],  phits[3]);
 
+    quality_[quadId] = pixelTuplesHeterogeneousProduct::loose;
   } // end loop over quads
 
 // #ifdef GPU_DEBUG

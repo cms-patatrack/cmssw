@@ -144,7 +144,7 @@ void kernel_VerifyFit(TuplesOnGPU::Container const * __restrict__ tuples,
   for (int i=0; i<5; ++i) {
     isNaN |=  fit_results[idx].par(i)!=fit_results[idx].par(i);
   }
-
+  isNaN |=  !(fit_results[idx].chi2_line+fit_results[idx].chi2_circle < 10000.f);  // catch NaN as well
   quality[idx] = isNaN ? quality[idx] : pixelTuplesHeterogeneousProduct::loose;
 
 }

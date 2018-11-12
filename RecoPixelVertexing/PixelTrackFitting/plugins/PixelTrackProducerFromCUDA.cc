@@ -10,6 +10,17 @@
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "RecoTracker/TkHitPairs/interface/RegionsSeedingHitSets.h"
 
+// track stuff
+#include "DataFormats/TrajectoryState/interface/LocalTrajectoryParameters.h"
+#include "DataFormats/TrackReco/interface/Track.h"
+#include "DataFormats/TrackReco/interface/TrackFwd.h"
+#include "DataFormats/TrackReco/interface/TrackExtra.h"
+#include "DataFormats/Common/interface/OrphanHandle.h"
+
+#include "DataFormats/TrackerCommon/interface/TrackerTopology.h"
+#include "Geometry/Records/interface/TrackerTopologyRcd.h"
+
+
 /**
  * This class will eventually be the one creating the reco::Track
  * objects from the output of GPU CA. Now it is just to produce
@@ -43,21 +54,29 @@ class PixelTrackProducerFromCUDA: public HeterogeneousEDProducer<heterogeneous::
  private:
   edm::EDGetTokenT<HeterogeneousProduct> gpuToken_;
   edm::EDGetTokenT<RegionsSeedingHitSets> srcToken_;
-  bool enabled_;
+  bool enableConversion_;
 };
 
 PixelTrackProducerFromCUDA::PixelTrackProducerFromCUDA(const edm::ParameterSet& iConfig):
   HeterogeneousEDProducer(iConfig),
-  gpuToken_(consumes<HeterogeneousProduct>(iConfig.getParameter<edm::InputTag>("src")))
-//  srcToken_(consumes<RegionsSeedingHitSets>(iConfig.getParameter<edm::InputTag>("src")))
+  gpuToken_(consumes<HeterogeneousProduct>(iConfig.getParameter<edm::InputTag>("src"))),
+  enableConversion_ (iConfig.getParameter<bool>("gpuEnableConversion"))
 {
-  produces<int>();
+  if (enableConversion_) {
+    srcToken_ = consumes<RegionsSeedingHitSets>(iConfig.getParameter<edm::InputTag>("src"));
+    produces<reco::TrackCollection>();
+    produces<TrackingRecHitCollection>();
+    produces<reco::TrackExtraCollection>();
+  }
+  produces<int>();  // dummy
 //  produces<HeterogeneousProduct>();
 }
 
 void PixelTrackProducerFromCUDA::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   edm::ParameterSetDescription desc;
   desc.add<edm::InputTag>("src", edm::InputTag("pixelTracksHitQuadruplets"));
+  desc.add<bool>("gpuEnableConversion", true);
+
 
   HeterogeneousEDProducer::fillPSetDescription(desc);
   descriptions.addWithDefaultLabel(desc);
