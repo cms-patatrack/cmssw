@@ -144,7 +144,7 @@ void kernel_VerifyFit(TuplesOnGPU::Container const * __restrict__ tuples,
   for (int i=0; i<5; ++i) {
     isNaN |=  fit_results[idx].par(i)!=fit_results[idx].par(i);
   }
-  isNaN |=  !(fit_results[idx].chi2_line+fit_results[idx].chi2_circle < 10000.f);  // catch NaN as well
+  isNaN |=  !(fit_results[idx].chi2_line+fit_results[idx].chi2_circle < 1000.f);  // catch NaN as well
   quality[idx] = isNaN ? quality[idx] : pixelTuplesHeterogeneousProduct::loose;
 
 }
@@ -170,6 +170,8 @@ void CAHitQuadrupletGeneratorGPU::deallocateOnGPU()
   cudaFree(device_theCells_);
   cudaFree(device_isOuterHitOfCell_);
   cudaFree(device_nCells_);
+  cudaFree(device_cellToTuple_);
+  cudaFree(device_cellToTuple_apc_);
 
   //product
   cudaFree(gpu_.tuples_d);
@@ -196,6 +198,8 @@ void CAHitQuadrupletGeneratorGPU::allocateOnGPU()
   cudaCheck(cudaMemset(device_isOuterHitOfCell_, 0,
              PixelGPUConstants::maxNumberOfHits * sizeof(GPU::VecArray<unsigned int, maxCellsPerHit_>)));
 
+   cudaCheck(cudaMalloc(&device_cellToTuple_, sizeof(CellToTuple)));
+   cudaCheck(cudaMalloc(&device_cellToTuple_apc_, sizeof(AtomicPairCounter)));
 
   //product
   cudaCheck(cudaMalloc(&gpu_.tuples_d, sizeof(TuplesOnGPU::Container)));

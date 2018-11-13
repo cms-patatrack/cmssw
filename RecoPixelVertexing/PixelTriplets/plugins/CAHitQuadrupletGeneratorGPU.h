@@ -199,10 +199,14 @@ private:
     uint32_t nTuples_ = 0;
     TuplesOnGPU gpu_;
 
-    
+    // workspace    
     GPUCACell* device_theCells_ = nullptr;
     GPUCACell::OuterHitOfCell* device_isOuterHitOfCell_ = nullptr;
     uint32_t* device_nCells_ = nullptr;
+
+    using CellToTuple = OneToManyAssoc<uint16_t, maxNumberOfDoublets_, 4*maxNumberOfQuadruplets_>; // 3.5 should be enough 
+    CellToTuple * device_cellToTuple_ = nullptr;
+    AtomicPairCounter * device_cellToTuple_apc_ = nullptr;
 
     // input
     HitsOnCPU const * hitsOnCPU=nullptr;

@@ -156,7 +156,7 @@ void PixelCPEFast::fillParamsForGpu() {
    */
 
    
-   errorFromTemplates(p,cp,15000.f);
+   errorFromTemplates(p,cp,20000.f);
    g.sx[0] = cp.sigmax;
    g.sx[1] = cp.sx1;
    g.sx[2] = cp.sx2;
