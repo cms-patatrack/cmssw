@@ -10,6 +10,8 @@
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "RecoTracker/TkHitPairs/interface/RegionsSeedingHitSets.h"
 
+#include "DataFormats/BeamSpot/interface/BeamSpot.h"
+
 #include "RecoPixelVertexing/PixelTrackFitting/interface/PixelTrackBuilder.h"
 #include "RecoPixelVertexing/PixelTrackFitting/interface/PixelTrackCleaner.h"
 
@@ -65,6 +67,7 @@ class PixelTrackProducerFromCUDA: public HeterogeneousEDProducer<heterogeneous::
 
   TuplesOnCPU const * tuples_=nullptr;
 
+  edm::EDGetTokenT<reco::BeamSpot>      tBeamSpot;
   edm::EDGetTokenT<HeterogeneousProduct> gpuToken_;
   edm::EDGetTokenT<RegionsSeedingHitSets> srcToken_;
   bool enableConversion_;
@@ -72,6 +75,7 @@ class PixelTrackProducerFromCUDA: public HeterogeneousEDProducer<heterogeneous::
 
 PixelTrackProducerFromCUDA::PixelTrackProducerFromCUDA(const edm::ParameterSet& iConfig):
   HeterogeneousEDProducer(iConfig),
+  tBeamSpot(consumes<reco::BeamSpot>(iConfig.getParameter<edm::InputTag>("beamSpot"))),
   gpuToken_(consumes<HeterogeneousProduct>(iConfig.getParameter<edm::InputTag>("src"))),
   enableConversion_ (iConfig.getParameter<bool>("gpuEnableConversion"))
 {
@@ -87,6 +91,7 @@ PixelTrackProducerFromCUDA::PixelTrackProducerFromCUDA(const edm::ParameterSet& 
 
 void PixelTrackProducerFromCUDA::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   edm::ParameterSetDescription desc;
+  desc.add<edm::InputTag>("beamSpot", edm::InputTag("offlineBeamSpot"));
   desc.add<edm::InputTag>("src", edm::InputTag("pixelTracksHitQuadruplets"));
   desc.add<bool>("gpuEnableConversion", true);
 
@@ -137,6 +142,15 @@ void PixelTrackProducerFromCUDA::produceGPUCuda(edm::HeterogeneousEvent &iEvent,
 
   const auto & region = hitSet.region();
 
+
+  std::cout << "origin " << region.origin() << std::endl;
+
+  edm::Handle<reco::BeamSpot> bsHandle;
+  iEvent.getByToken( tBeamSpot, bsHandle);
+  const auto  & bsh = *bsHandle;
+  std::cout << "beamspot " << bsh.x0() << ' ' << bsh.y0() << ' ' << bsh.z0() << std::endl;
+  GlobalPoint bs(bsh.x0(),bsh.y0(),bsh.z0());
+
   std::vector<const TrackingRecHit *> hits;
   hits.reserve(4);
 
@@ -177,7 +191,7 @@ void PixelTrackProducerFromCUDA::produceGPUCuda(edm::HeterogeneousEvent &iEvent,
 
     std::unique_ptr<reco::Track> track(
           builder.build(pt, phi, cotTheta, tip, zip, chi2, iCharge, hits,
-            fieldESH.product(), region.origin()));
+            fieldESH.product(), bs));
     if (!track) continue;
     // filter???
     tracks.emplace_back(track.release(), shits);
