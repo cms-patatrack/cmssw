@@ -312,6 +312,9 @@ void CAHitQuadrupletGeneratorGPU::launchKernels(const TrackingRegion &region,
     launchFit(hh, nhits, cudaStream);
     numberOfBlocks = (maxNumberOfQuadruplets_ + blockSize - 1)/blockSize;
     kernel_VerifyFit<<<numberOfBlocks, blockSize, 0, cudaStream>>>(gpu_.tuples_d, gpu_.helix_fit_results_d, gpu_.quality_d);
+
+    numberOfBlocks = (maxNumberOfDoublets_ + blockSize - 1)/blockSize;
+    kernel_fastDuplicateRemover<<<numberOfBlocks, blockSize, 0, cudaStream>>>(device_theCells_, device_nCells_,gpu_.helix_fit_results_d, gpu_.quality_d);
   }
 
 

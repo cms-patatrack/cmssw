@@ -155,7 +155,7 @@ void PixelTrackProducerFromCUDA::produceGPUCuda(edm::HeterogeneousEvent &iEvent,
   uint32_t nh=0; // current hitset
   for (uint32_t it=0; it<tuples_->nTuples; ++it) {
     auto q = tuples_->quality[it];
-    if (q == pixelTuplesHeterogeneousProduct::bad ) continue;
+    if (q != pixelTuplesHeterogeneousProduct::loose ) continue; // FIXME
     auto const & shits = *(b+nh);
     auto nHits = shits.size(); hits.resize(nHits);
     for (unsigned int iHit = 0; iHit < nHits; ++iHit) hits[iHit] = shits[iHit];
