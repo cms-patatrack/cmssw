@@ -121,7 +121,7 @@ void PixelTrackProducerFromCUDA::produceGPUCuda(edm::HeterogeneousEvent &iEvent,
   iEvent.put(std::make_unique<int>(0));
   if (!enableConversion_) return;
 
-  std::cout << "Converting gpu helix in reco tracks" << std::endl;
+  // std::cout << "Converting gpu helix in reco tracks" << std::endl;
 
   edm::ESHandle<MagneticField> fieldESH;
   iSetup.get<IdealMagneticFieldRecord>().get(fieldESH);
@@ -140,15 +140,13 @@ void PixelTrackProducerFromCUDA::produceGPUCuda(edm::HeterogeneousEvent &iEvent,
   auto b = hitSet.begin();  auto e = hitSet.end(); 
   std::cout << "reading hitset " << e-b << std::endl;
 
-  const auto & region = hitSet.region();
-
-
-  std::cout << "origin " << region.origin() << std::endl;
+  // const auto & region = hitSet.region();
+  // std::cout << "origin " << region.origin() << std::endl;
 
   edm::Handle<reco::BeamSpot> bsHandle;
   iEvent.getByToken( tBeamSpot, bsHandle);
   const auto  & bsh = *bsHandle;
-  std::cout << "beamspot " << bsh.x0() << ' ' << bsh.y0() << ' ' << bsh.z0() << std::endl;
+  // std::cout << "beamspot " << bsh.x0() << ' ' << bsh.y0() << ' ' << bsh.z0() << std::endl;
   GlobalPoint bs(bsh.x0(),bsh.y0(),bsh.z0());
 
   std::vector<const TrackingRecHit *> hits;

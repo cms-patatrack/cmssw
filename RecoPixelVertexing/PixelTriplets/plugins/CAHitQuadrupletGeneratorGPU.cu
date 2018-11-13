@@ -50,6 +50,8 @@ void kernel_checkOverflows(TuplesOnGPU::Container * foundNtuplets, AtomicPairCou
    auto &thisCell = cells[idx];
    if (thisCell.theOuterNeighbors.full()) //++tooManyNeighbors[thisCell.theLayerPairId];
      printf("OuterNeighbors overflow %d in %d\n", idx, thisCell.theLayerPairId);
+   if (thisCell.theTracks.full()) //++tooManyTracks[thisCell.theLayerPairId];
+     printf("Tracks overflow %d in %d\n", idx, thisCell.theLayerPairId);
    if (thisCell.theDoubletId<0) atomicInc(&killedCell,maxNumberOfDoublets);
  }
  if (idx < nHits) {
@@ -61,10 +63,40 @@ void kernel_checkOverflows(TuplesOnGPU::Container * foundNtuplets, AtomicPairCou
 // if (threadIdx.x==0) printf("number of killed cells %d\n",killedCell);
 }
 
+__global__
+void
+kernel_fastDuplicateRemover(GPUCACell const * cells, uint32_t const * __restrict__ nCells,
+                            Rfit::helix_fit const * __restrict__ hfit,
+                            pixelTuplesHeterogeneousProduct::Quality * quality
+                           ) {
+
+   constexpr auto bad = pixelTuplesHeterogeneousProduct::bad;
+   constexpr auto dup = pixelTuplesHeterogeneousProduct::dup;
+   constexpr auto loose = pixelTuplesHeterogeneousProduct::loose;
+
+  auto cellIndex = threadIdx.x + blockIdx.x * blockDim.x;
+
+  if (cellIndex >= (*nCells) ) return;
+  auto const & thisCell = cells[cellIndex];
+  if (thisCell.theDoubletId<0) return;
+
+  // find min chi2
+  float mc=1000.f; uint16_t im=60000;
+  for (auto it : thisCell.theTracks) {
+    if (quality[it]!= bad && hfit[it].chi2_line+hfit[it].chi2_circle < mc) {
+      mc=hfit[it].chi2_line+hfit[it].chi2_circle;
+      im=it;
+    }
+  }
+  // mark duplicates
+  for (auto it : thisCell.theTracks) {
+    quality[it] = it==im ? loose : dup;
+  }
+}
 
 __global__ 
 void
-kernel_connect(AtomicPairCounter * apc,
+kernel_connect(AtomicPairCounter * apc1, AtomicPairCounter * apc2,  // just to zero them,
                GPUCACell::Hits const *  __restrict__ hhp,
                GPUCACell * cells, uint32_t const * __restrict__ nCells,
                GPUCACell::OuterHitOfCell const * __restrict__ isOuterHitOfCell,
@@ -82,7 +114,7 @@ kernel_connect(AtomicPairCounter * apc,
 
   auto cellIndex = threadIdx.x + blockIdx.x * blockDim.x;
 
-  if (0==cellIndex) (*apc)=0; // ready for next kernel
+  if (0==cellIndex) { (*apc1)=0; (*apc2)=0; }// ready for next kernel
 
   if (cellIndex >= (*nCells) ) return;
   auto const & thisCell = cells[cellIndex];
@@ -104,7 +136,7 @@ kernel_connect(AtomicPairCounter * apc,
 
 __global__ 
 void kernel_find_ntuplets(
-    GPUCACell * const __restrict__ cells, uint32_t const * nCells,
+    GPUCACell * __restrict__ cells, uint32_t const * nCells,
     TuplesOnGPU::Container * foundNtuplets, AtomicPairCounter * apc,
     unsigned int minHitsPerNtuplet,
     unsigned int maxNumberOfDoublets_)
@@ -245,7 +277,7 @@ void CAHitQuadrupletGeneratorGPU::launchKernels(const TrackingRegion &region,
 
   numberOfBlocks = (maxNumberOfDoublets_ + blockSize - 1)/blockSize;
   kernel_connect<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
-      gpu_.apc_d, // needed only to be reset, ready for next kernel
+      gpu_.apc_d, device_cellToTuple_apc_,  // needed only to be reset, ready for next kernel
       hh.gpu_d,
       device_theCells_, device_nCells_,
       device_isOuterHitOfCell_,

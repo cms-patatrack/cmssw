@@ -38,9 +38,11 @@ public:
   using Hits = siPixelRecHitsHeterogeneousProduct::HitsOnGPU;
   using hindex_type = siPixelRecHitsHeterogeneousProduct::hindex_type;
 
-  using TmpTuple = GPU::VecArray<hindex_type,6>;
+  using TmpTuple = GPU::VecArray<uint32_t,6>;
 
   using TuplesOnGPU = pixelTuplesHeterogeneousProduct::TuplesOnGPU;
+
+  using CellToTuple = pixelTuplesHeterogeneousProduct::CellToTuple;
 
   GPUCACell() = default;
 #ifdef __CUDACC__
@@ -58,6 +60,7 @@ public:
     theInnerZ = __ldg(hh.zg_d+innerHitId);
     theInnerR = __ldg(hh.rg_d+innerHitId);
     theOuterNeighbors.reset();
+    theTracks.reset();
   }
 
   __device__ __forceinline__ float get_inner_x(Hits const & hh) const { return __ldg(hh.xg_d+theInnerHitId); }
@@ -156,7 +159,7 @@ public:
 
   __device__
   inline void find_ntuplets(
-      GPUCACell const * __restrict__ cells,
+      GPUCACell * __restrict__ cells,
       TuplesOnGPU::Container & foundNtuplets, 
       AtomicPairCounter & apc,
       TmpTuple & tmpNtuplet,
@@ -168,8 +171,8 @@ public:
     // the ntuplets is then saved if the number of hits it contains is greater
     // than a threshold
 
-    tmpNtuplet.push_back_unsafe(theInnerHitId);
-    assert(tmpNtuplet.size()<=5);
+    tmpNtuplet.push_back_unsafe(theDoubletId);
+    assert(tmpNtuplet.size()<=4);
 
     if(theOuterNeighbors.size()>0) { // continue
       for (int j = 0; j < theOuterNeighbors.size(); ++j) {
@@ -179,18 +182,21 @@ public:
       }
     } else {  // if long enough save...
       if ((unsigned int)(tmpNtuplet.size()) >= minHitsPerNtuplet-1) {
-        tmpNtuplet.push_back_unsafe(theOuterHitId);
-        foundNtuplets.bulkFill(apc,tmpNtuplet.data(),tmpNtuplet.size());
-        tmpNtuplet.pop_back();
+        hindex_type hits[6]; auto nh=0U;
+        for (auto c : tmpNtuplet) hits[nh++] = cells[c].theInnerHitId;
+        hits[nh] = theOuterHitId; 
+        uint16_t it = foundNtuplets.bulkFill(apc,hits,tmpNtuplet.size()+1);
+        for (auto c : tmpNtuplet) cells[c].theTracks.push_back(it);
       }
     }
     tmpNtuplet.pop_back();
-    assert(tmpNtuplet.size() < 5);
+    assert(tmpNtuplet.size() < 4);
   }
 
 #endif // __CUDACC__
 
-  GPU::VecArray< unsigned int, 40> theOuterNeighbors;
+  GPU::VecArray< uint32_t, 40> theOuterNeighbors;
+  GPU::VecArray< uint16_t, 20> theTracks;
 
   int theDoubletId;
   int theLayerPairId;

@@ -223,10 +223,11 @@ public:
 #ifdef __CUDACC__
   __device__
   __forceinline__
-  void bulkFill(AtomicPairCounter & apc, index_type const * v, uint32_t n) {
+  uint32_t bulkFill(AtomicPairCounter & apc, index_type const * v, uint32_t n) {
     auto c = apc.add(n);
     off[c.m] = c.n;
     for(int j=0; j<n; ++j) bins[c.n+j]=v[j];
+    return c.m;
   }
 
   __device__
