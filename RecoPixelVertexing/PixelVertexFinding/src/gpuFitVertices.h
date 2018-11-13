@@ -21,7 +21,7 @@ namespace gpuVertexFinder {
                    float chi2Max // for outlier rejection
                   )  {
 
-    constexpr bool verbose = false; // in principle the compiler should optmize out if false
+    constexpr bool verbose = true; // in principle the compiler should optmize out if false
 
 
     auto & __restrict__ data = *pdata;

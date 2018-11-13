@@ -119,16 +119,24 @@ void PixelVertexHeterogeneousProducer::acquireGPUCuda(
   // fill z,ez
   std::vector<float> z,ez2,pt2;
   assert(m_trks.empty());
+  auto nok=0;
   for (unsigned int i=0; i<tracks.size(); i++) {
     if (tracks[i].pt() < m_ptMin) continue;    
     m_trks.push_back( reco::TrackRef(trackCollection, i) );
     z.push_back(tracks[i].dz(bs));
     ez2.push_back(tracks[i].dzError());ez2.back()*=ez2.back();
     pt2.push_back(std::min(25.,tracks[i].pt()));pt2.back()*=pt2.back();
-
+    if (tracks[i].dzError()<0.01f) ++nok;
   }
   if (verbose_) std::cout << "PixelVertexHeterogeneousProducer" << ": Selected " << m_trks.size() << " of these tracks for vertexing\n" << std::endl;
-  
+  if (verbose_) std::cout << "tracks with dzErr<0.11mm " << nok << std::endl;
+
+  /*
+  auto zs=z; std::sort(zs.begin(),zs.end());
+  for (auto v:zs) std::cout << v << ' ';
+  std::cout<<std::endl;
+  */
+
   // Third, ship these tracks off to be vertexed
   m_gpuAlgo.produce(cudaStream.id(),z.data(),ez2.data(),pt2.data(),z.size());
 

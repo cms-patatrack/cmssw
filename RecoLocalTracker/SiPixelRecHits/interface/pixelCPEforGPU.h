@@ -217,11 +217,11 @@ namespace pixelCPEforGPU {
 
     // FIXME these are errors form Run1
     constexpr float xerr_barrel_l1[] = { 0.00115, 0.00120, 0.00088 };
-    constexpr float xerr_barrel_l1_def = 0.01030;
+    constexpr float xerr_barrel_l1_def = 0.00200;           // 0.01030;
     constexpr float yerr_barrel_l1[] = { 0.00375, 0.00230, 0.00250, 0.00250, 0.00230, 0.00230, 0.00210, 0.00210, 0.00240 };
     constexpr float yerr_barrel_l1_def = 0.00210;
     constexpr float xerr_barrel_ln[] = { 0.00115, 0.00120, 0.00088 };
-    constexpr float xerr_barrel_ln_def = 0.01030;
+    constexpr float xerr_barrel_ln_def = 0.00200; // 0.01030;
     constexpr float yerr_barrel_ln[] = { 0.00375, 0.00230, 0.00250, 0.00250, 0.00230, 0.00230, 0.00210, 0.00210, 0.00240 };
     constexpr float yerr_barrel_ln_def = 0.00210;
     constexpr float xerr_endcap[] = { 0.0020, 0.0020 };
