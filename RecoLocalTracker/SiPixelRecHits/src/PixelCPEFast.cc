@@ -129,7 +129,7 @@ void PixelCPEFast::fillParamsForGpu() {
 
     // errors .....
    ClusterParamGeneric cp;
-   auto gvx = p.theOrigin.x() + 80.f*m_commonParamsGPU.thePitchX;
+   auto gvx = p.theOrigin.x() + 40.f*m_commonParamsGPU.thePitchX;
    auto gvy = p.theOrigin.y();
    auto gvz = 1.f/p.theOrigin.z();
    //--- Note that the normalization is not required as only the ratio used
@@ -155,7 +155,7 @@ void PixelCPEFast::fillParamsForGpu() {
    std::cout << i << ' ' << m*std::sqrt(lape.xx())  <<' '<< m*std::sqrt(lape.yy()) << std::endl;
    */
 
-   /*
+   
    errorFromTemplates(p,cp,15000.f);
    g.sx[0] = cp.sigmax;
    g.sx[1] = cp.sx1;
@@ -165,8 +165,8 @@ void PixelCPEFast::fillParamsForGpu() {
    g.sy[1] = cp.sy1;
    g.sy[2] = cp.sy2;
    
-   */
-
+   
+   /*
     // from run1??
     if (i<96) {
       g.sx[0] = 0.00120;
@@ -193,7 +193,7 @@ void PixelCPEFast::fillParamsForGpu() {
       g.sy[1] = 0.0021;
       g.sy[2] = 0.0085;
    }
-
+   */
    
 
    for (int i=0; i<3; ++i) {
