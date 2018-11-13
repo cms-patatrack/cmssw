@@ -57,7 +57,7 @@ public:
 
   gpuVertexFinder::Producer m_gpuAlgo;
 
-  bool verbose_ = true;
+  bool verbose_ = false;
   
 };
 
@@ -128,8 +128,8 @@ void PixelVertexHeterogeneousProducer::acquireGPUCuda(
     pt2.push_back(std::min(25.,tracks[i].pt()));pt2.back()*=pt2.back();
     if (tracks[i].dzError()<0.01f) ++nok;
   }
-  if (verbose_) std::cout << "PixelVertexHeterogeneousProducer" << ": Selected " << m_trks.size() << " of these tracks for vertexing\n" << std::endl;
-  if (verbose_) std::cout << "tracks with dzErr<0.11mm " << nok << std::endl;
+  if (verbose_) std::cout << "PixelVertexHeterogeneousProducer" << ": Selected " << m_trks.size() << " of these tracks for vertexing" << std::endl;
+  if (verbose_) std::cout << "tracks with dzErr<0.1mm " << nok << std::endl;
 
   /*
   auto zs=z; std::sort(zs.begin(),zs.end());

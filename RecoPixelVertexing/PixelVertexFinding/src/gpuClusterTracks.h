@@ -24,11 +24,7 @@ namespace gpuVertexFinder {
 		     float chi2max   // max normalized distance to cluster
 		     )  {
 
-    chi2max=50000000.f;
-    eps = 0.1f;    
-    errmax = 0.1f;
-
-    constexpr bool verbose = true; // in principle the compiler should optmize out if false
+    constexpr bool verbose = false; // in principle the compiler should optmize out if false
 
 
     if(verbose && 0==threadIdx.x) printf("params %d %f %f %f\n",minT,eps,errmax,chi2max);

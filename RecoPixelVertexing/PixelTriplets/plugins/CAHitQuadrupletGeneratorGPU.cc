@@ -108,12 +108,16 @@ void CAHitQuadrupletGeneratorGPU::fillResults(
 
   auto const & foundQuads = fetchKernelResult(index);
   unsigned int numberOfFoundQuadruplets = foundQuads.size();
+
+  /*
   const QuantityDependsPtEval maxChi2Eval = maxChi2.evaluator(es);
 
   // re-used throughout
   std::array<float, 4> bc_r;
   std::array<float, 4> bc_z;
   std::array<float, 4> bc_errZ2;
+
+  */
   std::array<GlobalPoint, 4> gps;
   std::array<GlobalError, 4> ges;
   std::array<bool, 4> barrels;
@@ -143,6 +147,8 @@ void CAHitQuadrupletGeneratorGPU::fillResults(
 
     }
     if (bad) { nbad++; quality_[quadId] = pixelTuplesHeterogeneousProduct::bad; continue;}
+
+    /*
 
     // this part shall not be run anymore...
     quality_[quadId] = pixelTuplesHeterogeneousProduct::bad;
@@ -201,8 +207,10 @@ void CAHitQuadrupletGeneratorGPU::fillResults(
       if (fitFastCircleChi2Cut && chi2 > thisMaxChi2)
         continue;
     }
-    result[index].emplace_back(phits[0],  phits[1],  phits[2],  phits[3]);
 
+    */
+
+    result[index].emplace_back(phits[0],  phits[1],  phits[2],  phits[3]);
     quality_[quadId] = pixelTuplesHeterogeneousProduct::loose;
   } // end loop over quads
 
