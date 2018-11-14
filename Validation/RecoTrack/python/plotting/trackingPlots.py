@@ -1347,6 +1347,7 @@ def _appendPixelTrackingPlots(lastDirName, name):
 _appendPixelTrackingPlots("PixelTrack", "pixel")
 _appendPixelTrackingPlots("PixelTrackFromPV", "pixelFromPV")
 _appendPixelTrackingPlots("PixelTrackFromPVAllTP", "pixelFromPVAllTP")
+_appendPixelTrackingPlots("PixelTrackBHadron", "pixelbhadron")
 
 
 # MiniAOD
