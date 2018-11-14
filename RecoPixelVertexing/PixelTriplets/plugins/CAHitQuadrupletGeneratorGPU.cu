@@ -90,7 +90,7 @@ kernel_fastDuplicateRemover(GPUCACell const * cells, uint32_t const * __restrict
   }
   // mark duplicates
   for (auto it : thisCell.theTracks) {
-    quality[it] = it==im ? loose : dup;
+     if (it!=im) quality[it] = dup; //no race:  simple assignment of the same constant
   }
 }
 
