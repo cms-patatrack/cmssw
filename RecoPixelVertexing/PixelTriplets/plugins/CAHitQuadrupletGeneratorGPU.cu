@@ -66,6 +66,7 @@ void kernel_checkOverflows(TuplesOnGPU::Container * foundNtuplets, AtomicPairCou
 __global__
 void
 kernel_fastDuplicateRemover(GPUCACell const * cells, uint32_t const * __restrict__ nCells,
+                            TuplesOnGPU::Container * foundNtuplets,
                             Rfit::helix_fit const * __restrict__ hfit,
                             pixelTuplesHeterogeneousProduct::Quality * quality
                            ) {
@@ -80,10 +81,20 @@ kernel_fastDuplicateRemover(GPUCACell const * cells, uint32_t const * __restrict
   auto const & thisCell = cells[cellIndex];
   if (thisCell.theDoubletId<0) return;
 
-  // find min chi2
-  float mc=1000.f; uint16_t im=60000;
+  float mc=1000.f; uint16_t im=60000; uint32_t maxNh=0;
+   
+  // find maxNh
   for (auto it : thisCell.theTracks) {
-    if (quality[it]!= bad && hfit[it].chi2_line+hfit[it].chi2_circle < mc) {
+    if (quality[it] == bad) continue;
+    auto nh = foundNtuplets->size(it);
+    maxNh = std::max(nh,maxNh);
+  }
+  // find min chi2
+  for (auto it : thisCell.theTracks) {
+    auto nh = foundNtuplets->size(it);
+    if (nh!=maxNh) continue; 
+    if (quality[it]!= bad && 
+        hfit[it].chi2_line+hfit[it].chi2_circle < mc) {
       mc=hfit[it].chi2_line+hfit[it].chi2_circle;
       im=it;
     }
@@ -314,7 +325,7 @@ void CAHitQuadrupletGeneratorGPU::launchKernels(const TrackingRegion &region,
     kernel_VerifyFit<<<numberOfBlocks, blockSize, 0, cudaStream>>>(gpu_.tuples_d, gpu_.helix_fit_results_d, gpu_.quality_d);
 
     numberOfBlocks = (maxNumberOfDoublets_ + blockSize - 1)/blockSize;
-    kernel_fastDuplicateRemover<<<numberOfBlocks, blockSize, 0, cudaStream>>>(device_theCells_, device_nCells_,gpu_.helix_fit_results_d, gpu_.quality_d);
+    kernel_fastDuplicateRemover<<<numberOfBlocks, blockSize, 0, cudaStream>>>(device_theCells_, device_nCells_,gpu_.tuples_d,gpu_.helix_fit_results_d, gpu_.quality_d);
   }
 
 
