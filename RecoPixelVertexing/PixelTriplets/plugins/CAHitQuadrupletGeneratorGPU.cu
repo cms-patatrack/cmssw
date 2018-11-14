@@ -72,7 +72,7 @@ kernel_fastDuplicateRemover(GPUCACell const * cells, uint32_t const * __restrict
 
    constexpr auto bad = pixelTuplesHeterogeneousProduct::bad;
    constexpr auto dup = pixelTuplesHeterogeneousProduct::dup;
-   constexpr auto loose = pixelTuplesHeterogeneousProduct::loose;
+   // constexpr auto loose = pixelTuplesHeterogeneousProduct::loose;
 
   auto cellIndex = threadIdx.x + blockIdx.x * blockDim.x;
 
@@ -90,7 +90,7 @@ kernel_fastDuplicateRemover(GPUCACell const * cells, uint32_t const * __restrict
   }
   // mark duplicates
   for (auto it : thisCell.theTracks) {
-     if (it!=im) quality[it] = dup; //no race:  simple assignment of the same constant
+     if (quality[it]!= bad && it!=im) quality[it] = dup; //no race:  simple assignment of the same constant
   }
 }
 

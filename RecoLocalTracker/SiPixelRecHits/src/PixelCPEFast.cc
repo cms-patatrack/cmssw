@@ -141,8 +141,9 @@ void PixelCPEFast::fillParamsForGpu() {
    cp.with_track_angle = false;
 
    auto lape = p.theDet->localAlignmentError();
+   if ( lape.invalid() ) lape = LocalError(); // zero....
 
-   /*
+#ifdef DUMP_ERRORS   
    auto m=10000.f;
    for (float qclus = 15000; qclus<35000; qclus+=15000){
      errorFromTemplates(p,cp,qclus);
@@ -153,7 +154,7 @@ void PixelCPEFast::fillParamsForGpu() {
               << std::endl;
    }
    std::cout << i << ' ' << m*std::sqrt(lape.xx())  <<' '<< m*std::sqrt(lape.yy()) << std::endl;
-   */
+#endif   
 
    
    errorFromTemplates(p,cp,20000.f);
