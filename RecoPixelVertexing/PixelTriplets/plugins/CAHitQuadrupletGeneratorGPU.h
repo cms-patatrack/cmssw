@@ -21,9 +21,13 @@
 #include "RecoTracker/TkSeedingLayers/interface/SeedComparitor.h"
 #include "RecoTracker/TkSeedingLayers/interface/SeedComparitorFactory.h"
 #include "RecoPixelVertexing/PixelTriplets/plugins/RecHitsMap.h"
-#include "RecoPixelVertexing/PixelTrackFitting/interface/RiemannFit.h"
 
 #include "CAHitQuadrupletGeneratorKernels.h"
+#include "RiemannFitOnGPU.h"
+
+#include "RecoPixelVertexing/PixelTriplets/plugins/pixelTuplesHeterogeneousProduct.h"
+
+// FIXME  (split header???)
 #include "GPUCACell.h"
 
 class TrackingRegion;
@@ -41,8 +45,13 @@ public:
     using HitsOnCPU = siPixelRecHitsHeterogeneousProduct::HitsOnCPU;
     using hindex_type = siPixelRecHitsHeterogeneousProduct::hindex_type;
 
+    using TuplesOnGPU = pixelTuplesHeterogeneousProduct::TuplesOnGPU;
+    using TuplesOnCPU = pixelTuplesHeterogeneousProduct::TuplesOnCPU;
+    using Quality = pixelTuplesHeterogeneousProduct::Quality;
+    using Output = pixelTuplesHeterogeneousProduct::HeterogeneousPixelTuples;
+
     static constexpr unsigned int minLayers = 4;
-    typedef OrderedHitSeeds ResultType;
+    using  ResultType = OrderedHitSeeds;
 
 public:
 
@@ -63,6 +72,11 @@ public:
                      bool doRiemannFit,
                      bool transferToCPU,
                      cudaStream_t stream);
+
+    TuplesOnCPU getOutput() const {
+       return TuplesOnCPU { hitsOnCPU->gpu_d, tuples_,  helix_fit_results_, quality_, gpu_d, nTuples_};
+    }
+
     void cleanup(cudaStream_t stream);
     void fillResults(const TrackingRegion &region, SiPixelRecHitCollectionNew const & rechits,
                      std::vector<OrderedHitSeeds>& result,
@@ -72,6 +86,8 @@ public:
     void deallocateOnGPU();
 
 private:
+
+    // cpu stuff
 
     std::unique_ptr<SeedComparitor> theComparitor;
 
@@ -139,10 +155,18 @@ private:
         const bool enabled_;
     };
 
+    // end cpu stuff
+
+
     void launchKernels(const TrackingRegion &, int, HitsOnCPU const & hh, bool doRiemannFit, bool transferToCPU, cudaStream_t);
+
+
     std::vector<std::array<int,4>> fetchKernelResult(int);
 
-    float bField_;
+
+    CAHitQuadrupletGeneratorKernels kernels;
+    RiemannFitOnGPU fitter;
+
 
     const float extraHitRPhitolerance;
 
@@ -155,34 +179,19 @@ private:
     const float caPhiCut = 0.1f;
     const float caHardPtCut = 0.f;
 
-    static constexpr int maxNumberOfQuadruplets_ = 10000;
-    static constexpr int maxCellsPerHit_ = 256;
-    static constexpr int maxNumberOfLayerPairs_ = 13;
-    static constexpr int maxNumberOfLayers_ = 10;
-    static constexpr int maxNumberOfDoublets_ = 262144;
-    static constexpr int maxNumberOfRegions_ = 2;
+    // products
+    TuplesOnGPU * gpu_d = nullptr;   // copy of the structure on the gpu itself: this is the "Product"
+    TuplesOnGPU::Container * tuples_ = nullptr;
+    Rfit::helix_fit * helix_fit_results_ = nullptr;
+    Quality * quality_ =  nullptr;
+    uint32_t nTuples_ = 0;
+    TuplesOnGPU gpu_;
 
-    std::vector<GPU::SimpleVector<Quadruplet>*> h_foundNtupletsVec_;
-    std::vector<Quadruplet*> h_foundNtupletsData_;
-
-    std::vector<GPU::SimpleVector<Quadruplet>*> d_foundNtupletsVec_;
-    std::vector<Quadruplet*> d_foundNtupletsData_;
-
-    GPUCACell* device_theCells_ = nullptr;
-    GPU::VecArray< unsigned int, maxCellsPerHit_>* device_isOuterHitOfCell_ = nullptr;
-    uint32_t* device_nCells_ = nullptr;
-
+    // input
     HitsOnCPU const * hitsOnCPU=nullptr;
 
     RecHitsMap<TrackingRecHit const *> hitmap_ = RecHitsMap<TrackingRecHit const *>(nullptr);
 
-    // Riemann Fit stuff
-    Rfit::Matrix3xNd *hitsGPU_ = nullptr;
-    Rfit::Matrix3Nd *hits_covGPU_ = nullptr;
-    Eigen::Vector4d *fast_fit_resultsGPU_ = nullptr;
-    Rfit::circle_fit *circle_fit_resultsGPU_ = nullptr;
-    Rfit::line_fit *line_fit_resultsGPU_ = nullptr;
-    Rfit::helix_fit * helix_fit_resultsGPU_ = nullptr;
 };
 
 #endif // RecoPixelVertexing_PixelTriplets_plugins_CAHitQuadrupletGeneratorGPU_h

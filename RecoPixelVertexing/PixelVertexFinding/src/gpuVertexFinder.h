@@ -23,6 +23,7 @@ namespace gpuVertexFinder {
     float * chi2;  // vertices chi2
     float * ptv2;  // vertices pt^2
     uint32_t * nv;  // the number of vertices
+    uint32_t * nv2;  // the number of vertices after sipping pruning etc.
     int32_t * iv;  // vertex index for each associated track
     uint16_t * sortInd; // sorted index (by pt2)
 

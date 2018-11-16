@@ -59,9 +59,9 @@ std::unique_ptr<reco::Track> PixelFitterByRiemannParaboloid::run(
     isBarrel[i] = recHit->detUnit()->type().isBarrel();
   }
 
-  Matrix<double, 3, Dynamic, 0, 3, max_nop> riemannHits(3, nhits);
+  Eigen::Matrix<double, 3, Eigen::Dynamic, 0, 3, max_nop> riemannHits(3, nhits);
 
-  Matrix<double, Dynamic, Dynamic, 0, 3 * max_nop, 3 * max_nop> riemannHits_cov =
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, 0, 3 * max_nop, 3 * max_nop> riemannHits_cov =
       MatrixXd::Zero(3 * nhits, 3 * nhits);
 
   for (unsigned int i = 0; i < nhits; ++i) {

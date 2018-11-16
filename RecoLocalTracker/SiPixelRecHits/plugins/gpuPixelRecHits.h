@@ -135,8 +135,8 @@ namespace gpuPixelRecHits {
     xl[h]= clusParams.xpos[ic];   
     yl[h]= clusParams.ypos[ic]; 
 
-    xe[h]= clusParams.xerr[ic];
-    ye[h]= clusParams.yerr[ic];
+    xe[h]= clusParams.xerr[ic]*clusParams.xerr[ic];
+    ye[h]= clusParams.yerr[ic]*clusParams.yerr[ic];
     mr[h]= clusParams.minRow[ic];
     mc[h]= clusParams.minCol[ic];
   
