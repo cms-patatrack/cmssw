@@ -33,7 +33,10 @@ class CAHitNtupletHeterogeneousEDProducer
           heterogeneous::GPUCuda, heterogeneous::CPU>> {
 public:
 
-  using PixelRecHitsH = siPixelRecHitsHeterogeneousProduct::HeterogeneousPixelRecHit;
+    using PixelRecHitsH = siPixelRecHitsHeterogeneousProduct::HeterogeneousPixelRecHit;
+    using GPUProduct = pixelTuplesHeterogeneousProduct::GPUProduct;
+    using CPUProduct = pixelTuplesHeterogeneousProduct::CPUProduct;
+    using Output = pixelTuplesHeterogeneousProduct::HeterogeneousPixelTuples;
 
 
   CAHitNtupletHeterogeneousEDProducer(const edm::ParameterSet &iConfig);
@@ -80,7 +83,8 @@ CAHitNtupletHeterogeneousEDProducer::CAHitNtupletHeterogeneousEDProducer(
       enableConversion_(iConfig.getParameter<bool>("gpuEnableConversion")),
       enableTransfer_(enableConversion_ || iConfig.getParameter<bool>("gpuEnableTransfer"))
 {
-  produces<RegionsSeedingHitSets>();
+   produces<HeterogeneousProduct>();
+   if(enableConversion_) produces<RegionsSeedingHitSets>();
 }
 
 void CAHitNtupletHeterogeneousEDProducer::fillDescriptions(
@@ -137,13 +141,14 @@ void CAHitNtupletHeterogeneousEDProducer::acquireGPUCuda(
         << " regions";
 
   GPUGenerator_.hitNtuplets(region, gHits, iSetup, doRiemannFit_, enableTransfer_, cudaStream.id());
+
+  
+
 }
 
 void CAHitNtupletHeterogeneousEDProducer::produceGPUCuda(
     edm::HeterogeneousEvent &iEvent, const edm::EventSetup &iSetup,
     cuda::stream_t<> &cudaStream) {
-
-  GPUGenerator_.cleanup(cudaStream.id());
 
   if (not emptyRegions and enableConversion_) {
     edm::Handle<edm::OwnVector<TrackingRegion>> hregions;
@@ -165,8 +170,13 @@ void CAHitNtupletHeterogeneousEDProducer::produceGPUCuda(
       index++;
     }
     localRA_.update(seedingHitSets_->size());
+    iEvent.put(std::move(seedingHitSets_));
   }
-  iEvent.put(std::move(seedingHitSets_));
+
+  auto output = std::make_unique<GPUProduct>(GPUGenerator_.getOutput());
+  iEvent.put<Output>(std::move(output), heterogeneous::DisableTransfer{});
+  GPUGenerator_.cleanup(cudaStream.id());
+
 }
 
 void CAHitNtupletHeterogeneousEDProducer::produceCPU(
