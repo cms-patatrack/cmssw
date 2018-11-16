@@ -271,9 +271,10 @@ void CAHitQuadrupletGeneratorGPU::launchKernels(const TrackingRegion &region,
 
 
   kernels.launchKernels(hh, gpu_, cudaStream); 
-  if (doRiemannFit) 
+  if (doRiemannFit) {
     fitter.launchKernels(hh, hh.nHits, CAConstants::maxNumberOfQuadruplets(), cudaStream);
-
+    kernels.classifyTuples(hh, gpu_, cudaStream);
+  }
   if (transferToCPU) {
     cudaCheck(cudaMemcpyAsync(tuples_,gpu_.tuples_d,
                               sizeof(TuplesOnGPU::Container),

@@ -23,6 +23,8 @@ public:
 
    void launchKernels(HitsOnCPU const & hh, TuplesOnGPU & tuples_d, cudaStream_t cudaStream);
 
+   void classifyTuples(HitsOnCPU const & hh, TuplesOnGPU & tuples_d, cudaStream_t cudaStream);
+
    void buildDoublets(HitsOnCPU const & hh, cudaStream_t stream);
    void allocateOnGPU();
    void deallocateOnGPU();

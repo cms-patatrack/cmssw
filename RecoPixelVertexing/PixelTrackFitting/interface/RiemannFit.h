@@ -197,16 +197,17 @@ __host__ __device__ inline MatrixNd Scatter_cov_rad(const Matrix2xNd& p2D,
     computeRadLenUniformMaterial(s_values*sqrt(1. + 1./(fast_fit(3)*fast_fit(3))), rad_lengths);
     MatrixNd scatter_cov_rad = MatrixXd::Zero(n, n);
     VectorNd sig2(n);
-    sig2 = .000225 / p_2 * (1. + 0.038 * rad_lengths.array().log()).abs2() * rad_lengths.array();
+    sig2 =  (1. + 0.038 * rad_lengths.array().log()).abs2() * rad_lengths.array();
+    sig2 *= 0.000225 / ( p_2 * sqr(sin(theta)) );
     for (u_int k = 0; k < n; ++k)
     {
         for (u_int l = k; l < n; ++l)
         {
             for (u_int i = 0; i < std::min(k, l); ++i)
             {
-              scatter_cov_rad(k, l) += (rad(k) - rad(i)) * (rad(l) - rad(i)) * sig2(i) / (sqr(sin(theta)));
-              scatter_cov_rad(l, k) = scatter_cov_rad(k, l);
+              scatter_cov_rad(k, l) += (rad(k) - rad(i)) * (rad(l) - rad(i)) * sig2(i);
             }
+            scatter_cov_rad(l, k) = scatter_cov_rad(k, l);
         }
     }
 #if RFIT_DEBUG
