@@ -16,15 +16,15 @@ namespace gpuVertexFinder {
 
 
   __global__
-  void fitVertices(int nt,
+  void fitVertices(
                    OnGPU * pdata,
                    float chi2Max // for outlier rejection
                   )  {
 
     constexpr bool verbose = false; // in principle the compiler should optmize out if false
 
-
     auto & __restrict__ data = *pdata;
+    auto nt = *data.ntrks;
     float const * __restrict__ zt = data.zt;
     float const * __restrict__ ezt2 = data.ezt2;
     float * __restrict__ zv = data.zv;

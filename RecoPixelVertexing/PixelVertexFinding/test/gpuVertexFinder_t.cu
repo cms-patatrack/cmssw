@@ -86,7 +86,8 @@ int main() {
   }
 
   auto current_device = cuda::device::current::get();
-
+  
+  auto ntrks_d = cuda::memory::device::make_unique<uint32_t[]>(current_device, 1);
   auto zt_d = cuda::memory::device::make_unique<float[]>(current_device, 64000);
   auto ezt2_d = cuda::memory::device::make_unique<float[]>(current_device, 64000);
   auto ptt2_d = cuda::memory::device::make_unique<float[]>(current_device, 64000);
@@ -107,6 +108,7 @@ int main() {
 
   OnGPU onGPU;
 
+  onGPU.ntrks = ntrks_d.get();
   onGPU.zt = zt_d.get();
   onGPU.ezt2 = ezt2_d.get();
   onGPU.ptt2 = ptt2_d.get();
@@ -138,7 +140,8 @@ int main() {
   gen(ev);
   
   std::cout << ev.zvert.size() << ' ' << ev.ztrack.size() << std::endl;
-
+  auto nt = ev.ztrack.size();
+  cuda::memory::copy(onGPU.ntrks,&nt,sizeof(uint32_t));
   cuda::memory::copy(onGPU.zt,ev.ztrack.data(),sizeof(float)*ev.ztrack.size());
   cuda::memory::copy(onGPU.ezt2,ev.eztrack.data(),sizeof(float)*ev.eztrack.size());
   cuda::memory::copy(onGPU.ptt2,ev.pttrack.data(),sizeof(float)*ev.eztrack.size());
@@ -150,28 +153,28 @@ int main() {
   if ( (i%4) == 0 )
     cuda::launch(clusterTracks,
 		 { 1, 512+256 },
-		 ev.ztrack.size(), onGPU_d.get(),kk,eps,
+		 onGPU_d.get(),kk,eps,
 		 0.02f,12.0f
 		 );
   
   if ( (i%4) == 1 )
     cuda::launch(clusterTracks,
 		 { 1, 512+256 },
-		 ev.ztrack.size(), onGPU_d.get(),kk,eps,
+		 onGPU_d.get(),kk,eps,
 		 0.02f,9.0f
 		 );
   
   if ( (i%4) == 2 )
     cuda::launch(clusterTracks,
 		 { 1, 512+256 },
-		 ev.ztrack.size(), onGPU_d.get(),kk,eps,
+		 onGPU_d.get(),kk,eps,
 		 0.01f,9.0f
 		 );
   
   if ( (i%4) == 3 )
     cuda::launch(clusterTracks,
 		 { 1, 512+256 },
-		 ev.ztrack.size(), onGPU_d.get(),kk,0.7f*eps,
+		 onGPU_d.get(),kk,0.7f*eps,
 		 0.01f,9.0f
 		 );
   cudaCheck(cudaGetLastError());
@@ -179,7 +182,7 @@ int main() {
 
   cuda::launch(fitVertices, 
                { 1,1024-256 },
-               ev.ztrack.size(), onGPU_d.get(),50.f
+               onGPU_d.get(),50.f
               );
   cudaCheck(cudaGetLastError());
 
@@ -206,7 +209,7 @@ int main() {
 
   cuda::launch(fitVertices,
                { 1,1024-256 },
-               ev.ztrack.size(), onGPU_d.get(), 50.f
+               onGPU_d.get(), 50.f
               );
   cuda::memory::copy(&nv, onGPU.nv, sizeof(uint32_t));
   cuda::memory::copy(&nn, onGPU.nn, nv*sizeof(int32_t));
@@ -219,7 +222,7 @@ int main() {
 
   cuda::launch(splitVertices,
                { 1024, 64 },
-               ev.ztrack.size(), onGPU_d.get(),
+               onGPU_d.get(),
                9.f
               );
  cuda::memory::copy(&nv, onGPU.nv2, sizeof(uint32_t));
@@ -227,14 +230,14 @@ int main() {
 
   cuda::launch(fitVertices,
                { 1,1024-256 },
-               ev.ztrack.size(), onGPU_d.get(),5000.f
+               onGPU_d.get(),5000.f
               );
   cudaCheck(cudaGetLastError());
 
 
   cuda::launch(sortByPt2,
                { 1, 256 },
-               ev.ztrack.size(), onGPU_d.get()
+               onGPU_d.get()
               );
 
   cuda::memory::copy(&nv, onGPU.nv, sizeof(uint32_t));

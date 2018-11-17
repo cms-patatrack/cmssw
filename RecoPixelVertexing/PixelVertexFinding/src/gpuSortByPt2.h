@@ -16,10 +16,11 @@
 namespace gpuVertexFinder {
 
   __global__
-  void sortByPt2(int nt,
+  void sortByPt2(
                  OnGPU * pdata
                 )  {
     auto & __restrict__ data = *pdata;
+    auto nt = *data.ntrks;
     float const * __restrict__ ptt2 = data.ptt2;
     uint32_t const & nv = *data.nv;
 

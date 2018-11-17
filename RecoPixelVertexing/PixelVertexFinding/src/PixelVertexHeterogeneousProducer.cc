@@ -22,12 +22,17 @@
 #include "HeterogeneousCore/Producer/interface/HeterogeneousEDProducer.h"
 
 #include "RecoPixelVertexing/PixelVertexFinding/interface/pixelVertexHeterogeneousProduct.h"
+#include "RecoPixelVertexing/PixelTriplets/plugins/pixelTuplesHeterogeneousProduct.h"
 #include "gpuVertexFinder.h"
 
 
 class PixelVertexHeterogeneousProducer : public HeterogeneousEDProducer<heterogeneous::HeterogeneousDevices<
           heterogeneous::GPUCuda, heterogeneous::CPU>> {
 public:
+
+  using Input = pixelTuplesHeterogeneousProduct::HeterogeneousPixelTuples;
+  using TuplesOnCPU = pixelTuplesHeterogeneousProduct::TuplesOnCPU;
+
   explicit PixelVertexHeterogeneousProducer(const edm::ParameterSet&);
   ~PixelVertexHeterogeneousProducer() override = default;
 
@@ -46,11 +51,18 @@ public:
                   const edm::EventSetup &iSetup) override;
  private:
   // ----------member data ---------------------------
+
+  TuplesOnCPU const * tuples_=nullptr;
+
+
   // Tracking cuts before sending tracks to vertex algo
   const double m_ptMin;
-  const edm::InputTag trackCollName;
-  const edm::EDGetTokenT<reco::TrackCollection> token_Tracks;
-  const edm::EDGetTokenT<reco::BeamSpot> token_BeamSpot;
+
+
+  const bool enableConversion_;
+  const edm::EDGetTokenT<HeterogeneousProduct> gpuToken_;
+  edm::EDGetTokenT<reco::TrackCollection> token_Tracks;
+  edm::EDGetTokenT<reco::BeamSpot> token_BeamSpot;
 
 
   reco::TrackRefVector m_trks;
@@ -72,6 +84,9 @@ void PixelVertexHeterogeneousProducer::fillDescriptions(edm::ConfigurationDescri
   desc.add<double>("PtMin", 0.5);
   desc.add<edm::InputTag>("TrackCollection", edm::InputTag("pixelTracks"));
   desc.add<edm::InputTag>("beamSpot", edm::InputTag("offlineBeamSpot"));
+  desc.add<edm::InputTag>("src", edm::InputTag("pixelTracksHitQuadruplets"));
+  desc.add<bool>("gpuEnableConversion", true);
+
   HeterogeneousEDProducer::fillPSetDescription(desc);
   auto label = "pixelVertexHeterogeneousProducer";
   descriptions.add(label, desc);
@@ -80,19 +95,21 @@ void PixelVertexHeterogeneousProducer::fillDescriptions(edm::ConfigurationDescri
 
 PixelVertexHeterogeneousProducer::PixelVertexHeterogeneousProducer(const edm::ParameterSet& conf) :
   HeterogeneousEDProducer(conf)
-  ,m_ptMin  (conf.getParameter<double>("PtMin")  ) // 0.5 GeV
-  , trackCollName  ( conf.getParameter<edm::InputTag>("TrackCollection") )
-  , token_Tracks   ( consumes<reco::TrackCollection>(trackCollName) )
-  , token_BeamSpot ( consumes<reco::BeamSpot>(conf.getParameter<edm::InputTag>("beamSpot") ) )
+  , m_ptMin(conf.getParameter<double>("PtMin")) // 0.5 GeV
+  , enableConversion_(conf.getParameter<bool>("gpuEnableConversion"))
+  , gpuToken_(consumes<HeterogeneousProduct>(conf.getParameter<edm::InputTag>("src")))
   , m_gpuAlgo( conf.getParameter<int>("minT")
 	       ,conf.getParameter<double>("eps")
 	       ,conf.getParameter<double>("errmax")
 	       ,conf.getParameter<double>("chi2max")
 	       )
 {
-  // Register my product
-  produces<reco::VertexCollection>();  
-  
+  if (enableConversion_) {
+    token_Tracks = consumes<reco::TrackCollection>(conf.getParameter<edm::InputTag>("TrackCollection"));
+    token_BeamSpot =consumes<reco::BeamSpot>(conf.getParameter<edm::InputTag>("beamSpot") );
+    // Register my product
+    produces<reco::VertexCollection>();  
+  }
 }
 
 
@@ -103,10 +120,20 @@ void PixelVertexHeterogeneousProducer::acquireGPUCuda(
                       cuda::stream_t<> &cudaStream) {
 
   // First fish the pixel tracks out of the event
+  edm::Handle<TuplesOnCPU> gh;
+  e.getByToken<Input>(gpuToken_, gh);
+  auto const & gTuples = *gh;
+  std::cout << "tuples from gpu " << gTuples.nTuples << std::endl;
+
+  tuples_ = gh.product();
+
+  m_gpuAlgo.produce(cudaStream.id(),(*gh));
+
+
   edm::Handle<reco::TrackCollection> trackCollection;
   e.getByToken(token_Tracks,trackCollection);
   const reco::TrackCollection tracks = *(trackCollection.product());
-  if (verbose_)  std::cout << "PixelVertexHeterogeneousProducer" << ": Found " << tracks.size() << " tracks in TrackCollection called " << trackCollName << "\n";
+  if (verbose_)  std::cout << "PixelVertexHeterogeneousProducer" << ": Found " << tracks.size() << " tracks in TrackCollection" << "\n";
 
   // on gpu beamspot already subtracted at hit level...
   math::XYZPoint bs(0.,0.,0.);

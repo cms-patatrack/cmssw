@@ -119,7 +119,7 @@ kernel_connect(AtomicPairCounter * apc1, AtomicPairCounter * apc2,  // just to z
   // take less than radius given by the hardPtCut and reject everything below
   // auto hardCurvCut = 1.f/(hardPtCut * 87.f);
   constexpr auto hardCurvCut = 1.f/(0.35f * 87.f); // FIXME VI tune
-  constexpr auto ptmin = 0.6f; // FIXME VI "tune"
+  constexpr auto ptmin = 0.9f; // FIXME original "tune"
 
   auto cellIndex = threadIdx.x + blockIdx.x * blockDim.x;
 

@@ -16,7 +16,7 @@ namespace gpuVertexFinder {
 
 
   __global__
-  void splitVertices(int nt,
+  void splitVertices(
                    OnGPU * pdata,
                    float maxChi2
                   )  {
@@ -25,6 +25,7 @@ namespace gpuVertexFinder {
 
 
     auto & __restrict__ data = *pdata;
+    auto nt = *data.ntrks;
     float const * __restrict__ zt = data.zt;
     float const * __restrict__ ezt2 = data.ezt2;
     float * __restrict__ zv = data.zv;

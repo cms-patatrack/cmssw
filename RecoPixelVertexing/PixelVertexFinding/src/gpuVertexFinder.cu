@@ -7,6 +7,8 @@ namespace gpuVertexFinder {
 
 
   void Producer::allocateOnGPU() {
+    cudaCheck(cudaMalloc(&onGPU.ntrks, sizeof(uint32_t)));
+    cudaCheck(cudaMalloc(&onGPU.itrk, OnGPU::MAXTRACKS*sizeof(uint16_t)));
     cudaCheck(cudaMalloc(&onGPU.zt, OnGPU::MAXTRACKS*sizeof(float)));
     cudaCheck(cudaMalloc(&onGPU.ezt2, OnGPU::MAXTRACKS*sizeof(float)));
     cudaCheck(cudaMalloc(&onGPU.ptt2, OnGPU::MAXTRACKS*sizeof(float)));
@@ -30,6 +32,8 @@ namespace gpuVertexFinder {
   }
 	      
   void Producer::deallocateOnGPU() {
+    cudaCheck(cudaFree(onGPU.ntrks));
+    cudaCheck(cudaFree(onGPU.itrk));
     cudaCheck(cudaFree(onGPU.zt));
     cudaCheck(cudaFree(onGPU.ezt2));
     cudaCheck(cudaFree(onGPU.ptt2));
@@ -51,13 +55,20 @@ namespace gpuVertexFinder {
   }
 
 
+  void Producer::produce(cudaStream_t stream, TuplesOnCPU const & tuples) {
+
+  }
+
+
   void Producer::produce(cudaStream_t stream,
 			 float const * __restrict__ zt,
 			 float const * __restrict__ ezt2,
                          float const * __restrict__ ptt2,
 			 uint32_t ntrks
 			 ) {
-    
+
+    cudaCheck(cudaMemcpyAsync(onGPU.ntrks,&ntrks,sizeof(uint32_t),
+                              cudaMemcpyHostToDevice,stream));
     cudaCheck(cudaMemcpyAsync(onGPU.zt,zt,ntrks*sizeof(float),
 			      cudaMemcpyHostToDevice,stream));
     cudaCheck(cudaMemcpyAsync(onGPU.ezt2,ezt2,ntrks*sizeof(float),
@@ -66,17 +77,17 @@ namespace gpuVertexFinder {
                               cudaMemcpyHostToDevice,stream));
     
     assert(onGPU_d);
-    clusterTracks<<<1,1024-256,0,stream>>>(ntrks,onGPU_d,minT,eps,errmax,chi2max);
+    clusterTracks<<<1,1024-256,0,stream>>>(onGPU_d,minT,eps,errmax,chi2max);
     cudaCheck(cudaGetLastError());
-    fitVertices<<<1,1024-256,0,stream>>>(ntrks,onGPU_d,50.);
-    cudaCheck(cudaGetLastError());
-
-    splitVertices<<<1024,128,0,stream>>>(ntrks,onGPU_d,9.f);
-    cudaCheck(cudaGetLastError());
-    fitVertices<<<1,1024-256,0,stream>>>(ntrks,onGPU_d,5000.);
+    fitVertices<<<1,1024-256,0,stream>>>(onGPU_d,50.);
     cudaCheck(cudaGetLastError());
 
-    sortByPt2<<<1,256,0,stream>>>(ntrks,onGPU_d);
+    splitVertices<<<1024,128,0,stream>>>(onGPU_d,9.f);
+    cudaCheck(cudaGetLastError());
+    fitVertices<<<1,1024-256,0,stream>>>(onGPU_d,5000.);
+    cudaCheck(cudaGetLastError());
+
+    sortByPt2<<<1,256,0,stream>>>(onGPU_d);
     cudaCheck(cudaGetLastError());
 
     cudaCheck(cudaMemcpyAsync(&gpuProduct.nVertices, onGPU.nv, sizeof(uint32_t),

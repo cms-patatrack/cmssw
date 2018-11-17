@@ -16,7 +16,7 @@ namespace gpuVertexFinder {
   // this algo does not really scale as it works in a single block...
   // enough for <10K tracks we have
   __global__ 
-  void clusterTracks(int nt,
+  void clusterTracks(
 		     OnGPU * pdata,
 		     int minT,  // min number of neighbours to be "core"
 		     float eps, // max absolute distance to cluster
@@ -32,6 +32,7 @@ namespace gpuVertexFinder {
     auto er2mx = errmax*errmax;
     
     auto & __restrict__ data = *pdata;
+    auto nt = *data.ntrks;
     float const * __restrict__ zt = data.zt;
     float const * __restrict__ ezt2 = data.ezt2;
 

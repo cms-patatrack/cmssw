@@ -3,6 +3,7 @@
 
 #include<cstdint>
 
+#include "RecoPixelVertexing/PixelTriplets/plugins/pixelTuplesHeterogeneousProduct.h"
 #include "RecoPixelVertexing/PixelVertexFinding/interface/pixelVertexHeterogeneousProduct.h"
 
 
@@ -12,7 +13,9 @@ namespace gpuVertexFinder {
 
     static constexpr uint32_t MAXTRACKS = 16000;
     static constexpr uint32_t MAXVTX= 1024;
-    
+
+    uint32_t * ntrks; // number of "selected tracks"
+    uint16_t * itrk; // index of original track    
     float * zt;   // input track z at bs
     float * ezt2; // input error^2 on the above
     float * ptt2; // input pt^2 on the above
@@ -36,7 +39,9 @@ namespace gpuVertexFinder {
 
   class Producer {
   public:
-    
+
+    using TuplesOnCPU = pixelTuplesHeterogeneousProduct::TuplesOnCPU;
+
     using GPUProduct = pixelVertexHeterogeneousProduct::GPUProduct;
     using OnGPU = gpuVertexFinder::OnGPU;
 
@@ -54,6 +59,9 @@ namespace gpuVertexFinder {
     {}
     
     ~Producer() { deallocateOnGPU();}
+
+    void produce(cudaStream_t stream, TuplesOnCPU const & tuples);
+
     
     void produce(cudaStream_t stream,
 		 float const * zt,
