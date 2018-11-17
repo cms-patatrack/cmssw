@@ -146,8 +146,8 @@ __host__ __device__ inline MatrixNd Scatter_cov_line(Matrix2Nd& cov_sz,
         for (u_int i = 0; i < std::min(k, l); ++i)
         {
           tmp(k + n, l + n) += std::abs(S_values(k) - S_values(i)) * std::abs(S_values(l) - S_values(i)) * sig2_S(i);
-          tmp(l + n, k + n) = tmp(k + n, l + n);
         }
+        tmp(l + n, k + n) = tmp(k + n, l + n);
       }
     }
     // We are interested only in the errors orthogonal to the rotated s-axis
@@ -373,7 +373,9 @@ __host__ __device__ inline void par_uvrtopak(circle_fit& circle, const double B,
         const double temp2 = sqr(circle.par(0)) * 1. / temp0;
         const double temp3 = 1. / temp1 * circle.q;
         Matrix3d J4;
-        J4 << -circle.par(1) * temp2 * 1. / sqr(circle.par(0)), temp2 * 1. / circle.par(0), 0., circle.par(0) * temp3, circle.par(1) * temp3, -circle.q, 0., 0., B;
+        J4 << -circle.par(1) * temp2 * 1. / sqr(circle.par(0)), temp2 * 1. / circle.par(0), 0., 
+               circle.par(0) * temp3, circle.par(1) * temp3, -circle.q,
+               0., 0., B;
         circle.cov = J4 * circle.cov * J4.transpose();
     }
     circle.par = par_pak;
