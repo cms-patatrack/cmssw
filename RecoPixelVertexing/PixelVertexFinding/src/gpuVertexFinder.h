@@ -63,12 +63,14 @@ namespace gpuVertexFinder {
 	     int iminT,  // min number of neighbours to be "core"
 	     float ieps, // max absolute distance to cluster
 	     float ierrmax, // max error to be "seed"
-	     float ichi2max   // max normalized distance to cluster
+	     float ichi2max,   // max normalized distance to cluster
+             bool ienableTransfer
 	     ) :
       minT(iminT),
       eps(ieps),
       errmax(ierrmax),
-      chi2max(ichi2max)  
+      chi2max(ichi2max),
+      enableTransfer(ienableTransfer)
     {}
     
     ~Producer() { deallocateOnGPU();}
@@ -90,6 +92,7 @@ namespace gpuVertexFinder {
     float eps; // max absolute distance to cluster
     float errmax; // max error to be "seed"
     float chi2max;   // max normalized distance to cluster
+    const bool enableTransfer;
 
   };
   

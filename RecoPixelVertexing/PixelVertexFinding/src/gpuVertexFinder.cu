@@ -109,13 +109,17 @@ namespace gpuVertexFinder {
     sortByPt2<<<1,256,0,stream>>>(onGPU_d);
     cudaCheck(cudaGetLastError());
 
-    cudaCheck(cudaMemcpyAsync(&gpuProduct.nVertices, onGPU.nv, sizeof(uint32_t),
-			      cudaMemcpyDeviceToHost, stream));
-    cudaCheck(cudaMemcpyAsync(&gpuProduct.nTracks, onGPU.ntrks, sizeof(uint32_t),
+    if(enableTransfer) {
+      cudaCheck(cudaMemcpyAsync(&gpuProduct.nVertices, onGPU.nv, sizeof(uint32_t),
+                                cudaMemcpyDeviceToHost, stream));
+      cudaCheck(cudaMemcpyAsync(&gpuProduct.nTracks, onGPU.ntrks, sizeof(uint32_t),
                               cudaMemcpyDeviceToHost, stream));
+    }
   }
   
   Producer::OnCPU const & Producer::fillResults(cudaStream_t stream) {
+
+    if(!enableTransfer) return gpuProduct;
 
     // finish copy
     gpuProduct.ivtx.resize(gpuProduct.nTracks);

@@ -65,6 +65,7 @@ public:
 
 
   const bool enableConversion_;
+  const bool enableTransfer_;
   const edm::EDGetTokenT<HeterogeneousProduct> gpuToken_;
   edm::EDGetTokenT<reco::TrackCollection> token_Tracks;
   edm::EDGetTokenT<reco::BeamSpot> token_BeamSpot;
@@ -89,6 +90,7 @@ void PixelVertexHeterogeneousProducer::fillDescriptions(edm::ConfigurationDescri
   desc.add<edm::InputTag>("beamSpot", edm::InputTag("offlineBeamSpot"));
   desc.add<edm::InputTag>("src", edm::InputTag("pixelTracksHitQuadruplets"));
   desc.add<bool>("gpuEnableConversion", true);
+  desc.add<bool>("gpuEnableTransfer", true);
 
   HeterogeneousEDProducer::fillPSetDescription(desc);
   auto label = "pixelVertexHeterogeneousProducer";
@@ -100,11 +102,13 @@ PixelVertexHeterogeneousProducer::PixelVertexHeterogeneousProducer(const edm::Pa
   HeterogeneousEDProducer(conf)
   , m_ptMin(conf.getParameter<double>("PtMin")) // 0.5 GeV
   , enableConversion_(conf.getParameter<bool>("gpuEnableConversion"))
+  , enableTransfer_(enableConversion_ || conf.getParameter<bool>("gpuEnableTransfer"))
   , gpuToken_(consumes<HeterogeneousProduct>(conf.getParameter<edm::InputTag>("src")))
   , m_gpuAlgo( conf.getParameter<int>("minT")
 	       ,conf.getParameter<double>("eps")
 	       ,conf.getParameter<double>("errmax")
 	       ,conf.getParameter<double>("chi2max")
+               ,enableTransfer_
 	       )
 {
   produces<HeterogeneousProduct>();
@@ -127,7 +131,7 @@ void PixelVertexHeterogeneousProducer::acquireGPUCuda(
   edm::Handle<TuplesOnCPU> gh;
   e.getByToken<Input>(gpuToken_, gh);
   auto const & gTuples = *gh;
-  std::cout << "tuples from gpu " << gTuples.nTuples << std::endl;
+  std::cout << "Vertex Producers: tuples from gpu " << gTuples.nTuples << std::endl;
 
   tuples_ = gh.product();
 
@@ -223,11 +227,8 @@ void PixelVertexHeterogeneousProducer::produceGPUCuda(
       std::cout << "Vertex number " << i << " has " << (*vertexes)[i].tracksSize() << " tracks with a position of " << (*vertexes)[i].z() << " +- " << std::sqrt( (*vertexes)[i].covariance(2,2) )
 		<< " chi2 " << (*vertexes)[i].normalizedChi2() << std::endl;
     }
-
-    std::cout << ": Found " << vertexes->size() << " vertexes" << std::endl;
-    
   }
-  
+  std::cout << ": Found " << vertexes->size() << " vertexes" << std::endl;
   
   if(vertexes->empty() && bsHandle.isValid()){
     
