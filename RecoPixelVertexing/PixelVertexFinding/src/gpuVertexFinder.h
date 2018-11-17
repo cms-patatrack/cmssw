@@ -37,12 +37,25 @@ namespace gpuVertexFinder {
   };
   
 
+  struct OnCPU {
+    OnCPU() = default;
+
+    std::vector<float,    CUDAHostAllocator<float>> z,zerr, chi2;
+    std::vector<int16_t, CUDAHostAllocator<uint16_t>> sortInd;
+    std::vector<int32_t, CUDAHostAllocator<int32_t>> ivtx;
+    std::vector<uint16_t, CUDAHostAllocator<uint16_t>> itrk;
+
+    uint32_t nVertices=0;
+    uint32_t nTracks=0;
+    OnGPU const * gpu_d = nullptr;
+  };
+
   class Producer {
   public:
 
     using TuplesOnCPU = pixelTuplesHeterogeneousProduct::TuplesOnCPU;
 
-    using GPUProduct = pixelVertexHeterogeneousProduct::GPUProduct;
+    using OnCPU = gpuVertexFinder::OnCPU;
     using OnGPU = gpuVertexFinder::OnGPU;
 
 
@@ -60,24 +73,16 @@ namespace gpuVertexFinder {
     
     ~Producer() { deallocateOnGPU();}
 
-    void produce(cudaStream_t stream, TuplesOnCPU const & tuples);
+    void produce(cudaStream_t stream, TuplesOnCPU const & tuples, float ptMin);
 
-    
-    void produce(cudaStream_t stream,
-		 float const * zt,
-		 float const * ezt2,
-                 float const * ptt2,
-		 uint32_t ntrks
-		 );
-    
-    GPUProduct const & fillResults(cudaStream_t stream);
+    OnCPU const & fillResults(cudaStream_t stream);
     
 
     void allocateOnGPU();
     void deallocateOnGPU();
 
   private:
-    GPUProduct gpuProduct;
+    OnCPU gpuProduct;
     OnGPU onGPU;
     OnGPU * onGPU_d=nullptr;
 

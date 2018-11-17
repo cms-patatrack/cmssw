@@ -123,6 +123,8 @@ void CAHitQuadrupletGeneratorGPU::fillResults(
   std::array<bool, 4> barrels;
   std::array<BaseTrackerRecHit const*, 4> phits;
 
+  indToEdm.clear();
+  indToEdm.resize(numberOfFoundQuadruplets,64000);
 
   int nbad=0;
   // loop over quadruplets
@@ -211,7 +213,7 @@ void CAHitQuadrupletGeneratorGPU::fillResults(
     */    
 
     result[index].emplace_back(phits[0],  phits[1],  phits[2],  phits[3]);
-    // quality_[quadId] = pixelTuplesHeterogeneousProduct::loose;
+    indToEdm[quadId] = result[index].size()-1;
   } // end loop over quads
 
 // #ifdef GPU_DEBUG

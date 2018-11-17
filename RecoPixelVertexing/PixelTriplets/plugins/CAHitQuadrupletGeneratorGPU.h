@@ -74,7 +74,7 @@ public:
                      cudaStream_t stream);
 
     TuplesOnCPU getOutput() const {
-       return TuplesOnCPU { hitsOnCPU->gpu_d, tuples_,  helix_fit_results_, quality_, gpu_d, nTuples_};
+       return TuplesOnCPU { std::move(indToEdm), hitsOnCPU->gpu_d, tuples_,  helix_fit_results_, quality_, gpu_d, nTuples_};
     }
 
     void cleanup(cudaStream_t stream);
@@ -180,6 +180,7 @@ private:
     const float caHardPtCut = 0.f;
 
     // products
+    std::vector<uint32_t> indToEdm; // index of    tuple in reco tracks....
     TuplesOnGPU * gpu_d = nullptr;   // copy of the structure on the gpu itself: this is the "Product"
     TuplesOnGPU::Container * tuples_ = nullptr;
     Rfit::helix_fit * helix_fit_results_ = nullptr;

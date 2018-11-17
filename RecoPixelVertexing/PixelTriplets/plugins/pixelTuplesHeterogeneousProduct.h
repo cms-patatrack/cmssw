@@ -36,6 +36,10 @@ namespace pixelTuplesHeterogeneousProduct {
   };
 
   struct TuplesOnCPU {
+
+    std::vector<uint32_t> indToEdm; // index of    tuple in reco tracks....
+
+
     using Container = TuplesOnGPU::Container;
 
     siPixelRecHitsHeterogeneousProduct::HitsOnGPU const * hitsOnGPU_d = nullptr; // forwarding
