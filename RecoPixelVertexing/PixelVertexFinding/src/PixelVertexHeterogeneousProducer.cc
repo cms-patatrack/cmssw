@@ -117,6 +117,8 @@ PixelVertexHeterogeneousProducer::PixelVertexHeterogeneousProducer(const edm::Pa
     token_BeamSpot =consumes<reco::BeamSpot>(conf.getParameter<edm::InputTag>("beamSpot") );
     // Register my product
     produces<reco::VertexCollection>();  
+  } else {   
+     produces<int>();  // dummy
   }
 }
 

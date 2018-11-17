@@ -85,7 +85,9 @@ PixelTrackProducerFromCUDA::PixelTrackProducerFromCUDA(const edm::ParameterSet& 
     produces<TrackingRecHitCollection>();
     produces<reco::TrackExtraCollection>();
   }
-  produces<int>();  // dummy
+  else {
+   produces<int>();  // dummy
+  }
 //  produces<HeterogeneousProduct>();
 }
 
@@ -118,7 +120,7 @@ void  PixelTrackProducerFromCUDA::acquireGPUCuda(const edm::HeterogeneousEvent &
 void PixelTrackProducerFromCUDA::produceGPUCuda(edm::HeterogeneousEvent &iEvent,
                       const edm::EventSetup &iSetup,
                       cuda::stream_t<> &cudaStream) {
-  iEvent.put(std::make_unique<int>(0));
+  // iEvent.put(std::make_unique<int>(0));
   if (!enableConversion_) return;
 
   // std::cout << "Converting gpu helix in reco tracks" << std::endl;
