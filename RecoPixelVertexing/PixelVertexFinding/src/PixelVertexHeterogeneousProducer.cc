@@ -133,7 +133,7 @@ void PixelVertexHeterogeneousProducer::acquireGPUCuda(
   edm::Handle<TuplesOnCPU> gh;
   e.getByToken<Input>(gpuToken_, gh);
   auto const & gTuples = *gh;
-  std::cout << "Vertex Producers: tuples from gpu " << gTuples.nTuples << std::endl;
+  // std::cout << "Vertex Producers: tuples from gpu " << gTuples.nTuples << std::endl;
 
   tuples_ = gh.product();
 
@@ -230,7 +230,6 @@ void PixelVertexHeterogeneousProducer::produceGPUCuda(
 		<< " chi2 " << (*vertexes)[i].normalizedChi2() << std::endl;
     }
   }
-  std::cout << ": Found " << vertexes->size() << " vertexes" << std::endl;
   
   if(vertexes->empty() && bsHandle.isValid()){
     

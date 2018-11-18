@@ -108,9 +108,8 @@ void  PixelTrackProducerFromCUDA::acquireGPUCuda(const edm::HeterogeneousEvent &
 
   edm::Handle<TuplesOnCPU> gh;
   iEvent.getByToken<Input>(gpuToken_, gh);
-  auto const & gTuples = *gh;
-  std::cout << "tuples from gpu " << gTuples.nTuples << std::endl;
-
+  //auto const & gTuples = *gh;
+  // std::cout << "tuples from gpu " << gTuples.nTuples << std::endl;
 
   tuples_ = gh.product();
 
@@ -140,7 +139,7 @@ void PixelTrackProducerFromCUDA::produceGPUCuda(edm::HeterogeneousEvent &iEvent,
   iEvent.getByToken(srcToken_, hitSets);
   const auto & hitSet =  *hitSets->begin();
   auto b = hitSet.begin();  auto e = hitSet.end(); 
-  std::cout << "reading hitset " << e-b << std::endl;
+  // std::cout << "reading hitset " << e-b << std::endl;
 
   // const auto & region = hitSet.region();
   // std::cout << "origin " << region.origin() << std::endl;
@@ -200,7 +199,7 @@ void PixelTrackProducerFromCUDA::produceGPUCuda(edm::HeterogeneousEvent &iEvent,
     ++nh;
   }
   assert(nh==e-b);
-  std::cout << "processed " << nh << " good tuples " << tracks.size() << std::endl;
+  // std::cout << "processed " << nh << " good tuples " << tracks.size() << std::endl;
 
   // store tracks
   storeTracks(iEvent, tracks, *httopo);

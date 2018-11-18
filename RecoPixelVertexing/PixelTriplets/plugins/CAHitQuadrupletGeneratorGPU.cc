@@ -216,9 +216,9 @@ void CAHitQuadrupletGeneratorGPU::fillResults(
     indToEdm[quadId] = result[index].size()-1;
   } // end loop over quads
 
-// #ifdef GPU_DEBUG
+#ifdef GPU_DEBUG
   std::cout << "Q Final quads " << result[index].size() << ' ' << nbad << std::endl; 
-// #endif
+#endif
 
 }
 
@@ -327,12 +327,12 @@ CAHitQuadrupletGeneratorGPU::fetchKernelResult(int)
     quadsInterface.back()[3] = tuples.begin(i)[3];   // [sz-1];
   }
 
-//#ifdef GPU_DEBUG
+#ifdef GPU_DEBUG
   long long ave =0; int nn=0; for (auto k : ntk) if(k>0){ave+=k; ++nn;}
   std::cout << "Q Produced " << quadsInterface.size() << " quadruplets: ";
   for (auto i=3; i<7; ++i) std::cout << sizes[i] << ' ';
   std::cout << "max/ave " << *std::max_element(ntk.begin(),ntk.end())<<'/'<<float(ave)/float(nn) << std::endl;
-//#endif
+#endif
   return quadsInterface;
 }
 
