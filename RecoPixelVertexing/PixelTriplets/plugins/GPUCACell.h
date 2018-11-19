@@ -15,19 +15,6 @@
 
 #include "RecoPixelVertexing/PixelTriplets/plugins/pixelTuplesHeterogeneousProduct.h"
 
-
-struct Quadruplet {
-   static constexpr uint32_t capacity() { return 6;}
-   using hindex_type = siPixelRecHitsHeterogeneousProduct::hindex_type;
-   static constexpr auto invalid() { return std::numeric_limits<hindex_type>::max();}
-   hindex_type hitId[6];
-   uint32_t size() const {
-     for (auto i=capacity()-1; i>0; --i) if (hitId[i]!=invalid()) return i+1;
-     return 0;
-   }
-};
-
-
 class GPUCACell {
 public:
 

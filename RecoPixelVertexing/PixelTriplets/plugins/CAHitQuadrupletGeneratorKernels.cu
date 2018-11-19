@@ -199,15 +199,14 @@ void kernel_VerifyFit(TuplesOnGPU::Container const * __restrict__ tuples,
 }
 
 __global__
-void kernel_print_found_ntuplets(GPU::SimpleVector<Quadruplet> *foundNtuplets, int maxPrint) {
+void kernel_print_found_ntuplets(TuplesOnGPU::Container * foundNtuplets, uint32_t maxPrint) {
   for (int i = 0; i < std::min(maxPrint, foundNtuplets->size()); ++i) {
     printf("\nquadruplet %d: %d %d %d %d\n", i,
-           (*foundNtuplets)[i].hitId[0],
-           (*foundNtuplets)[i].hitId[1],
-           (*foundNtuplets)[i].hitId[2],
-           (*foundNtuplets)[i].hitId[3]
+           (*(*foundNtuplets).begin(i)),
+           (*(*foundNtuplets).begin(i)+1),
+           (*(*foundNtuplets).begin(i)+2),
+           (*(*foundNtuplets).begin(i)+3)
           );
-
   }
 }
 
