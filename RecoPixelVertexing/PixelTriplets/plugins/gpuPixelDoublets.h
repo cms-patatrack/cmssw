@@ -13,10 +13,11 @@
 #include "RecoLocalTracker/SiPixelRecHits/plugins/siPixelRecHitsHeterogeneousProduct.h"
 
 #include "GPUCACell.h"
+#include "CAConstants.h"
 
 namespace gpuPixelDoublets {
 
-  constexpr uint32_t MaxNumOfDoublets = 1024*1024*256;  // not really relevant
+  constexpr uint32_t MaxNumOfDoublets = CAConstants::maxNumberOfDoublets();  // not really relevant
 
   template<typename Hist>
   __device__
@@ -122,7 +123,8 @@ namespace gpuPixelDoublets {
           if (std::min(std::abs(int16_t(iphi[oi]-mep)), std::abs(int16_t(mep-iphi[oi]))) > iphicut)
             continue;
           if (z0cutoff(oi) || ptcut(oi)) continue;
-          auto ind = atomicInc(nCells, MaxNumOfDoublets);
+          auto ind = atomicAdd(nCells, 1); 
+          if (ind>=MaxNumOfDoublets) {atomicSub(nCells, 1); break; } // move to SimpleVector??
           // int layerPairId, int doubletId, int innerHitId, int outerHitId)
           cells[ind].init(hh, pairLayerId, ind, i, oi);
           isOuterHitOfCell[oi].push_back(ind);

@@ -11,7 +11,8 @@
 #include "RecoLocalTracker/SiPixelRecHits/interface/pixelCPEforGPU.h"
 #include "GPUCACell.h"
 #include "gpuPixelDoublets.h"
-#include"gpuFishbone.h"
+#include "gpuFishbone.h"
+#include "CAConstants.h"
 
 using namespace gpuPixelDoublets;
 
@@ -46,6 +47,9 @@ void kernel_checkOverflows(TuplesOnGPU::Container * foundNtuplets, AtomicPairCou
  }
  #endif
 
+ if (0==idx) {
+   if (*nCells>=CAConstants::maxNumberOfDoublets()) printf("Cells overflow\n");
+ }
 
  if (idx < (*nCells) ) {
    auto &thisCell = cells[idx];
