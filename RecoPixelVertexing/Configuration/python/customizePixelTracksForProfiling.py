@@ -5,7 +5,6 @@ def customizePixelTracksForProfiling(process):
 
     process.out = cms.OutputModule("AsciiOutputModule",
         outputCommands = cms.untracked.vstring(
-#            "keep *_pixelTracks_*_*",
             "keep *_pixelVertices_*_*",
         ),
         verbosity = cms.untracked.uint32(0),
@@ -19,9 +18,6 @@ def customizePixelTracksForProfiling(process):
 
 def customizePixelTracksForProfilingDisableConversion(process):
     process = customizePixelTracksForProfiling(process)
-
-    # Turn off cluster shape filter so that CA doesn't depend on clusters
-    process.pixelTracksHitQuadruplets.SeedComparitorPSet = cms.PSet(ComponentName = cms.string("none"))
 
     # Disable conversions to legacy
     process.siPixelClustersPreSplitting.gpuEnableConversion = False
