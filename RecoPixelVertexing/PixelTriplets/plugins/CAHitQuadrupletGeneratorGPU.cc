@@ -122,17 +122,15 @@ void CAHitQuadrupletGeneratorGPU::fillResults(
 
 void CAHitQuadrupletGeneratorGPU::deallocateOnGPU()
 {
-
-  fitter.deallocateOnGPU();
-  kernels.deallocateOnGPU();
-
-  //product
+   //product
   cudaFree(gpu_.tuples_d);
   cudaFree(gpu_.helix_fit_results_d);
+  cudaFree(gpu_.quality_d);
   cudaFree(gpu_.apc_d);
   cudaFree(gpu_d);
-  cudaFree(tuples_);
-  cudaFree(helix_fit_results_);
+  cudaFreeHost(tuples_);
+  cudaFreeHost(helix_fit_results_);
+  cudaFreeHost(quality_);
 }
 
 void CAHitQuadrupletGeneratorGPU::allocateOnGPU()
