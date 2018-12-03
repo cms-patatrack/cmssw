@@ -81,10 +81,9 @@ namespace gpuClustering {
    constexpr uint32_t maxPixInModule = 4000;
    constexpr auto  nbins = phase1PixelTopology::numColsInModule + 2;   //2+2;
    using Hist = HistoContainer<uint16_t,nbins,maxPixInModule,9,uint16_t>;
-   constexpr auto wss = Hist::totbins();
     __shared__ Hist hist;
-    __shared__ typename Hist::Counter ws[wss];
-    for (auto j=threadIdx.x; j<Hist::totbins(); j+=blockDim.x) { hist.off[j]=0; ws[j]=0;}
+    __shared__ typename Hist::Counter ws[32];
+    for (auto j=threadIdx.x; j<Hist::totbins(); j+=blockDim.x) { hist.off[j]=0;}
     __syncthreads();
 
     assert((msize == numElements) or ((msize < numElements) and (id[msize] != thisModuleId)));
@@ -107,9 +106,9 @@ namespace gpuClustering {
 #endif
       }
     __syncthreads();
-    hist.finalize(ws);
-    __syncthreads();
     if (threadIdx.x<32) ws[threadIdx.x]=0;  // used by prefix scan...
+    __syncthreads();
+    hist.finalize(ws);
     __syncthreads();
 #ifdef GPU_DEBUG
     assert(hist.size()==totGood);
@@ -120,7 +119,7 @@ namespace gpuClustering {
       for (int i = first; i < msize; i += blockDim.x) {
         if (id[i] == InvId)                 // skip invalid pixels
           continue;
-        hist.fill(y[i],i-firstPixel,ws);
+        hist.fill(y[i],i-firstPixel);
       }
 
 #ifdef CLUS_LIMIT_LOOP
