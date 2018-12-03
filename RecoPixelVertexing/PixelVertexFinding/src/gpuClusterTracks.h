@@ -36,8 +36,8 @@ namespace gpuVertexFinder {
     float const * __restrict__ zt = data.zt;
     float const * __restrict__ ezt2 = data.ezt2;
 
-    uint32_t & nv = *data.nv;
-    uint32_t & nv2 = *data.nv2;
+    uint32_t & nvFinal = *data.nvFinal;
+    uint32_t & nvIntermediate = *data.nvIntermediate;
     
     uint8_t  * __restrict__ izt = data.izt;
     int32_t * __restrict__ nn = data.nn;
@@ -177,7 +177,7 @@ namespace gpuVertexFinder {
       iv[i] = - iv[i] - 1;
     }
     
-    nv2 = nv = foundClusters;
+    nvIntermediate = nvFinal = foundClusters;
 
     if(verbose && 0==threadIdx.x) printf("found %d proto vertices\n",foundClusters);
 

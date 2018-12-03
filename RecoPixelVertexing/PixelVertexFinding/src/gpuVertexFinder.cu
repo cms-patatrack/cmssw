@@ -15,8 +15,8 @@ namespace gpuVertexFinder {
     cudaCheck(cudaMalloc(&onGPU.ptt2, OnGPU::MAXTRACKS*sizeof(float)));
     cudaCheck(cudaMalloc(&onGPU.iv, OnGPU::MAXTRACKS*sizeof(int32_t)));
 
-    cudaCheck(cudaMalloc(&onGPU.nv, sizeof(uint32_t)));
-    cudaCheck(cudaMalloc(&onGPU.nv2, sizeof(uint32_t)));
+    cudaCheck(cudaMalloc(&onGPU.nvFinal, sizeof(uint32_t)));
+    cudaCheck(cudaMalloc(&onGPU.nvIntermediate, sizeof(uint32_t)));
     cudaCheck(cudaMalloc(&onGPU.zv, OnGPU::MAXVTX*sizeof(float)));
     cudaCheck(cudaMalloc(&onGPU.wv, OnGPU::MAXVTX*sizeof(float)));
     cudaCheck(cudaMalloc(&onGPU.chi2, OnGPU::MAXVTX*sizeof(float)));
@@ -40,8 +40,8 @@ namespace gpuVertexFinder {
     cudaCheck(cudaFree(onGPU.ptt2));
     cudaCheck(cudaFree(onGPU.iv));
 
-    cudaCheck(cudaFree(onGPU.nv));
-    cudaCheck(cudaFree(onGPU.nv2));
+    cudaCheck(cudaFree(onGPU.nvFinal));
+    cudaCheck(cudaFree(onGPU.nvIntermediate));
     cudaCheck(cudaFree(onGPU.zv));
     cudaCheck(cudaFree(onGPU.wv));
     cudaCheck(cudaFree(onGPU.chi2));
@@ -110,7 +110,7 @@ namespace gpuVertexFinder {
     cudaCheck(cudaGetLastError());
 
     if(enableTransfer) {
-      cudaCheck(cudaMemcpyAsync(&gpuProduct.nVertices, onGPU.nv, sizeof(uint32_t),
+      cudaCheck(cudaMemcpyAsync(&gpuProduct.nVertices, onGPU.nvFinal, sizeof(uint32_t),
                                 cudaMemcpyDeviceToHost, stream));
       cudaCheck(cudaMemcpyAsync(&gpuProduct.nTracks, onGPU.ntrks, sizeof(uint32_t),
                               cudaMemcpyDeviceToHost, stream));

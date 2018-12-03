@@ -22,16 +22,16 @@ namespace gpuVertexFinder {
     auto & __restrict__ data = *pdata;
     auto nt = *data.ntrks;
     float const * __restrict__ ptt2 = data.ptt2;
-    uint32_t const & nv = *data.nv;
+    uint32_t const & nvFinal = *data.nvFinal;
 
     int32_t const * __restrict__ iv = data.iv;
     float * __restrict__ ptv2 = data.ptv2;
     uint16_t * __restrict__ sortInd = data.sortInd;
 
-    if (nv<1) return;
+    if (nvFinal<1) return;
 
     // can be done asynchronoisly at the end of previous event
-    for (int i = threadIdx.x; i < nv; i += blockDim.x) {
+    for (int i = threadIdx.x; i < nvFinal; i += blockDim.x) {
       ptv2[i]=0;
     }
     __syncthreads();
@@ -43,14 +43,14 @@ namespace gpuVertexFinder {
     }
     __syncthreads();
 
-    if (1==nv) {
+    if (1==nvFinal) {
       if (threadIdx.x==0) sortInd[0]=0;
       return;
     }
     __shared__ uint16_t ws[1024];
-    radixSort(ptv2,sortInd,ws,nv);
+    radixSort(ptv2,sortInd,ws,nvFinal);
 
-    assert(ptv2[sortInd[nv-1]]>=ptv2[sortInd[nv-2]]);
+    assert(ptv2[sortInd[nvFinal-1]]>=ptv2[sortInd[nvFinal-2]]);
     assert(ptv2[sortInd[1]]>=ptv2[sortInd[0]]);
   }
 

@@ -67,8 +67,8 @@ public:
   const bool enableConversion_;
   const bool enableTransfer_;
   const edm::EDGetTokenT<HeterogeneousProduct> gpuToken_;
-  edm::EDGetTokenT<reco::TrackCollection> token_Tracks;
-  edm::EDGetTokenT<reco::BeamSpot> token_BeamSpot;
+  edm::EDGetTokenT<reco::TrackCollection> token_Tracks_;
+  edm::EDGetTokenT<reco::BeamSpot> token_BeamSpot_;
 
 
   gpuVertexFinder::Producer m_gpuAlgo;
@@ -113,8 +113,8 @@ PixelVertexHeterogeneousProducer::PixelVertexHeterogeneousProducer(const edm::Pa
 {
   produces<HeterogeneousProduct>();
   if (enableConversion_) {
-    token_Tracks = consumes<reco::TrackCollection>(conf.getParameter<edm::InputTag>("TrackCollection"));
-    token_BeamSpot =consumes<reco::BeamSpot>(conf.getParameter<edm::InputTag>("beamSpot") );
+    token_Tracks_ = consumes<reco::TrackCollection>(conf.getParameter<edm::InputTag>("TrackCollection"));
+    token_BeamSpot_ =consumes<reco::BeamSpot>(conf.getParameter<edm::InputTag>("beamSpot") );
     // Register my product
     produces<reco::VertexCollection>();  
   } else {   
@@ -155,13 +155,13 @@ void PixelVertexHeterogeneousProducer::produceGPUCuda(
   if (!enableConversion_) return; 
 
   edm::Handle<reco::TrackCollection> trackCollection;
-  e.getByToken(token_Tracks,trackCollection);
+  e.getByToken(token_Tracks_,trackCollection);
   const reco::TrackCollection tracks = *(trackCollection.product());
   if (verbose_)  std::cout << "PixelVertexHeterogeneousProducer" << ": Found " << tracks.size() << " tracks in TrackCollection" << "\n";
 
   
   edm::Handle<reco::BeamSpot> bsHandle;
-  e.getByToken(token_BeamSpot,bsHandle);
+  e.getByToken(token_BeamSpot_,bsHandle);
  
   auto vertexes = std::make_unique<reco::VertexCollection>(); 
 
@@ -198,7 +198,7 @@ void PixelVertexHeterogeneousProducer::produceGPUCuda(
       if (gpuProduct.ivtx[k]==int(i)) itrk.push_back(gpuProduct.itrk[k]);
     }
     auto nt = itrk.size();
-    if (nt==0) { std::cout << "vertex " << i << "with no tracks..." << std::endl; continue;}
+    if (nt==0) { std::cout << "vertex " << i << " with no tracks..." << std::endl; continue;}
     (*vertexes).emplace_back(reco::Vertex::Point(x,y,z), err, gpuProduct.chi2[i], nt-1, nt );
     auto & v = (*vertexes).back();
     for (auto it: itrk) {
@@ -210,13 +210,13 @@ void PixelVertexHeterogeneousProducer::produceGPUCuda(
     }
     itrk.clear();
   }
-  /*
+  
   assert(uind.size()==(*vertexes).size());
   if (!uind.empty()) {
     assert(0 == *uind.begin());
     assert(uind.size()-1 == *uind.rbegin());  
   }
-  */
+  
 
   if (verbose_) {
     edm::LogInfo("PixelVertexHeterogeneousProducer") << ": Found " << vertexes->size() << " vertexes\n";

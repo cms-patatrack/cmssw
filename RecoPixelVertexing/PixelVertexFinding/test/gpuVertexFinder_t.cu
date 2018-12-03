@@ -117,8 +117,8 @@ int main() {
   onGPU.chi2 = chi2_d.get();
   onGPU.ptv2 = ptv2_d.get();
   onGPU.sortInd = ind_d.get();
-  onGPU.nv = nv_d.get();
-  onGPU.nv2 = nv2_d.get();
+  onGPU.nvFinal = nv_d.get();
+  onGPU.nvIntermediate = nv2_d.get();
   onGPU.izt = izt_d.get();
   onGPU.nn = nn_d.get();
   onGPU.iv = iv_d.get();
@@ -187,7 +187,7 @@ int main() {
   cudaCheck(cudaGetLastError());
 
   uint32_t nv;
-  cuda::memory::copy(&nv, onGPU.nv, sizeof(uint32_t));
+  cuda::memory::copy(&nv, onGPU.nvFinal, sizeof(uint32_t));
   if (nv==0) {
     std::cout << "NO VERTICES???" << std::endl;
     continue;
@@ -211,7 +211,7 @@ int main() {
                { 1,1024-256 },
                onGPU_d.get(), 50.f
               );
-  cuda::memory::copy(&nv, onGPU.nv, sizeof(uint32_t));
+  cuda::memory::copy(&nv, onGPU.nvFinal, sizeof(uint32_t));
   cuda::memory::copy(&nn, onGPU.nn, nv*sizeof(int32_t));
   cuda::memory::copy(&chi2, onGPU.chi2, nv*sizeof(float));
   for (auto j=0U; j<nv; ++j) if (nn[j]>0) chi2[j]/=float(nn[j]);
@@ -225,7 +225,7 @@ int main() {
                onGPU_d.get(),
                9.f
               );
- cuda::memory::copy(&nv, onGPU.nv2, sizeof(uint32_t));
+ cuda::memory::copy(&nv, onGPU.nvIntermediate, sizeof(uint32_t));
  std::cout << "after split " << nv << std::endl; 
 
   cuda::launch(fitVertices,
@@ -240,7 +240,7 @@ int main() {
                onGPU_d.get()
               );
 
-  cuda::memory::copy(&nv, onGPU.nv, sizeof(uint32_t));
+  cuda::memory::copy(&nv, onGPU.nvFinal, sizeof(uint32_t));
 
   if (nv==0) {
     std::cout << "NO VERTICES???" << std::endl;

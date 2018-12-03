@@ -30,8 +30,8 @@ namespace gpuVertexFinder {
     float * __restrict__ zv = data.zv;
     float * __restrict__ wv = data.wv;
     float * __restrict__ chi2 = data.chi2;
-    uint32_t & nv  = *data.nv;
-    uint32_t & nv2 = *data.nv2;
+    uint32_t & nvFinal  = *data.nvFinal;
+    uint32_t & nvIntermediate = *data.nvIntermediate;
 
     int32_t * __restrict__ nn = data.nn;
     int32_t * __restrict__ iv = data.iv;
@@ -39,20 +39,20 @@ namespace gpuVertexFinder {
     assert(pdata);
     assert(zt);
 
-   assert(nv<=nv2);
-   nv = nv2;
-   auto foundClusters = nv2;
+    assert(nvFinal<=nvIntermediate);
+    nvFinal = nvIntermediate;
+    auto foundClusters = nvFinal;
  
-   // zero
-   for (int i = threadIdx.x; i < foundClusters; i += blockDim.x) {
+    // zero
+    for (int i = threadIdx.x; i < foundClusters; i += blockDim.x) {
       zv[i]=0;
       wv[i]=0;
       chi2[i]=0;
-   }
+    }
 
       // only for test
     __shared__ int noise;
-   if(verbose && 0==threadIdx.x) noise = 0;
+    if(verbose && 0==threadIdx.x) noise = 0;
 
     __syncthreads();
 

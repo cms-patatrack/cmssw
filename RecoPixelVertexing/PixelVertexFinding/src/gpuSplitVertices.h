@@ -31,7 +31,7 @@ namespace gpuVertexFinder {
     float * __restrict__ zv = data.zv;
     float * __restrict__ wv = data.wv;
     float const * __restrict__ chi2 = data.chi2;
-    uint32_t & nv  = *data.nv;
+    uint32_t & nvFinal  = *data.nvFinal;
 
     int32_t const * __restrict__ nn = data.nn;
     int32_t * __restrict__ iv = data.iv;
@@ -42,7 +42,7 @@ namespace gpuVertexFinder {
     // one vertex per block
     auto kv = blockIdx.x;
     
-    if (kv>= nv) return;
+    if (kv>= nvFinal) return;
     if (nn[kv]<4) return;
     if (chi2[kv]<maxChi2*float(nn[kv])) return;
     
@@ -116,7 +116,7 @@ namespace gpuVertexFinder {
     
     // get a new global vertex
     __shared__ uint32_t igv;
-    if (0==threadIdx.x) igv = atomicInc(data.nv2,1024);
+    if (0==threadIdx.x) igv = atomicInc(data.nvIntermediate,1024);
     __syncthreads();
     for (auto k = threadIdx.x; k<nq; k+=blockDim.x) {
       if(1==newV[k]) iv[it[k]]=igv;

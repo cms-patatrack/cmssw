@@ -5,6 +5,7 @@
 #include <iostream>
 #include <random>
 #include <memory>  // unique_ptr
+#include<chrono>
 
 #include <TFile.h>
 #include <TH1F.h>
@@ -365,7 +366,7 @@ void test_helix_fit(bool getcin) {
      gen_par(4) = 10.;   // R (p_t)
      gen_par(5) = 1.;   // eta
   }
-  return_err = 1;
+  return_err = true;
 
   const int iteration = 5000;
   gen_par = New_par(gen_par, 1, B_field);
@@ -382,7 +383,9 @@ void test_helix_fit(bool getcin) {
     << "CotT: " << true_par(3) << " "
     << "Zip: " << true_par(4) << " "
     << std::endl;
-  for (int i = 0; i < iteration; i++) {
+  auto start = std::chrono::high_resolution_clock::now();
+  auto delta = start-start;
+  for (int i = 0; i < 100*iteration; i++) {
     hits_gen gen;
     gen = Hits_gen(n_, gen_par);
     //      gen.hits = MatrixXd::Zero(3, 4);
@@ -391,10 +394,13 @@ void test_helix_fit(bool getcin) {
     //      gen.hits.col(1) << 4.47041416168, 4.82704305649, 18.6394691467;
     //      gen.hits.col(2) << 7.25991010666, 7.74653434753, 30.6931324005;
     //      gen.hits.col(3) << 8.99161434174, 9.54262828827, 38.1338043213;
-    helixRiemann_fit[i] = Rfit::Helix_fit(gen.hits, gen.hits_cov, B_field, return_err);
+    delta -= std::chrono::high_resolution_clock::now()-start;
+    helixRiemann_fit[i%iteration] = Rfit::Helix_fit(gen.hits, gen.hits_cov, B_field, return_err);
+    delta += std::chrono::high_resolution_clock::now()-start;
+
 //    helixBrokenLine_fit[i] = BrokenLine::Helix_fit(gen.hits, gen.hits_cov, B_field);
 
-    
+    if (helixRiemann_fit[i%iteration].par(0)>10.) std::cout << "error" << std::endl;
     if (0==i)
       cout << std::setprecision(6)
         << "phi:  " << helixRiemann_fit[i].par(0) << " +/- " << sqrt(helixRiemann_fit[i].cov(0, 0)) << " vs "
@@ -414,6 +420,7 @@ void test_helix_fit(bool getcin) {
         << "Initial Covariance:\n" << gen.hits_cov << endl;
         
   }
+  std::cout << "elapsted time " << double(std::chrono::duration_cast<std::chrono::nanoseconds>(delta).count())/1.e6 << std::endl;
   computePull(helixRiemann_fit, "Riemann", n_, iteration, true_par);
 //  computePull(helixBrokenLine_fit, "BrokenLine", n_, iteration, true_par);
 }
