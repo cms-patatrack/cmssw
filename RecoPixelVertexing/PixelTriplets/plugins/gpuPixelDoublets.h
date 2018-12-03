@@ -132,9 +132,10 @@ namespace gpuPixelDoublets {
           ++tot;
         }
       }
+#ifdef GPU_DEBUG
       if (tooMany > 0)
-        printf("OuterHitOfCell full for %d in layer %d/%d, %d:%d   %d,%d\n", i, inner, outer, kl, kh, nmin, tot);
-
+        printf("OuterHitOfCell full for %d in layer %d/%d, %d,%d %d\n", i, inner, outer, nmin, tot, tooMany);
+#endif
     }  // loop in block...
   }
 
