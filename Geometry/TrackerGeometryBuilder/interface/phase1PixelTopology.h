@@ -31,17 +31,17 @@ namespace phase1PixelTopology {
 
 
   template<class Function, std::size_t... Indices>
-  constexpr auto make_array_helper(Function f, std::index_sequence<Indices...>)
+  constexpr auto map_to_array_helper(Function f, std::index_sequence<Indices...>)
   -> std::array<typename std::result_of<Function(std::size_t)>::type, sizeof...(Indices)>
   {
     return {{ f(Indices)... }};
   }
 
   template<int N, class Function>
-  constexpr auto make_array(Function f)
+  constexpr auto map_to_array(Function f)
   -> std::array<typename std::result_of<Function(std::size_t)>::type, N>
   {
-    return make_array_helper(f, std::make_index_sequence<N>{});
+    return map_to_array_helper(f, std::make_index_sequence<N>{});
   }
 
 
@@ -74,7 +74,7 @@ namespace phase1PixelTopology {
 
 
   constexpr uint32_t layerIndexSize = numberOfModules/maxModuleStride;
-  constexpr std::array<uint8_t,layerIndexSize> layer = make_array<layerIndexSize>(findLayerFromCompact);
+  constexpr std::array<uint8_t,layerIndexSize> layer = map_to_array<layerIndexSize>(findLayerFromCompact);
 
   constexpr bool validateLayerIndex() {
     bool res=true;

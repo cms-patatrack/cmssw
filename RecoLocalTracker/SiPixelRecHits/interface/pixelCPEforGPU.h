@@ -210,7 +210,7 @@ namespace pixelCPEforGPU {
   }
 
   constexpr inline
-  void errorOld(CommonParams const & __restrict__ comParams, DetParams const & __restrict__ detParams, ClusParams & cp, uint32_t ic) {
+  void errorFromSize(CommonParams const & __restrict__ comParams, DetParams const & __restrict__ detParams, ClusParams & cp, uint32_t ic) {
     // Edge cluster errors
     cp.xerr[ic]= 0.0050;
     cp.yerr[ic]= 0.0085;
@@ -263,7 +263,7 @@ namespace pixelCPEforGPU {
 
 
   constexpr inline
-  void error(CommonParams const & __restrict__ comParams, DetParams const & __restrict__ detParams, ClusParams & cp, uint32_t ic) {
+  void errorFromDB(CommonParams const & __restrict__ comParams, DetParams const & __restrict__ detParams, ClusParams & cp, uint32_t ic) {
     // Edge cluster errors
     cp.xerr[ic]= 0.0050f;
     cp.yerr[ic]= 0.0085f;

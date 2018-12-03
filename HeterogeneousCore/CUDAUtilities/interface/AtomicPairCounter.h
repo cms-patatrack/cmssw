@@ -1,7 +1,8 @@
 #ifndef HeterogeneousCoreCUDAUtilitiesAtomicPairCounter_H
 #define HeterogeneousCoreCUDAUtilitiesAtomicPairCounter_H
 
-#include<cstdint>
+#include <cuda_runtime.h>
+#include <cstdint>
 
 class AtomicPairCounter {
 public:
@@ -11,14 +12,12 @@ public:
   AtomicPairCounter(){}
   AtomicPairCounter(c_type i) { counter.ac=i;}
 
-#ifdef __CUDACC__
   __device__ __host__
   AtomicPairCounter & operator=(c_type i) { counter.ac=i; return *this;}
-#endif
 
   struct Counters {
-    uint32_t n;  // total size
-    uint32_t m;  // number of elements
+    uint32_t n;  // in a "One to Many" association is the number of "One"
+    uint32_t m;  // in a "One to Many" association is the total number of associations
   };
 
   union Atomic2 {
@@ -35,10 +34,11 @@ public:
 
   // increment n by 1 and m by i.  return previous value
   __device__
-  Counters add(c_type i) {
-    i+=incr;
+  Counters add(uint32_t i) {
+    c_type c = i; 
+    c+=incr;
     Atomic2 ret;
-    ret.ac = atomicAdd(&counter.ac,i);
+    ret.ac = atomicAdd(&counter.ac,c);
     return ret.counters;
   }
 

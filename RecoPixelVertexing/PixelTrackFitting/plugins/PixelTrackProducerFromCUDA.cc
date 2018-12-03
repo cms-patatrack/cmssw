@@ -67,7 +67,7 @@ class PixelTrackProducerFromCUDA: public HeterogeneousEDProducer<heterogeneous::
 
   TuplesOnCPU const * tuples_=nullptr;
 
-  edm::EDGetTokenT<reco::BeamSpot>      tBeamSpot;
+  edm::EDGetTokenT<reco::BeamSpot>      tBeamSpot_;
   edm::EDGetTokenT<HeterogeneousProduct> gpuToken_;
   edm::EDGetTokenT<RegionsSeedingHitSets> srcToken_;
   bool enableConversion_;
@@ -75,7 +75,7 @@ class PixelTrackProducerFromCUDA: public HeterogeneousEDProducer<heterogeneous::
 
 PixelTrackProducerFromCUDA::PixelTrackProducerFromCUDA(const edm::ParameterSet& iConfig):
   HeterogeneousEDProducer(iConfig),
-  tBeamSpot(consumes<reco::BeamSpot>(iConfig.getParameter<edm::InputTag>("beamSpot"))),
+  tBeamSpot_(consumes<reco::BeamSpot>(iConfig.getParameter<edm::InputTag>("beamSpot"))),
   gpuToken_(consumes<HeterogeneousProduct>(iConfig.getParameter<edm::InputTag>("src"))),
   enableConversion_ (iConfig.getParameter<bool>("gpuEnableConversion"))
 {
@@ -145,7 +145,7 @@ void PixelTrackProducerFromCUDA::produceGPUCuda(edm::HeterogeneousEvent &iEvent,
   // std::cout << "origin " << region.origin() << std::endl;
 
   edm::Handle<reco::BeamSpot> bsHandle;
-  iEvent.getByToken( tBeamSpot, bsHandle);
+  iEvent.getByToken( tBeamSpot_, bsHandle);
   const auto  & bsh = *bsHandle;
   // std::cout << "beamspot " << bsh.x0() << ' ' << bsh.y0() << ' ' << bsh.z0() << std::endl;
   GlobalPoint bs(bsh.x0(),bsh.y0(),bsh.z0());
