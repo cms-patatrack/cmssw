@@ -638,10 +638,10 @@ __host__ __device__ inline circle_fit Circle_fit(const Matrix2xNd& hits2D,
     // COST FUNCTION
 
     // compute
-    Matrix3d A = Matrix3d::Zero();
-    const Vector3d r0 = p3D * weight;  // center of gravity
+    Matrix3d A; //  = Matrix3d::Zero();
+    Vector3d r0; r0.noalias() = p3D * weight;  // center of gravity
     const Matrix3xNd X = p3D.colwise() - r0;
-    A = X * G * X.transpose();
+    A.noalias() = X * G * X.transpose();
     printIt(&A, "circle_fit - A:");
 
 #if RFIT_DEBUG
