@@ -110,6 +110,7 @@ private:
   void produceCPU(edm::HeterogeneousEvent& iEvent, const edm::EventSetup& iSetup) override;
 
   // GPU implementation
+  void beginStreamGPUCuda(edm::StreamID streamId, cuda::stream_t<>& cudaStream) override;
   void acquireGPUCuda(const edm::HeterogeneousEvent& iEvent, const edm::EventSetup& iSetup, cuda::stream_t<>& cudaStream) override;
   void produceGPUCuda(edm::HeterogeneousEvent& iEvent, const edm::EventSetup& iSetup, cuda::stream_t<>& cudaStream) override;
   void convertGPUtoCPU(edm::Event& ev, unsigned int nDigis, pixelgpudetails::SiPixelRawToClusterGPUKernel::CPUData) const;
@@ -149,6 +150,7 @@ std::unique_ptr<PixelUnpackingRegions> regions_;
 
   // GPU algo
   pixelgpudetails::SiPixelRawToClusterGPUKernel gpuAlgo_;
+  std::optional<SiPixelFedCablingMapGPUWrapper::ModulesToUnpack> gpuModulesToUnpack_;
   PixelDataFormatter::Errors errors_;
 
   bool enableTransfer_;
@@ -311,6 +313,11 @@ const FEDRawDataCollection *SiPixelRawToClusterHeterogeneous::initialize(const e
 
 
 // -----------------------------------------------------------------------------
+void SiPixelRawToClusterHeterogeneous::beginStreamGPUCuda(edm::StreamID streamId, cuda::stream_t<>& cudaStream) {
+  // Allocate GPU resources here
+  gpuModulesToUnpack_.emplace(cudaStream);
+}
+
 void SiPixelRawToClusterHeterogeneous::produceCPU(edm::HeterogeneousEvent& ev, const edm::EventSetup& es)
 {
   const auto buffers = initialize(ev.event(), es);
@@ -462,14 +469,13 @@ void SiPixelRawToClusterHeterogeneous::produceCPU(edm::HeterogeneousEvent& ev, c
 void SiPixelRawToClusterHeterogeneous::acquireGPUCuda(const edm::HeterogeneousEvent& ev, const edm::EventSetup& es, cuda::stream_t<>& cudaStream) {
   const auto buffers = initialize(ev.event(), es);
 
-  auto gpuModulesToUnpack = SiPixelFedCablingMapGPUWrapper::ModulesToUnpack(cudaStream);
   if (regions_) {
-    std::set<unsigned int> modules = *(regions_->modulesToUnpack());
-    gpuModulesToUnpack.fillAsync(*cablingMap_, modules, cudaStream);
+    auto const& modules = *(regions_->modulesToUnpack());
+    gpuModulesToUnpack_->fillAsync(*cablingMap_, modules, cudaStream);
   }
   else if(recordWatcherUpdatedSinceLastTransfer_) {
-    // If regions_ are disabled, it is enough to fill and transfer only if cablingMap has changed
-    gpuModulesToUnpack.fillAsync(*cablingMap_, std::set<unsigned int>(), cudaStream);
+    // If regions are disabled, it is enough to fill and transfer only if cablingMap has changed
+    gpuModulesToUnpack_->fillAsync(*cablingMap_, std::set<unsigned int>(), cudaStream);
     recordWatcherUpdatedSinceLastTransfer_ = false;
   }
 
@@ -548,7 +554,7 @@ void SiPixelRawToClusterHeterogeneous::acquireGPUCuda(const edm::HeterogeneousEv
 
   } // end of for loop
 
-  gpuAlgo_.makeClustersAsync(gpuMap, gpuModulesToUnpack.get(), hgains->getGPUProductAsync(cudaStream),
+  gpuAlgo_.makeClustersAsync(gpuMap, gpuModulesToUnpack_->get(), hgains->getGPUProductAsync(cudaStream),
                              wordFedAppender,
                              wordCounterGPU, fedCounter, convertADCtoElectrons,
                              useQuality, includeErrors, enableTransfer_, debug, cudaStream);
