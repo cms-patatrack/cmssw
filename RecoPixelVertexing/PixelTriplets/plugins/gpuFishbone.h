@@ -25,7 +25,7 @@ namespace gpuPixelDoublets {
                GPUCACell * cells, uint32_t const * __restrict__ nCells,
                GPUCACell::OuterHitOfCell const * __restrict__ isOuterHitOfCell,
                uint32_t nHits,
-               uint32_t stride) {
+               uint32_t stride, bool checkTrack) {
 
     constexpr auto maxCellsPerHit = GPUCACell::maxCellsPerHit;
 
@@ -50,21 +50,26 @@ namespace gpuPixelDoublets {
     auto zo = c0.get_outer_z(hh);
     float x[maxCellsPerHit], y[maxCellsPerHit],z[maxCellsPerHit], n[maxCellsPerHit];
     uint16_t d[maxCellsPerHit]; // uint8_t l[maxCellsPerHit];
+    uint32_t cc[maxCellsPerHit];
+    auto sg=0;
     for (uint32_t ic=0; ic<s; ++ic) {
       auto & ci = cells[vc[ic]];
-      d[ic] = ci.get_inner_detId(hh);
-//      l[ic] = layer(d[ic]);
-      x[ic] = ci.get_inner_x(hh) -xo;
-      y[ic] = ci.get_inner_y(hh) -yo;
-      z[ic] = ci.get_inner_z(hh) -zo;
-      n[ic] = x[ic]*x[ic]+y[ic]*y[ic]+z[ic]*z[ic];
+      if (checkTrack && 0==ci.theTracks.size()) continue;
+      cc[sg] = vc[ic];
+      d[sg] = ci.get_inner_detId(hh);
+//      l[sg] = layer(d[sg]);
+      x[sg] = ci.get_inner_x(hh) -xo;
+      y[sg] = ci.get_inner_y(hh) -yo;
+      z[sg] = ci.get_inner_z(hh) -zo;
+      n[sg] = x[sg]*x[sg]+y[sg]*y[sg]+z[sg]*z[sg];
+      ++sg;
     }
-
+    if (sg<2) return;   
     // here we parallelize
-    for (uint32_t ic=first; ic<s-1;  ic+=stride) {
-      auto & ci = cells[vc[ic]];
-      for    (auto jc=ic+1; jc<s; ++jc) {
-        auto & cj = cells[vc[jc]];
+    for (uint32_t ic=first; ic<sg-1;  ic+=stride) {
+      auto & ci = cells[cc[ic]];
+      for    (auto jc=ic+1; jc<sg; ++jc) {
+        auto & cj = cells[cc[jc]];
         // must be different detectors (in the same layer)
 //        if (d[ic]==d[jc]) continue;
         // || l[ic]!=l[jc]) continue;

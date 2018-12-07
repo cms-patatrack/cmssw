@@ -68,6 +68,25 @@ void kernel_checkOverflows(TuplesOnGPU::Container * foundNtuplets, AtomicPairCou
 // if (threadIdx.x==0) printf("number of killed cells %d\n",killedCell);
 }
 
+
+__global__
+void
+kernel_fishboneCleaner(GPUCACell const * cells, uint32_t const * __restrict__ nCells,
+                            pixelTuplesHeterogeneousProduct::Quality * quality
+                           ) {
+
+   constexpr auto bad = pixelTuplesHeterogeneousProduct::bad;
+
+  auto cellIndex = threadIdx.x + blockIdx.x * blockDim.x;
+
+  if (cellIndex >= (*nCells) ) return;
+  auto const & thisCell = cells[cellIndex];
+  if (thisCell.theDoubletId>=0) return;
+
+  for (auto it : thisCell.theTracks) quality[it] = bad;
+
+}
+
 __global__
 void
 kernel_fastDuplicateRemover(GPUCACell const * cells, uint32_t const * __restrict__ nCells,
@@ -225,12 +244,14 @@ void CAHitQuadrupletGeneratorKernels::launchKernels( // here goes algoparms....
   auto stride = 4;
   auto numberOfBlocks = (nhits + blockSize - 1)/blockSize;
   numberOfBlocks *=stride;
+  /*
   fishbone<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
       hh.gpu_d,
       device_theCells_, device_nCells_,
       device_isOuterHitOfCell_,
-      nhits, stride
+      nhits, stride, false
   );
+  */
 
   numberOfBlocks = (maxNumberOfDoublets_ + blockSize - 1)/blockSize;
   kernel_connect<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
@@ -260,6 +281,17 @@ void CAHitQuadrupletGeneratorKernels::launchKernels( // here goes algoparms....
                        );
   cudaCheck(cudaGetLastError());
 
+  numberOfBlocks = (nhits + blockSize - 1)/blockSize;
+  numberOfBlocks *=stride;
+  fishbone<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
+      hh.gpu_d,
+      device_theCells_, device_nCells_,
+      device_isOuterHitOfCell_,
+      nhits, stride, true
+  );
+  
+
+
   // kernel_print_found_ntuplets<<<1, 1, 0, cudaStream>>>(gpu_.tuples_d, 10);
   }
 
@@ -277,6 +309,9 @@ void CAHitQuadrupletGeneratorKernels::classifyTuples(HitsOnCPU const & hh, Tuple
     auto blockSize = 64;
     auto numberOfBlocks = (CAConstants::maxNumberOfQuadruplets() + blockSize - 1)/blockSize;
     kernel_VerifyFit<<<numberOfBlocks, blockSize, 0, cudaStream>>>(tuples.tuples_d, tuples.helix_fit_results_d, tuples.quality_d);
+
+    numberOfBlocks = (CAConstants::maxNumberOfDoublets() + blockSize - 1)/blockSize;
+    kernel_fishboneCleaner<<<numberOfBlocks, blockSize, 0, cudaStream>>>(device_theCells_, device_nCells_,tuples.quality_d);
 
     numberOfBlocks = (CAConstants::maxNumberOfDoublets() + blockSize - 1)/blockSize;
     kernel_fastDuplicateRemover<<<numberOfBlocks, blockSize, 0, cudaStream>>>(device_theCells_, device_nCells_,tuples.tuples_d,tuples.helix_fit_results_d, tuples.quality_d);
