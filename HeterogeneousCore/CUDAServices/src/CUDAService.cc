@@ -71,12 +71,12 @@ unsigned int getCudaCoresPerSM(unsigned int major, unsigned int minor) {
     return  64;
 
   // Turing architecture
-  case 80:  // SM 8.0: TU10x class
+  case 75:  // SM 7.5: TU10x class
     return  64;
 
-  // unknown architecture
+  // unknown architecture, return a default value
   default:
-    return   0;
+    return  64;
   }
 }
 
@@ -442,7 +442,7 @@ void *CUDAService::allocate_device(int dev, size_t nbytes, cuda::stream_t<>& str
 }
 
 void CUDAService::free_device(int device, void *ptr) {
-  allocator_->deviceAllocator.DeviceFree(device, ptr);
+  cuda::throw_if_error(allocator_->deviceAllocator.DeviceFree(device, ptr));
 }
 
 void *CUDAService::allocate_host(size_t nbytes, cuda::stream_t<>& stream) {
@@ -456,5 +456,5 @@ void *CUDAService::allocate_host(size_t nbytes, cuda::stream_t<>& stream) {
 }
 
 void CUDAService::free_host(void *ptr) {
-  allocator_->hostAllocator.HostFree(ptr);
+  cuda::throw_if_error(allocator_->hostAllocator.HostFree(ptr));
 }
