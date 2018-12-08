@@ -138,7 +138,6 @@ void CAHitQuadrupletGeneratorGPU::deallocateOnGPU()
 
 void CAHitQuadrupletGeneratorGPU::allocateOnGPU()
 {
-
   constexpr auto maxNumberOfQuadruplets_ = CAConstants::maxNumberOfQuadruplets();
 
   //product
