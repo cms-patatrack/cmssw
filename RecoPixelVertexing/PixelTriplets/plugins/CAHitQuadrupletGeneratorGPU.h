@@ -101,6 +101,7 @@ private:
     const float caPhiCut = 0.1f;
     const float caHardPtCut = 0.f;
 
+
     // products
     std::vector<uint32_t> indToEdm; // index of    tuple in reco tracks....
     TuplesOnGPU * gpu_d = nullptr;   // copy of the structure on the gpu itself: this is the "Product"

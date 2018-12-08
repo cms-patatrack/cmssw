@@ -29,6 +29,7 @@ constexpr unsigned int CAHitQuadrupletGeneratorGPU::minLayers;
 CAHitQuadrupletGeneratorGPU::CAHitQuadrupletGeneratorGPU(
     const edm::ParameterSet &cfg,
     edm::ConsumesCollector &iC) : 
+    kernels(cfg.getParameter<bool>("earlyFishbone"),cfg.getParameter<bool>("lateFishbone")),
     caThetaCut(cfg.getParameter<double>("CAThetaCut")),
     caPhiCut(cfg.getParameter<double>("CAPhiCut")),
     caHardPtCut(cfg.getParameter<double>("CAHardPtCut"))
@@ -39,6 +40,8 @@ void CAHitQuadrupletGeneratorGPU::fillDescriptions(edm::ParameterSetDescription 
   desc.add<double>("CAThetaCut", 0.00125);
   desc.add<double>("CAPhiCut", 10);
   desc.add<double>("CAHardPtCut", 0);
+  desc.add<bool>("earlyFishbone",false);
+  desc.add<bool>("lateFishbone",true);
 }
 
 void CAHitQuadrupletGeneratorGPU::initEvent(edm::Event const& ev, edm::EventSetup const& es) {

@@ -18,7 +18,9 @@ public:
 
    using HitToTuple = CAConstants::HitToTuple;
 
-   CAHitQuadrupletGeneratorKernels() = default;
+   CAHitQuadrupletGeneratorKernels(bool earlyFishbone, bool lateFishbone) :
+    earlyFishbone_(earlyFishbone),
+    lateFishbone_(lateFishbone){}
    ~CAHitQuadrupletGeneratorKernels() { deallocateOnGPU();}
 
    void launchKernels(HitsOnCPU const & hh, TuplesOnGPU & tuples_d, cudaStream_t cudaStream);
@@ -39,6 +41,10 @@ private:
 
     HitToTuple * device_hitToTuple_ = nullptr;
     AtomicPairCounter * device_hitToTuple_apc_ = nullptr;
+
+
+    const bool earlyFishbone_;
+    const bool lateFishbone_;
 
 };
 

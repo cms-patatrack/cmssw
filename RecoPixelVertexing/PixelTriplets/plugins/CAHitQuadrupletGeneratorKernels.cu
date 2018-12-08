@@ -240,20 +240,24 @@ void CAHitQuadrupletGeneratorKernels::launchKernels( // here goes algoparms....
 
   auto nhits = hh.nHits;
   assert(nhits <= PixelGPUConstants::maxNumberOfHits);
-  auto blockSize = 64;
-  auto stride = 4;
-  auto numberOfBlocks = (nhits + blockSize - 1)/blockSize;
-  numberOfBlocks *=stride;
-  /*
-  fishbone<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
+  
+  if (earlyFishbone_) {
+    auto blockSize = 128;
+    auto stride = 4;
+    auto numberOfBlocks = (nhits + blockSize - 1)/blockSize;
+    numberOfBlocks *=stride;
+  
+    fishbone<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
       hh.gpu_d,
       device_theCells_, device_nCells_,
       device_isOuterHitOfCell_,
       nhits, stride, false
-  );
-  */
+    );
+    cudaCheck(cudaGetLastError());
+  }
 
-  numberOfBlocks = (maxNumberOfDoublets_ + blockSize - 1)/blockSize;
+  auto blockSize = 64;
+  auto numberOfBlocks = (maxNumberOfDoublets_ + blockSize - 1)/blockSize;
   kernel_connect<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
       gpu_.apc_d, device_hitToTuple_apc_,  // needed only to be reset, ready for next kernel
       hh.gpu_d,
@@ -281,16 +285,18 @@ void CAHitQuadrupletGeneratorKernels::launchKernels( // here goes algoparms....
                        );
   cudaCheck(cudaGetLastError());
 
-  numberOfBlocks = (nhits + blockSize - 1)/blockSize;
-  numberOfBlocks *=stride;
-  fishbone<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
+  if (lateFishbone_) {
+    auto stride=4;
+    numberOfBlocks = (nhits + blockSize - 1)/blockSize;
+    numberOfBlocks *=stride;
+    fishbone<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
       hh.gpu_d,
       device_theCells_, device_nCells_,
       device_isOuterHitOfCell_,
       nhits, stride, true
-  );
-  
-
+    );
+    cudaCheck(cudaGetLastError());
+  }
 
   // kernel_print_found_ntuplets<<<1, 1, 0, cudaStream>>>(gpu_.tuples_d, 10);
   }

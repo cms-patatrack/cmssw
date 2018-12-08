@@ -181,7 +181,7 @@ public:
 #endif // __CUDACC__
 
   GPU::VecArray< uint32_t, 36> theOuterNeighbors;
-  GPU::VecArray< uint16_t, 32> theTracks;
+  GPU::VecArray< uint16_t, 42> theTracks;
 
   int32_t theDoubletId;
   int32_t theLayerPairId;
