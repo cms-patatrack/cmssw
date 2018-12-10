@@ -3,9 +3,6 @@
 
 #include "RecoPixelVertexing/PixelTrackFitting/interface/FitResult.h"
 
-#ifndef RFIT_DEBUG
-#define RFIT_DEBUG 0
-#endif  // RFIT_DEBUG
 
 namespace Rfit
 {
@@ -13,7 +10,7 @@ namespace Rfit
 template <class C>
 __host__ __device__ void printIt(C* m, const char* prefix = "")
 {
-#if RFIT_DEBUG
+#ifdef RFIT_DEBUG
     for (u_int r = 0; r < m->rows(); ++r)
     {
         for (u_int c = 0; c < m->cols(); ++c)
@@ -130,8 +127,8 @@ __host__ __device__ inline MatrixNd Scatter_cov_line(Matrix2Nd& cov_sz,
     for (u_int i = 0; i < n; ++i) {
       rot(i, i) = sin(theta);
       rot(n + i, n + i) = sin(theta);
-      u_int j = (i + n);
-      rot(i, j) = i < j ? cos(theta) : -cos(theta);
+      rot(i, n+i) = cos(theta);
+      rot(n + i, i) = -cos(theta);
     }
 
 #if RFIT_DEBUG
