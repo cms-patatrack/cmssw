@@ -1,7 +1,7 @@
 #ifndef RecoPixelVertexing_PixelTrackFitting_interface_RiemannFit_h
 #define RecoPixelVertexing_PixelTrackFitting_interface_RiemannFit_h
 
-#include "RecoPixelVertexing/PixelTrackFitting/interface/FitResult.h"
+#include "FitResult.h"
 
 
 namespace Rfit
@@ -43,6 +43,72 @@ __host__ __device__ inline double cross2D(const Vector2d& a, const Vector2d& b)
     return a.x() * b.y() - a.y() * b.x();
 }
 
+/*!
+ *  load error in CMSSW format to our formalism
+ *  
+ */
+  template<typename M6x4f, typename M2Nd>
+  __host__ __device__ void loadCovariance2D(M6x4f const & ge,  M2Nd & hits_cov) {
+    // Index numerology:
+    // i: index of the hits/point (0,..,3)
+    // j: index of space component (x,y,z)
+    // l: index of space components (x,y,z)
+    // ge is always in sync with the index i and is formatted as:
+    // ge[] ==> [xx, xy, yy, xz, yz, zz]
+    // in (j,l) notation, we have:
+    // ge[] ==> [(0,0), (0,1), (1,1), (0,2), (1,2), (2,2)]
+    // so the index ge_idx corresponds to the matrix elements:
+    // | 0  1  3 |
+    // | 1  2  4 |
+    // | 3  4  5 |
+    constexpr uint32_t  hits_in_fit = 4; // Fixme
+    for (uint32_t i=0; i< hits_in_fit; ++i) {
+      auto ge_idx = 0; auto j=0; auto l=0;
+      hits_cov(i + j * hits_in_fit, i + l * hits_in_fit) = ge.col(i)[ge_idx];
+      ge_idx = 2; j=1; l=1;
+      hits_cov(i + j * hits_in_fit, i + l * hits_in_fit) = ge.col(i)[ge_idx];
+      ge_idx = 1; j=1; l=0;
+      hits_cov(i + l * hits_in_fit, i + j * hits_in_fit) =
+      hits_cov(i + j * hits_in_fit, i + l * hits_in_fit) = ge.col(i)[ge_idx];
+    }
+  }
+  
+  template<typename M6x4f, int N>
+  __host__ __device__ void loadCovariance(M6x4f const & ge,  Matrix3Nd<N> & hits_cov) {
+
+    // Index numerology:
+    // i: index of the hits/point (0,..,3)
+    // j: index of space component (x,y,z)
+    // l: index of space components (x,y,z)
+    // ge is always in sync with the index i and is formatted as:
+    // ge[] ==> [xx, xy, yy, xz, yz, zz]
+    // in (j,l) notation, we have:
+    // ge[] ==> [(0,0), (0,1), (1,1), (0,2), (1,2), (2,2)]
+    // so the index ge_idx corresponds to the matrix elements:
+    // | 0  1  3 |
+    // | 1  2  4 |
+    // | 3  4  5 |
+    constexpr uint32_t  hits_in_fit = 4; // Fixme
+    for (uint32_t i=0; i<hits_in_fit; ++i) {
+      auto ge_idx = 0; auto j=0; auto l=0;
+      hits_cov(i + j * hits_in_fit, i + l * hits_in_fit) = ge.col(i)[ge_idx];
+      ge_idx = 2; j=1; l=1;
+      hits_cov(i + j * hits_in_fit, i + l * hits_in_fit) = ge.col(i)[ge_idx];
+      ge_idx = 5; j=2; l=2;
+      hits_cov(i + j * hits_in_fit, i + l * hits_in_fit) = ge.col(i)[ge_idx];
+      ge_idx = 1; j=1; l=0;
+      hits_cov(i + l * hits_in_fit, i + j * hits_in_fit) =
+	hits_cov(i + j * hits_in_fit, i + l * hits_in_fit) = ge.col(i)[ge_idx];
+      ge_idx = 3; j=2; l=0;
+      hits_cov(i + l * hits_in_fit, i + j * hits_in_fit) =
+	hits_cov(i + j * hits_in_fit, i + l * hits_in_fit) = ge.col(i)[ge_idx];
+      ge_idx = 4; j=2; l=1;
+      hits_cov(i + l * hits_in_fit, i + j * hits_in_fit) =
+	hits_cov(i + j * hits_in_fit, i + l * hits_in_fit) = ge.col(i)[ge_idx];
+    }
+  }
+
+  
 /*!  Compute the Radiation length in the uniform hypothesis
  *
  * The Pixel detector, barrel and forward, is considered as an omogeneous
@@ -65,9 +131,11 @@ __host__ __device__ inline double cross2D(const Vector2d& a, const Vector2d& b)
  * \return incremental radiation lengths that correspond to each segment.
  */
 
+
+  template<typename VNd1, typename VNd2>
 __host__ __device__ inline
-void computeRadLenUniformMaterial(const VectorNd &length_values,
-    VectorNd & rad_lengths) {
+void computeRadLenUniformMaterial(const VNd1 &length_values,
+    VNd2 & rad_lengths) {
   // Radiation length of the pixel detector in the uniform assumption, with
   // 0.06 rad_len at 16 cm
   constexpr double XX_0_inv = 0.06/16.;
@@ -98,44 +166,39 @@ void computeRadLenUniformMaterial(const VectorNd &length_values,
     correspond to the case at eta = 0.
  */
 
-__host__ __device__ inline MatrixNd Scatter_cov_line(Matrix2Nd& cov_sz,
-                                                     const Vector4d& fast_fit,
-                                                     VectorNd const& s_arcs,
-                                                     VectorNd const& z_values,
-                                                     const double theta,
-                                                     const double B)
+  template<typename V4, typename VNd1, typename VNd2, int N>
+__host__ __device__ inline auto Scatter_cov_line(Matrix2d const * cov_sz,
+						 const V4& fast_fit,
+						 VNd1 const& s_arcs,
+						 VNd2 const& z_values,
+						 const double theta,
+						 const double B, 
+                                                 MatrixNd<N>& ret)
 {
-#if RFIT_DEBUG
+#ifdef RFIT_DEBUG
     Rfit::printIt(&s_arcs, "Scatter_cov_line - s_arcs: ");
 #endif
-    u_int n = s_arcs.rows();
+    constexpr auto n = N;
     double p_t = std::min(20.,fast_fit(2) * B);   // limit pt to avoid too small error!!!
     double p_2 = p_t * p_t * (1. + 1. / (fast_fit(3) * fast_fit(3)));
-    VectorNd rad_lengths_S(n);
+    VectorNd<N> rad_lengths_S;
     // See documentation at http://eigen.tuxfamily.org/dox/group__TutorialArrayClass.html
     // Basically, to perform cwise operations on Matrices and Vectors, you need
     // to transform them into Array-like objects.
-    VectorNd S_values = s_arcs.array() * s_arcs.array() + z_values.array() * z_values.array();
+    VectorNd<N> S_values = s_arcs.array() * s_arcs.array() + z_values.array() * z_values.array();
     S_values = S_values.array().sqrt();
     computeRadLenUniformMaterial(S_values, rad_lengths_S);
-    VectorNd sig2_S(n);
+    VectorNd<N> sig2_S;
     sig2_S = .000225 / p_2 * (1. + 0.038 * rad_lengths_S.array().log()).abs2() * rad_lengths_S.array();
-#if RFIT_DEBUG
-    Rfit::printIt(&cov_sz, "Scatter_cov_line - cov_sz: ");
+#ifdef RFIT_DEBUG
+    Rfit::printIt(cov_sz, "Scatter_cov_line - cov_sz: ");
 #endif
-    Matrix2Nd rot = MatrixXd::Zero(2 * n, 2 * n);
-    for (u_int i = 0; i < n; ++i) {
-      rot(i, i) = sin(theta);
-      rot(n + i, n + i) = sin(theta);
-      rot(i, n+i) = cos(theta);
-      rot(n + i, i) = -cos(theta);
-    }
-
-#if RFIT_DEBUG
-    Rfit::printIt(&rot, "Scatter_cov_line - rot: ");
-#endif
-
-    Matrix2Nd tmp = rot*cov_sz*rot.transpose();
+    Matrix2Nd<N> tmp = Matrix2Nd<N>::Zero();
+    for (u_int k = 0; k < n; ++k) {
+     tmp(k, k) = cov_sz[k](0, 0);
+     tmp(k + n, k + n) = cov_sz[k](1, 1);
+     tmp(k, k + n) = tmp(k + n, k) = cov_sz[k](0, 1);
+    } 
     for (u_int k = 0; k < n; ++k)
     {
       for (u_int l = k; l < n; ++l)
@@ -149,10 +212,10 @@ __host__ __device__ inline MatrixNd Scatter_cov_line(Matrix2Nd& cov_sz,
     }
     // We are interested only in the errors orthogonal to the rotated s-axis
     // which, in our formalism, are in the lower square matrix.
-#if RFIT_DEBUG
+#ifdef RFIT_DEBUG
     Rfit::printIt(&tmp, "Scatter_cov_line - tmp: ");
 #endif
-    return tmp.block(n, n, n, n);
+    ret = tmp.block(n, n, n, n);
 }
 
 /*!
@@ -168,18 +231,19 @@ __host__ __device__ inline MatrixNd Scatter_cov_line(Matrix2Nd& cov_sz,
     \details Only the tangential component is computed (the radial one is
     negligible).
  */
-__host__ __device__ inline MatrixNd Scatter_cov_rad(const Matrix2xNd& p2D,
-                                                    const Vector4d& fast_fit,
-                                                    VectorNd const& rad,
-                                                    double B)
+  template<typename M2xN, typename V4, int N>
+  __host__ __device__ inline MatrixNd<N> Scatter_cov_rad(const M2xN& p2D,
+							 const V4& fast_fit,
+							 VectorNd<N> const& rad,
+							 double B)
 {
-    u_int n = p2D.cols();
+    u_int n = N;
     double p_t = std::min(20.,fast_fit(2) * B);   // limit pt to avoid too small error!!!
     double p_2 = p_t * p_t * (1. + 1. / (fast_fit(3) * fast_fit(3)));
     double theta = atan(fast_fit(3));
     theta = theta < 0. ? theta + M_PI :  theta;
-    VectorNd s_values(n);
-    VectorNd rad_lengths(n);
+    VectorNd<N> s_values;
+    VectorNd<N> rad_lengths;
     const Vector2d o(fast_fit(0), fast_fit(1));
 
     // associated Jacobian, used in weights and errors computation
@@ -192,9 +256,8 @@ __host__ __device__ inline MatrixNd Scatter_cov_rad(const Matrix2xNd& p2D,
         s_values(i) = std::abs(atan2_ * fast_fit(2));
     }
     computeRadLenUniformMaterial(s_values*sqrt(1. + 1./(fast_fit(3)*fast_fit(3))), rad_lengths);
-    MatrixNd scatter_cov_rad = MatrixXd::Zero(n, n);
-    VectorNd sig2(n);
-    sig2 =  (1. + 0.038 * rad_lengths.array().log()).abs2() * rad_lengths.array();
+    MatrixNd<N> scatter_cov_rad = MatrixNd<N>::Zero();
+    VectorNd<N> sig2 =  (1. + 0.038 * rad_lengths.array().log()).abs2() * rad_lengths.array();
     sig2 *= 0.000225 / ( p_2 * sqr(sin(theta)) );
     for (u_int k = 0; k < n; ++k)
     {
@@ -207,7 +270,7 @@ __host__ __device__ inline MatrixNd Scatter_cov_rad(const Matrix2xNd& p2D,
             scatter_cov_rad(l, k) = scatter_cov_rad(k, l);
         }
     }
-#if RFIT_DEBUG
+#ifdef RFIT_DEBUG
     Rfit::printIt(&scatter_cov_rad, "Scatter_cov_rad - scatter_cov_rad: ");
 #endif
     return scatter_cov_rad;
@@ -221,17 +284,18 @@ __host__ __device__ inline MatrixNd Scatter_cov_rad(const Matrix2xNd& p2D,
     \return cov_cart covariance matrix in Cartesian coordinates.
 */
 
-__host__ __device__ inline Matrix2Nd cov_radtocart(const Matrix2xNd& p2D,
-                                                   const MatrixNd& cov_rad,
-                                                   const VectorNd& rad)
+  template<typename M2xN, int N>
+  __host__ __device__ inline Matrix2Nd<N> cov_radtocart(const M2xN& p2D,
+                                                   const MatrixNd<N>& cov_rad,
+                                                   const VectorNd<N>& rad)
 {
-#if RFIT_DEBUG
+#ifdef RFIT_DEBUG
     printf("Address of p2D: %p\n", &p2D);
 #endif
     printIt(&p2D, "cov_radtocart - p2D:");
     u_int n = p2D.cols();
-    Matrix2Nd cov_cart = MatrixXd::Zero(2 * n, 2 * n);
-    VectorNd rad_inv = rad.cwiseInverse();
+    Matrix2Nd<N> cov_cart = Matrix2Nd<N>::Zero();
+    VectorNd<N> rad_inv = rad.cwiseInverse();
     printIt(&rad_inv, "cov_radtocart - rad_inv:");
     for (u_int i = 0; i < n; ++i)
     {
@@ -241,7 +305,6 @@ __host__ __device__ inline Matrix2Nd cov_radtocart(const Matrix2xNd& p2D,
             cov_cart(i + n, j + n) = cov_rad(i, j) * p2D(0, i) * rad_inv(i) * p2D(0, j) * rad_inv(j);
             cov_cart(i, j + n) = -cov_rad(i, j) * p2D(1, i) * rad_inv(i) * p2D(0, j) * rad_inv(j);
             cov_cart(i + n, j) = -cov_rad(i, j) * p2D(0, i) * rad_inv(i) * p2D(1, j) * rad_inv(j);
-
             cov_cart(j, i) = cov_cart(i, j);
             cov_cart(j + n, i + n) = cov_cart(i + n, j + n);
             cov_cart(j + n, i) = cov_cart(i, j + n);
@@ -261,21 +324,22 @@ __host__ __device__ inline Matrix2Nd cov_radtocart(const Matrix2xNd& p2D,
     \return cov_rad covariance matrix in raidal coordinate.
     \warning correlation between different point are not computed.
 */
-__host__ __device__ inline MatrixNd cov_carttorad(const Matrix2xNd& p2D,
-                                                  const Matrix2Nd& cov_cart,
-                                                  const VectorNd& rad)
+    template<typename M2xN, int N>
+    __host__ __device__ inline VectorNd<N> cov_carttorad(const M2xN& p2D,
+							 const Matrix2Nd<N>& cov_cart,
+							 const VectorNd<N>& rad)
 {
     u_int n = p2D.cols();
-    MatrixNd cov_rad = MatrixXd::Zero(n, n);
-    const VectorNd rad_inv2 = rad.cwiseInverse().array().square();
+    VectorNd<N> cov_rad;
+    const VectorNd<N> rad_inv2 = rad.cwiseInverse().array().square();
     for (u_int i = 0; i < n; ++i)
     {
         //!< in case you have (0,0) to avoid dividing by 0 radius
         if (rad(i) < 1.e-4)
-            cov_rad(i, i) = cov_cart(i, i);
+            cov_rad(i) = cov_cart(i, i);
         else
         {
-            cov_rad(i, i) = rad_inv2(i) * (cov_cart(i, i) * sqr(p2D(1, i)) + cov_cart(i + n, i + n) * sqr(p2D(0, i)) - 2. * cov_cart(i, i + n) * p2D(0, i) * p2D(1, i));
+            cov_rad(i) = rad_inv2(i) * (cov_cart(i, i) * sqr(p2D(1, i)) + cov_cart(i + n, i + n) * sqr(p2D(0, i)) - 2. * cov_cart(i, i + n) * p2D(0, i) * p2D(1, i));
         }
     }
     return cov_rad;
@@ -293,18 +357,18 @@ __host__ __device__ inline MatrixNd cov_carttorad(const Matrix2xNd& p2D,
     \return cov_rad covariance matrix in the pre-fitted circle's
     orthogonal system.
 */
-
-__host__ __device__ inline MatrixNd cov_carttorad_prefit(const Matrix2xNd& p2D, const Matrix2Nd& cov_cart,
-                                                         const Vector4d& fast_fit,
-                                                         const VectorNd& rad)
+template<typename M2xN, typename V4, int N>
+  __host__ __device__ inline VectorNd<N> cov_carttorad_prefit(const M2xN& p2D, const Matrix2Nd<N>& cov_cart,
+							      V4& fast_fit,
+							      const VectorNd<N>& rad)
 {
     u_int n = p2D.cols();
-    MatrixNd cov_rad = MatrixXd::Zero(n, n);
+    VectorNd<N> cov_rad;
     for (u_int i = 0; i < n; ++i)
     {
         //!< in case you have (0,0) to avoid dividing by 0 radius
         if (rad(i) < 1.e-4)
-            cov_rad(i, i) = cov_cart(i, i);  // TO FIX
+            cov_rad(i) = cov_cart(i, i);  // TO FIX
         else
         {
             Vector2d a = p2D.col(i);
@@ -313,7 +377,7 @@ __host__ __device__ inline MatrixNd cov_carttorad_prefit(const Matrix2xNd& p2D, 
             const double y2 = cross2D(a, b);
             const double tan_c = -y2 / x2;
             const double tan_c2 = sqr(tan_c);
-            cov_rad(i, i) = 1. / (1. + tan_c2) * (cov_cart(i, i) + cov_cart(i + n, i + n) * tan_c2 + 2 * cov_cart(i, i + n) * tan_c);
+            cov_rad(i) = 1. / (1. + tan_c2) * (cov_cart(i, i) + cov_cart(i + n, i + n) * tan_c2 + 2 * cov_cart(i, i + n) * tan_c);
         }
     }
     return cov_rad;
@@ -330,7 +394,8 @@ __host__ __device__ inline MatrixNd cov_carttorad_prefit(const Matrix2xNd& p2D, 
     diagonal cov matrix. Further investigation needed.
 */
 
-__host__ __device__ inline VectorNd Weight_circle(const MatrixNd& cov_rad_inv)
+  template<int N>  
+  __host__ __device__ inline VectorNd<N> Weight_circle(const MatrixNd<N>& cov_rad_inv)
 {
     return cov_rad_inv.colwise().sum().transpose();
 }
@@ -343,8 +408,8 @@ __host__ __device__ inline VectorNd Weight_circle(const MatrixNd& cov_rad_inv)
     \param par_uvr result of the circle fit in this form: (X0,Y0,R).
     \return q int 1 or -1.
 */
-
-__host__ __device__ inline int64_t Charge(const Matrix2xNd& p2D, const Vector3d& par_uvr)
+template<typename M2xN> 
+  __host__ __device__ inline int32_t Charge(const M2xN& p2D, const Vector3d& par_uvr)
 {
     return ((p2D(0, 1) - p2D(0, 0)) * (par_uvr.y() - p2D(1, 0)) - (p2D(1, 1) - p2D(1, 0)) * (par_uvr.x() - p2D(0, 0)) > 0)? -1 : 1;
 }
@@ -395,14 +460,14 @@ __host__ __device__ inline void par_uvrtopak(circle_fit& circle, const double B,
 
 __host__ __device__ inline Vector3d min_eigen3D(const Matrix3d& A, double& chi2)
 {
-#if RFIT_DEBUG
+#ifdef RFIT_DEBUG
     printf("min_eigen3D - enter\n");
 #endif
     Eigen::SelfAdjointEigenSolver<Matrix3d> solver(3);
     solver.computeDirect(A);
     int min_index;
     chi2 = solver.eigenvalues().minCoeff(&min_index);
-#if RFIT_DEBUG
+#ifdef RFIT_DEBUG
     printf("min_eigen3D - exit\n");
 #endif
     return solver.eigenvectors().col(min_index);
@@ -460,9 +525,9 @@ __host__ __device__ inline Vector2d min_eigen2D(const Matrix2d& A, double& chi2)
     - computation of error due to multiple scattering.
 */
 
-__host__ __device__ inline Vector4d Fast_fit(const Matrix3xNd& hits)
+template<typename M3xN, typename V4>
+__host__ __device__ inline void Fast_fit(const M3xN& hits, V4 & result)
 {
-    Vector4d result;
     u_int n = hits.cols();  // get the number of hits
     printIt(&hits, "Fast_fit - hits: ");
 
@@ -473,35 +538,26 @@ __host__ __device__ inline Vector4d Fast_fit(const Matrix3xNd& hits)
     printIt(&b, "Fast_fit - b: ");
     printIt(&c, "Fast_fit - c: ");
     // Compute their lengths
-    const double b2 = b.squaredNorm();
-    const double c2 = c.squaredNorm();
-    double X0;
-    double Y0;
+    auto b2 = b.squaredNorm();
+    auto c2 = c.squaredNorm();
     // The algebra has been verified (MR). The usual approach has been followed:
     // * use an orthogonal reference frame passing from the first point.
     // * build the segments (chords)
     // * build orthogonal lines through mid points
     // * make a system and solve for X0 and Y0.
     // * add the initial point
-    if (abs(b.x()) > abs(b.y()))
-    {  //!< in case b.x is 0 (2 hits with same x)
-        const double k = c.x() / b.x();
-        const double div = 2. * (k * b.y() - c.y());
-        // if aligned TO FIX
-        Y0 = (k * b2 - c2) / div;
-        X0 = b2 / (2 * b.x()) - b.y() / b.x() * Y0;
-    }
-    else
-    {
-        const double k = c.y() / b.y();
-        const double div = 2. * (k * b.x() - c.x());
-        // if aligned TO FIX
-        X0 = (k * b2 - c2) / div;
-        Y0 = b2 / (2 * b.y()) - b.x() / b.y() * X0;
-    }
-
-    result(0) = X0 + hits(0, 0);
-    result(1) = Y0 + hits(1, 0);
+    bool flip =  abs(b.x()) < abs(b.y());
+    auto bx = flip ? b.y() : b.x();
+    auto by = flip ? b.x() : b.y();
+    auto cx = flip ? c.y() : c.x();
+    auto cy = flip ? c.x() : c.y();
+    //!< in case b.x is 0 (2 hits with same x)
+    auto div = 2. * (cx * by - bx*cy);
+    // if aligned TO FIX
+    auto Y0 = (cx*b2 - bx*c2) / div;
+    auto X0 = (0.5*b2 - Y0*by) / bx;
+    result(0) = hits(0, 0) + ( flip ? Y0 : X0);
+    result(1) = hits(1, 0) + ( flip ? X0 : Y0);
     result(2) = sqrt(sqr(X0) + sqr(Y0));
     printIt(&result, "Fast_fit - result: ");
 
@@ -511,16 +567,15 @@ __host__ __device__ inline Vector4d Fast_fit(const Matrix3xNd& hits)
     printIt(&e, "Fast_fit - e: ");
     printIt(&d, "Fast_fit - d: ");
     // Compute the arc-length between first and last point: L = R * theta = R * atan (tan (Theta) )
-    const double dr = result(2) * atan2(cross2D(d, e), d.dot(e));
+    auto dr = result(2) * atan2(cross2D(d, e), d.dot(e));
     // Simple difference in Z between last and first hit
-    const double dz = hits(2, n - 1) - hits(2, 0);
+    auto dz = hits(2, n - 1) - hits(2, 0);
 
     result(3) = (dr / dz);
 
-#if RFIT_DEBUG
+#ifdef RFIT_DEBUG
     printf("Fast_fit: [%f, %f, %f, %f]\n", result(0), result(1), result(2), result(3));
 #endif
-    return result;
 }
 
 /*!
@@ -550,73 +605,64 @@ __host__ __device__ inline Vector4d Fast_fit(const Matrix3xNd& hits)
     \bug further investigation needed for error propagation with multiple
     scattering.
 */
-
-__host__ __device__ inline circle_fit Circle_fit(const Matrix2xNd& hits2D,
-                                                 const Matrix2Nd& hits_cov2D,
-                                                 const Vector4d& fast_fit,
-                                                 const VectorNd& rad,
+template<typename M2xN, typename V4, int N>
+__host__ __device__ inline circle_fit Circle_fit(const  M2xN& hits2D,
+                                                 const Matrix2Nd<N>& hits_cov2D,
+                                                 const V4& fast_fit,
+                                                 const VectorNd<N>& rad,
                                                  const double B,
                                                  const bool error = true)
 {
-#if RFIT_DEBUG
+#ifdef RFIT_DEBUG
     printf("circle_fit - enter\n");
 #endif
     // INITIALIZATION
-    Matrix2Nd V = hits_cov2D;
+    Matrix2Nd<N> V = hits_cov2D;
     u_int n = hits2D.cols();
     printIt(&hits2D, "circle_fit - hits2D:");
     printIt(&hits_cov2D, "circle_fit - hits_cov2D:");
 
-#if RFIT_DEBUG
+#ifdef RFIT_DEBUG
     printf("circle_fit - WEIGHT COMPUTATION\n");
 #endif
     // WEIGHT COMPUTATION
-    VectorNd weight;
-    MatrixNd G;
+    VectorNd<N> weight;
+    MatrixNd<N> G;
     double renorm;
     {
-        MatrixNd cov_rad;
-        cov_rad = cov_carttorad_prefit(hits2D, V, fast_fit, rad);
-        printIt(&cov_rad, "circle_fit - cov_rad:");
-        // cov_rad = cov_carttorad(hits2D, V);
-
-        MatrixNd scatter_cov_rad = Scatter_cov_rad(hits2D, fast_fit, rad, B);
+        MatrixNd<N> cov_rad = cov_carttorad_prefit(hits2D, V, fast_fit, rad).asDiagonal();
+        MatrixNd<N> scatter_cov_rad = Scatter_cov_rad(hits2D, fast_fit, rad, B);
         printIt(&scatter_cov_rad, "circle_fit - scatter_cov_rad:");
         printIt(&hits2D, "circle_fit - hits2D bis:");
-#if RFIT_DEBUG
+#ifdef RFIT_DEBUG
         printf("Address of hits2D: a) %p\n", &hits2D);
 #endif
         V += cov_radtocart(hits2D, scatter_cov_rad, rad);
         printIt(&V, "circle_fit - V:");
         cov_rad += scatter_cov_rad;
         printIt(&cov_rad, "circle_fit - cov_rad:");
-        Matrix4d cov_rad4 = cov_rad;
-        Matrix4d G4;
-        G4 = cov_rad4.inverse();
-        printIt(&G4, "circle_fit - G4:");
-        renorm = G4.sum();
-        G4 *= 1. / renorm;
-        printIt(&G4, "circle_fit - G4:");
-        G = G4;
+        G = cov_rad.inverse();
+	renorm = G.sum();
+        G *= 1. / renorm;
         weight = Weight_circle(G);
     }
     printIt(&weight, "circle_fit - weight:");
 
     // SPACE TRANSFORMATION
-#if RFIT_DEBUG
+#ifdef RFIT_DEBUG
     printf("circle_fit - SPACE TRANSFORMATION\n");
 #endif
 
     // center
-#if RFIT_DEBUG
+#ifdef RFIT_DEBUG
     printf("Address of hits2D: b) %p\n", &hits2D);
 #endif
     const Vector2d h_ = hits2D.rowwise().mean();  // centroid
     printIt(&h_, "circle_fit - h_:");
-    Matrix3xNd p3D(3, n);
+    Matrix3xNd<N> p3D;
     p3D.block(0, 0, 2, n) = hits2D.colwise() - h_;
     printIt(&p3D, "circle_fit - p3D: a)");
-    Vector2Nd mc(2 * n);  // centered hits, used in error computation
+    Vector2Nd<N> mc;  // centered hits, used in error computation
     mc << p3D.row(0).transpose(), p3D.row(1).transpose();
     printIt(&mc, "circle_fit - mc(centered hits):");
 
@@ -629,25 +675,24 @@ __host__ __device__ inline circle_fit Circle_fit(const Matrix2xNd& hits2D,
     p3D.row(2) = p3D.block(0, 0, 2, n).colwise().squaredNorm();
     printIt(&p3D, "circle_fit - p3D: b)");
 
-#if RFIT_DEBUG
+#ifdef RFIT_DEBUG
     printf("circle_fit - COST FUNCTION\n");
 #endif
     // COST FUNCTION
 
     // compute
-    Matrix3d A; //  = Matrix3d::Zero();
     Vector3d r0; r0.noalias() = p3D * weight;  // center of gravity
-    const Matrix3xNd X = p3D.colwise() - r0;
-    A.noalias() = X * G * X.transpose();
+    const Matrix3xNd<N> X = p3D.colwise() - r0;
+    Matrix3d A = X * G * X.transpose();
     printIt(&A, "circle_fit - A:");
 
-#if RFIT_DEBUG
+#ifdef RFIT_DEBUG
     printf("circle_fit - MINIMIZE\n");
 #endif
     // minimize
     double chi2;
     Vector3d v = min_eigen3D(A, chi2);
-#if RFIT_DEBUG
+#ifdef RFIT_DEBUG
     printf("circle_fit - AFTER MIN_EIGEN\n");
 #endif
     printIt(&v, "v BEFORE INVERSION");
@@ -655,21 +700,21 @@ __host__ __device__ inline circle_fit Circle_fit(const Matrix2xNd& hits2D,
     printIt(&v, "v AFTER INVERSION");
     // This hack to be able to run on GPU where the automatic assignment to a
     // double from the vector multiplication is not working.
-#if RFIT_DEBUG
+#ifdef RFIT_DEBUG
     printf("circle_fit - AFTER MIN_EIGEN 1\n");
 #endif
     Eigen::Matrix<double, 1, 1> cm;
-#if RFIT_DEBUG
+#ifdef RFIT_DEBUG
     printf("circle_fit - AFTER MIN_EIGEN 2\n");
 #endif
     cm = -v.transpose() * r0;
-#if RFIT_DEBUG
+#ifdef RFIT_DEBUG
     printf("circle_fit - AFTER MIN_EIGEN 3\n");
 #endif
     const double c = cm(0, 0);
     //  const double c = -v.transpose() * r0;
 
-#if RFIT_DEBUG
+#ifdef RFIT_DEBUG
     printf("circle_fit - COMPUTE CIRCLE PARAMETER\n");
 #endif
     // COMPUTE CIRCLE PARAMETER
@@ -687,57 +732,60 @@ __host__ __device__ inline circle_fit Circle_fit(const Matrix2xNd& hits2D,
     circle.chi2 = abs(chi2) * renorm * 1. / sqr(2 * v(2) * par_uvr_(2) * s);
     printIt(&circle.par, "circle_fit - CIRCLE PARAMETERS:");
     printIt(&circle.cov, "circle_fit - CIRCLE COVARIANCE:");
-#if RFIT_DEBUG
-    printf("circle_fit - CIRCLE CHARGE: %ld\n", circle.q);
+#ifdef RFIT_DEBUG
+    printf("circle_fit - CIRCLE CHARGE: %d\n", circle.q);
 #endif
 
-#if RFIT_DEBUG
+#ifdef RFIT_DEBUG
     printf("circle_fit - ERROR PROPAGATION\n");
 #endif
     // ERROR PROPAGATION
     if (error)
     {
-#if RFIT_DEBUG
+#ifdef RFIT_DEBUG
         printf("circle_fit - ERROR PRPAGATION ACTIVATED\n");
 #endif
-        ArrayNd Vcs_[2][2];  // cov matrix of center & scaled points
-#if RFIT_DEBUG
+        ArrayNd<N> Vcs_[2][2];  // cov matrix of center & scaled points
+        MatrixNd<N> C[3][3];  // cov matrix of 3D transformed points
+#ifdef RFIT_DEBUG
         printf("circle_fit - ERROR PRPAGATION ACTIVATED 2\n");
 #endif
         {
             Eigen::Matrix<double, 1, 1> cm;
             Eigen::Matrix<double, 1, 1> cm2;
             cm = mc.transpose() * V * mc;
-            //      cm2 = mc * mc.transpose();
             const double c = cm(0, 0);
-            //      const double c2 = cm2(0,0);
-            const Matrix2Nd Vcs = sqr(s) * V + sqr(sqr(s)) * 1. / (4. * q * n) *
-                                                   (2. * V.squaredNorm() + 4. * c) *  // mc.transpose() * V * mc) *
-                                                   mc * mc.transpose();
+	     Matrix2Nd<N> Vcs; Vcs. template triangularView<Eigen::Upper>()  = (sqr(s) * V
+				  + sqr(sqr(s)) * 1. / (4. * q * n) *
+				  (2. * V.squaredNorm() + 4. * c) *  // mc.transpose() * V * mc) *
+				  (mc * mc.transpose()));
+
             printIt(&Vcs, "circle_fit - Vcs:");
-            Vcs_[0][0] = Vcs.block(0, 0, n, n);
+            C[0][0] = Vcs.block(0, 0, n, n). template selfadjointView<Eigen::Upper>();
             Vcs_[0][1] = Vcs.block(0, n, n, n);
-            Vcs_[1][1] = Vcs.block(n, n, n, n);
+            C[1][1] = Vcs.block(n, n, n, n). template selfadjointView<Eigen::Upper>();
             Vcs_[1][0] = Vcs_[0][1].transpose();
             printIt(&Vcs, "circle_fit - Vcs:");
         }
 
-        MatrixNd C[3][3];  // cov matrix of 3D transformed points
         {
-            const ArrayNd t0 = (VectorXd::Constant(n, 1.) * p3D.row(0));
-            const ArrayNd t1 = (VectorXd::Constant(n, 1.) * p3D.row(1));
-            const ArrayNd t00 = p3D.row(0).transpose() * p3D.row(0);
-            const ArrayNd t01 = p3D.row(0).transpose() * p3D.row(1);
-            const ArrayNd t11 = p3D.row(1).transpose() * p3D.row(1);
-            const ArrayNd t10 = t01.transpose();
-            C[0][0] = Vcs_[0][0];
+            const ArrayNd<N> t0 = (VectorXd::Constant(n, 1.) * p3D.row(0));
+            const ArrayNd<N> t1 = (VectorXd::Constant(n, 1.) * p3D.row(1));
+            const ArrayNd<N> t00 = p3D.row(0).transpose() * p3D.row(0);
+            const ArrayNd<N> t01 = p3D.row(0).transpose() * p3D.row(1);
+            const ArrayNd<N> t11 = p3D.row(1).transpose() * p3D.row(1);
+            const ArrayNd<N> t10 = t01.transpose();
+            Vcs_[0][0] = C[0][0];;
             C[0][1] = Vcs_[0][1];
             C[0][2] = 2. * (Vcs_[0][0] * t0 + Vcs_[0][1] * t1);
-            C[1][1] = Vcs_[1][1];
+            Vcs_[1][1] = C[1][1];
             C[1][2] = 2. * (Vcs_[1][0] * t0 + Vcs_[1][1] * t1);
-            C[2][2] = 2. * (Vcs_[0][0] * Vcs_[0][0] + Vcs_[0][0] * Vcs_[0][1] + Vcs_[1][1] * Vcs_[1][0] +
-                            Vcs_[1][1] * Vcs_[1][1]) +
-                      4. * (Vcs_[0][0] * t00 + Vcs_[0][1] * t01 + Vcs_[1][0] * t10 + Vcs_[1][1] * t11);
+            MatrixNd<N> tmp;
+            tmp. template triangularView<Eigen::Upper>()
+	      =  ( 2. * (Vcs_[0][0] * Vcs_[0][0] + Vcs_[0][0] * Vcs_[0][1] + Vcs_[1][1] * Vcs_[1][0] +
+					   Vcs_[1][1] * Vcs_[1][1]) +
+				     4. * (Vcs_[0][0] * t00 + Vcs_[0][1] * t01 + Vcs_[1][0] * t10 + Vcs_[1][1] * t11) ).matrix();
+	    C[2][2] = tmp. template selfadjointView<Eigen::Upper>();
         }
         printIt(&C[0][0], "circle_fit - C[0][0]:");
 
@@ -755,14 +803,14 @@ __host__ __device__ inline circle_fit Circle_fit(const Matrix2xNd& hits2D,
         }
         printIt(&C0, "circle_fit - C0:");
 
-        const MatrixNd W = weight * weight.transpose();
-        const MatrixNd H = MatrixXd::Identity(n, n).rowwise() - weight.transpose();
-        const MatrixNx3d s_v = H * p3D.transpose();
+        const MatrixNd<N> W = weight * weight.transpose();
+        const MatrixNd<N> H = MatrixXd::Identity(n, n).rowwise() - weight.transpose();
+        const MatrixNx3d<N> s_v = H * p3D.transpose();
         printIt(&W, "circle_fit - W:");
         printIt(&H, "circle_fit - H:");
         printIt(&s_v, "circle_fit - s_v:");
 
-        MatrixNd D_[3][3];  // cov(s_v)
+        MatrixNd<N> D_[3][3];  // cov(s_v)
         {
             D_[0][0] = (H * C[0][0] * H.transpose()).cwiseProduct(W);
             D_[0][1] = (H * C[0][1] * H.transpose()).cwiseProduct(W);
@@ -787,8 +835,8 @@ __host__ __device__ inline circle_fit Circle_fit(const Matrix2xNd& hits2D,
             for (u_int b = a; b < 6; ++b)
             {
                 const u_int k = nu[b][0], l = nu[b][1];
-                VectorNd t0(n);
-                VectorNd t1(n);
+                VectorNd<N> t0(n);
+                VectorNd<N> t1(n);
                 if (l == k)
                 {
                     t0 = 2. * D_[j][l] * s_v.col(l);
@@ -865,7 +913,7 @@ __host__ __device__ inline circle_fit Circle_fit(const Matrix2xNd& hits2D,
         }
         printIt(&J3, "circle_fit - J3:");
 
-        const RowVector2Nd Jq = mc.transpose() * s * 1. / n;  // var(q)
+        const RowVector2Nd<N> Jq = mc.transpose() * s * 1. / n;  // var(q)
         printIt(&Jq, "circle_fit - Jq:");
 
         Matrix3d cov_uvr = J3 * Cvc * J3.transpose() * sqr(s_inv)  // cov(X0,Y0,R)
@@ -875,246 +923,32 @@ __host__ __device__ inline circle_fit Circle_fit(const Matrix2xNd& hits2D,
     }
 
     printIt(&circle.cov, "Circle cov:");
-#if RFIT_DEBUG
+#ifdef RFIT_DEBUG
     printf("circle_fit - exit\n");
 #endif
     return circle;
 }
 
-/*!
-    \brief Fit of helix parameter cotan(theta)) and Zip by projection on the
-    pre-fitted cylinder  and line fit on its surface.
-    \param hits hits coordinates.
-    \param hits_cov covariance matrix of the hits.
-    \param circle cylinder parameter, their covariance (if computed, otherwise
-    uninitialized) and particle charge.
-    \param fast_fit result of the previous fast fit in this form:
-    (X0,Y0,R,cotan(theta))).
-    \param error flag for error computation.
-    \return line line_fit:
-    -par parameter of the line in this form: (cotan(theta)), Zip); \n
-    -cov covariance matrix of the fitted parameter; \n
-    -chi2.
-    \warning correlation between R and z are neglected, this could be relevant
-    if geometry detector provides sloped modules in the R/z plane.
-    \bug chi2 and errors could be slightly underestimated for small eta (<0.2)
-    when pt is small (<0.3 Gev/c).
-    \todo multiple scattering treatment.
-    \details Line fit is made by orthogonal distance regression where
-    correlation between coordinates in the transverse plane (x,y) and z are
-    neglected (for a barrel + endcap geometry this is a very good
-    approximation).
-    Covariance matrix of the fitted parameter is optionally computed.
-    Multiple scattering is not handled (yet).
-    A fast pre-fit is performed in order to evaluate weights and to compute
-    errors.
-*/
 
-__host__ __device__ inline line_fit Line_fit_odr(const Matrix3xNd& hits,
-    const Matrix3Nd& hits_cov,
-    const circle_fit& circle,
-    const Vector4d& fast_fit,
-    const double B,
-    const bool error = true)
-{
-    u_int n = hits.cols();
-    double theta = -circle.q*atan(fast_fit(3));
-    theta = theta < 0. ? theta + M_PI :  theta;
-    // PROJECTION ON THE CILINDER
-    Matrix2xNd p2D = MatrixXd::Zero(2, n);
-    Eigen::Matrix<double, 2, 6> Jx;
-
-#if RFIT_DEBUG
-    printf("Line_fit - B: %g\n", B);
-    printIt(&hits, "Line_fit points: ");
-    printIt(&hits_cov, "Line_fit covs: ");
-#endif
-    // x & associated Jacobian
-    // cfr https://indico.cern.ch/event/663159/contributions/2707659/attachments/1517175/2368189/Riemann_fit.pdf
-    // Slide 11
-    // a ==> -o i.e. the origin of the circle in XY plane, negative
-    // b ==> p i.e. distances of the points wrt the origin of the circle.
-    const Vector2d o(circle.par(0), circle.par(1));
-
-    // associated Jacobian, used in weights and errors computation
-    Matrix2Nd cov_sz = MatrixXd::Zero(2 * n, 2 * n);
-    for (u_int i = 0; i < n; ++i)
-    {  // x
-      Matrix6d Cov = MatrixXd::Zero(6, 6);
-      Matrix2d Cov_sz_single = MatrixXd::Zero(2, 2);
-        Vector2d p = hits.block(0, i, 2, 1) - o;
-        const double cross = cross2D(-o, p);
-        const double dot = (-o).dot(p);
-        // atan2(cross, dot) give back the angle in the transverse plane so tha the
-        // final equation reads: x_i = -q*R*theta (theta = angle returned by atan2)
-        const double atan2_ = -circle.q * atan2(cross, dot);
-        p2D(0, i) = atan2_ * circle.par(2);
-
-        // associated Jacobian, used in weights and errors- computation
-        const double temp0 = -circle.q * circle.par(2) * 1. / (sqr(dot) + sqr(cross));
-        double d_X0 = 0., d_Y0 = 0., d_R = 0.;  // good approximation for big pt and eta
-        if (error)
-        {
-            d_X0 = -temp0 * ((p(1) + o(1)) * dot - (p(0) - o(0)) * cross);
-            d_Y0 = temp0 * ((p(0) + o(0)) * dot - (o(1) - p(1)) * cross);
-            d_R = atan2_;
-        }
-        const double d_x = temp0 * (o(1) * dot + o(0) * cross);
-        const double d_y = temp0 * (-o(0) * dot + o(1) * cross);
-        Jx << d_X0, d_Y0, d_R, d_x, d_y, 0., 0., 0., 0., 0., 0., 1.;
-//        Jx << d_X0, d_Y0, d_R, p(1)/p.norm(), -p(0)/p.norm(), 0, 0, 0, 0, 0, 0, 1.;
-        Cov.block(0, 0, 3, 3) = circle.cov;
-        Cov(3, 3) = hits_cov(i, i);
-        Cov(4, 4) = hits_cov(i + n, i + n);
-        Cov(5, 5) = hits_cov(i + 2*n, i + 2*n);
-        Cov(3, 4) = Cov(4, 3) = hits_cov(i, i + n);
-        Cov(3, 5) = Cov(5, 3) = hits_cov(i, i + 2*n);
-        Cov(4, 5) = Cov(5, 4) = hits_cov(i + n, i + 2*n);
-        Cov_sz_single = Jx * Cov * Jx.transpose();
-        cov_sz(i, i) = Cov_sz_single(0, 0);
-        cov_sz(i + n, i + n) = Cov_sz_single(1, 1);
-        cov_sz(i, i + n) = cov_sz(i + n, i) = Cov_sz_single(0, 1);
-    }
-    // Math of d_{X0,Y0,R,x,y} all verified by hand
-
-    // y
-    p2D.row(1) = hits.row(2);
-
-    // WEIGHT COMPUTATION
-#if RFIT_DEBUG
-    printIt(&cov_sz, "line_fit - cov_sz:");
-#endif
-    MatrixNd cov_with_ms = Scatter_cov_line(cov_sz, fast_fit, p2D.row(0), p2D.row(1), theta, B);
-#if RFIT_DEBUG
-    printIt(&cov_with_ms, "line_fit - cov_with_ms: ");
-#endif
-    Matrix4d G;
-    G = cov_with_ms.inverse();
-#if RFIT_DEBUG
-    printIt(&G, "line_fit - cov_with_ms.inverse():");
-#endif
-    double renorm = G.sum();
-    G *= 1. / renorm;
-#if RFIT_DEBUG
-    printIt(&G, "line_fit - G4:");
-#endif
-
-    const VectorNd weight = Weight_circle(G);
-
-    // COST FUNCTION
-
-    // compute
-    // r0 represents the weighted mean of "x" and "y".
-    const Vector2d r0 = p2D * weight;
-    // This is the X  vector that will be used to build the
-    // scatter matrix S = X^T * X
-    const Matrix2xNd X = p2D.colwise() - r0;
-    Matrix2d A = Matrix2d::Zero();
-    A = X * G * X.transpose();
-
-#if RFIT_DEBUG
-    printIt(&A, "Line_fit - A: ");
-#endif
-
-    // minimize. v is normalized!!
-    double chi2;
-    Vector2d v = min_eigen2D(A, chi2);
-#if RFIT_DEBUG
-    printIt(&v, "Line_fit - v: ");
-    printf("Line_fit chi2: %e\n", chi2);
-#endif
-
-    // This hack to be able to run on GPU where the automatic assignment to a
-    // double from the vector multiplication is not working.
-    Eigen::Matrix<double, 1, 1> cm;
-    cm = -v.transpose() * r0;
-    const double c = cm(0, 0);
-
-    // COMPUTE LINE PARAMETER
-    line_fit line;
-    line.par << -v(0) / v(1),                          // cotan(theta))
-        -c / v(1);  // Zip
-    line.chi2 = abs(chi2*renorm);
-#if RFIT_DEBUG
-    printIt(&(line.par), "Line_fit - line.par: ");
-    printf("Line_fit - v norm: %e\n", sqrt(v(0)*v(0) + v(1)*v(1)));
-#endif
-
-    // ERROR PROPAGATION
-    if (error)
-    {
-        const double v0_2 = sqr(v(0));
-        const double v1_2 = sqr(v(1));
-
-        Matrix3d C;  // cov(v,c)
-        {
-          // The norm is taken from Chernov, properly adapted to the weights case.
-            double norm = v.transpose() * A * v;
-//            double norm_empirical = cov_with_ms.diagonal().mean();
-#if RFIT_DEBUG
-            printf("Chi_2: %g\n", chi2);
-            printf("Norm: %g\n", norm);
-            printf("weight.sum(): %g\n", weight.sum());
-            printf("Line_fit - norm:    %e\n", norm);
-#endif
-
-            const double sig2 = norm/(A(0,0) + A(1,1));
-            C(0, 0) = sig2 * v1_2;
-            C(1, 1) = sig2 * v0_2;
-            C(1, 0) = C(0, 1) = -sig2 * v(0) * v(1);
-            C(2, 2) = sig2 * (v(0)*r0(1)-v(1)*r0(0))*(v(0)*r0(1)-v(1)*r0(0)) + (sig2/n)*(A(0,0)+A(1,1));
-            C(0, 2) = C(2, 0) = sig2*(v(0)*r0(1)-v(1)*r0(0))*v(1);
-            C(1, 2) = C(2, 1) = - sig2*(v(0)*r0(1)-v(1)*r0(0))*v(0);
-        }
-#if RFIT_DEBUG
-        printIt(&C, "line_fit - C:");
-#endif
-
-        Eigen::Matrix<double, 2, 3> J;  // Jacobian of (v,c) -> (cotan(theta)),Zip)
-        {
-            const double t0 = 1. / v(1);
-            const double t1 = sqr(t0);
-            J << -t0, v(0) * t1, 0., 0., c * t1, -t0;
-        }
-        Eigen::Matrix<double, 3, 2> JT = J.transpose().eval();
-#if RFIT_DEBUG
-        printIt(&J, "line_fit - J:");
-#endif
-        line.cov = J * C * JT;
-    }
-
-#if RFIT_DEBUG
-    printIt(&line.cov, "Line cov:");
-#endif
-    return line;
-}
-
-/*!  \brief Perform an ordinary least square fit in the s-z plane to compute
- * the parameters cotTheta and Zip.
- *
- * The fit is performed in the rotated S3D-Z' plane, following the formalism of
- * Frodesen, Chapter 10, p. 259.
- *
- * The system has been rotated to both try to use the combined errors in s-z
- * along Z', as errors in the Y direction and to avoid the patological case of
- * degenerate lines with angular coefficient m = +/- inf.
- *
- * The rotation is using the information on the theta angle computed in the
- * fast fit. The rotation is such that the S3D axis will be the X-direction,
- * while the rotated Z-axis will be the Y-direction. This pretty much follows
- * what is done in the same fit in the Broken Line approach.
- */
-
-__host__ __device__ inline line_fit Line_fit(const Matrix3xNd& hits,
-    const Matrix3Nd& hits_cov,
-    const circle_fit& circle,
-    const Vector4d& fast_fit,
-    const double B,
-    const bool error = true) {
+  template<typename M3xN, typename M6xN, typename V4>
+__host__ __device__ 
+inline line_fit Line_fit(const M3xN& hits,
+			 const  M6xN & hits_ge,
+			 const circle_fit& circle,
+			 const V4& fast_fit,
+			 const double B,
+			 const bool error = true) {
+    
+  constexpr uint32_t N = M3xN::ColsAtCompileTime;
   auto n = hits.cols();
   double theta = -circle.q*atan(fast_fit(3));
   theta = theta < 0. ? theta + M_PI : theta;
+    
+  // Prepare the Rotation Matrix to rotate the points
+  Eigen::Matrix<double, 2, 2> rot;
+  rot << sin(theta), cos(theta), -cos(theta), sin(theta);
 
+  
   // PROJECTION ON THE CILINDER
   //
   // p2D will be:
@@ -1123,16 +957,14 @@ __host__ __device__ inline line_fit Line_fit(const Matrix3xNd& hits,
   // s values will be ordinary x-values
   // z values will be ordinary y-values
 
-  Matrix2xNd p2D(2, n);
+  Matrix2xNd<N> p2D = Matrix2xNd<N>::Zero(); 
   Eigen::Matrix<double, 2, 6> Jx;
 
-  p2D << MatrixXd::Zero(2, n);
-  Jx << MatrixXd::Zero(2, 6);
-
-#if RFIT_DEBUG
+#ifdef RFIT_DEBUG
   printf("Line_fit - B: %g\n", B);
   printIt(&hits, "Line_fit points: ");
-  printIt(&hits_cov, "Line_fit covs: ");
+  printIt(&hits_ge, "Line_fit covs: ");
+  printIt(&rot, "Line_fit rot: ");
 #endif
   // x & associated Jacobian
   // cfr https://indico.cern.ch/event/663159/contributions/2707659/attachments/1517175/2368189/Riemann_fit.pdf
@@ -1142,9 +974,8 @@ __host__ __device__ inline line_fit Line_fit(const Matrix3xNd& hits,
   const Vector2d o(circle.par(0), circle.par(1));
 
   // associated Jacobian, used in weights and errors computation
-  Matrix2Nd cov_sz = MatrixXd::Zero(2 * n, 2 * n);
-  Matrix6d Cov(6,6);
-  Matrix2d Cov_sz_single(2, 2);
+  Matrix6d Cov = Matrix6d::Zero();
+  Matrix2d cov_sz[4];  // FIXME: should be "N"
   for (u_int i = 0; i < n; ++i)
   {
     Vector2d p = hits.block(0, i, 2, 1) - o;
@@ -1169,39 +1000,34 @@ __host__ __device__ inline line_fit Line_fit(const Matrix3xNd& hits,
     const double d_y = temp0 * (-o(0) * dot + o(1) * cross);
     Jx << d_X0, d_Y0, d_R, d_x, d_y, 0., 0., 0., 0., 0., 0., 1.;
 
-    Cov << MatrixXd::Zero(6, 6);
-    Cov_sz_single << MatrixXd::Zero(2, 2);
+
+    
     Cov.block(0, 0, 3, 3) = circle.cov;
-    Cov(3, 3) = hits_cov(i, i);                        // x errors
-    Cov(4, 4) = hits_cov(i + n, i + n);                // y errors
-    Cov(5, 5) = hits_cov(i + 2*n, i + 2*n);            // z errors
-    Cov(3, 4) = Cov(4, 3) = hits_cov(i, i + n);        // cov_xy
-    Cov(3, 5) = Cov(5, 3) = hits_cov(i, i + 2*n);      // cov_xz
-    Cov(4, 5) = Cov(5, 4) = hits_cov(i + n, i + 2*n);  // cov_yz
-    Cov_sz_single = Jx * Cov * Jx.transpose();
-    cov_sz(i, i) = Cov_sz_single(0, 0);
-    cov_sz(i + n, i + n) = Cov_sz_single(1, 1);
-    cov_sz(i, i + n) = cov_sz(i + n, i) = Cov_sz_single(0, 1);
+    Cov(3, 3) = hits_ge.col(i)[0];                // x errors
+    Cov(4, 4) = hits_ge.col(i)[2];                // y errors
+    Cov(5, 5) = hits_ge.col(i)[5];                // z errors
+    Cov(3, 4) = Cov(4, 3) =  hits_ge.col(i)[1];   // cov_xy
+    Cov(3, 5) = Cov(5, 3) =  hits_ge.col(i)[3];   // cov_xz
+    Cov(4, 5) = Cov(5, 4) =  hits_ge.col(i)[4];   // cov_yz
+    Matrix2d tmp = Jx * Cov * Jx.transpose();
+    cov_sz[i].noalias() = rot*tmp*rot.transpose();
   }
   // Math of d_{X0,Y0,R,x,y} all verified by hand
   p2D.row(1) = hits.row(2);
 
   // The following matrix will contain errors orthogonal to the rotated S
   // component only, with the Multiple Scattering properly treated!!
-  MatrixNd cov_with_ms = Scatter_cov_line(cov_sz, fast_fit, p2D.row(0), p2D.row(1), theta, B);
-#if RFIT_DEBUG
-  printIt(&cov_sz, "line_fit - cov_sz:");
+  MatrixNd<N> cov_with_ms; 
+  Scatter_cov_line(cov_sz, fast_fit, p2D.row(0), p2D.row(1), theta, B,cov_with_ms);
+#ifdef RFIT_DEBUG
+  printIt(cov_sz, "line_fit - cov_sz:");
   printIt(&cov_with_ms, "line_fit - cov_with_ms: ");
 #endif
 
-  // Prepare the Rotation Matrix to rotate the points
-  Eigen::Matrix<double, 2, 2> rot = Eigen::Matrix<double, 2, 2>::Zero();
-  rot << sin(theta), cos(theta), -cos(theta), sin(theta);
-
   // Rotate Points with the shape [2, n]
-  Matrix2xNd p2D_rot = rot*p2D;
+  Matrix2xNd<N> p2D_rot = rot*p2D;
 
-#if RFIT_DEBUG
+#ifdef RFIT_DEBUG
   printf("Fast fit Tan(theta): %g\n", fast_fit(3));
   printf("Rotation angle: %g\n", theta);
   printIt(&rot, "Rotation Matrix:");
@@ -1211,15 +1037,15 @@ __host__ __device__ inline line_fit Line_fit(const Matrix3xNd& hits,
 #endif
 
   // Build the A Matrix
-  Matrix2xNd A(2,n);
+  Matrix2xNd<N> A;
   A << MatrixXd::Ones(1, n), p2D_rot.row(0);  // rotated s values
 
-#if RFIT_DEBUG
+#ifdef RFIT_DEBUG
   printIt(&A, "A Matrix:");
 #endif
 
   // Build A^T V-1 A, where V-1 is the covariance of only the Y components.
-  MatrixNd Vy_inv = cov_with_ms.inverse();
+  MatrixNd<N> Vy_inv = cov_with_ms.inverse();
   Eigen::Matrix<double, 2, 2> Inv_Cov = A*Vy_inv*A.transpose();
 
   // Compute the Covariance Matrix of the fit parameters
@@ -1231,20 +1057,20 @@ __host__ __device__ inline line_fit Line_fit(const Matrix3xNd& hits,
   Eigen::Matrix<double, 2, 1> sol = Cov_params*A*Vy_inv*p2D_rot.row(1).transpose();
 
 
-#if RFIT_DEBUG
+#ifdef RFIT_DEBUG
   printIt(&sol, "Rotated solutions:");
 #endif
 
   // We need now to transfer back the results in the original s-z plane
   auto common_factor = 1./(sin(theta)-sol(1,0)*cos(theta));
-  Eigen::Matrix<double, 2, 2> J = Eigen::Matrix<double, 2, 2>::Zero();
+  Eigen::Matrix<double, 2, 2> J;
   J << 0., common_factor*common_factor, common_factor, sol(0,0)*cos(theta)*common_factor*common_factor;
 
   double m = common_factor*(sol(1,0)*sin(theta)+cos(theta));
   double q = common_factor*sol(0,0);
   auto cov_mq = J * Cov_params * J.transpose();
 
-  VectorNd res = p2D_rot.row(1).transpose() - A.transpose() * sol;
+  VectorNd<N> res = p2D_rot.row(1).transpose() - A.transpose() * sol;
   double chi2 = res.transpose()*Vy_inv*res;
   chi2 = chi2 / float(n);
 
@@ -1253,7 +1079,7 @@ __host__ __device__ inline line_fit Line_fit(const Matrix3xNd& hits,
   line.cov << cov_mq;
   line.chi2 = chi2;
 
-#if RFIT_DEBUG
+#ifdef RFIT_DEBUG
   printf("Common_factor: %g\n", common_factor);
   printIt(&J, "Jacobian:");
   printIt(&sol, "Rotated solutions:");
@@ -1300,19 +1126,22 @@ __host__ __device__ inline line_fit Line_fit(const Matrix3xNd& hits,
    \bug see Circle_fit(), Line_fit() and Fast_fit() bugs.
 */
 
-inline helix_fit Helix_fit(const Matrix3xNd& hits, const Matrix3Nd& hits_cov, const double B,
+template<int N>
+inline helix_fit Helix_fit(const Matrix3xNd<N>& hits, const Eigen::Matrix<float,6,4>& hits_ge, const double B,
                            const bool error = true)
 {
     u_int n = hits.cols();
-    VectorNd rad = (hits.block(0, 0, 2, n).colwise().norm());
+    VectorNd<4> rad = (hits.block(0, 0, 2, n).colwise().norm());
 
     // Fast_fit gives back (X0, Y0, R, theta) w/o errors, using only 3 points.
-    const Vector4d fast_fit = Fast_fit(hits);
-
+    Vector4d fast_fit; 
+    Fast_fit(hits,fast_fit);
+    Rfit::Matrix2Nd<4> hits_cov =  MatrixXd::Zero(2 * n, 2 * n);
+    Rfit::loadCovariance2D(hits_ge,hits_cov);
     circle_fit circle = Circle_fit(hits.block(0, 0, 2, n),
-                                   hits_cov.block(0, 0, 2 * n, 2 * n),
+                                   hits_cov,
                                    fast_fit, rad, B, error);
-    line_fit line = Line_fit(hits, hits_cov, circle, fast_fit, B, error);
+    line_fit line = Line_fit(hits, hits_ge, circle, fast_fit, B, error);
 
     par_uvrtopak(circle, B, error);
 

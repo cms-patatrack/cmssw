@@ -8,6 +8,18 @@ namespace siPixelRecHitsHeterogeneousProduct {
    struct HitsOnCPU;
 }
 
+namespace Rfit {
+  constexpr uint32_t maxNumberOfConcurrentFits() { return 2*1024;}
+  constexpr uint32_t stride() { return maxNumberOfConcurrentFits();}
+  using Matrix3x4d = Eigen::Matrix<double,3,4>;
+  using Map3x4d = Eigen::Map<Matrix3x4d,0,Eigen::Stride<3*stride(),stride()> >;
+  using Matrix6x4f = Eigen::Matrix<float,6,4>;
+  using Map6x4f = Eigen::Map<Matrix6x4f,0,Eigen::Stride<6*stride(),stride()> >;
+  using Map4d = Eigen::Map<Vector4d,0,Eigen::InnerStride<stride()> >;
+
+}
+
+
 class RiemannFitOnGPU {
 public:
 
@@ -28,7 +40,7 @@ public:
 
 private:
 
-    static constexpr uint32_t maxNumberOfConcurrentFits_ = 2000;
+    static constexpr uint32_t maxNumberOfConcurrentFits_ = Rfit::maxNumberOfConcurrentFits();
 
     // fowarded
     TuplesOnGPU::Container const * tuples_d = nullptr;
@@ -38,9 +50,9 @@ private:
 
 
    // Riemann Fit internals
-   Rfit::Matrix3xNd *hitsGPU_ = nullptr;
-   Rfit::Matrix3Nd *hits_covGPU_ = nullptr;
-   Eigen::Vector4d *fast_fit_resultsGPU_ = nullptr;
+   double *hitsGPU_ = nullptr;
+   float *hits_geGPU_ = nullptr;
+   double *fast_fit_resultsGPU_ = nullptr;
    Rfit::circle_fit *circle_fit_resultsGPU_ = nullptr;
    Rfit::line_fit *line_fit_resultsGPU_ = nullptr;
 

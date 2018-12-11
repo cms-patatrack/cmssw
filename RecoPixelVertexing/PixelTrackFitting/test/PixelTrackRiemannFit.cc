@@ -25,9 +25,10 @@ using Vector6d = Eigen::Matrix<double, 6, 1>;
 using Vector8d = Eigen::Matrix<double, 8, 1>;
 };  // namespace Rfit
 
+// quadruplets...
 struct hits_gen {
-  Matrix3xNd hits;
-  Matrix3Nd hits_cov;
+  Matrix3xNd<4> hits;
+  Eigen::Matrix<float,6,4> hits_ge;
   Vector5d true_par;
 };
 
@@ -71,30 +72,31 @@ void smearing(const Vector5d& err, const bool& isbarrel, double& x, double& y, d
   }
 }
 
-void Hits_cov(Matrix3Nd& V, const unsigned int& i, const unsigned int& n, const Matrix3xNd& hits,
+template<int N>
+void Hits_cov(Eigen::Matrix<float,6,4> & V, const unsigned int& i, const unsigned int& n, const Matrix3xNd<N>& hits,
               const Vector5d& err, bool isbarrel) {
   if (isbarrel) {
     double R2 = Rfit::sqr(hits(0, i)) + Rfit::sqr(hits(1, i));
-    V(i, i) =
+    V.col(i)[0] =
         (Rfit::sqr(err[1]) * Rfit::sqr(hits(1, i)) + Rfit::sqr(err[0]) * Rfit::sqr(hits(0, i))) /
         R2;
-    V(i + n, i + n) =
+    V.col(i)[2] =
         (Rfit::sqr(err[1]) * Rfit::sqr(hits(0, i)) + Rfit::sqr(err[0]) * Rfit::sqr(hits(1, i))) /
         R2;
-    V(i, i + n) = V(i + n, i) =
+    V.col(i)[1] =
         (Rfit::sqr(err[0]) - Rfit::sqr(err[1])) * hits(1, i) * hits(0, i) / R2;
-    V(i + 2 * n, i + 2 * n) = Rfit::sqr(err[2]);
+    V.col(i)[5] = Rfit::sqr(err[2]);
   } else {
-    V(i, i) = Rfit::sqr(err[3]);
-    V(i + n, i + n) = Rfit::sqr(err[3]);
-    V(i + 2 * n, i + 2 * n) = Rfit::sqr(err[4]);
+    V.col(i)[0] = Rfit::sqr(err[3]);
+    V.col(i)[2] = Rfit::sqr(err[3]);
+    V.col(i)[5] = Rfit::sqr(err[4]);
   }
 }
 
 hits_gen Hits_gen(const unsigned int& n, const Matrix<double, 6, 1>& gen_par) {
   hits_gen gen;
   gen.hits = MatrixXd::Zero(3, n);
-  gen.hits_cov = MatrixXd::Zero(3 * n, 3 * n);
+  gen.hits_ge = Eigen::Matrix<float,6,4>::Zero();
   // err /= 10000.;
   constexpr double rad[8] = {2.95, 6.8, 10.9, 16., 3.1, 7., 11., 16.2};
   // constexpr double R_err[8] = {5./10000, 5./10000, 5./10000, 5./10000, 5./10000,
@@ -128,7 +130,7 @@ hits_gen Hits_gen(const unsigned int& n, const Matrix<double, 6, 1>& gen_par) {
     Vector5d err;
     err << R_err[i], Rp_err[i], z_err[i], 0, 0;
     smearing(err, true, gen.hits(0, i), gen.hits(1, i), gen.hits(2, i));
-    Hits_cov(gen.hits_cov, i, n, gen.hits, err, true);
+    Hits_cov(gen.hits_ge, i, n, gen.hits, err, true);
   }
 
   return gen;
@@ -371,8 +373,7 @@ void test_helix_fit(bool getcin) {
   const int iteration = 5000;
   gen_par = New_par(gen_par, 1, B_field);
   true_par = True_par(gen_par, 1, B_field);
-  Matrix3xNd hits;
-  Matrix3Nd hits_cov;
+  // Matrix3xNd<4> hits;
   std::array<helix_fit, iteration> helixRiemann_fit;
 //  std::array<BrokenLine::helix_fit, iteration> helixBrokenLine_fit;
 
@@ -395,7 +396,7 @@ void test_helix_fit(bool getcin) {
     //      gen.hits.col(2) << 7.25991010666, 7.74653434753, 30.6931324005;
     //      gen.hits.col(3) << 8.99161434174, 9.54262828827, 38.1338043213;
     delta -= std::chrono::high_resolution_clock::now()-start;
-    helixRiemann_fit[i%iteration] = Rfit::Helix_fit(gen.hits, gen.hits_cov, B_field, return_err);
+    helixRiemann_fit[i%iteration] = Rfit::Helix_fit(gen.hits, gen.hits_ge, B_field, return_err);
     delta += std::chrono::high_resolution_clock::now()-start;
 
 //    helixBrokenLine_fit[i] = BrokenLine::Helix_fit(gen.hits, gen.hits_cov, B_field);
@@ -417,7 +418,7 @@ void test_helix_fit(bool getcin) {
         << "covariance matrix:" << endl
         << helixRiemann_fit[i].cov << endl
         << "Initial hits:\n" << gen.hits << endl
-        << "Initial Covariance:\n" << gen.hits_cov << endl;
+        << "Initial Covariance:\n" << gen.hits_ge << endl;
         
   }
   std::cout << "elapsted time " << double(std::chrono::duration_cast<std::chrono::nanoseconds>(delta).count())/1.e6 << std::endl;
