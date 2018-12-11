@@ -74,7 +74,7 @@ void testFit() {
   std::cout << "Fitted values (CircleFit):\n" << circle_fit_results.par << std::endl;
 
   // LINE_FIT CPU
-  Rfit::line_fit line_fit_results = Rfit::Line_fit(hits, hits_ge, circle_fit_results, fast_fit_results, true);
+  Rfit::line_fit line_fit_results = Rfit::Line_fit(hits, hits_ge, circle_fit_results, fast_fit_results, B, true);
   std::cout << "Fitted values (LineFit):\n" << line_fit_results.par << std::endl;
 
   std::cout << "Fitted cov (CircleFit) CPU:\n" << circle_fit_results.cov << std::endl;

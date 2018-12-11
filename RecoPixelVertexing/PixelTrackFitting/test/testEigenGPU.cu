@@ -81,6 +81,7 @@ if (0==i) {
 __global__
 void kernelLineFit(double * __restrict__ phits,
 		   float * __restrict__ phits_ge,
+                   double B,
                    Rfit::circle_fit * circle_fit,
                    double * __restrict__ pfast_fit,
                    Rfit::line_fit * line_fit)
@@ -89,7 +90,7 @@ void kernelLineFit(double * __restrict__ phits,
   Rfit::Map3x4d hits(phits+i,3,4);
   Rfit::Map4d   fast_fit(pfast_fit+i,4);
   Rfit::Map6x4f hits_ge(phits_ge+i,6,4);
-  line_fit[i] = Rfit::Line_fit(hits, hits_ge, circle_fit[i], fast_fit, true);
+  line_fit[i] = Rfit::Line_fit(hits, hits_ge, circle_fit[i], fast_fit, B, true);
 }
 
 template<typename M3x4, typename M6x4>
@@ -194,13 +195,13 @@ void testFit() {
   assert(isEqualFuzzy(circle_fit_results.par, circle_fit_resultsGPUret->par));
 
   // LINE_FIT CPU
-  Rfit::line_fit line_fit_results = Rfit::Line_fit(hits, hits_ge, circle_fit_results, fast_fit_results, true);
+  Rfit::line_fit line_fit_results = Rfit::Line_fit(hits, hits_ge, circle_fit_results, fast_fit_results, B, true);
   std::cout << "Fitted values (LineFit):\n" << line_fit_results.par << std::endl;
 
   // LINE_FIT GPU
   Rfit::line_fit * line_fit_resultsGPUret = new Rfit::line_fit();
 
-  kernelLineFit<<<Ntracks/64, 64>>>(hitsGPU, hits_geGPU, circle_fit_resultsGPU, fast_fit_resultsGPU, line_fit_resultsGPU);
+  kernelLineFit<<<Ntracks/64, 64>>>(hitsGPU, hits_geGPU, B, circle_fit_resultsGPU, fast_fit_resultsGPU, line_fit_resultsGPU);
   cudaDeviceSynchronize();
 
   cudaMemcpy(line_fit_resultsGPUret, line_fit_resultsGPU, sizeof(Rfit::line_fit), cudaMemcpyDeviceToHost);

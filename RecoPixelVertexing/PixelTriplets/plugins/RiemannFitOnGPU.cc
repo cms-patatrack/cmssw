@@ -20,9 +20,6 @@ void RiemannFitOnGPU::allocateOnGPU(TuplesOnGPU::Container const * tuples, Rfit:
   cudaCheck(cudaMalloc(&circle_fit_resultsGPU_, maxNumberOfConcurrentFits_ * sizeof(Rfit::circle_fit)));
   cudaCheck(cudaMemset(circle_fit_resultsGPU_, 0x00, maxNumberOfConcurrentFits_ * sizeof(Rfit::circle_fit)));
 
-  cudaCheck(cudaMalloc(&line_fit_resultsGPU_, maxNumberOfConcurrentFits_ * sizeof(Rfit::line_fit)));
-  cudaCheck(cudaMemset(line_fit_resultsGPU_, 0x00, maxNumberOfConcurrentFits_ * sizeof(Rfit::line_fit)));
-
 }
 
 void RiemannFitOnGPU::deallocateOnGPU() {
@@ -31,7 +28,6 @@ void RiemannFitOnGPU::deallocateOnGPU() {
   cudaFree(hits_geGPU_);
   cudaFree(fast_fit_resultsGPU_);
   cudaFree(circle_fit_resultsGPU_);
-  cudaFree(line_fit_resultsGPU_);
 
 }
 

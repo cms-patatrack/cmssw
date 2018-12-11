@@ -54,7 +54,6 @@ private:
    float *hits_geGPU_ = nullptr;
    double *fast_fit_resultsGPU_ = nullptr;
    Rfit::circle_fit *circle_fit_resultsGPU_ = nullptr;
-   Rfit::line_fit *line_fit_resultsGPU_ = nullptr;
 
 };
 

@@ -43,9 +43,9 @@ void kernelFastFitAllHits(TuplesOnGPU::Container const * __restrict__ foundNtupl
     return;
   }
 
-  Rfit::Map3x4d hits(phits+local_start,3,4);
-  Rfit::Map4d   fast_fit(pfast_fit+local_start,4);
-  Rfit::Map6x4f hits_ge(phits_ge+local_start,6,4);
+  Rfit::Map3x4d hits(phits+local_start);
+  Rfit::Map4d   fast_fit(pfast_fit+local_start);
+  Rfit::Map6x4f hits_ge(phits_ge+local_start);
 
   // Prepare data structure
   auto const * hitId = foundNtuplets->begin(helix_start);
@@ -89,9 +89,9 @@ void kernelCircleFitAllHits(TuplesOnGPU::Container const * __restrict__ foundNtu
     return;
   }
 
-  Rfit::Map3x4d hits(phits+local_start,3,4);
-  Rfit::Map4d   fast_fit(pfast_fit_input+local_start,4);
-  Rfit::Map6x4f hits_ge(phits_ge+local_start,6,4);
+  Rfit::Map3x4d hits(phits+local_start);
+  Rfit::Map4d   fast_fit(pfast_fit_input+local_start);
+  Rfit::Map6x4f hits_ge(phits_ge+local_start);
 
   constexpr uint32_t N = Rfit::Map3x4d::ColsAtCompileTime;
   constexpr auto n = N;
@@ -123,11 +123,10 @@ void kernelLineFitAllHits(TuplesOnGPU::Container const * __restrict__ foundNtupl
     float * __restrict__ phits_ge,
     double * __restrict__ pfast_fit,
     Rfit::circle_fit * __restrict__ circle_fit,
-    Rfit::line_fit *line_fit,
     uint32_t offset)
 {
 
-  assert(results); assert(line_fit);
+  assert(results); assert(circle_fit);
 
   auto local_start = (blockIdx.x * blockDim.x + threadIdx.x);
   auto helix_start = local_start + offset;
@@ -137,31 +136,31 @@ void kernelLineFitAllHits(TuplesOnGPU::Container const * __restrict__ foundNtupl
     return;
   }
 
-  Rfit::Map3x4d hits(phits+local_start,3,4);
-  Rfit::Map4d   fast_fit(pfast_fit+local_start,4);
-  Rfit::Map6x4f hits_ge(phits_ge+local_start,6,4);
-  line_fit[local_start] = Rfit::Line_fit(hits, hits_ge, circle_fit[local_start], fast_fit, B, true);
+  Rfit::Map3x4d hits(phits+local_start);
+  Rfit::Map4d   fast_fit(pfast_fit+local_start);
+  Rfit::Map6x4f hits_ge(phits_ge+local_start);
+  auto const & line_fit = Rfit::Line_fit(hits, hits_ge, circle_fit[local_start], fast_fit, B, true);
 
   par_uvrtopak(circle_fit[local_start], B, true);
 
   // Grab helix_fit from the proper location in the output vector
   auto & helix = results[helix_start];
-  helix.par << circle_fit[local_start].par, line_fit[local_start].par;
+  helix.par << circle_fit[local_start].par, line_fit.par;
 
   // TODO: pass properly error booleans
 
-  helix.cov = MatrixXd::Zero(5, 5);
+  helix.cov = Rfit::Matrix5d::Zero();
   helix.cov.block(0, 0, 3, 3) = circle_fit[local_start].cov;
-  helix.cov.block(3, 3, 2, 2) = line_fit[local_start].cov;
+  helix.cov.block(3, 3, 2, 2) = line_fit.cov;
 
   helix.q = circle_fit[local_start].q;
   helix.chi2_circle = circle_fit[local_start].chi2;
-  helix.chi2_line = line_fit[local_start].chi2;
+  helix.chi2_line = line_fit.chi2;
 
 #ifdef GPU_DEBUG
   printf("kernelLineFitAllHits circle.par(0,1,2): %d %f,%f,%f\n", helix_start,
          circle_fit[local_start].par(0), circle_fit[local_start].par(1), circle_fit[local_start].par(2));
-  printf("kernelLineFitAllHits line.par(0,1): %d %f,%f\n", helix_start, line_fit[local_start].par(0),line_fit[local_start].par(1));
+  printf("kernelLineFitAllHits line.par(0,1): %d %f,%f\n", helix_start, line_fit.par(0),line_fit.par(1));
   printf("kernelLineFitAllHits chi2 cov %f/%f %f,%f,%f,%f,%f\n",helix.chi2_circle,helix.chi2_line, 
          helix.cov(0,0),helix.cov(1,1),helix.cov(2,2),helix.cov(3,3),helix.cov(4,4));
 #endif
@@ -190,7 +189,7 @@ void RiemannFitOnGPU::launchKernels(HitsOnCPU const & hh, uint32_t nhits, uint32
       kernelLineFitAllHits<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
              tuples_d, 4,  bField_, helix_fit_results_d,
              hitsGPU_, hits_geGPU_, fast_fit_resultsGPU_, circle_fit_resultsGPU_,
-             line_fit_resultsGPU_, offset);
+             offset);
       cudaCheck(cudaGetLastError());
     }
 }

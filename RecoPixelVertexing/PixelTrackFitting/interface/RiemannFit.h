@@ -611,7 +611,7 @@ __host__ __device__ inline circle_fit Circle_fit(const  M2xN& hits2D,
                                                  const V4& fast_fit,
                                                  const VectorNd<N>& rad,
                                                  const double B,
-                                                 const bool error = true)
+                                                 const bool error)
 {
 #ifdef RFIT_DEBUG
     printf("circle_fit - enter\n");
@@ -930,6 +930,22 @@ __host__ __device__ inline circle_fit Circle_fit(const  M2xN& hits2D,
 }
 
 
+/*!  \brief Perform an ordinary least square fit in the s-z plane to compute
+ * the parameters cotTheta and Zip.
+ *
+ * The fit is performed in the rotated S3D-Z' plane, following the formalism of
+ * Frodesen, Chapter 10, p. 259.
+ *
+ * The system has been rotated to both try to use the combined errors in s-z
+ * along Z', as errors in the Y direction and to avoid the patological case of
+ * degenerate lines with angular coefficient m = +/- inf.
+ *
+ * The rotation is using the information on the theta angle computed in the
+ * fast fit. The rotation is such that the S3D axis will be the X-direction,
+ * while the rotated Z-axis will be the Y-direction. This pretty much follows
+ * what is done in the same fit in the Broken Line approach.
+ */
+
   template<typename M3xN, typename M6xN, typename V4>
 __host__ __device__ 
 inline line_fit Line_fit(const M3xN& hits,
@@ -937,7 +953,7 @@ inline line_fit Line_fit(const M3xN& hits,
 			 const circle_fit& circle,
 			 const V4& fast_fit,
 			 const double B,
-			 const bool error = true) {
+			 const bool error) {
     
   constexpr uint32_t N = M3xN::ColsAtCompileTime;
   auto n = hits.cols();
@@ -1128,7 +1144,7 @@ inline line_fit Line_fit(const M3xN& hits,
 
 template<int N>
 inline helix_fit Helix_fit(const Matrix3xNd<N>& hits, const Eigen::Matrix<float,6,4>& hits_ge, const double B,
-                           const bool error = true)
+                           const bool error)
 {
     u_int n = hits.cols();
     VectorNd<4> rad = (hits.block(0, 0, 2, n).colwise().norm());
