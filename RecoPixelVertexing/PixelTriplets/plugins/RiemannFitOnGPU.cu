@@ -31,6 +31,8 @@ void kernelFastFitAllHits(TuplesOnGPU::Container const * __restrict__ foundNtupl
     uint32_t offset)
 {
 
+  assert(hits_in_fit==4); // FixMe later template
+
   assert(pfast_fit); assert(foundNtuplets);
 
   auto local_start = (blockIdx.x * blockDim.x + threadIdx.x);
@@ -94,6 +96,8 @@ void kernelCircleFitAllHits(TuplesOnGPU::Container const * __restrict__ foundNtu
   constexpr uint32_t N = Rfit::Map3x4d::ColsAtCompileTime;
   constexpr auto n = N;
 
+  assert(4==n); // later will be templated...
+
   Rfit::VectorNd<N> rad = (hits.block(0, 0, 2, n).colwise().norm());
 
   Rfit::Matrix2Nd<N> hits_cov =  Rfit::Matrix2Nd<4>::Zero();
@@ -105,8 +109,8 @@ void kernelCircleFitAllHits(TuplesOnGPU::Container const * __restrict__ foundNtu
                        fast_fit, rad, B, true);
 
 #ifdef GPU_DEBUG
-  printf("kernelCircleFitAllHits circle.par(0,1,2): %d %f,%f,%f\n", helix_start, 
-         circle_fit.par(0), circle_fit.par(1), circle_fit.par(2));
+//  printf("kernelCircleFitAllHits circle.par(0,1,2): %d %f,%f,%f\n", helix_start, 
+//         circle_fit[local_start].par(0), circle_fit[local_start].par(1), circle_fit[local_start].par(2));
 #endif
 }
 
@@ -158,6 +162,8 @@ void kernelLineFitAllHits(TuplesOnGPU::Container const * __restrict__ foundNtupl
   printf("kernelLineFitAllHits circle.par(0,1,2): %d %f,%f,%f\n", helix_start,
          circle_fit[local_start].par(0), circle_fit[local_start].par(1), circle_fit[local_start].par(2));
   printf("kernelLineFitAllHits line.par(0,1): %d %f,%f\n", helix_start, line_fit[local_start].par(0),line_fit[local_start].par(1));
+  printf("kernelLineFitAllHits chi2 cov %f/%f %f,%f,%f,%f,%f\n",helix.chi2_circle,helix.chi2_line, 
+         helix.cov(0,0),helix.cov(1,1),helix.cov(2,2),helix.cov(3,3),helix.cov(4,4));
 #endif
 }
 

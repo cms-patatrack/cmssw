@@ -208,6 +208,10 @@ void kernel_VerifyFit(TuplesOnGPU::Container const * __restrict__ tuples,
   }
   isNaN |=  !(fit_results[idx].chi2_line+fit_results[idx].chi2_circle < 100.f);  // catch NaN as well
 
+#ifdef GPU_DEBUG
+ if (isNaN) printf("NaN or Bad Fit %d %f/%f\n",idx,fit_results[idx].chi2_line,fit_results[idx].chi2_circle);
+#endif
+
   // impose "region cuts" (NaN safe)
   // phi,Tip,pt,cotan(theta)),Zip
   bool ok = std::abs(fit_results[idx].par(1)) < 0.1f 
