@@ -140,7 +140,7 @@ void kernelLineFitAllHits(TuplesOnGPU::Container const * __restrict__ foundNtupl
   Rfit::Map3x4d hits(phits+local_start,3,4);
   Rfit::Map4d   fast_fit(pfast_fit+local_start,4);
   Rfit::Map6x4f hits_ge(phits_ge+local_start,6,4);
-  line_fit[local_start] = Rfit::Line_fit(hits, hits_ge, circle_fit[local_start], fast_fit, true);
+  line_fit[local_start] = Rfit::Line_fit(hits, hits_ge, circle_fit[local_start], fast_fit, B, true);
 
   par_uvrtopak(circle_fit[local_start], B, true);
 
