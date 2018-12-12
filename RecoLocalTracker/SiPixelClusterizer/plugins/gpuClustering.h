@@ -141,6 +141,23 @@ namespace gpuClustering {
 
     __syncthreads();  // for hit filling!
 
+#ifdef GPU_DEBUG
+    // look for anomalous high occupancy
+    __shared__ uint32_t n40,n60;
+    n40=n60=0;
+    __syncthreads();
+    for (auto j=threadIdx.x; j<Hist::nbins(); j+=blockDim.x) { 
+      if(hist.size(j)>60) atomicAdd(&n60,1);
+      if(hist.size(j)>40) atomicAdd(&n40,1);
+     }
+    __syncthreads();
+    if (0==threadIdx.x) {
+      if (n60>0) printf("columns with more than 60 px %d in %d\n",n60,thisModuleId);
+      else if (n40>0) printf("columns with more than 40 px %d in %d\n",n40,thisModuleId);
+    }
+    __syncthreads();
+#endif
+
     // for each pixel, look at all the pixels until the end of the module;
     // when two valid pixels within +/- 1 in x or y are found, set their id to the minimum;
     // after the loop, all the pixel in each cluster should have the id equeal to the lowest
