@@ -133,10 +133,8 @@ namespace gpuClustering {
       jmax[k] = hist.end();
 #endif
 
-#ifdef GPU_DEBUG
     __shared__ int nloops;
     nloops=0;
-#endif
 
 
     __syncthreads();  // for hit filling!
@@ -164,7 +162,16 @@ namespace gpuClustering {
     // pixel in the cluster ( clus[i] == i ).
     bool more = true;
     while (__syncthreads_or(more)) {
-      more = false;
+      if (1==nloops%2) {
+        for (int j=threadIdx.x, k = 0; j<hist.size(); j+=blockDim.x, ++k) {
+             auto p = hist.begin()+j;
+             auto i = *p + firstPixel;
+             auto m = clusterId[i];
+             while (m!=clusterId[m]) m=clusterId[m];
+             clusterId[i]=m;
+        }
+      } else {
+        more = false;
         for (int j=threadIdx.x, k = 0; j<hist.size(); j+=blockDim.x, ++k) {
           auto p = hist.begin()+j;
           auto i = *p + firstPixel;
@@ -182,9 +189,7 @@ namespace gpuClustering {
           // loop to columns
           auto loop = [&](uint16_t const * kk) {
             auto m = (*kk)+firstPixel;
-#ifdef GPU_DEBUG
             assert(m!=i);
-#endif
             if (std::abs(int(x[m]) - int(x[i])) > 1) return;
             // if (std::abs(int(y[m]) - int(y[i])) > 1) return; // binssize is 1
             auto old = atomicMin(&clusterId[m], clusterId[i]);
@@ -201,9 +206,8 @@ namespace gpuClustering {
           ++p;
           for (;p<e;++p) loop(p);
         } // pixel loop
-#ifdef GPU_DEBUG
+        }
         if (threadIdx.x==0) ++nloops;
-#endif
     }  // end while
 
 #ifdef GPU_DEBUG
