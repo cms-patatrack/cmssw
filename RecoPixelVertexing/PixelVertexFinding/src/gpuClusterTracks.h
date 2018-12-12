@@ -94,14 +94,27 @@ namespace gpuVertexFinder {
 
       forEachInBins(hist,izt[i],1,loop);
     }
+
+
+    __shared__ int nloops;
+    nloops=0;
       
     __syncthreads();
+
+
     
     // cluster seeds only
     bool more = true;
     while (__syncthreads_or(more)) {
-      more=false;
-      for (int  k = threadIdx.x; k < hist.size(); k += blockDim.x) {
+     if (1==nloops%2) {
+      for (int i = threadIdx.x; i < nt; i += blockDim.x) {
+        auto m = iv[i];
+        while (m!=iv[m]) m=iv[m];
+        iv[i]=m;
+      }
+      }  else {
+       more=false;
+       for (int  k = threadIdx.x; k < hist.size(); k += blockDim.x) {
         auto p = hist.begin()+k;
         auto i = (*p);
         auto be = std::min(Hist::bin(izt[i])+1,int(hist.nbins()-1));
@@ -121,7 +134,9 @@ namespace gpuVertexFinder {
 	};
         ++p;
         for (;p<hist.end(be);++p) loop(*p);
-      } // for i
+       } // for i
+      }
+      if (threadIdx.x==0) ++nloops;
     } // while
     
     
