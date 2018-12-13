@@ -2,11 +2,12 @@
 #define RecoLocalTracker_SiPixelRecHits_plugins_gpuFishbone_h
 
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <limits>
+
+#include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
 
 #include "DataFormats/Math/interface/approx_atan2.h"
 #include "RecoLocalTracker/SiPixelRecHits/plugins/siPixelRecHitsHeterogeneousProduct.h"

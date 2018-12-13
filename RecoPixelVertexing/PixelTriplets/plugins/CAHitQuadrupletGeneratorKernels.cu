@@ -281,14 +281,6 @@ void CAHitQuadrupletGeneratorKernels::launchKernels( // here goes algoparms....
   numberOfBlocks = (TuplesOnGPU::Container::totbins() + blockSize - 1)/blockSize;
   cudautils::finalizeBulk<<<numberOfBlocks, blockSize, 0, cudaStream>>>(gpu_.apc_d,gpu_.tuples_d);
 
-  numberOfBlocks = (std::max(nhits, maxNumberOfDoublets_) + blockSize - 1)/blockSize;
-  kernel_checkOverflows<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
-                        gpu_.tuples_d, gpu_.apc_d,
-                        device_theCells_, device_nCells_,
-                        device_isOuterHitOfCell_, nhits
-                       );
-  cudaCheck(cudaGetLastError());
-
   if (lateFishbone_) {
     auto stride=4;
     numberOfBlocks = (nhits + blockSize - 1)/blockSize;
@@ -301,6 +293,17 @@ void CAHitQuadrupletGeneratorKernels::launchKernels( // here goes algoparms....
     );
     cudaCheck(cudaGetLastError());
   }
+
+#ifndef NO_CHECK_OVERFLOWS
+  numberOfBlocks = (std::max(nhits, maxNumberOfDoublets_) + blockSize - 1)/blockSize;
+  kernel_checkOverflows<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
+                        gpu_.tuples_d, gpu_.apc_d,
+                        device_theCells_, device_nCells_,
+                        device_isOuterHitOfCell_, nhits
+                       );
+  cudaCheck(cudaGetLastError());
+#endif
+
 
   // kernel_print_found_ntuplets<<<1, 1, 0, cudaStream>>>(gpu_.tuples_d, 10);
   }

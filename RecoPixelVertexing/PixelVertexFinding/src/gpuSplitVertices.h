@@ -4,7 +4,7 @@
 #include<cstdint>
 #include<cmath>
 #include <algorithm>
-#include<cassert>
+#include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
 
 #include "HeterogeneousCore/CUDAUtilities/interface/HistoContainer.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/radixSort.h"
