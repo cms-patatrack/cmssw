@@ -119,6 +119,7 @@ namespace pixelgpudetails {
     cudaCheck(cudaFree(gpu_.hws_d));
     cudaCheck(cudaFree(gpu_d));
     cudaCheck(cudaFree(d_phase1TopologyLayerStart_));
+    cudaCheck(cudaFree(d_phase1TopologyLayer_));
 
     cudaCheck(cudaFreeHost(h_hitsModuleStart_));
     cudaCheck(cudaFreeHost(h_owner_32bit_));
