@@ -146,6 +146,11 @@ void CAHitQuadrupletGeneratorGPU::allocateOnGPU()
   cudaCheck(cudaMalloc(&gpu_.helix_fit_results_d, sizeof(Rfit::helix_fit)*maxNumberOfQuadruplets_));
   cudaCheck(cudaMalloc(&gpu_.quality_d, sizeof(Quality)*maxNumberOfQuadruplets_));
 
+  // make initchk happy
+  cudaCheck(cudaMemset(gpu_.tuples_d, 0Xaa, sizeof(TuplesOnGPU::Container)));
+  cudaCheck(cudaMemset(gpu_.helix_fit_results_d, 0Xaa, sizeof(Rfit::helix_fit)*maxNumberOfQuadruplets_));
+  cudaCheck(cudaMemset(gpu_.quality_d, 0Xaa, sizeof(Quality)*maxNumberOfQuadruplets_));
+
   cudaCheck(cudaMalloc(&gpu_d, sizeof(TuplesOnGPU)));
   gpu_.me_d = gpu_d;
   cudaCheck(cudaMemcpy(gpu_d, &gpu_, sizeof(TuplesOnGPU), cudaMemcpyDefault));
