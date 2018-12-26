@@ -246,16 +246,16 @@ void CAHitQuadrupletGeneratorKernels::launchKernels( // here goes algoparms....
   assert(nhits <= PixelGPUConstants::maxNumberOfHits);
   
   if (earlyFishbone_) {
-    auto blockSize = 128;
+    auto blockSize = 64;
     auto stride = 4;
     auto numberOfBlocks = (nhits + blockSize - 1)/blockSize;
-    numberOfBlocks *=stride;
-  
-    fishbone<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
+    dim3 blks(1,numberOfBlocks,1);
+    dim3 thrs(stride,blockSize,1);
+    fishbone<<<blks,thrs, 0, cudaStream>>>(
       hh.gpu_d,
       device_theCells_, device_nCells_,
       device_isOuterHitOfCell_,
-      nhits, stride, false
+      nhits, false
     );
     cudaCheck(cudaGetLastError());
   }
@@ -282,14 +282,16 @@ void CAHitQuadrupletGeneratorKernels::launchKernels( // here goes algoparms....
   cudautils::finalizeBulk<<<numberOfBlocks, blockSize, 0, cudaStream>>>(gpu_.apc_d,gpu_.tuples_d);
 
   if (lateFishbone_) {
-    auto stride=4;
-    numberOfBlocks = (nhits + blockSize - 1)/blockSize;
-    numberOfBlocks *=stride;
-    fishbone<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
+    auto blockSize = 64;
+    auto stride = 4;
+    auto numberOfBlocks = (nhits + blockSize - 1)/blockSize;
+    dim3 blks(1,numberOfBlocks,1);
+    dim3 thrs(stride,blockSize,1);
+    fishbone<<<blks,thrs, 0, cudaStream>>>(
       hh.gpu_d,
       device_theCells_, device_nCells_,
       device_isOuterHitOfCell_,
-      nhits, stride, true
+      nhits, true
     );
     cudaCheck(cudaGetLastError());
   }
