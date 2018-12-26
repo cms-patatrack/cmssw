@@ -34,8 +34,8 @@ namespace gpuPixelDoublets {
                          int16_t const * __restrict__ phicuts,
                          float const * __restrict__ minz,
                          float const * __restrict__ maxz,
-                         float const * __restrict__ maxr,
-                         int stride)
+                         float const * __restrict__ maxr
+                         )
   {
     auto layerSize = [=](uint8_t li) { return offsets[li+1]-offsets[li]; };
 
@@ -51,10 +51,11 @@ namespace gpuPixelDoublets {
     }
     auto ntot = innerLayerCumulativeSize[nPairs-1];
 
-    auto ldx = blockIdx.x * blockDim.x + threadIdx.x;
-    auto idx = ldx/stride;
-    auto first = ldx - idx*stride;
-    for (auto j = idx; j < ntot; j += (blockDim.x * gridDim.x)/stride ) {
+    // x runs faster
+    auto idy = blockIdx.y * blockDim.y + threadIdx.y;
+    auto first = threadIdx.x;
+    auto stride = blockDim.x;
+    for (auto j = idy; j < ntot; j += blockDim.y * gridDim.y ) {
 
       uint32_t pairLayerId=0;
       while (j >= innerLayerCumulativeSize[pairLayerId++]);
@@ -143,7 +144,7 @@ namespace gpuPixelDoublets {
     }  // loop in block...
   }
 
-  constexpr auto getDoubletsFromHistoMaxBlockSize = 64;
+  constexpr auto getDoubletsFromHistoMaxBlockSize = 64;  // for both x and y
   constexpr auto getDoubletsFromHistoMinBlocksPerMP = 16;
 
   __global__
@@ -151,7 +152,7 @@ namespace gpuPixelDoublets {
   void getDoubletsFromHisto(GPUCACell * cells,
                             uint32_t * nCells,
                             siPixelRecHitsHeterogeneousProduct::HitsOnGPU const *  __restrict__ hhp,
-                            GPUCACell::OuterHitOfCell * isOuterHitOfCell, int stride)
+                            GPUCACell::OuterHitOfCell * isOuterHitOfCell)
   {
     constexpr int nPairs = 13;
     constexpr const uint8_t layerPairs[2*nPairs] = {
@@ -193,7 +194,7 @@ namespace gpuPixelDoublets {
     doubletsFromHisto(layerPairs, nPairs, cells, nCells,
                       hh.iphi_d, *hh.hist_d, hh.hitsLayerStart_d,
                       hh, isOuterHitOfCell,
-                      phicuts, minz, maxz, maxr, stride);
+                      phicuts, minz, maxz, maxr);
   }
 
 

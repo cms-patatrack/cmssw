@@ -66,7 +66,7 @@ namespace gpuPixelDoublets {
     }
     if (sg<2) return;   
     // here we parallelize 
-    for (uint32_t ic=first; ic<sg-1;  ic+=blockIdx.x) {
+    for (uint32_t ic=first; ic<sg-1;  ic+=blockDim.x) {
       auto & ci = cells[cc[ic]];
       for    (auto jc=ic+1; jc<sg; ++jc) {
         auto & cj = cells[cc[jc]];

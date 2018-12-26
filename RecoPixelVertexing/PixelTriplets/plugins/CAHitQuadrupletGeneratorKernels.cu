@@ -315,10 +315,12 @@ void CAHitQuadrupletGeneratorKernels::buildDoublets(HitsOnCPU const & hh, cudaSt
   auto nhits = hh.nHits;
 
   int stride=4;
-  int threadsPerBlock = gpuPixelDoublets::getDoubletsFromHistoMaxBlockSize;
+  int threadsPerBlock = gpuPixelDoublets::getDoubletsFromHistoMaxBlockSize/stride;
   int blocks = (3 * nhits + threadsPerBlock - 1) / threadsPerBlock;
-  gpuPixelDoublets::getDoubletsFromHisto<<<stride*blocks, threadsPerBlock, 0, stream>>>(
-            device_theCells_, device_nCells_, hh.gpu_d, device_isOuterHitOfCell_,stride);
+  dim3 blks(1,blocks,1);
+  dim3 thrs(stride,threadsPerBlock,1);
+  gpuPixelDoublets::getDoubletsFromHisto<<<blks, thrs, 0, stream>>>(
+            device_theCells_, device_nCells_, hh.gpu_d, device_isOuterHitOfCell_);
   cudaCheck(cudaGetLastError());
 }
 
