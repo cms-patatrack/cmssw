@@ -144,9 +144,11 @@ kernel_connect(AtomicPairCounter * apc1, AtomicPairCounter * apc2,  // just to z
   constexpr auto hardCurvCut = 1.f/(0.35f * 87.f); // FIXME VI tune
   constexpr auto ptmin = 0.9f; // FIXME original "tune"
 
-  auto cellIndex = threadIdx.x + blockIdx.x * blockDim.x;
+  auto cellIndex = threadIdx.y + blockIdx.y * blockDim.y;
+  auto first = threadIdx.x;
+  auto stride = blockDim.x;
 
-  if (0==cellIndex) { (*apc1)=0; (*apc2)=0; }// ready for next kernel
+  if (0==(cellIndex+first)) { (*apc1)=0; (*apc2)=0; }// ready for next kernel
 
   if (cellIndex >= (*nCells) ) return;
   auto const & thisCell = cells[cellIndex];
@@ -154,7 +156,7 @@ kernel_connect(AtomicPairCounter * apc1, AtomicPairCounter * apc2,  // just to z
   auto innerHitId = thisCell.get_inner_hit_id();
   auto numberOfPossibleNeighbors = isOuterHitOfCell[innerHitId].size();
   auto vi = isOuterHitOfCell[innerHitId].data();
-  for (auto j = 0; j < numberOfPossibleNeighbors; ++j) {
+  for (auto j = first; j < numberOfPossibleNeighbors; j+=stride) {
      auto otherCell = __ldg(vi+j);
      if (cells[otherCell].theDoubletId<0) continue;
      if (thisCell.check_alignment(hh,
@@ -260,9 +262,14 @@ void CAHitQuadrupletGeneratorKernels::launchKernels( // here goes algoparms....
     cudaCheck(cudaGetLastError());
   }
 
-  auto blockSize = 64;
+  auto nthTot = 64;
+  auto stride = 4;
+  auto blockSize = nthTot/stride;
   auto numberOfBlocks = (maxNumberOfDoublets_ + blockSize - 1)/blockSize;
-  kernel_connect<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
+  dim3 blks(1,numberOfBlocks,1);
+  dim3 thrs(stride,blockSize,1);
+
+  kernel_connect<<<blks, thrs, 0, cudaStream>>>(
       gpu_.apc_d, device_hitToTuple_apc_,  // needed only to be reset, ready for next kernel
       hh.gpu_d,
       device_theCells_, device_nCells_,
@@ -330,4 +337,3 @@ void CAHitQuadrupletGeneratorKernels::classifyTuples(HitsOnCPU const & hh, Tuple
     kernel_fastDuplicateRemover<<<numberOfBlocks, blockSize, 0, cudaStream>>>(device_theCells_, device_nCells_,tuples.tuples_d,tuples.helix_fit_results_d, tuples.quality_d);
 
 }
-
