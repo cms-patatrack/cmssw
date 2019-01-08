@@ -8,8 +8,7 @@
 #include "CalibTracker/SiPixelESProducers/interface/SiPixelCPEGenericDBErrorParametrization.h"
 #include "CondFormats/SiPixelTransient/interface/SiPixelGenError.h"
 #include "CondFormats/SiPixelTransient/interface/SiPixelTemplate.h"
-#include "HeterogeneousCore/CUDACore/interface/CUDAESProduct.h"
-#include "HeterogeneousCore/CUDAUtilities/interface/CUDAHostAllocator.h"
+#include "HeterogeneousCore/CUDACore/interface/CUDAESManaged.h"
 #include "RecoLocalTracker/SiPixelRecHits/interface/PixelCPEBase.h"
 #include "RecoLocalTracker/SiPixelRecHits/interface/pixelCPEforGPU.h"
 
@@ -47,7 +46,7 @@ public:
 
     // The return value can only be used safely in kernels launched on
     // the same cudaStream, or after cudaStreamSynchronize.
-    const pixelCPEforGPU::ParamsOnGPU *getGPUProductAsync(cuda::stream_t<>& cudaStream) const;
+   const pixelCPEforGPU::ParamsOnGPU *getGPUProductAsync(cuda::stream_t<>& cudaStream) const;
 
 private:
    ClusterParam * createClusterParam(const SiPixelCluster & cl) const override;
@@ -81,16 +80,10 @@ private:
    //--- DB Error Parametrization object, new light templates 
    std::vector< SiPixelGenErrorStore > thePixelGenError_;
 
-   std::vector<pixelCPEforGPU::DetParams, CUDAHostAllocator<pixelCPEforGPU::DetParams>> m_detParamsGPU;
-   pixelCPEforGPU::CommonParams m_commonParamsGPU;     
-
-   struct GPUData {
-     ~GPUData();
-     // not needed if not used on CPU...
-     pixelCPEforGPU::ParamsOnGPU h_paramsOnGPU;
-     pixelCPEforGPU::ParamsOnGPU * d_paramsOnGPU = nullptr;  // copy of the above on the Device
-   };
-   CUDAESProduct<GPUData> gpuData_;
+   CUDAESManaged m_helper;
+   pixelCPEforGPU::DetParams *m_detParamsGPU = nullptr;
+   pixelCPEforGPU::CommonParams *m_commonParamsGPU = nullptr;
+   pixelCPEforGPU::ParamsOnGPU *m_paramsGPU = nullptr;
 
    void fillParamsForGpu();
 };

@@ -84,7 +84,7 @@ namespace pixelgpudetails {
     return (1==((rawId>>25)&0x7));
   }
 
-  __device__ pixelgpudetails::DetIdGPU getRawId(const SiPixelFedCablingMapGPU * cablingMap, uint32_t fed, uint32_t link, uint32_t roc) {
+  __device__ pixelgpudetails::DetIdGPU getRawId(const SiPixelFedCablingMapGPU *cablingMap, uint32_t fed, uint32_t link, uint32_t roc) {
     uint32_t index = fed * MAX_LINK * MAX_ROC + (link-1) * MAX_ROC + roc;
     pixelgpudetails::DetIdGPU detId = { cablingMap->RawId[index], cablingMap->rocInDet[index], cablingMap->moduleId[index] };
     return detId;

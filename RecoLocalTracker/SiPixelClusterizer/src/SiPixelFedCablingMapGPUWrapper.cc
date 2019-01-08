@@ -12,6 +12,7 @@
 #include "CondFormats/SiPixelObjects/interface/SiPixelFedCablingTree.h"
 #include "CondFormats/SiPixelObjects/interface/SiPixelQuality.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
+#include "FWCore/ServiceRegistry/interface/Service.h"
 #include "Geometry/CommonDetUnit/interface/GeomDetType.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
 #include "HeterogeneousCore/CUDAServices/interface/CUDAService.h"
@@ -21,12 +22,26 @@
 SiPixelFedCablingMapGPUWrapper::SiPixelFedCablingMapGPUWrapper(SiPixelFedCablingMap const& cablingMap,
                                                                TrackerGeometry const& trackerGeom,
                                                                SiPixelQuality const *badPixelInfo):
-  cablingMap_(&cablingMap),
-  fedMap(pixelgpudetails::MAX_SIZE), linkMap(pixelgpudetails::MAX_SIZE), rocMap(pixelgpudetails::MAX_SIZE),
-  RawId(pixelgpudetails::MAX_SIZE), rocInDet(pixelgpudetails::MAX_SIZE), moduleId(pixelgpudetails::MAX_SIZE),
-  badRocs(pixelgpudetails::MAX_SIZE), modToUnpDefault(pixelgpudetails::MAX_SIZE),
   hasQuality_(badPixelInfo != nullptr)
 {
+  unsigned int *fedMap = nullptr;
+  unsigned int *linkMap = nullptr;
+  unsigned int *rocMap = nullptr;
+  unsigned int *RawId = nullptr;
+  unsigned int *rocInDet = nullptr;
+  unsigned int *moduleId = nullptr;
+  unsigned char *badRocs = nullptr;
+
+  helper_.allocate(&fedMap,   pixelgpudetails::MAX_SIZE);
+  helper_.allocate(&linkMap,  pixelgpudetails::MAX_SIZE);
+  helper_.allocate(&rocMap,   pixelgpudetails::MAX_SIZE);
+  helper_.allocate(&RawId,    pixelgpudetails::MAX_SIZE);
+  helper_.allocate(&rocInDet, pixelgpudetails::MAX_SIZE);
+  helper_.allocate(&moduleId, pixelgpudetails::MAX_SIZE);
+  helper_.allocate(&badRocs,  pixelgpudetails::MAX_SIZE);
+
+  helperUnp_.allocate(&modToUnpDefault, pixelgpudetails::MAX_SIZE);
+
   std::vector<unsigned int> const& fedIds = cablingMap.fedIds();
   std::unique_ptr<SiPixelFedCablingTree> const& cabling = cablingMap.cablingTree();
 
@@ -88,12 +103,22 @@ SiPixelFedCablingMapGPUWrapper::SiPixelFedCablingMapGPUWrapper(SiPixelFedCabling
     LogDebug("SiPixelFedCablingMapGPU") << "----------------------------------------------------------------------------" << std::endl;
     LogDebug("SiPixelFedCablingMapGPU") << i << std::setw(20) << fedMap[i]  << std::setw(20) << linkMap[i]  << std::setw(20) << rocMap[i] << std::endl;
     LogDebug("SiPixelFedCablingMapGPU") << i << std::setw(20) << RawId[i]   << std::setw(20) << rocInDet[i] << std::setw(20) << moduleId[i] << std::endl;
-    LogDebug("SiPixelFedCablingMapGPU") << i << std::setw(20) << (bool)badRocs[i] << std::setw(20) << std::endl;
+    LogDebug("SiPixelFedCablingMapGPU") << i << std::setw(20) << static_cast<bool>(badRocs[i]) << std::setw(20) << std::endl;
     LogDebug("SiPixelFedCablingMapGPU") << "----------------------------------------------------------------------------" << std::endl;
 
   }
 
-  size = index-1;
+  helper_.allocate(&cablingGPU_, 1);
+  cablingGPU_->size = index-1;
+  cablingGPU_->fed = fedMap;
+  cablingGPU_->link = linkMap;
+  cablingGPU_->roc = rocMap;
+  cablingGPU_->RawId = RawId;
+  cablingGPU_->rocInDet = rocInDet;
+  cablingGPU_->moduleId = moduleId;
+  cablingGPU_->badRocs = badRocs;
+  helper_.advise();
+  helperUnp_.advise();
 }
 
 
@@ -101,38 +126,13 @@ SiPixelFedCablingMapGPUWrapper::~SiPixelFedCablingMapGPUWrapper() {}
 
 
 const SiPixelFedCablingMapGPU *SiPixelFedCablingMapGPUWrapper::getGPUProductAsync(cuda::stream_t<>& cudaStream) const {
-  const auto& data = gpuData_.dataForCurrentDeviceAsync(cudaStream, [this](GPUData& data, cuda::stream_t<>& stream) {
-      // allocate
-      cudaCheck(cudaMallocHost((void**) & data.cablingMapHost, sizeof(SiPixelFedCablingMapGPU)));
-      cudaCheck(cudaMalloc((void**) & data.cablingMapDevice, sizeof(SiPixelFedCablingMapGPU)));
-      cudaCheck(cudaMalloc((void**) & data.cablingMapHost->fed,      pixelgpudetails::MAX_SIZE_BYTE_INT));
-      cudaCheck(cudaMalloc((void**) & data.cablingMapHost->link,     pixelgpudetails::MAX_SIZE_BYTE_INT));
-      cudaCheck(cudaMalloc((void**) & data.cablingMapHost->roc,      pixelgpudetails::MAX_SIZE_BYTE_INT));
-      cudaCheck(cudaMalloc((void**) & data.cablingMapHost->RawId,    pixelgpudetails::MAX_SIZE_BYTE_INT));
-      cudaCheck(cudaMalloc((void**) & data.cablingMapHost->rocInDet, pixelgpudetails::MAX_SIZE_BYTE_INT));
-      cudaCheck(cudaMalloc((void**) & data.cablingMapHost->moduleId, pixelgpudetails::MAX_SIZE_BYTE_INT));
-      cudaCheck(cudaMalloc((void**) & data.cablingMapHost->badRocs,  pixelgpudetails::MAX_SIZE_BYTE_BOOL));
-
-      // transfer
-      data.cablingMapHost->size = this->size;
-      cudaCheck(cudaMemcpyAsync(data.cablingMapHost->fed,      this->fedMap.data(),   this->fedMap.size()   * sizeof(unsigned int),  cudaMemcpyDefault, stream.id()));
-      cudaCheck(cudaMemcpyAsync(data.cablingMapHost->link,     this->linkMap.data(),  this->linkMap.size()  * sizeof(unsigned int),  cudaMemcpyDefault, stream.id()));
-      cudaCheck(cudaMemcpyAsync(data.cablingMapHost->roc,      this->rocMap.data(),   this->rocMap.size()   * sizeof(unsigned int),  cudaMemcpyDefault, stream.id()));
-      cudaCheck(cudaMemcpyAsync(data.cablingMapHost->RawId,    this->RawId.data(),    this->RawId.size()    * sizeof(unsigned int),  cudaMemcpyDefault, stream.id()));
-      cudaCheck(cudaMemcpyAsync(data.cablingMapHost->rocInDet, this->rocInDet.data(), this->rocInDet.size() * sizeof(unsigned int),  cudaMemcpyDefault, stream.id()));
-      cudaCheck(cudaMemcpyAsync(data.cablingMapHost->moduleId, this->moduleId.data(), this->moduleId.size() * sizeof(unsigned int),  cudaMemcpyDefault, stream.id()));
-      cudaCheck(cudaMemcpyAsync(data.cablingMapHost->badRocs,  this->badRocs.data(),  this->badRocs.size()  * sizeof(unsigned char), cudaMemcpyDefault, stream.id()));
-      cudaCheck(cudaMemcpyAsync(data.cablingMapDevice, data.cablingMapHost, sizeof(SiPixelFedCablingMapGPU), cudaMemcpyDefault, stream.id()));
-    });
-  return data.cablingMapDevice;
+  helper_.prefetchAsync(cudaStream);
+  return cablingGPU_;
 }
 
 const unsigned char *SiPixelFedCablingMapGPUWrapper::getModToUnpAllAsync(cuda::stream_t<>& cudaStream) const {
-  const auto& data = modToUnp_.dataForCurrentDeviceAsync(cudaStream, [this](ModulesToUnpack& data, cuda::stream_t<>& stream) {
-      cudaCheck(cudaMalloc((void**) & data.modToUnpDefault, pixelgpudetails::MAX_SIZE_BYTE_BOOL));
-      cudaCheck(cudaMemcpyAsync(data.modToUnpDefault, this->modToUnpDefault.data(), this->modToUnpDefault.size() * sizeof(unsigned char), cudaMemcpyDefault, stream.id()));
-    });
-  return data.modToUnpDefault;
+  helperUnp_.prefetchAsync(cudaStream);
+  return modToUnpDefault;
 }
 
 edm::cuda::device::unique_ptr<unsigned char[]> SiPixelFedCablingMapGPUWrapper::getModToUnpRegionalAsync(std::set<unsigned int> const& modules, cuda::stream_t<>& cudaStream) const {
@@ -166,23 +166,4 @@ edm::cuda::device::unique_ptr<unsigned char[]> SiPixelFedCablingMapGPUWrapper::g
 
   cuda::memory::async::copy(modToUnpDevice.get(), modToUnpHost.get(), pixelgpudetails::MAX_SIZE * sizeof(unsigned char), cudaStream.id());
   return modToUnpDevice;
-}
-
-
-SiPixelFedCablingMapGPUWrapper::GPUData::~GPUData() {
-  if(cablingMapHost != nullptr) {
-    cudaCheck(cudaFree(cablingMapHost->fed));
-    cudaCheck(cudaFree(cablingMapHost->link));
-    cudaCheck(cudaFree(cablingMapHost->roc));
-    cudaCheck(cudaFree(cablingMapHost->RawId));
-    cudaCheck(cudaFree(cablingMapHost->rocInDet));
-    cudaCheck(cudaFree(cablingMapHost->moduleId));
-    cudaCheck(cudaFree(cablingMapHost->badRocs));
-    cudaCheck(cudaFreeHost(cablingMapHost));
-  }
-  cudaCheck(cudaFree(cablingMapDevice));
-}
-
-SiPixelFedCablingMapGPUWrapper::ModulesToUnpack::~ModulesToUnpack() {
-  cudaCheck(cudaFree(modToUnpDefault));
 }

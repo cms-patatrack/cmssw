@@ -15,13 +15,13 @@ namespace pixelgpudetails {
 // TODO: since this has more information than just cabling map, maybe we should invent a better name?
 struct SiPixelFedCablingMapGPU {
   unsigned int size = 0;
-  unsigned int * fed = nullptr;
-  unsigned int * link = nullptr;
-  unsigned int * roc = nullptr;
-  unsigned int * RawId = nullptr;
-  unsigned int * rocInDet = nullptr;
-  unsigned int * moduleId = nullptr;
-  unsigned char * badRocs = nullptr;
+  unsigned int const* fed = nullptr;
+  unsigned int const* link = nullptr;
+  unsigned int const* roc = nullptr;
+  unsigned int const* RawId = nullptr;
+  unsigned int const* rocInDet = nullptr;
+  unsigned int const* moduleId = nullptr;
+  unsigned char const* badRocs = nullptr;
 };
 
 #endif

@@ -1,9 +1,8 @@
 #ifndef RecoLocalTracker_SiPixelClusterizer_SiPixelFedCablingMapGPUWrapper_h
 #define RecoLocalTracker_SiPixelClusterizer_SiPixelFedCablingMapGPUWrapper_h
-
 #include "CUDADataFormats/Common/interface/device_unique_ptr.h"
 #include "CUDADataFormats/Common/interface/host_unique_ptr.h"
-#include "HeterogeneousCore/CUDACore/interface/CUDAESProduct.h"
+#include "HeterogeneousCore/CUDACore/interface/CUDAESManaged.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/CUDAHostAllocator.h"
 #include "RecoLocalTracker/SiPixelClusterizer/interface/SiPixelFedCablingMapGPU.h"
 
@@ -34,29 +33,13 @@ public:
 
 private:
   const SiPixelFedCablingMap *cablingMap_;
-  std::vector<unsigned int,  CUDAHostAllocator<unsigned int>>  fedMap;
-  std::vector<unsigned int,  CUDAHostAllocator<unsigned int>>  linkMap;
-  std::vector<unsigned int,  CUDAHostAllocator<unsigned int>>  rocMap;
-  std::vector<unsigned int,  CUDAHostAllocator<unsigned int>>  RawId;
-  std::vector<unsigned int,  CUDAHostAllocator<unsigned int>>  rocInDet;
-  std::vector<unsigned int,  CUDAHostAllocator<unsigned int>>  moduleId;
-  std::vector<unsigned char, CUDAHostAllocator<unsigned char>> badRocs;
-  std::vector<unsigned char, CUDAHostAllocator<unsigned char>> modToUnpDefault;
+  CUDAESManaged helperUnp_;
+  unsigned char *modToUnpDefault = nullptr;
+
+  CUDAESManaged helper_;
+  SiPixelFedCablingMapGPU *cablingGPU_ = nullptr;
   unsigned int size;
   bool hasQuality_;
-
-  struct GPUData {
-    ~GPUData();
-    SiPixelFedCablingMapGPU *cablingMapHost = nullptr;   // internal pointers are to GPU, struct itself is on CPU
-    SiPixelFedCablingMapGPU *cablingMapDevice = nullptr; // same internal pointers as above, struct itself is on GPU
-  };
-  CUDAESProduct<GPUData> gpuData_;
-
-  struct ModulesToUnpack {
-    ~ModulesToUnpack();
-    unsigned char *modToUnpDefault = nullptr; // pointer to GPU
-  };
-  CUDAESProduct<ModulesToUnpack> modToUnp_;
 };
 
 

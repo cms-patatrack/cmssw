@@ -7,8 +7,7 @@
 
 #include <cuda.h>
 
-SiPixelGainCalibrationForHLTGPU::SiPixelGainCalibrationForHLTGPU(const SiPixelGainCalibrationForHLT& gains, const TrackerGeometry& geom):
-  gains_(&gains)
+SiPixelGainCalibrationForHLTGPU::SiPixelGainCalibrationForHLTGPU(const SiPixelGainCalibrationForHLT& gains, const TrackerGeometry& geom)
 {
   // bizzarre logic (looking for fist strip-det) don't ask
   auto const & dus = geom.detUnits();
@@ -25,8 +24,7 @@ SiPixelGainCalibrationForHLTGPU::SiPixelGainCalibrationForHLTGPU(const SiPixelGa
   std::cout << "sizes " << sizeof(char) << ' ' << sizeof(uint8_t) << ' ' << sizeof(SiPixelGainForHLTonGPU::DecodingStructure) << std::endl;
   */
 
-  cudaCheck(cudaMallocHost((void**) & gainForHLTonHost_, sizeof(SiPixelGainForHLTonGPU)));
-  //gainForHLTonHost_->v_pedestals = gainDataOnGPU_; // how to do this?
+  helper_.allocate(&gainForHLT_, 1);
 
   // do not read back from the (possibly write-combined) memory buffer
   auto minPed  = gains.getPedLow();
@@ -36,21 +34,21 @@ SiPixelGainCalibrationForHLTGPU::SiPixelGainCalibrationForHLTGPU(const SiPixelGa
   auto nBinsToUseForEncoding = 253;
 
   // we will simplify later (not everything is needed....)
-  gainForHLTonHost_->minPed_ = minPed;
-  gainForHLTonHost_->maxPed_ = maxPed;
-  gainForHLTonHost_->minGain_= minGain;
-  gainForHLTonHost_->maxGain_= maxGain;
+  gainForHLT_->minPed_ = minPed;
+  gainForHLT_->maxPed_ = maxPed;
+  gainForHLT_->minGain_= minGain;
+  gainForHLT_->maxGain_= maxGain;
 
-  gainForHLTonHost_->numberOfRowsAveragedOver_ = 80;
-  gainForHLTonHost_->nBinsToUseForEncoding_    = nBinsToUseForEncoding;
-  gainForHLTonHost_->deadFlag_                 = 255;
-  gainForHLTonHost_->noisyFlag_                = 254;
+  gainForHLT_->numberOfRowsAveragedOver_ = 80;
+  gainForHLT_->nBinsToUseForEncoding_    = nBinsToUseForEncoding;
+  gainForHLT_->deadFlag_                 = 255;
+  gainForHLT_->noisyFlag_                = 254;
 
-  gainForHLTonHost_->pedPrecision  = static_cast<float>(maxPed - minPed) / nBinsToUseForEncoding;
-  gainForHLTonHost_->gainPrecision = static_cast<float>(maxGain - minGain) / nBinsToUseForEncoding;
+  gainForHLT_->pedPrecision  = static_cast<float>(maxPed - minPed) / nBinsToUseForEncoding;
+  gainForHLT_->gainPrecision = static_cast<float>(maxGain - minGain) / nBinsToUseForEncoding;
 
   /*
-  std::cout << "precisions g " << gainForHLTonHost_->pedPrecision << ' ' << gainForHLTonHost_->gainPrecision << std::endl;
+  std::cout << "precisions g " << gainForHLT_->pedPrecision << ' ' << gainForHLT_->gainPrecision << std::endl;
   */
 
   // fill the index map
@@ -68,31 +66,21 @@ SiPixelGainCalibrationForHLTGPU::SiPixelGainCalibrationForHLTGPU(const SiPixelGa
     assert(0==p->iend%2);
     assert(p->ibegin!=p->iend);
     assert(p->ncols>0);
-    gainForHLTonHost_->rangeAndCols[i] = std::make_pair(SiPixelGainForHLTonGPU::Range(p->ibegin,p->iend), p->ncols);
+    gainForHLT_->rangeAndCols[i] = std::make_pair(SiPixelGainForHLTonGPU::Range(p->ibegin,p->iend), p->ncols);
     // if (ind[i].detid!=dus[i]->geographicalId()) std::cout << ind[i].detid<<"!="<<dus[i]->geographicalId() << std::endl;
-    // gainForHLTonHost_->rangeAndCols[i] = std::make_pair(SiPixelGainForHLTonGPU::Range(ind[i].ibegin,ind[i].iend), ind[i].ncols);
+    // gainForHLT_->rangeAndCols[i] = std::make_pair(SiPixelGainForHLTonGPU::Range(ind[i].ibegin,ind[i].iend), ind[i].ncols);
   }
 
+  helper_.allocate(&(gainForHLT_->v_pedestals), gains.data().size(), sizeof(char)); // override the element size because essentially we reinterpret_cast on the fly
+  std::memcpy(gainForHLT_->v_pedestals, gains.data().data(), gains.data().size()*sizeof(char));
+
+  helper_.advise();
 }
 
 SiPixelGainCalibrationForHLTGPU::~SiPixelGainCalibrationForHLTGPU() {
-  cudaCheck(cudaFreeHost(gainForHLTonHost_));
-}
-
-SiPixelGainCalibrationForHLTGPU::GPUData::~GPUData() {
-  cudaCheck(cudaFree(gainForHLTonGPU));
-  cudaCheck(cudaFree(gainDataOnGPU));
 }
 
 const SiPixelGainForHLTonGPU *SiPixelGainCalibrationForHLTGPU::getGPUProductAsync(cuda::stream_t<>& cudaStream) const {
-  const auto& data = gpuData_.dataForCurrentDeviceAsync(cudaStream, [this](GPUData& data, cuda::stream_t<>& stream) {
-      cudaCheck(cudaMalloc((void**) & data.gainForHLTonGPU, sizeof(SiPixelGainForHLTonGPU)));
-      cudaCheck(cudaMalloc((void**) & data.gainDataOnGPU, this->gains_->data().size())); // TODO: this could be changed to cuda::memory::device::unique_ptr<>
-      // gains.data().data() is used also for non-GPU code, we cannot allocate it on aligned and write-combined memory
-      cudaCheck(cudaMemcpyAsync(data.gainDataOnGPU, this->gains_->data().data(), this->gains_->data().size(), cudaMemcpyDefault, stream.id()));
-
-      cudaCheck(cudaMemcpyAsync(data.gainForHLTonGPU, this->gainForHLTonHost_, sizeof(SiPixelGainForHLTonGPU), cudaMemcpyDefault, stream.id()));
-      cudaCheck(cudaMemcpyAsync(&(data.gainForHLTonGPU->v_pedestals), &(data.gainDataOnGPU), sizeof(SiPixelGainForHLTonGPU_DecodingStructure*), cudaMemcpyDefault, stream.id()));
-    });
-  return data.gainForHLTonGPU;
+  helper_.prefetchAsync(cudaStream);
+  return gainForHLT_;
 }

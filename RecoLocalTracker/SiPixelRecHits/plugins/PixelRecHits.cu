@@ -131,7 +131,7 @@ namespace pixelgpudetails {
 
   void PixelRecHitGPUKernel::makeHitsAsync(const siPixelRawToClusterHeterogeneousProduct::GPUProduct& input,
                                            float const * bs,
-                                           pixelCPEforGPU::ParamsOnGPU const * cpeParams,
+                                           pixelCPEforGPU::ParamsOnGPU const *cpeParams,
                                            bool transferToCPU,
                                            cuda::stream_t<>& stream) {
     cudaCheck(cudaMemcpyAsync(gpu_.bs_d, bs, 3 * sizeof(float), cudaMemcpyDefault, stream.id()));

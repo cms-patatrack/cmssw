@@ -44,8 +44,8 @@ namespace pixelCPEforGPU {
 
 
   struct ParamsOnGPU {
-    CommonParams * m_commonParams;
-    DetParams * m_detParams;
+    CommonParams const * m_commonParams;
+    DetParams const * m_detParams;
 
     constexpr
     CommonParams const & __restrict__ commonParams() const {

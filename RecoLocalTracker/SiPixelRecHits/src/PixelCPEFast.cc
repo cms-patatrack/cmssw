@@ -67,34 +67,27 @@ PixelCPEFast::PixelCPEFast(edm::ParameterSet const & conf,
 }
 
 const pixelCPEforGPU::ParamsOnGPU *PixelCPEFast::getGPUProductAsync(cuda::stream_t<>& cudaStream) const {
-  const auto& data = gpuData_.dataForCurrentDeviceAsync(cudaStream, [this](GPUData& data, cuda::stream_t<>& stream) {
-      // and now copy to device...
-      cudaCheck(cudaMalloc((void**) & data.h_paramsOnGPU.m_commonParams, sizeof(pixelCPEforGPU::CommonParams)));
-      cudaCheck(cudaMalloc((void**) & data.h_paramsOnGPU.m_detParams, this->m_detParamsGPU.size()*sizeof(pixelCPEforGPU::DetParams)));
-      cudaCheck(cudaMalloc((void**) & data.d_paramsOnGPU, sizeof(pixelCPEforGPU::ParamsOnGPU)));
-
-      cudaCheck(cudaMemcpyAsync(data.d_paramsOnGPU, &data.h_paramsOnGPU, sizeof(pixelCPEforGPU::ParamsOnGPU), cudaMemcpyDefault, stream.id()));
-      cudaCheck(cudaMemcpyAsync(data.h_paramsOnGPU.m_commonParams, &this->m_commonParamsGPU, sizeof(pixelCPEforGPU::CommonParams), cudaMemcpyDefault, stream.id()));
-      cudaCheck(cudaMemcpyAsync(data.h_paramsOnGPU.m_detParams, this->m_detParamsGPU.data(), this->m_detParamsGPU.size()*sizeof(pixelCPEforGPU::DetParams), cudaMemcpyDefault, stream.id()));
-    });
-  return data.d_paramsOnGPU;
+  m_helper.prefetchAsync(cudaStream);
+  return m_paramsGPU;
 }
 
 void PixelCPEFast::fillParamsForGpu() {
-  m_commonParamsGPU.theThicknessB = m_DetParams.front().theThickness;
-  m_commonParamsGPU.theThicknessE = m_DetParams.back().theThickness;
-  m_commonParamsGPU.thePitchX = m_DetParams[0].thePitchX;
-  m_commonParamsGPU.thePitchY = m_DetParams[0].thePitchY;
+  m_helper.allocate(&m_commonParamsGPU, 1);
+
+  m_commonParamsGPU->theThicknessB = m_DetParams.front().theThickness;
+  m_commonParamsGPU->theThicknessE = m_DetParams.back().theThickness;
+  m_commonParamsGPU->thePitchX = m_DetParams[0].thePitchX;
+  m_commonParamsGPU->thePitchY = m_DetParams[0].thePitchY;
 
   //uint32_t oldLayer = 0;
-  m_detParamsGPU.resize(m_DetParams.size());
+  m_helper.allocate(&m_detParamsGPU, m_DetParams.size());
   for (auto i=0U; i<m_DetParams.size(); ++i) {
     auto & p=m_DetParams[i];
     auto & g=m_detParamsGPU[i];
 
     assert(p.theDet->index()==int(i));
-    assert(m_commonParamsGPU.thePitchY==p.thePitchY);    
-    assert(m_commonParamsGPU.thePitchX==p.thePitchX);
+    assert(m_commonParamsGPU->thePitchY==p.thePitchY);
+    assert(m_commonParamsGPU->thePitchX==p.thePitchX);
     //assert(m_commonParamsGPU.theThickness==p.theThickness);
 
     g.isBarrel = GeomDetEnumerators::isBarrel(p.thePart);
@@ -103,10 +96,10 @@ void PixelCPEFast::fillParamsForGpu() {
     g.index=i; // better be!
     g.rawId = p.theDet->geographicalId();
    
-    assert( (g.isBarrel ?m_commonParamsGPU.theThicknessB : m_commonParamsGPU.theThicknessE) ==p.theThickness );
+    assert( (g.isBarrel ?m_commonParamsGPU->theThicknessB : m_commonParamsGPU->theThicknessE) ==p.theThickness );
 
-    //if (m_commonParamsGPU.theThickness!=p.theThickness)   
-    //  std::cout << i << (g.isBarrel ? "B " : "E ") << m_commonParamsGPU.theThickness<<"!="<<p.theThickness << std::endl;
+    //if (m_commonParamsGPU->theThickness!=p.theThickness)
+    //  std::cout << i << (g.isBarrel ? "B " : "E ") << m_commonParamsGPU->theThickness<<"!="<<p.theThickness << std::endl;
 
     //if (oldLayer != g.layer) {
     //  oldLayer = g.layer;
@@ -129,7 +122,7 @@ void PixelCPEFast::fillParamsForGpu() {
 
     // errors .....
    ClusterParamGeneric cp;
-   auto gvx = p.theOrigin.x() + 40.f*m_commonParamsGPU.thePitchX;
+   auto gvx = p.theOrigin.x() + 40.f*m_commonParamsGPU->thePitchX;
    auto gvy = p.theOrigin.y();
    auto gvz = 1.f/p.theOrigin.z();
    //--- Note that the normalization is not required as only the ratio used
@@ -153,7 +146,7 @@ void PixelCPEFast::fillParamsForGpu() {
                << ' ' << m*cp.sigmay << ' ' << m*cp.sy1 << ' ' << m*cp.sy2
               << std::endl;
    }
-   std::cout << i << ' ' << m*std::sqrt(lape.xx())  <<' '<< m*std::sqrt(lape.yy()) << std::endl;
+  std::cout << i << ' ' << m*std::sqrt(lape.xx())  <<' '<< m*std::sqrt(lape.yy()) << std::endl;
 #endif   
 
    
@@ -202,17 +195,16 @@ void PixelCPEFast::fillParamsForGpu() {
      g.sy[i] = std::sqrt(g.sy[i]*g.sy[i]+lape.yy());
    }
 
- }
+  }
+
+  m_helper.allocate(&m_paramsGPU, 1);
+  m_paramsGPU->m_commonParams = m_commonParamsGPU;
+  m_paramsGPU->m_detParams = m_detParamsGPU;
+
+  m_helper.advise();
 }
 
-PixelCPEFast::~PixelCPEFast() {}
-
-PixelCPEFast::GPUData::~GPUData() {
-  if(d_paramsOnGPU != nullptr) {
-    cudaFree(h_paramsOnGPU.m_commonParams);
-    cudaFree(h_paramsOnGPU.m_detParams);
-    cudaFree(d_paramsOnGPU);
-  }
+PixelCPEFast::~PixelCPEFast() {
 }
 
 PixelCPEBase::ClusterParam* PixelCPEFast::createClusterParam(const SiPixelCluster & cl) const
@@ -302,7 +294,7 @@ PixelCPEFast::localPosition(DetParam const & theDetParam, ClusterParam & theClus
       cp.Q_l_Y[0] = Q_l_Y;
 
       auto ind = theDetParam.theDet->index();
-      pixelCPEforGPU::position(m_commonParamsGPU, m_detParamsGPU[ind],cp,0);
+      pixelCPEforGPU::position(*m_commonParamsGPU, m_detParamsGPU[ind],cp,0);
       auto xPos = cp.xpos[0];     
       auto yPos = cp.ypos[0];
 

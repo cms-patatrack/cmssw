@@ -33,7 +33,7 @@ namespace pixelgpudetails {
 
     void makeHitsAsync(const siPixelRawToClusterHeterogeneousProduct::GPUProduct& input,
                        float const * bs,
-                       pixelCPEforGPU::ParamsOnGPU const * cpeParams,
+                       pixelCPEforGPU::ParamsOnGPU const *cpeParams,
                        bool transferToCPU,
                        cuda::stream_t<>& stream);
 

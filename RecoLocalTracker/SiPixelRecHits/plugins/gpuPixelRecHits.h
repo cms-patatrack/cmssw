@@ -14,7 +14,7 @@ namespace gpuPixelRecHits {
 
 
 
-  __global__ void getHits(pixelCPEforGPU::ParamsOnGPU const * __restrict__  cpeParams,
+  __global__ void getHits(pixelCPEforGPU::ParamsOnGPU const * __restrict__ cpeParams,
                           float const * __restrict__  bs,
                           uint16_t const * __restrict__  id,
 			  uint16_t const * __restrict__  x,
