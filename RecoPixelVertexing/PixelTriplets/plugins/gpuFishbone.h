@@ -89,4 +89,4 @@ namespace gpuPixelDoublets {
 
 }
 
-#endif
+#endif // RecoLocalTracker_SiPixelRecHits_plugins_gpuFishbone_h

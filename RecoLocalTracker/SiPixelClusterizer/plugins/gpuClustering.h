@@ -85,8 +85,8 @@ namespace gpuClustering {
     __syncthreads();
 
     assert((msize == numElements) or ((msize < numElements) and (id[msize] != thisModuleId)));
-    assert(msize-firstPixel<maxPixInModule);  
- 
+    assert(msize-firstPixel<maxPixInModule);
+
 
 #ifdef GPU_DEBUG
     __shared__ uint32_t totGood;
@@ -138,7 +138,7 @@ namespace gpuClustering {
     __shared__ uint32_t n40,n60;
     n40=n60=0;
     __syncthreads();
-    for (auto j=threadIdx.x; j<Hist::nbins(); j+=blockDim.x) { 
+    for (auto j=threadIdx.x; j<Hist::nbins(); j+=blockDim.x) {
       if(hist.size(j)>60) atomicAdd(&n60,1);
       if(hist.size(j)>40) atomicAdd(&n40,1);
      }
