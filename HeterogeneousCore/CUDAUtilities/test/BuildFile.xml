@@ -32,6 +32,7 @@
   <flags CUDA_FLAGS="-g -G -DGPU_DEBUG"/>
 </bin>
 
+
 <bin file="HistoContainer_t.cpp">
   <flags CXXFLAGS="-g"/>
 </bin>
