@@ -1,6 +1,5 @@
 <use name="HeterogeneousCore/CUDAUtilities"/>
 
-
 <bin file="assert_t.cu" name="cudaAssert_t">
 </bin>
 
@@ -12,15 +11,13 @@
   <flags CUDA_FLAGS="-g -DGPU_DEBUG"/>
 </bin>
 
-
 <bin file="cudastdAlgorithm_t.cpp">
 </bin>
 
 <bin file="cudastdAlgorithm_t.cu" name="gpuCudastdAlgorithm_t">
   <use name="cuda-api-wrappers"/>
-  <flags CUDA_FLAGS="-g  -DGPU_DEBUG"/>
+  <flags CUDA_FLAGS="-g -DGPU_DEBUG"/>
 </bin>
-
 
 <bin file="radixSort_t.cu" name="gpuRadixSort_t">
   <use name="cuda-api-wrappers"/>
@@ -32,26 +29,25 @@
   <flags CUDA_FLAGS="-g -G -DGPU_DEBUG"/>
 </bin>
 
-
 <bin file="HistoContainer_t.cpp">
   <flags CXXFLAGS="-g"/>
 </bin>
 
 <bin file="HistoContainer_t.cu" name="gpuHistoContainer_t">
   <use name="cuda-api-wrappers"/>
-   <use name="cub"/>
+  <use name="cub"/>
   <flags CUDA_FLAGS="-g -DGPU_DEBUG"/>
 </bin>
 
 <bin file="HistoContainer_t.cu" name="gpuHistoContainer_debug">
   <use name="cuda-api-wrappers"/>
-   <use name="cub"/>
+  <use name="cub"/>
   <flags CUDA_FLAGS="-g -G -DGPU_DEBUG"/>
 </bin>
 
 <bin file="OneHistoContainer_t.cu" name="gpuOneHistoContainer_t">
   <use name="cuda-api-wrappers"/>
-   <use name="cub"/>
+  <use name="cub"/>
   <flags CUDA_FLAGS="-g -DGPU_DEBUG"/>
 </bin>
 
@@ -61,10 +57,9 @@
 
 <bin file="OneToManyAssoc_t.cu" name="gpuOneToManyAssoc_t">
   <use name="cuda-api-wrappers"/>
-   <use name="cub"/>
+  <use name="cub"/>
   <flags CUDA_FLAGS="-g -DGPU_DEBUG"/>
 </bin>
-
 
 <bin file="prefixScan_t.cu" name="gpuPrefixScan_t">
   <use name="cub"/>

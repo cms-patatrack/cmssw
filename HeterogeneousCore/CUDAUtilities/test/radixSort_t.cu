@@ -1,17 +1,17 @@
-#include "HeterogeneousCore/CUDAUtilities/interface/radixSort.h"
-
-#include "cuda/api_wrappers.h"
-
-#include <iomanip>
-#include <memory>
 #include <algorithm>
+#include <cassert>
 #include <chrono>
-#include<random>
-#include<set>
+#include <iomanip>
+#include <iostream>
+#include <limits>
+#include <memory>
+#include <random>
+#include <set>
 
-#include<cassert>
-#include<iostream>
-#include<limits>
+#include <cuda/api_wrappers.h>
+
+#include "HeterogeneousCore/CUDAUtilities/interface/radixSort.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/exitSansCUDADevices.h"
 
 template<typename T>
 struct RS { 
@@ -34,9 +34,8 @@ template<typename T, int NS=sizeof(T),
 void go(bool useShared) {
 
   std::mt19937 eng;
-// std::mt19937 eng2;
+  //std::mt19937 eng2;
   auto rgen = RS<T>::ud();
-
 
   auto start = std::chrono::high_resolution_clock::now();
   auto delta = start - start;
@@ -53,8 +52,6 @@ void go(bool useShared) {
   constexpr int N=blockSize*blocks;
   T v[N];
   uint16_t ind[N];
-
-
 
   constexpr bool sgn = T(-1) < T(0);
   std::cout << "Will sort " << N << (sgn ? " signed" : " unsigned")
@@ -85,7 +82,7 @@ void go(bool useShared) {
     offsets[10]=3297+offsets[9];
   }
 
-  std::random_shuffle(v,v+N);
+  std::random_shuffle(v, v+N);
 
   auto v_d = cuda::memory::device::make_unique<U[]>(current_device, N);
   auto ind_d = cuda::memory::device::make_unique<uint16_t[]>(current_device, N);
@@ -97,30 +94,29 @@ void go(bool useShared) {
 
   if (i<2) std::cout << "lauch for " << offsets[blocks] << std::endl;
 
-   auto ntXBl = 1==i%4 ? 256 : 256;
+  auto ntXBl = 1==i%4 ? 256 : 256;
 
-   delta -= (std::chrono::high_resolution_clock::now()-start);
-   constexpr int MaxSize = 256*32;
-   if (useShared)
-   cuda::launch(
-                radixSortMultiWrapper<U,NS>,
-                { blocks, ntXBl, MaxSize*2 },
-                v_d.get(),ind_d.get(),off_d.get(),nullptr
+  delta -= (std::chrono::high_resolution_clock::now()-start);
+  constexpr int MaxSize = 256*32;
+  if (useShared)
+    cuda::launch(
+        radixSortMultiWrapper<U, NS>,
+        { blocks, ntXBl, MaxSize*2 },
+        v_d.get(), ind_d.get(), off_d.get(), nullptr
         );
-   else
-   cuda::launch(
-                radixSortMultiWrapper2<U,NS>,
-                { blocks, ntXBl },
-                v_d.get(),ind_d.get(),off_d.get(),ws_d.get()
+  else
+    cuda::launch(
+        radixSortMultiWrapper2<U, NS>,
+        { blocks, ntXBl },
+        v_d.get(), ind_d.get(), off_d.get(), ws_d.get()
         );
 
+  if (i==0) std::cout << "done for " << offsets[blocks] << std::endl;
 
- if (i==0) std::cout << "done for " << offsets[blocks] << std::endl;
+  //  cuda::memory::copy(v, v_d.get(), 2*N);
+  cuda::memory::copy(ind, ind_d.get(), 2*N);
 
-//  cuda::memory::copy(v, v_d.get(), 2*N);
-   cuda::memory::copy(ind, ind_d.get(), 2*N);
-
-   delta += (std::chrono::high_resolution_clock::now()-start);
+  delta += (std::chrono::high_resolution_clock::now()-start);
 
   if (i==0) std::cout << "done for " << offsets[blocks] << std::endl;
 
@@ -159,21 +155,20 @@ void go(bool useShared) {
               << " ms" << std::endl;
 }
 
-
 int main() {
+  exitSansCUDADevices();
 
   bool useShared=false;
 
   std::cout << "using Global memory" <<    std::endl;
 
-
   go<int8_t>(useShared);
   go<int16_t>(useShared);
   go<int32_t>(useShared);
-  go<int32_t,3>(useShared);
+  go<int32_t, 3>(useShared);
   go<int64_t>(useShared);
-  go<float,4,float,double>(useShared);
-  go<float,2,float,double>(useShared);
+  go<float, 4, float, double>(useShared);
+  go<float, 2, float, double>(useShared);
 
   go<uint8_t>(useShared);
   go<uint16_t>(useShared);
@@ -187,17 +182,15 @@ int main() {
   go<int8_t>(useShared);
   go<int16_t>(useShared);
   go<int32_t>(useShared);
-  go<int32_t,3>(useShared);
+  go<int32_t, 3>(useShared);
   go<int64_t>(useShared);
-  go<float,4,float,double>(useShared);
-  go<float,2,float,double>(useShared);
+  go<float, 4, float, double>(useShared);
+  go<float, 2, float, double>(useShared);
 
   go<uint8_t>(useShared);
   go<uint16_t>(useShared);
   go<uint32_t>(useShared);
   // go<uint64_t>(v);
-
-
 
   return 0;
 }
