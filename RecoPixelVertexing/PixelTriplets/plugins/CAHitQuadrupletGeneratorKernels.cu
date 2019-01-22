@@ -250,8 +250,9 @@ void CAHitQuadrupletGeneratorKernels::launchKernels( // here goes algoparms....
   assert(nhits <= PixelGPUConstants::maxNumberOfHits);
   
   if (earlyFishbone_) {
-    auto blockSize = 64;
+    auto nthTot = 64;
     auto stride = 4;
+    auto blockSize = nthTot/stride;
     auto numberOfBlocks = (nhits + blockSize - 1)/blockSize;
     dim3 blks(1,numberOfBlocks,1);
     dim3 thrs(stride,blockSize,1);
@@ -264,9 +265,10 @@ void CAHitQuadrupletGeneratorKernels::launchKernels( // here goes algoparms....
     cudaCheck(cudaGetLastError());
   }
 
-  auto blockSize = 64;
-  auto numberOfBlocks = (maxNumberOfDoublets_ + blockSize - 1)/blockSize;
+  auto nthTot = 64;
   auto stride = 4;
+  auto blockSize = nthTot/stride;
+  auto numberOfBlocks = (maxNumberOfDoublets_ + blockSize - 1)/blockSize;
   dim3 blks(1,numberOfBlocks,1);
   dim3 thrs(stride,blockSize,1);
 
@@ -290,8 +292,9 @@ void CAHitQuadrupletGeneratorKernels::launchKernels( // here goes algoparms....
   cudautils::finalizeBulk<<<numberOfBlocks, blockSize, 0, cudaStream>>>(gpu_.apc_d,gpu_.tuples_d);
 
   if (lateFishbone_) {
-    auto blockSize = 64;
+    auto nthTot = 64;
     auto stride = 4;
+    auto blockSize = nthTot/stride;
     auto numberOfBlocks = (nhits + blockSize - 1)/blockSize;
     dim3 blks(1,numberOfBlocks,1);
     dim3 thrs(stride,blockSize,1);
