@@ -292,8 +292,8 @@ void CAHitQuadrupletGeneratorKernels::launchKernels( // here goes algoparms....
   cudautils::finalizeBulk<<<numberOfBlocks, blockSize, 0, cudaStream>>>(gpu_.apc_d,gpu_.tuples_d);
 
   if (lateFishbone_) {
-    auto nthTot = 64;
-    auto stride = 4;
+    auto nthTot = 128;
+    auto stride = 16;
     auto blockSize = nthTot/stride;
     auto numberOfBlocks = (nhits + blockSize - 1)/blockSize;
     dim3 blks(1,numberOfBlocks,1);
@@ -325,7 +325,7 @@ void CAHitQuadrupletGeneratorKernels::launchKernels( // here goes algoparms....
 void CAHitQuadrupletGeneratorKernels::buildDoublets(HitsOnCPU const & hh, cudaStream_t stream) {
   auto nhits = hh.nHits;
 
-  int stride=4;
+  int stride=1;
   int threadsPerBlock = gpuPixelDoublets::getDoubletsFromHistoMaxBlockSize/stride;
   int blocks = (3 * nhits + threadsPerBlock - 1) / threadsPerBlock;
   dim3 blks(1,blocks,1);
