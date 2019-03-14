@@ -2,15 +2,15 @@
 
 #include <cuda_runtime.h>
 
-#include "HeterogeneousCore/CUDAServices/interface/supportedCudaDevices.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/supportedCUDADevices.h"
 
 __global__
 void isSupported(bool * result) {
   * result = true;
 }
 
-std::map<int, std::pair<int, int>> supportedCudaDevices(bool reset) {
+std::map<int, std::pair<int, int>> supportedCUDADevices(bool reset) {
   std::map<int, std::pair<int, int>> capabilities;
 
   int devices = 0;

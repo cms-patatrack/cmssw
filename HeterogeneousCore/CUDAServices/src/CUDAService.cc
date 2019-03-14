@@ -11,8 +11,8 @@
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "FWCore/Utilities/interface/ReusableObjectHolder.h"
 #include "HeterogeneousCore/CUDAServices/interface/CUDAService.h"
-#include "HeterogeneousCore/CUDAServices/interface/supportedCudaDevices.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/supportedCUDADevices.h"
 
 #include "CachingDeviceAllocator.h"
 #include "CachingHostAllocator.h"
@@ -122,7 +122,7 @@ CUDAService::CUDAService(edm::ParameterSet const& config, edm::ActivityRegistry&
     return;
   }
 
-  auto supportedDevices = supportedCudaDevices();
+  auto supportedDevices = supportedCUDADevices();
   numberOfDevices_ = supportedDevices.size();
   if (numberOfDevices_ == 0) {
     edm::LogWarning("CUDAService") << "Failed to initialize the CUDA runtime.\n" << "Disabling the CUDAService.";

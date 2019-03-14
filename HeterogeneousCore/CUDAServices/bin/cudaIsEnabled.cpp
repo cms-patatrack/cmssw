@@ -1,5 +1,5 @@
-#include "HeterogeneousCore/CUDAServices/interface/supportedCudaDevices.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/supportedCUDADevices.h"
 
 int main() {
-  return supportedCudaDevices().empty() ? EXIT_FAILURE : EXIT_SUCCESS;
+  return supportedCUDADevices().empty() ? EXIT_FAILURE : EXIT_SUCCESS;
 }

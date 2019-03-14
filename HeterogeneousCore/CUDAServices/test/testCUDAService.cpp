@@ -14,7 +14,7 @@
 #include "FWCore/ServiceRegistry/interface/ActivityRegistry.h"
 #include "FWCore/Utilities/interface/Exception.h"
 #include "HeterogeneousCore/CUDAServices/interface/CUDAService.h"
-#include "HeterogeneousCore/CUDAServices/interface/supportedCudaDevices.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/supportedCUDADevices.h"
 
 namespace {
   CUDAService makeCUDAService(edm::ParameterSet ps, edm::ActivityRegistry& ar) {
@@ -30,7 +30,7 @@ TEST_CASE("Tests of CUDAService", "[CUDAService]") {
 
   // Test setup: check if a simple CUDA runtime API call fails:
   // if so, skip the test with the CUDAService enabled
-  int deviceCount = supportedCudaDevices().size();
+  int deviceCount = supportedCUDADevices().size();
 
   if (deviceCount == 0) {
     WARN("No supported CUDA devices available. Running only tests not requiring devices.");
