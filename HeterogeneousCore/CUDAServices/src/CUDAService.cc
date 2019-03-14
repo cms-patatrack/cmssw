@@ -122,23 +122,14 @@ CUDAService::CUDAService(edm::ParameterSet const& config, edm::ActivityRegistry&
     return;
   }
 
-  auto supportedDevices = supportedCUDADevices();
-  numberOfDevices_ = supportedDevices.size();
+  supportedDevices_ = supportedCUDADevices();
+  numberOfDevices_ = supportedDevices_.size();
   if (numberOfDevices_ == 0) {
     edm::LogWarning("CUDAService") << "Failed to initialize the CUDA runtime.\n" << "Disabling the CUDAService.";
     return;
   }
   edm::LogInfo log("CUDAService");
   log << "CUDA runtime successfully initialised, found " << numberOfDevices_ << " supported compute devices.\n\n";
-
-  int lastDevice = supportedDevices.rbegin()->first;
-  supportedDevices_.reserve(numberOfDevices_);
-  computeCapabilities_.resize(lastDevice + 1, std::make_pair(0, 0));
-  for (auto const& device_caps: supportedDevices) {
-    int device = device_caps.first;
-    supportedDevices_.push_back(device);
-    computeCapabilities_[device] = device_caps.second;
-  }
 
   auto const& limits = config.getUntrackedParameter<edm::ParameterSet>("limits");
   auto printfFifoSize               = limits.getUntrackedParameter<int>("cudaLimitPrintfFifoSize");
@@ -147,6 +138,8 @@ CUDAService::CUDAService(edm::ParameterSet const& config, edm::ActivityRegistry&
   auto devRuntimeSyncDepth          = limits.getUntrackedParameter<int>("cudaLimitDevRuntimeSyncDepth");
   auto devRuntimePendingLaunchCount = limits.getUntrackedParameter<int>("cudaLimitDevRuntimePendingLaunchCount");
 
+  int lastDevice = supportedDevices_.back();
+  computeCapabilities_.resize(lastDevice + 1, std::make_pair(0, 0));
   for (int i: supportedDevices_) {
     // read information about the compute device.
     // see the documentation of cudaGetDeviceProperties() for more information.
@@ -155,6 +148,7 @@ CUDAService::CUDAService(edm::ParameterSet const& config, edm::ActivityRegistry&
     log << "CUDA device " << i << ": " << properties.name << '\n';
 
     // compute capabilities
+    computeCapabilities_[i] = std::make_pair(properties.major, properties.minor);
     log << "  compute capability:          " << properties.major << "." << properties.minor << " (sm_" << properties.major << properties.minor << ")\n";
     log << "  streaming multiprocessors: " << std::setw(13) << properties.multiProcessorCount << '\n';
     log << "  CUDA cores: " << std::setw(28) << properties.multiProcessorCount * getCudaCoresPerSM(properties.major, properties.minor) << '\n';

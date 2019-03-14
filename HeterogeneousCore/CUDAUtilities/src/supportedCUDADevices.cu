@@ -1,4 +1,4 @@
-#include <map>
+#include <vector>
 
 #include <cuda_runtime.h>
 
@@ -10,14 +10,15 @@ void isSupported(bool * result) {
   * result = true;
 }
 
-std::map<int, std::pair<int, int>> supportedCUDADevices(bool reset) {
-  std::map<int, std::pair<int, int>> capabilities;
-
+std::vector<int> supportedCUDADevices() {
   int devices = 0;
   auto status = cudaGetDeviceCount(&devices);
-  if (cudaSuccess != status) {
-    return capabilities;
+  if (status != cudaSuccess or devices == 0) {
+    return {};
   }
+
+  std::vector<int> supportedDevices;
+  supportedDevices.reserve(devices);
 
   for (int i = 0; i < devices; ++i) {
     cudaCheck(cudaSetDevice(i));
@@ -32,14 +33,10 @@ std::map<int, std::pair<int, int>> supportedCUDADevices(bool reset) {
     cudaCheck(cudaMemcpy(& supported, supported_d, sizeof(bool), cudaMemcpyDeviceToHost));
     cudaCheck(cudaFree(supported_d));
     if (supported) {
-      cudaDeviceProp properties;
-      cudaCheck(cudaGetDeviceProperties(&properties, i));
-      capabilities[i] = std::make_pair(properties.major, properties.minor);
+      supportedDevices.push_back(i);
     }
-    if (reset) {
-      cudaCheck(cudaDeviceReset());
-    }
+    cudaCheck(cudaDeviceReset());
   }
 
-  return capabilities;
+  return supportedDevices;
 }

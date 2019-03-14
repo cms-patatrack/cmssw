@@ -1,3 +1,5 @@
+#include <cstdlib>
+
 #include "HeterogeneousCore/CUDAUtilities/interface/supportedCUDADevices.h"
 
 int main() {
