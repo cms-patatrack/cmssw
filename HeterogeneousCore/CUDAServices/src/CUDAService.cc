@@ -122,14 +122,23 @@ CUDAService::CUDAService(edm::ParameterSet const& config, edm::ActivityRegistry&
     return;
   }
 
-  computeCapabilities_ = supportedCudaDevices();
-  numberOfDevices_ = computeCapabilities_.size();
+  auto supportedDevices = supportedCudaDevices();
+  numberOfDevices_ = supportedDevices.size();
   if (numberOfDevices_ == 0) {
     edm::LogWarning("CUDAService") << "Failed to initialize the CUDA runtime.\n" << "Disabling the CUDAService.";
     return;
   }
   edm::LogInfo log("CUDAService");
   log << "CUDA runtime successfully initialised, found " << numberOfDevices_ << " supported compute devices.\n\n";
+
+  int lastDevice = supportedDevices.rbegin()->first;
+  supportedDevices_.reserve(numberOfDevices_);
+  computeCapabilities_.resize(lastDevice + 1, std::make_pair(0, 0));
+  for (auto const& device_caps: supportedDevices) {
+    int device = device_caps.first;
+    supportedDevices_.push_back(device);
+    computeCapabilities_[device] = device_caps.second;
+  }
 
   auto const& limits = config.getUntrackedParameter<edm::ParameterSet>("limits");
   auto printfFifoSize               = limits.getUntrackedParameter<int>("cudaLimitPrintfFifoSize");
@@ -138,9 +147,7 @@ CUDAService::CUDAService(edm::ParameterSet const& config, edm::ActivityRegistry&
   auto devRuntimeSyncDepth          = limits.getUntrackedParameter<int>("cudaLimitDevRuntimeSyncDepth");
   auto devRuntimePendingLaunchCount = limits.getUntrackedParameter<int>("cudaLimitDevRuntimePendingLaunchCount");
 
-  // iterate over the supported devices
-  for (auto const& keyval: computeCapabilities_) {
-    int i = keyval.first;
+  for (int i: supportedDevices_) {
     // read information about the compute device.
     // see the documentation of cudaGetDeviceProperties() for more information.
     cudaDeviceProp properties;
@@ -293,9 +300,7 @@ CUDAService::CUDAService(edm::ParameterSet const& config, edm::ActivityRegistry&
     size_t minCachedBytes = std::numeric_limits<size_t>::max();
     int currentDevice;
     cudaCheck(cudaGetDevice(&currentDevice));
-    // iterate over the supported devices
-    for (auto const& keyval: computeCapabilities_) {
-      int i = keyval.first;
+    for (int i: supportedDevices_) {
       size_t freeMemory, totalMemory;
       cudaCheck(cudaSetDevice(i));
       cudaCheck(cudaMemGetInfo(&freeMemory, &totalMemory));
@@ -357,9 +362,7 @@ CUDAService::~CUDAService() {
     cudaEventCache_.reset();
     cudaStreamCache_.reset();
 
-    // iterate over the supported devices
-    for (auto const& keyval: computeCapabilities_) {
-      int i = keyval.first;
+    for (int i: supportedDevices_) {
       cudaCheck(cudaSetDevice(i));
       cudaCheck(cudaDeviceSynchronize());
       // Explicitly destroys and cleans up all resources associated with the current device in the
@@ -397,15 +400,6 @@ void CUDAService::fillDescriptions(edm::ConfigurationDescriptions & descriptions
   descriptions.add("CUDAService", desc);
 }
 
-std::vector<int> CUDAService::devices() const {
-  std::vector<int> devices;
-  devices.reserve(numberOfDevices_);
-  for (auto const& keyval: computeCapabilities_) {
-    devices.push_back(keyval.first);
-  }
-  return devices;
-}
-
 int CUDAService::deviceWithMostFreeMemory() const {
   // save the current device
   int currentDevice;
@@ -413,9 +407,7 @@ int CUDAService::deviceWithMostFreeMemory() const {
 
   size_t maxFreeMemory = 0;
   int device = -1;
-  // iterate over the supported devices
-  for (auto const& keyval: computeCapabilities_) {
-    int i = keyval.first;
+  for (int i: supportedDevices_) {
     /*
     // TODO: understand why the api-wrappers version gives same value for all devices
     auto device = cuda::device::get(i);
