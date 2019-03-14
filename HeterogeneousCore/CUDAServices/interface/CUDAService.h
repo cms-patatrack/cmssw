@@ -1,8 +1,8 @@
 #ifndef HeterogeneousCore_CUDAServices_CUDAService_h
 #define HeterogeneousCore_CUDAServices_CUDAService_h
 
+#include <map>
 #include <utility>
-#include <vector>
 
 #include <cuda/api_wrappers.h>
 
@@ -51,6 +51,7 @@ public:
   bool enabled() const { return enabled_; }
 
   int numberOfDevices() const { return numberOfDevices_; }
+  std::vector<int> devices() const;
 
   // major, minor
   std::pair<int, int> computeCapability(int device) { return computeCapabilities_.at(device); }
@@ -152,7 +153,7 @@ private:
   std::unique_ptr<CUDAEventCache> cudaEventCache_;
 
   int numberOfDevices_ = 0;
-  std::vector<std::pair<int, int>> computeCapabilities_;
+  std::map<int, std::pair<int, int>> computeCapabilities_;
   bool enabled_ = false;
 };
 

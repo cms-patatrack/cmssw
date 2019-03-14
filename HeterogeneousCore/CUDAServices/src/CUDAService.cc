@@ -11,6 +11,7 @@
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "FWCore/Utilities/interface/ReusableObjectHolder.h"
 #include "HeterogeneousCore/CUDAServices/interface/CUDAService.h"
+#include "HeterogeneousCore/CUDAServices/interface/supportedCudaDevices.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 
 #include "CachingDeviceAllocator.h"
@@ -94,10 +95,10 @@ namespace {
     }
   }
 
-  void devicePreallocate(CUDAService& cs, int numberOfDevices, const std::vector<unsigned int>& bufferSizes) {
+  void devicePreallocate(CUDAService& cs, const std::vector<unsigned int>& bufferSizes) {
     int device;
     cudaCheck(cudaGetDevice(&device));
-    for(int i=0; i<numberOfDevices; ++i) {
+    for (int i : cs.devices()) {
       cudaCheck(cudaSetDevice(i));
       preallocate<cudautils::device::unique_ptr>([&](size_t size, cuda::stream_t<>& stream) {
           return cs.make_device_unique<char[]>(size, stream);
@@ -121,14 +122,14 @@ CUDAService::CUDAService(edm::ParameterSet const& config, edm::ActivityRegistry&
     return;
   }
 
-  auto status = cudaGetDeviceCount(&numberOfDevices_);
-  if (cudaSuccess != status) {
+  computeCapabilities_ = supportedCudaDevices();
+  numberOfDevices_ = computeCapabilities_.size();
+  if (numberOfDevices_ == 0) {
     edm::LogWarning("CUDAService") << "Failed to initialize the CUDA runtime.\n" << "Disabling the CUDAService.";
     return;
   }
   edm::LogInfo log("CUDAService");
-  computeCapabilities_.reserve(numberOfDevices_);
-  log << "CUDA runtime successfully initialised, found " << numberOfDevices_ << " compute devices.\n\n";
+  log << "CUDA runtime successfully initialised, found " << numberOfDevices_ << " supported compute devices.\n\n";
 
   auto const& limits = config.getUntrackedParameter<edm::ParameterSet>("limits");
   auto printfFifoSize               = limits.getUntrackedParameter<int>("cudaLimitPrintfFifoSize");
@@ -137,7 +138,9 @@ CUDAService::CUDAService(edm::ParameterSet const& config, edm::ActivityRegistry&
   auto devRuntimeSyncDepth          = limits.getUntrackedParameter<int>("cudaLimitDevRuntimeSyncDepth");
   auto devRuntimePendingLaunchCount = limits.getUntrackedParameter<int>("cudaLimitDevRuntimePendingLaunchCount");
 
-  for (int i = 0; i < numberOfDevices_; ++i) {
+  // iterate over the supported devices
+  for (auto const& keyval: computeCapabilities_) {
+    int i = keyval.first;
     // read information about the compute device.
     // see the documentation of cudaGetDeviceProperties() for more information.
     cudaDeviceProp properties;
@@ -146,9 +149,8 @@ CUDAService::CUDAService(edm::ParameterSet const& config, edm::ActivityRegistry&
 
     // compute capabilities
     log << "  compute capability:          " << properties.major << "." << properties.minor << " (sm_" << properties.major << properties.minor << ")\n";
-    computeCapabilities_.emplace_back(properties.major, properties.minor);
     log << "  streaming multiprocessors: " << std::setw(13) << properties.multiProcessorCount << '\n';
-    log << "  CUDA cores: " << std::setw(28) << properties.multiProcessorCount * getCudaCoresPerSM(properties.major, properties.minor ) << '\n';
+    log << "  CUDA cores: " << std::setw(28) << properties.multiProcessorCount * getCudaCoresPerSM(properties.major, properties.minor) << '\n';
     log << "  single to double performance: " << std::setw(8) << properties.singleToDoublePrecisionPerfRatio << ":1\n";
 
     // compute mode
@@ -291,7 +293,9 @@ CUDAService::CUDAService(edm::ParameterSet const& config, edm::ActivityRegistry&
     size_t minCachedBytes = std::numeric_limits<size_t>::max();
     int currentDevice;
     cudaCheck(cudaGetDevice(&currentDevice));
-    for (int i = 0; i < numberOfDevices_; ++i) {
+    // iterate over the supported devices
+    for (auto const& keyval: computeCapabilities_) {
+      int i = keyval.first;
       size_t freeMemory, totalMemory;
       cudaCheck(cudaSetDevice(i));
       cudaCheck(cudaMemGetInfo(&freeMemory, &totalMemory));
@@ -340,7 +344,7 @@ CUDAService::CUDAService(edm::ParameterSet const& config, edm::ActivityRegistry&
   enabled_ = true;
 
   // Preallocate buffers if asked to
-  devicePreallocate(*this, numberOfDevices_, allocator.getUntrackedParameter<std::vector<unsigned int> >("devicePreallocate"));
+  devicePreallocate(*this, allocator.getUntrackedParameter<std::vector<unsigned int> >("devicePreallocate"));
   hostPreallocate(*this, allocator.getUntrackedParameter<std::vector<unsigned int> >("hostPreallocate"));
 }
 
@@ -353,7 +357,9 @@ CUDAService::~CUDAService() {
     cudaEventCache_.reset();
     cudaStreamCache_.reset();
 
-    for (int i = 0; i < numberOfDevices_; ++i) {
+    // iterate over the supported devices
+    for (auto const& keyval: computeCapabilities_) {
+      int i = keyval.first;
       cudaCheck(cudaSetDevice(i));
       cudaCheck(cudaDeviceSynchronize());
       // Explicitly destroys and cleans up all resources associated with the current device in the
@@ -391,6 +397,15 @@ void CUDAService::fillDescriptions(edm::ConfigurationDescriptions & descriptions
   descriptions.add("CUDAService", desc);
 }
 
+std::vector<int> CUDAService::devices() const {
+  std::vector<int> devices;
+  devices.reserve(numberOfDevices_);
+  for (auto const& keyval: computeCapabilities_) {
+    devices.push_back(keyval.first);
+  }
+  return devices;
+}
+
 int CUDAService::deviceWithMostFreeMemory() const {
   // save the current device
   int currentDevice;
@@ -398,7 +413,9 @@ int CUDAService::deviceWithMostFreeMemory() const {
 
   size_t maxFreeMemory = 0;
   int device = -1;
-  for(int i = 0; i < numberOfDevices_; ++i) {
+  // iterate over the supported devices
+  for (auto const& keyval: computeCapabilities_) {
+    int i = keyval.first;
     /*
     // TODO: understand why the api-wrappers version gives same value for all devices
     auto device = cuda::device::get(i);
@@ -431,9 +448,6 @@ int CUDAService::getCurrentDevice() const {
 struct CUDAService::Allocator {
   template <typename ...Args>
   Allocator(size_t max, Args&&... args): maxAllocation(max), deviceAllocator(args...), hostAllocator(std::forward<Args>(args)...) {}
-
-  void devicePreallocate(int numberOfDevices, const std::vector<unsigned int>& bytes);
-  void hostPreallocate(int numberOfDevices, const std::vector<unsigned int>& bytes);
 
   size_t maxAllocation;
   notcub::CachingDeviceAllocator deviceAllocator;

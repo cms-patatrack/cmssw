@@ -46,7 +46,7 @@ namespace heterogeneous {
     //   * being able to cheaply allocate+deallocate scratch memory allows to make the execution fully dynamic e.g. based on current load
     //   * would probably still need some buffer space/device to hold e.g. conditions data
     //     - for conditions, how to handle multiple lumis per job?
-    deviceId_ = id % cudaService->numberOfDevices();
+    deviceId_ = cudaService->devices()[id % cudaService->numberOfDevices()];
 
     cuda::device::current::scoped_override_t<> setDeviceForThisScope(deviceId_);
 
