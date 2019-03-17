@@ -2,8 +2,6 @@
  *
  * File Name: RawToClusterGPU.cu
  * Description: It converts Raw data into Digi Format on GPU
- * then it converts adc -> electron and
- * applies the adc threshold to needed for clustering
  * Finaly the Output of RawToDigi data is given to pixelClusterizer
  *
 **/
@@ -511,7 +509,6 @@ namespace pixelgpudetails {
       const WordFedAppender& wordFed,
       PixelFormatterErrors&& errors,
       const uint32_t wordCounter, const uint32_t fedCounter,
-      bool convertADCtoElectrons,
       bool useQualityInfo, bool includeErrors, bool debug,
       cuda::stream_t<>& stream)
   {
