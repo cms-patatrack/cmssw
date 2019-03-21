@@ -257,12 +257,12 @@ void SiPixelRecHitHeterogeneous::run(const edm::Handle<SiPixelClusterCollectionN
         // FIXME add a way to handle this case, or at least notify via edm::LogError
         break;
       }
-      auto ij = jnd(clust.oriId());
-      assert(clust.oriId()>=0); assert(clust.oriId()<nhits);
+      auto ij = jnd(clust.originalId());
+      assert(clust.originalId()>=0); assert(clust.originalId()<nhits);
       if(clust.charge()!=hoc.charge[ij])
         edm::LogWarning("GPUHits2CPU") << "not a perfect Match "
                                        << gind <<' '<<fc<<' '
-                                       << ic<<'/'<<clust.oriId()<<'/'<< (ij-fc) << ' ' << clust.size()
+                                       << ic<<'/'<<clust.originalId()<<'/'<< (ij-fc) << ' ' << clust.size()
                                        << ' ' << clust.charge()<<"!="<<hoc.charge[ij]
                                        << ' ' << clust.minPixelCol()<<"?"<< hoc.mc[ij]
                                        << ' ' << clust.minPixelRow()<<'/'<< hoc.mr[ij] << std::endl;
