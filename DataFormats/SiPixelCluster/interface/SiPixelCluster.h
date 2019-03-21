@@ -21,6 +21,7 @@
 #include <vector>
 #include <cstdint>
 #include <cassert>
+#include <limits>
 
 class PixelDigi;
 
@@ -196,7 +197,10 @@ public:
    float getSplitClusterErrorX() const { return err_x; }
    float getSplitClusterErrorY() const { return err_y; }
   
-  
+   // the original id (they get sorted)
+   auto oriId() const { return theClusId;}
+   void setOriId(uint16_t id) { theClusId=id;}
+
 private:
   
   std::vector<uint8_t>  thePixelOffset;
@@ -207,6 +211,8 @@ private:
   uint16_t theMinPixelCol=MAXPOS; // Minimum pixel index in the y direction (left edge).
   uint8_t thePixelRowSpan=0; // Span pixel index in the x direction (low edge).
   uint8_t thePixelColSpan=0; // Span pixel index in the y direction (left edge).
+
+  uint16_t theClusId=std::numeric_limits<uint16_t>::max();
   
    float err_x=-99999.9f;
    float err_y=-99999.9f;

@@ -1,3 +1,6 @@
+#include "CUDADataFormats/Common/interface/CUDAProduct.h"
+#include "CUDADataFormats/SiPixelCluster/interface/SiPixelClustersCUDA.h"
+#include "CUDADataFormats/SiPixelDigi/interface/SiPixelDigisCUDA.h"
 #include "DataFormats/Common/interface/DetSetVectorNew.h"
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/BeamSpot/interface/BeamSpot.h"
@@ -13,16 +16,18 @@
 #include "FWCore/Utilities/interface/InputTag.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
+#include "HeterogeneousCore/CUDACore/interface/CUDAScopedContext.h"
 #include "HeterogeneousCore/CUDACore/interface/GPUCuda.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 #include "HeterogeneousCore/Product/interface/HeterogeneousProduct.h"
 #include "HeterogeneousCore/Producer/interface/HeterogeneousEDProducer.h"
 #include "RecoLocalTracker/SiPixelRecHits/interface/PixelCPEBase.h"
 #include "RecoLocalTracker/SiPixelRecHits/interface/PixelCPEFast.h"
 #include "RecoLocalTracker/Records/interface/TkPixelCPERecord.h"
 
-#include "RecoLocalTracker/SiPixelClusterizer/plugins/siPixelRawToClusterHeterogeneousProduct.h" // TODO: we need a proper place for this header...
-
 #include "PixelRecHits.h"  // TODO : spit product from kernel
+
+#include <cuda_runtime.h>
 
 class SiPixelRecHitHeterogeneous: public HeterogeneousEDProducer<heterogeneous::HeterogeneousDevices <
                                                                    heterogeneous::GPUCuda,
@@ -30,8 +35,6 @@ class SiPixelRecHitHeterogeneous: public HeterogeneousEDProducer<heterogeneous::
                                                                    > > {
 
 public:
-  using Input = siPixelRawToClusterHeterogeneousProduct::HeterogeneousDigiCluster;
-
   using CPUProduct = siPixelRecHitsHeterogeneousProduct::CPUProduct;
   using GPUProduct = siPixelRecHitsHeterogeneousProduct::GPUProduct;
   using Output = siPixelRecHitsHeterogeneousProduct::HeterogeneousPixelRecHit;
@@ -62,7 +65,9 @@ private:
 
 
   edm::EDGetTokenT<reco::BeamSpot> 	 tBeamSpot;
-  edm::EDGetTokenT<HeterogeneousProduct> token_;
+  // The mess with inputs will be cleaned up when migrating to the new framework
+  edm::EDGetTokenT<CUDAProduct<SiPixelClustersCUDA>> token_;
+  edm::EDGetTokenT<CUDAProduct<SiPixelDigisCUDA>> tokenDigi_;
   edm::EDGetTokenT<SiPixelClusterCollectionNew> clusterToken_;
   std::string cpeName_;
 
@@ -78,8 +83,8 @@ private:
 SiPixelRecHitHeterogeneous::SiPixelRecHitHeterogeneous(const edm::ParameterSet& iConfig):
   HeterogeneousEDProducer(iConfig),
   tBeamSpot(consumes<reco::BeamSpot>(iConfig.getParameter<edm::InputTag>("beamSpot"))),
-  token_(consumesHeterogeneous(iConfig.getParameter<edm::InputTag>("heterogeneousSrc"))),
-  clusterToken_(consumes<SiPixelClusterCollectionNew>(iConfig.getParameter<edm::InputTag>("src"))),
+  token_(consumes<CUDAProduct<SiPixelClustersCUDA>>(iConfig.getParameter<edm::InputTag>("heterogeneousSrc"))),
+  tokenDigi_(consumes<CUDAProduct<SiPixelDigisCUDA>>(iConfig.getParameter<edm::InputTag>("heterogeneousSrc"))),
   cpeName_(iConfig.getParameter<std::string>("CPE"))
 {
   enableConversion_ = iConfig.getParameter<bool>("gpuEnableConversion");
@@ -87,6 +92,7 @@ SiPixelRecHitHeterogeneous::SiPixelRecHitHeterogeneous(const edm::ParameterSet& 
 
   produces<HeterogeneousProduct>();
   if(enableConversion_) {
+    clusterToken_ = consumes<SiPixelClusterCollectionNew>(iConfig.getParameter<edm::InputTag>("src"));
     produces<SiPixelRecHitCollectionNew>();
   }
 }
@@ -95,7 +101,7 @@ void SiPixelRecHitHeterogeneous::fillDescriptions(edm::ConfigurationDescriptions
   edm::ParameterSetDescription desc;
 
   desc.add<edm::InputTag>("beamSpot", edm::InputTag("offlineBeamSpot"));
-  desc.add<edm::InputTag>("heterogeneousSrc", edm::InputTag("siPixelClustersPreSplitting"));
+  desc.add<edm::InputTag>("heterogeneousSrc", edm::InputTag("siPixelClustersCUDAPreSplitting"));
   desc.add<edm::InputTag>("src", edm::InputTag("siPixelClustersPreSplitting"));
   desc.add<std::string>("CPE", "PixelCPEFast");
 
@@ -118,16 +124,7 @@ void SiPixelRecHitHeterogeneous::initialize(const edm::EventSetup& es) {
 }
 
 void SiPixelRecHitHeterogeneous::produceCPU(edm::HeterogeneousEvent& iEvent, const edm::EventSetup& iSetup) {
-  initialize(iSetup);
-
-  edm::Handle<SiPixelClusterCollectionNew> hclusters;
-  iEvent.getByToken(clusterToken_, hclusters);
-
-  auto output = std::make_unique<SiPixelRecHitCollectionNew>();
-  run(hclusters, *output);
-
-  output->shrink_to_fit();
-  iEvent.put(std::move(output));
+  throw cms::Exception("NotImplemented") << "CPU version is no longer implemented";
 }
 
 void SiPixelRecHitHeterogeneous::run(const edm::Handle<SiPixelClusterCollectionNew>& inputhandle, SiPixelRecHitCollectionNew &output) const {
@@ -174,8 +171,28 @@ void SiPixelRecHitHeterogeneous::acquireGPUCuda(const edm::HeterogeneousEvent& i
     throw cms::Exception("Configuration") << "too bad, not a fast cpe gpu processing not possible....";
   }
 
-  edm::Handle<siPixelRawToClusterHeterogeneousProduct::GPUProduct> hinput;
-  iEvent.getByToken<Input>(token_, hinput);
+  edm::Handle<CUDAProduct<SiPixelClustersCUDA>> hclusters;
+  iEvent.getByToken(token_, hclusters);
+  // temporary check (until the migration)
+  edm::Service<CUDAService> cs;
+  assert(hclusters->device() == cs->getCurrentDevice());
+  CUDAScopedContext ctx{*hclusters};
+  auto const& clusters = ctx.get(*hclusters);
+
+  edm::Handle<CUDAProduct<SiPixelDigisCUDA>> hdigis;
+  iEvent.getByToken(tokenDigi_, hdigis);
+  auto const& digis = ctx.get(*hdigis);
+
+  // We're processing in a stream given by base class, so need to
+  // synchronize explicitly (implementation is from
+  // CUDAScopedContext). In practice these should not be needed
+  // (because of synchronizations upstream), but let's play generic.
+  if(not hclusters->event().has_occurred()) {
+    cudaCheck(cudaStreamWaitEvent(cudaStream.id(), hclusters->event().id(), 0));
+  }
+  if(not hdigis->event().has_occurred()) {
+    cudaCheck(cudaStreamWaitEvent(cudaStream.id(), hclusters->event().id(), 0));
+  }
 
   edm::Handle<reco::BeamSpot> bsHandle;
   iEvent.getByToken( tBeamSpot, bsHandle);
@@ -185,8 +202,7 @@ void SiPixelRecHitHeterogeneous::acquireGPUCuda(const edm::HeterogeneousEvent& i
     bs[0]=bsh.x0(); bs[1]=bsh.y0(); bs[2]=bsh.z0();
   }
 
-
-  gpuAlgo_->makeHitsAsync(*hinput, bs, fcpe->getGPUProductAsync(cudaStream), enableTransfer_, cudaStream);
+  gpuAlgo_->makeHitsAsync(digis, clusters, bs, fcpe->getGPUProductAsync(cudaStream), enableTransfer_, cudaStream);
 
 }
 
@@ -218,7 +234,6 @@ void SiPixelRecHitHeterogeneous::run(const edm::Handle<SiPixelClusterCollectionN
 
   int numberOfDetUnits = 0;
   int numberOfClusters = 0;
-  int numberOfLostClusters = 0;
   for (auto DSViter=input.begin(); DSViter != input.end() ; DSViter++) {
     numberOfDetUnits++;
     unsigned int detid = DSViter->detId();
@@ -231,50 +246,26 @@ void SiPixelRecHitHeterogeneous::run(const edm::Handle<SiPixelClusterCollectionN
     auto fc = hoc.hitsModuleStart[gind];
     auto lc = hoc.hitsModuleStart[gind+1];
     auto nhits = lc-fc;
-    int32_t ind[nhits];
-    auto mrp = &hoc.mr[fc];
-    uint32_t ngh=0;
-    for (uint32_t i=0; i<nhits;++i) {
-      if (hoc.charge[fc+i]<2000 || (gind>=96 && hoc.charge[fc+i]<4000) ) { ++numberOfLostClusters; continue;}
-      ind[ngh]=i;std::push_heap(ind, ind+ngh+1,[&](auto a, auto b) { return mrp[a]<mrp[b];});
-      ++ngh;
-    }
-    std::sort_heap(ind, ind+ngh,[&](auto a, auto b) { return mrp[a]<mrp[b];});
     uint32_t ic=0;
-    auto jnd = [&](int k) { return fc+ind[k]; };
-    assert(ngh<=DSViter->size());
+    auto jnd = [&](int k) { return fc+k; };
+    assert(nhits<=DSViter->size());
+    if (nhits!=DSViter->size()) {
+       edm::LogWarning("GPUHits2CPU") <<"nhits!= ndigi " << nhits << ' ' << DSViter->size() << std::endl;
+    }
     for (auto const & clust : *DSViter) {
-      if (ic>=ngh) {
+      if (ic>=nhits) {
         // FIXME add a way to handle this case, or at least notify via edm::LogError
         break;
       }
-      // order is not stable... assume minPixelCol to be unique...
-      auto ij = jnd(ic);
-      // assert( clust.minPixelRow()==hoc.mr[ij] );
-      if( clust.minPixelRow()!=hoc.mr[ij] )
-        edm::LogWarning("GPUHits2CPU") <<"Missing pixels on CPU? "
-                                       << gind <<'/'<<fc<<'/'<<ic<<'/'<<ij << ' ' << clust.size()
-                                       << ' ' << clust.charge()<<"/"<<hoc.charge[ij]
-                                       << ' ' << clust.minPixelRow()<<"!="<< mrp[ij]
-                                       << ' ' << clust.minPixelCol()<<" "<< hoc.mc[ij] << std::endl;
-
-      if(clust.minPixelCol()!=hoc.mc[ij]) {
-        auto fd=false;
-        auto k = ic;
-        while (k<(ngh-1) && clust.minPixelRow()==hoc.mr[jnd(++k)]) if(clust.minPixelCol()==hoc.mc[jnd(k)]) {fd=true; break;}
-        if (!fd) {
-          k = ic;
-          while (k>0 && clust.minPixelRow()==hoc.mr[jnd(--k)])  if(clust.minPixelCol()==hoc.mc[jnd(k)]) {fd=true; break;}
-        }
-        // assert(fd && k!=ij);
-        if(fd) ij=jnd(k);
-      }
+      auto ij = jnd(clust.oriId());
+      assert(clust.oriId()>=0); assert(clust.oriId()<nhits);
       if(clust.charge()!=hoc.charge[ij])
-        edm::LogWarning("GPUHits2CPU") << "perfect Match not found "
-                                       << gind <<'/'<<fc<<'/'<<ic<<'/'<<ij << '	' << clust.size()
+        edm::LogWarning("GPUHits2CPU") << "not a perfect Match "
+                                       << gind <<' '<<fc<<' '
+                                       << ic<<'/'<<clust.oriId()<<'/'<< (ij-fc) << ' ' << clust.size()
                                        << ' ' << clust.charge()<<"!="<<hoc.charge[ij]
                                        << ' ' << clust.minPixelCol()<<"?"<< hoc.mc[ij]
-                                       << ' ' << clust.minPixelRow()<<'/'<< mrp[ij] <<'/'<< mrp[fc+ind[ic]] << std::endl;
+                                       << ' ' << clust.minPixelRow()<<'/'<< hoc.mr[ij] << std::endl;
 
       LocalPoint lp(hoc.xl[ij], hoc.yl[ij]);
       LocalError le(hoc.xe[ij], 0, hoc.ye[ij]);
@@ -316,7 +307,6 @@ void SiPixelRecHitHeterogeneous::run(const edm::Handle<SiPixelClusterCollectionN
   std::cout << "SiPixelRecHitGPUVI $ det, clus, lost "
     <<  numberOfDetUnits << ' '
     << numberOfClusters  << ' '
-    << numberOfLostClusters
     << std::endl;
   */
 }
