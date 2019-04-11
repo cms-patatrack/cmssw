@@ -34,6 +34,13 @@ public:
     stream_(std::move(token.streamPtr()))
   {}
 
+  explicit CUDAScopedContext(CUDAContextToken token, 
+          edm::WaitingTaskWithArenaHolder holder)
+      : CUDAScopedContext{std::move(token)}
+  {
+      waitingTaskHolder_ = std::move(holder);
+  }
+
   explicit CUDAScopedContext(const CUDAProductBase& data);
 
   explicit CUDAScopedContext(edm::StreamID streamID, edm::WaitingTaskWithArenaHolder waitingTaskHolder):
