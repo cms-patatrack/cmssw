@@ -79,20 +79,17 @@ int SiPixelArrayBuffer::operator()(const SiPixelCluster::PixelPos& pix) const {r
 // unchecked!
 void SiPixelArrayBuffer::set_adc( int row, int col, int adc) 
 {
-  if (adc>1 && pixel_vec[index(row,col)]>1) std::cout << "pixel " << row<<'/'<<col<<" exists. adc "<< pixel_vec[index(row,col)] <<','<<adc<< std::endl;
   pixel_vec[index(row,col)] = adc;
 }
 
 
 void SiPixelArrayBuffer::set_adc( const SiPixelCluster::PixelPos& pix, int adc)
 {
-  if (adc>1 &&  pixel_vec[index(pix)]>1) std::cout    << "pixel " << pix.row()<<'/'<<pix.col()<<"    exists. adc "<< pixel_vec[index(pix)] <<','<<adc<< std::endl;
   pixel_vec[index(pix)] = adc;
 }
 
 void SiPixelArrayBuffer::add_adc( int row, int col, int adc)
 {
-  if (adc!=0 && pixel_vec[index(row,col)]>1) std::cout << "pixel " << row<<'/'<<col<<" exists. adc "<< pixel_vec[index(row,col)] <<','<<adc<< std::endl;
   pixel_vec[index(row,col)] += adc;
 }
 
