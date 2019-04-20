@@ -149,8 +149,10 @@ namespace gpuPixelRecHits {
     // to global and compute phi... 
     cpeParams->detParams(me).frame.toGlobal(xl,yl, xg,yg,zg);
     // here correct for the beamspot...
-    assert(bs);
-    assert(std::abs(bs->x)<1.);assert(std::abs(bs->y)<1.);assert(std::abs(bs->z)<30.);
+    if (threadIdx.x==0) {
+      assert(bs);
+      assert(std::abs(bs->x)<1.);assert(std::abs(bs->y)<1.);assert(std::abs(bs->z)<30.);
+    }
     xg-=bs->x;
     yg-=bs->y;
     zg-=bs->z;
@@ -159,7 +161,7 @@ namespace gpuPixelRecHits {
     hits.yGlobal(h) = yg;
     hits.zGlobal(h) = zg;
 
-    assert(std::abs(xg)<1000.f);assert(std::abs(yg)<1000.f);assert(std::abs(zg)<1000.f);  // will catch nan....
+    // assert(std::abs(xg)<1000.f);assert(std::abs(yg)<1000.f);assert(std::abs(zg)<1000.f);  // will catch nan....
 
     hits.rGlobal(h) = std::sqrt(xg*xg+yg*yg);
     hits.iphi(h) = unsafe_atan2s<7>(yg,xg);
