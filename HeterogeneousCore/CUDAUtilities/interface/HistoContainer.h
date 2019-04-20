@@ -19,8 +19,16 @@
 #include "HeterogeneousCore/CUDAUtilities/interface/prefixScan.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/AtomicPairCounter.h"
 
-
+#include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
 namespace cudautils {
+
+  template<typename Histo>
+  __global__
+  void verifyPrefixScan(Histo const * __restrict__ h) {
+    auto first = blockDim.x * blockIdx.x + threadIdx.x;
+    for (auto i = first; i < Histo::totbins()-1; i += gridDim.x*blockDim.x)
+      assert(h->off[i]<=h->off[i+1]);
+  }
 
   template<typename Histo, typename T>
   __global__
@@ -100,6 +108,7 @@ namespace cudautils {
     countFromVector<<<nblocks, nthreads, 0, stream>>>(h, nh, v, offsets);
     cudaCheck(cudaGetLastError());
     launchFinalize(h,ws,stream);
+    verifyPrefixScan<<<(Histo::totbins()+nthreads-1)/nthreads, nthreads, 0, stream>>>(h);
     fillFromVector<<<nblocks, nthreads, 0, stream>>>(h, nh, v, offsets);
     cudaCheck(cudaGetLastError());
 #else
@@ -157,7 +166,7 @@ template<
   typename I=uint32_t,  // type stored in the container (usually an index in a vector of the input values)
   uint32_t NHISTS=1 // number of histos stored
 >
-class HistoContainer {
+class alignas(128) HistoContainer {
 public:
 #ifdef __CUDACC__
   using Counter = uint32_t;

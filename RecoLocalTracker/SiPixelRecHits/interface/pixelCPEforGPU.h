@@ -11,6 +11,7 @@
 #include "Geometry/TrackerGeometryBuilder/interface/phase1PixelTopology.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cuda_cxx17.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCompat.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
 
 namespace pixelCPEforGPU {
 

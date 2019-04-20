@@ -27,6 +27,7 @@ void CAHitQuadrupletGeneratorKernels::allocateOnGPU()
   // ALLOCATIONS FOR THE INTERMEDIATE RESULTS (STAYS ON WORKER)
   //////////////////////////////////////////////////////////
 
+  std::cout << "allocating in CAHitQuadrupletGeneratorKernels" << std::endl;
   cudaCheck(cudaMalloc(&counters_, sizeof(Counters)));
   cudaCheck(cudaMemset(counters_,0,sizeof(Counters)));
 

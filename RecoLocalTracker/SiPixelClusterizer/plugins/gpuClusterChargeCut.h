@@ -9,6 +9,7 @@
 
 #include "gpuClusteringConstants.h"
 
+#include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
 namespace gpuClustering {
 
   __global__ void  clusterChargeCut(

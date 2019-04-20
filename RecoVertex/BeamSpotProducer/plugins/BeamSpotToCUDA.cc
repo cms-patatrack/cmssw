@@ -67,6 +67,7 @@ void BeamSpotToCUDA::produce(edm::StreamID streamID, edm::Event& iEvent, const e
   const reco::BeamSpot& bs = iEvent.get(bsGetToken_);
 
   BeamSpotCUDA::Data *bsHost = streamCache(streamID)->get();
+  assert(bsHost);
 
   bsHost->x = bs.x0();
   bsHost->y = bs.y0();

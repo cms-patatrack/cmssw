@@ -10,6 +10,7 @@
 #include "DataFormats/Math/interface/approx_atan2.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
 #include "RecoLocalTracker/SiPixelRecHits/interface/pixelCPEforGPU.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
 namespace gpuPixelRecHits {
 
 
@@ -64,8 +65,6 @@ namespace gpuPixelRecHits {
 
     if (threadIdx.x==0 && nclus > MaxHitsInModule) { 
       printf("WARNING: too many clusters %d in Module %d. Only first %d processed\n", nclus,me,MaxHitsInModule);
-      // zero charge: do not bother to do it in parallel
-      for (auto d=MaxHitsInModule; d<nclus; ++d) { hits.charge(d)=0; hits.detectorIndex(d)=InvId;}
     }
     nclus = std::min(nclus, MaxHitsInModule);
 
@@ -121,6 +120,7 @@ namespace gpuPixelRecHits {
     first = hitsModuleStart[me];
     auto h = first+ic;  // output index in global memory
 
+    assert(h<hits.nHits());
     if (h >= TrackingRecHit2DSOAView::maxHits()) return; // overflow...
 
     pixelCPEforGPU::position(cpeParams->commonParams(), cpeParams->detParams(me), clusParams, ic);
@@ -149,6 +149,8 @@ namespace gpuPixelRecHits {
     // to global and compute phi... 
     cpeParams->detParams(me).frame.toGlobal(xl,yl, xg,yg,zg);
     // here correct for the beamspot...
+    assert(bs);
+    assert(std::abs(bs->x)<1.);assert(std::abs(bs->y)<1.);assert(std::abs(bs->z)<30.);
     xg-=bs->x;
     yg-=bs->y;
     zg-=bs->z;
@@ -156,6 +158,8 @@ namespace gpuPixelRecHits {
     hits.xGlobal(h) = xg;
     hits.yGlobal(h) = yg;
     hits.zGlobal(h) = zg;
+
+    assert(std::abs(xg)<1000.f);assert(std::abs(yg)<1000.f);assert(std::abs(zg)<1000.f);  // will catch nan....
 
     hits.rGlobal(h) = std::sqrt(xg*xg+yg*yg);
     hits.iphi(h) = unsafe_atan2s<7>(yg,xg);

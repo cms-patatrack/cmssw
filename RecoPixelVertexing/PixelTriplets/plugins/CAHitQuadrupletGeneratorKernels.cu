@@ -82,7 +82,7 @@ void kernel_checkOverflows(TuplesOnGPU::Container * foundNtuplets, AtomicPairCou
  }
  if (idx < nHits) {
    if (isOuterHitOfCell[idx].full()) // ++tooManyOuterHitOfCell;
-     printf("OuterHitOfCell overflow %d\n", idx);
+     printf("OuterHitOfCell overflow %d %d\n", idx, nHits);
  }
 
 }
@@ -510,6 +510,7 @@ void CAHitQuadrupletGeneratorKernels::launchKernels( // here goes algoparms....
   }
 
   if (doStats_) {
+    // std::cout << "NHits " << nhits << std::endl;
     numberOfBlocks = (std::max(nhits, maxNumberOfDoublets_) + blockSize - 1)/blockSize;
     kernel_checkOverflows<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
                         gpu_.tuples_d, gpu_.apc_d,

@@ -3,6 +3,7 @@
 
 #include "RecoPixelVertexing/PixelTriplets/plugins/gpuPixelDoubletsAlgos.h"
 
+#include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
 #define CONSTANT_VAR __constant__
 
 namespace gpuPixelDoublets {

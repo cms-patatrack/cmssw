@@ -40,7 +40,7 @@
 
 // local includes
 #include "SiPixelRawToClusterGPUKernel.h"
-
+#include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
 namespace pixelgpudetails {
 
   // number of words for all the FEDs

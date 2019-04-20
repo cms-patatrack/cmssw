@@ -12,5 +12,7 @@ int main(int argc, char* argv[]) {
   testIt<<<1,1>>>(argc);
   cudaDeviceSynchronize();
 
+  if (argc > 1) assert(argc==2);
+
   return (argc == 1) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
