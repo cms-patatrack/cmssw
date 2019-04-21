@@ -109,7 +109,7 @@ void SiPixelRecHitCUDA::produce(edm::StreamID streamID, edm::Event& iEvent, cons
   iEvent.getByToken(tBeamSpot, hbs);
   auto const& bs = ctx.get(*hbs);
 
-  cudaStreamSynchronize(ctx.stream().id());
+  // cudaStreamSynchronize(ctx.stream().id());
 
   ctx.emplace(iEvent,tokenHit_,
               std::move(

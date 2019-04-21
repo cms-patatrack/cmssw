@@ -18,5 +18,5 @@
 #include <cuda.h>
 #include <cassert>
 #include <cstdio>
-#undef assert
-#define assert(EX) if(!(EX)) printf("failed : %s \n",#EX);
+//#undef assert
+//#define assert(EX) if(!(EX)) printf("assert failed : %s \n",#EX);

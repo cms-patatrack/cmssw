@@ -16,7 +16,7 @@
 #include "GPUCACell.h"
 #include "CAConstants.h"
 
-#define DEBUG_DOUBLETS
+// #define DEBUG_DOUBLETS
 
 // useful for benchmark
 // #define ONLY_PHICUT
