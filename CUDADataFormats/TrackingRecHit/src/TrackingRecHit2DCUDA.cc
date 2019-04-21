@@ -65,6 +65,7 @@ TrackingRecHit2DCUDA::TrackingRecHit2DCUDA(
 
   // transfer view
   cudautils::copyAsync(m_view, view, stream);
+  cudaStreamSynchronize(stream.id());
 
 }
 
