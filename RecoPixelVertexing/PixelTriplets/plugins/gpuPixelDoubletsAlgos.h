@@ -141,7 +141,8 @@ namespace gpuPixelDoubletsAlgos {
       auto mep = hh.iphi(i);
       auto mer = hh.rGlobal(i);
 
-      assert(mez==mez);    assert(mer==mer);
+      assert(std::abs(mez)<1000.f);
+      assert(std::abs(mer)<1000.f);
 
       constexpr float z0cut = 12.f;                     // cm
       constexpr float hardPtCut = 0.5f;                 // GeV
@@ -151,14 +152,12 @@ namespace gpuPixelDoubletsAlgos {
         auto r2t4 = minRadius2T4;
         auto ri = mer;
         auto ro = hh.rGlobal(j);
-        assert(ri==ri); assert(ro==ro);
         auto dphi = short2phi( min( abs(int16_t(mep-hh.iphi(j))), abs(int16_t(hh.iphi(j)-mep)) ) );
         return dphi*dphi * (r2t4 - ri*ro) > (ro-ri)*(ro-ri);
       };
       auto z0cutoff = [&](int j) {
         auto zo = hh.zGlobal(j);;
         auto ro = hh.rGlobal(j);
-        assert(zo==zo);    assert(ro==ro);
         auto dr = ro-mer;
         return dr > maxr[pairLayerId] ||
           dr<0 || std::abs((mez*ro - mer*zo)) > z0cut*dr;

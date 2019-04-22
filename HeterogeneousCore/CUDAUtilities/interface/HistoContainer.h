@@ -108,7 +108,9 @@ namespace cudautils {
     countFromVector<<<nblocks, nthreads, 0, stream>>>(h, nh, v, offsets);
     cudaCheck(cudaGetLastError());
     launchFinalize(h,ws,stream);
+#ifdef GPU_DEBUG
     verifyPrefixScan<<<(Histo::totbins()+nthreads-1)/nthreads, nthreads, 0, stream>>>(h);
+#endif
     fillFromVector<<<nblocks, nthreads, 0, stream>>>(h, nh, v, offsets);
     cudaCheck(cudaGetLastError());
 #else
