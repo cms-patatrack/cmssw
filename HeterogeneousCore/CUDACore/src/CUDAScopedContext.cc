@@ -64,9 +64,11 @@ CUDAScopedContext::~CUDAScopedContext() {
 }
 
 void CUDAScopedContext::createEventIfStreamBusy() {
+  /*
   if(event_ or stream_->is_clear()) {
     return;
   }
+  */
   edm::Service<CUDAService> cs;
   event_ = cs->getCUDAEvent();
 }
