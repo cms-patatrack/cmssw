@@ -11,7 +11,7 @@
 
 // #define ONLY_PHICUT
 
-#define USE_SMART_CACHE
+// #define USE_SMART_CACHE
 
 namespace CAConstants {
 

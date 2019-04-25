@@ -1,3 +1,4 @@
+<use name="CUDADataFormats/Common"/>
 <use name="FWCore/ServiceRegistry"/>
 <use name="HeterogeneousCore/CUDAUtilities"/>
 <use name="HeterogeneousCore/CUDAServices"/>
