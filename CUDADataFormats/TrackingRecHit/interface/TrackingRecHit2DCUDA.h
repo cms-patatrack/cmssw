@@ -146,4 +146,4 @@ private:
   int16_t* m_iphi;
 };
 
-#endif // CUDADataFormats_TrackingRecHit_interface_TrackingRecHit2DCUDA_h
+#endif  // CUDADataFormats_TrackingRecHit_interface_TrackingRecHit2DCUDA_h

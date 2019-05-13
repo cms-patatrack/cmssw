@@ -1,25 +1,19 @@
 #include "CUDADataFormats/TrackingRecHit/interface/TrackingRecHit2DCUDA.h"
-
-#include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
+#include "FWCore/ParameterSet/interface/ParameterSet.h"
+#include "FWCore/PluginManager/interface/PluginManager.h"
+#include "FWCore/PluginManager/interface/standard.h"
 #include "FWCore/ServiceRegistry/interface/ActivityRegistry.h"
+#include "FWCore/ServiceRegistry/interface/ServiceRegistry.h"
 #include "HeterogeneousCore/CUDAServices/interface/CUDAService.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/copyAsync.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/exitSansCUDADevices.h"
 
-#include "FWCore/PluginManager/interface/standard.h"
-#include "FWCore/PluginManager/interface/PluginManager.h"
-#include "FWCore/ServiceRegistry/interface/ServiceRegistry.h"
-
-
 namespace testTrackingRecHit2D {
 
-  void runKernels(TrackingRecHit2DSOAView * hits);
+  void runKernels(TrackingRecHit2DSOAView* hits);
 
 }
-
-
-
 
 namespace {
   CUDAService makeCUDAService(edm::ParameterSet ps, edm::ActivityRegistry& ar) {
@@ -28,22 +22,18 @@ namespace {
     desc.validate(ps, "CUDAService");
     return CUDAService(ps, ar);
   }
-}
-
+}  // namespace
 
 int main() {
-
-
   exitSansCUDADevices();
 
   edmplugin::PluginManager::configure(edmplugin::standard::config());
 
   const std::string config{
-R"_(import FWCore.ParameterSet.Config as cms
+      R"_(import FWCore.ParameterSet.Config as cms
 process = cms.Process('Test')
 process.CUDAService = cms.Service('CUDAService')
-)_"
-  };
+)_"};
 
   std::unique_ptr<edm::ServiceRegistry::Operate> operate_;
   edm::ServiceToken tempToken = edm::ServiceRegistry::createServicesFromConfig(config);
@@ -57,7 +47,7 @@ process.CUDAService = cms.Service('CUDAService')
   auto stream = current_device.create_stream(cuda::stream::implicitly_synchronizes_with_default_stream);
 
   auto nHits = 200;
-  TrackingRecHit2DCUDA tkhit(nHits,nullptr, nullptr, stream);
+  TrackingRecHit2DCUDA tkhit(nHits, nullptr, nullptr, stream);
 
   testTrackingRecHit2D::runKernels(tkhit.view());
 
@@ -65,10 +55,4 @@ process.CUDAService = cms.Service('CUDAService')
   ar.postEndJobSignal_();
 
   return 0;
-
 }
-
-
-
-
-

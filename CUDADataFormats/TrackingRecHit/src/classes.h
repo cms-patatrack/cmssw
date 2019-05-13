@@ -1,8 +1,8 @@
-#ifndef CUDADataFormats_SiPixelCluster_classes_h
-#define CUDADataFormats_SiPixelCluster_classes_h
+#ifndef CUDADataFormats_SiPixelCluster_src_classes_h
+#define CUDADataFormats_SiPixelCluster_src_classes_h
 
 #include "CUDADataFormats/Common/interface/CUDAProduct.h"
 #include "CUDADataFormats/TrackingRecHit/interface/TrackingRecHit2DCUDA.h"
 #include "DataFormats/Common/interface/Wrapper.h"
 
-#endif
+#endif  // CUDADataFormats_SiPixelCluster_src_classes_h

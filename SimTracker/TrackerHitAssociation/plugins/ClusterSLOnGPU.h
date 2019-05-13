@@ -13,29 +13,34 @@
 namespace clusterSLOnGPU {
 
   using ClusterSLGPU = trackerHitAssociationHeterogeneousProduct::ClusterSLGPU;
-  using GPUProduct   = trackerHitAssociationHeterogeneousProduct::GPUProduct;
+  using GPUProduct = trackerHitAssociationHeterogeneousProduct::GPUProduct;
 
-  using HitsOnGPU    = TrackingRecHit2DSOAView;
-  using HitsOnCPU    = TrackingRecHit2DCUDA;
+  using HitsOnGPU = TrackingRecHit2DSOAView;
+  using HitsOnCPU = TrackingRecHit2DCUDA;
 
   using Clus2TP = ClusterSLGPU::Clus2TP;
 
   class Kernel {
   public:
     Kernel(cuda::stream_t<>& stream, bool dump);
-    ~Kernel() {deAlloc();}
-    void algo(SiPixelDigisCUDA const & dd, uint32_t ndigis, HitsOnCPU const & hh, uint32_t nhits, uint32_t n, cuda::stream_t<>& stream);
-    GPUProduct getProduct() { return GPUProduct{slgpu.me_d};}
-    
+    ~Kernel() { deAlloc(); }
+    void algo(SiPixelDigisCUDA const& dd,
+              uint32_t ndigis,
+              HitsOnCPU const& hh,
+              uint32_t nhits,
+              uint32_t n,
+              cuda::stream_t<>& stream);
+    GPUProduct getProduct() { return GPUProduct{slgpu.me_d}; }
+
   private:
-     void alloc(cuda::stream_t<>& stream);
-     void deAlloc(); 
-     void zero(cudaStream_t stream);
+    void alloc(cuda::stream_t<>& stream);
+    void deAlloc();
+    void zero(cudaStream_t stream);
 
   public:
-     ClusterSLGPU slgpu; 
-     bool doDump;
+    ClusterSLGPU slgpu;
+    bool doDump;
   };
-}
+}  // namespace clusterSLOnGPU
 
-#endif // SimTracker_TrackerHitAssociation_plugins_ClusterSLOnGPU_h
+#endif  // SimTracker_TrackerHitAssociation_plugins_ClusterSLOnGPU_h
