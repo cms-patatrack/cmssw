@@ -31,6 +31,21 @@ public:
   using HitToTuple = CAConstants::HitToTuple;
   using TupleMultiplicity = CAConstants::TupleMultiplicity;
 
+  struct QualityCuts {
+    float chi2Coeff[4]; // chi2 cut = chi2Scale * (chi2Coeff[0] + pT * (chi2Coeff[1] + pT * (chi2Coeff[2] + pT * chi2Coeff[3])))
+    float chi2MaxPt;    // GeV
+    float chi2Scale;
+
+    struct region {
+      float maxTip;     // cm
+      float minPt;      // GeV
+      float maxZip;     // cm
+    };
+
+    region triplet;
+    region quadruplet;
+  };
+
   CAHitQuadrupletGeneratorKernels(uint32_t minHitsPerNtuplet,
                                   bool earlyFishbone,
                                   bool lateFishbone,
@@ -107,6 +122,28 @@ private:
   const float hardCurvCut_;
   const float dcaCutInnerTriplet_;
   const float dcaCutOuterTriplet_;
+
+  // quality cuts
+  QualityCuts cuts_
+  {
+    // polynomial coefficients for the pT-dependent chi2 cut
+    { 0.68177776, 0.74609577, -0.08035491, 0.00315399 },
+    // max pT used to detrmine the chi2 cut
+    10.,
+    // chi2 scale factor: 30 for broken line fit, 45 for Riemann fit
+    30.,
+    // regional cuts for triplets
+    {
+      0.3,  // |Tip| < 0.3 cm
+      0.5,  // pT > 0.5 GeV
+      12.0  // |Zip| < 12.0 cm
+    },
+    // regional cuts for quadruplets
+    {
+      0.5,  // |Tip| < 0.5 cm
+      0.3,  // pT > 0.3 GeV
+      12.0  // |Zip| < 12.0 cm
+    }};
 };
 
 #endif  // RecoPixelVertexing_PixelTriplets_plugins_CAHitQuadrupletGeneratorKernels_h
