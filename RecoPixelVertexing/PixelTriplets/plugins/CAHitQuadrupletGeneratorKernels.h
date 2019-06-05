@@ -32,7 +32,8 @@ public:
   using TupleMultiplicity = CAConstants::TupleMultiplicity;
 
   struct QualityCuts {
-    float chi2Coeff[4]; // chi2 cut = chi2Scale * (chi2Coeff[0] + pT * (chi2Coeff[1] + pT * (chi2Coeff[2] + pT * chi2Coeff[3])))
+    // chi2 cut = chi2Scale * (chi2Coeff[0] + pT/GeV * (chi2Coeff[1] + pT/GeV * (chi2Coeff[2] + pT/GeV * chi2Coeff[3])))
+    float chi2Coeff[4];
     float chi2MaxPt;    // GeV
     float chi2Scale;
 
@@ -59,7 +60,8 @@ public:
                                   float CAThetaCutForward,
                                   float hardCurvCut,
                                   float dcaCutInnerTriplet,
-                                  float dcaCutOuterTriplet)
+                                  float dcaCutOuterTriplet,
+                                  QualityCuts const& cuts)
       : minHitsPerNtuplet_(minHitsPerNtuplet),
         earlyFishbone_(earlyFishbone),
         lateFishbone_(lateFishbone),
@@ -73,8 +75,13 @@ public:
         CAThetaCutForward_(CAThetaCutForward),
         hardCurvCut_(hardCurvCut),
         dcaCutInnerTriplet_(dcaCutInnerTriplet),
-        dcaCutOuterTriplet_(dcaCutOuterTriplet){};
-  ~CAHitQuadrupletGeneratorKernels() { deallocateOnGPU(); }
+        dcaCutOuterTriplet_(dcaCutOuterTriplet),
+        cuts_(cuts)
+  { }
+
+  ~CAHitQuadrupletGeneratorKernels() {
+    deallocateOnGPU();
+  }
 
   TupleMultiplicity const* tupleMultiplicity() const { return device_tupleMultiplicity_; }
 

@@ -306,7 +306,12 @@ __global__ void kernel_classifyTracks(TuplesOnGPU::Container const *__restrict__
     return;
   }
 
-  // compute a pT-dependent chi2 cut, up to 10 GeV
+  // compute a pT-dependent chi2 cut
+  // default parameters:
+  //   - chi2MaxPt = 10 GeV
+  //   - chi2Coeff = { 0.68177776, 0.74609577, -0.08035491, 0.00315399 }
+  //   - chi2Scale = 30 for broken line fit, 45 for Riemann fit
+  // (see CAHitQuadrupletGeneratorGPU.cc)
   float pt = std::min<float>(fit_results[idx].par(2), cuts.chi2MaxPt);
   float chi2Cut = cuts.chi2Scale *
                   (cuts.chi2Coeff[0] + pt * (cuts.chi2Coeff[1] + pt * (cuts.chi2Coeff[2] + pt * cuts.chi2Coeff[3])));
@@ -322,9 +327,10 @@ __global__ void kernel_classifyTracks(TuplesOnGPU::Container const *__restrict__
   }
 
   // impose "region cuts" based on the fit results (phi, Tip, pt, cotan(theta)), Zip)
-  // default cuts (see CAHitQuadrupletGeneratorKernels.h)
-  // for triplets:    |Tip| < 0.3 cm, pT > 0.5 GeV, |Zip| < 12.0 cm
-  // for quadruplets: |Tip| < 0.5 cm, pT > 0.3 GeV, |Zip| < 12.0 cm
+  // default cuts:
+  //   - for triplets:    |Tip| < 0.3 cm, pT > 0.5 GeV, |Zip| < 12.0 cm
+  //   - for quadruplets: |Tip| < 0.5 cm, pT > 0.3 GeV, |Zip| < 12.0 cm
+  // (see CAHitQuadrupletGeneratorGPU.cc)
   auto const &region = (tuples->size(idx) > 3) ? cuts.quadruplet : cuts.triplet;
   bool isOk = (std::abs(fit_results[idx].par(1)) < region.maxTip) and (fit_results[idx].par(2) > region.minPt) and
               (std::abs(fit_results[idx].par(4)) < region.maxZip);
