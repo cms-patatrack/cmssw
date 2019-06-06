@@ -107,7 +107,7 @@ void CAHitQuadrupletGeneratorGPU::fillDescriptions(edm::ParameterSetDescription 
   trackQualityCuts.add<double>("chi2MaxPt", 10.)->setComment("max pT used to determine the pT-dependent chi2 cut");
   trackQualityCuts.add<std::vector<double>>("chi2Coeff", { 0.68177776, 0.74609577, -0.08035491, 0.00315399 })
     ->setComment("Polynomial coefficients to derive the pT-dependent chi2 cut");
-  trackQualityCuts.add<double>("chi2Scale", 30.)->setComment("Factor to multiply the pT-dependent chi2 cut");
+  trackQualityCuts.add<double>("chi2Scale", 30.)->setComment("Factor to multiply the pT-dependent chi2 cut (currently: 30 for the broken line fit, 45 for the Riemann fit)");
   trackQualityCuts.add<double>("tripletMinPt", 0.5)->setComment("Min pT for triplets, in GeV");
   trackQualityCuts.add<double>("tripletMaxTip", 0.3)->setComment("Max |Tip| for triplets, in cm");
   trackQualityCuts.add<double>("tripletMaxZip", 12.)->setComment("Max |Zip| for triplets, in cm");
