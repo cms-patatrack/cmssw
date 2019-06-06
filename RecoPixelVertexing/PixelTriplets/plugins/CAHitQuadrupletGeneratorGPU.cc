@@ -34,7 +34,7 @@ namespace {
     return CAHitQuadrupletGeneratorKernels::QualityCuts {
       // polynomial coefficients for the pT-dependent chi2 cut
       { (float) coeff[0], (float) coeff[1], (float) coeff[2], (float) coeff[3] },
-      // max pT used to detrmine the chi2 cut
+      // max pT used to determine the chi2 cut
       (float) pset.getParameter<double>("chi2MaxPt"),
       // chi2 scale factor: 30 for broken line fit, 45 for Riemann fit
       (float) pset.getParameter<double>("chi2Scale"),

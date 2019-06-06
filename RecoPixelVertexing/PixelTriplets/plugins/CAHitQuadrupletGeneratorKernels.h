@@ -135,7 +135,7 @@ private:
   {
     // polynomial coefficients for the pT-dependent chi2 cut
     { 0.68177776, 0.74609577, -0.08035491, 0.00315399 },
-    // max pT used to detrmine the chi2 cut
+    // max pT used to determine the chi2 cut
     10.,
     // chi2 scale factor: 30 for broken line fit, 45 for Riemann fit
     30.,
