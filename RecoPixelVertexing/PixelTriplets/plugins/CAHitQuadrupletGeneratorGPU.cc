@@ -2,17 +2,17 @@
 // Author: Felice Pantaleo, CERN
 //
 
-#include <array>        // for make_array<T,N>
-#include <cassert>      // for make_array<T,N>
+#include <array>
+#include <cassert>
 #include <functional>
-#include <vector>       // for make_array<T,N>
+#include <vector>
 
-#include "CommonTools/Utils/interface/DynArray.h"
 #include "DataFormats/Common/interface/Handle.h"
 #include "FWCore/Framework/interface/ConsumesCollector.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
+#include "FWCore/Utilities/interface/EDMException.h"
 #include "FWCore/Utilities/interface/isFinite.h"
 #include "RecoPixelVertexing/PixelTriplets/interface/ThirdHitPredictionFromCircle.h"
 #include "TrackingTools/DetLayers/interface/BarrelDetLayer.h"
@@ -28,7 +28,9 @@ namespace {
 
   CAHitQuadrupletGeneratorKernels::QualityCuts makeQualityCuts(edm::ParameterSet const& pset) {
     auto coeff = pset.getParameter<std::vector<double>>("chi2Coeff");
-    assert(("CAHitQuadrupletGeneratorGPU.trackQualityCuts.chi2Coeff must have 4 elements" and coeff.size() == 4));
+    if (coeff.size() != 4) {
+      throw edm::Exception(edm::errors::Configuration, "CAHitQuadrupletGeneratorGPU.trackQualityCuts.chi2Coeff must have 4 elements");
+    }
     return CAHitQuadrupletGeneratorKernels::QualityCuts {
       // polynomial coefficients for the pT-dependent chi2 cut
       { (float) coeff[0], (float) coeff[1], (float) coeff[2], (float) coeff[3] },
