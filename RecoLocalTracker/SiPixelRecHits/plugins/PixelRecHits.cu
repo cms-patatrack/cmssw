@@ -52,15 +52,11 @@ namespace pixelgpudetails {
     if (blocks)  // protect from empty events
       gpuPixelRecHits::getHits<<<blocks, threadsPerBlock, 0, stream.id()>>>(cpeParams,
                                                                             bs_d.data(),
-                                                                            digis_d.moduleInd(),
-                                                                            digis_d.xx(),
-                                                                            digis_d.yy(),
-                                                                            digis_d.adc(),
+                                                                            digis_d.view(),
+                                                                            digis_d.nDigis(),
                                                                             clusters_d.moduleStart(),
                                                                             clusters_d.clusInModule(),
                                                                             clusters_d.moduleId(),
-                                                                            digis_d.clus(),
-                                                                            digis_d.nDigis(),
                                                                             clusters_d.clusModuleStart(),
                                                                             hits_d.view());
     cudaCheck(cudaGetLastError());

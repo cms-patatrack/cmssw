@@ -15,18 +15,16 @@ namespace gpuPixelRecHits {
 
   __global__ void getHits(pixelCPEforGPU::ParamsOnGPU const* __restrict__ cpeParams,
                           BeamSpotCUDA::Data const* __restrict__ bs,
-                          uint16_t const* __restrict__ id,
-                          uint16_t const* __restrict__ x,
-                          uint16_t const* __restrict__ y,
-                          uint16_t const* __restrict__ adc,
+                          SiPixelDigisCUDA::DeviceConstView const * __restrict__ pdigis,
+                          int numElements,
                           uint32_t const* __restrict__ digiModuleStart,
                           uint32_t const* __restrict__ clusInModule,
                           uint32_t const* __restrict__ moduleId,
-                          int32_t const* __restrict__ clus,
-                          int numElements,
                           uint32_t const* __restrict__ hitsModuleStart,
                           TrackingRecHit2DSOAView* phits) {
     auto& hits = *phits;
+
+    auto const digis = *pdigis; // the copy is intentional!
 
     // to be moved in common namespace...
     constexpr uint16_t InvId = 9999;  // must be > MaxNumModules
@@ -47,9 +45,9 @@ namespace gpuPixelRecHits {
 #ifdef GPU_DEBUG
     if (threadIdx.x == 0) {
       auto k = first;
-      while (id[k] == InvId)
+      while (digis.moduleInd(k) == InvId)
         ++k;
-      assert(id[k] == me);
+      assert(digis.moduleInd(k) == me);
     }
 #endif
 
@@ -92,36 +90,45 @@ namespace gpuPixelRecHits {
     // one thead per "digi"
 
     for (int i = first; i < numElements; i += blockDim.x) {
-      if (id[i] == InvId)
+      auto id = digis.moduleInd(i);
+      if (id == InvId)
         continue;  // not valid
-      if (id[i] != me)
+      if (id != me)
         break;  // end of module
-      if (clus[i] >= nclus)
+      auto cl = digis.clus(i);
+      if (cl >= nclus)
         continue;
-      atomicMin(&clusParams.minRow[clus[i]], x[i]);
-      atomicMax(&clusParams.maxRow[clus[i]], x[i]);
-      atomicMin(&clusParams.minCol[clus[i]], y[i]);
-      atomicMax(&clusParams.maxCol[clus[i]], y[i]);
+      auto x = digis.xx(i);
+      auto y = digis.yy(i);
+      atomicMin(&clusParams.minRow[cl], x);
+      atomicMax(&clusParams.maxRow[cl], x);
+      atomicMin(&clusParams.minCol[cl], y);
+      atomicMax(&clusParams.maxCol[cl], y);
     }
 
     __syncthreads();
 
     for (int i = first; i < numElements; i += blockDim.x) {
-      if (id[i] == InvId)
+      auto id =    digis.moduleInd(i);
+      if (id == InvId)
         continue;  // not valid
-      if (id[i] != me)
+      if (id != me)
         break;  // end of module
-      if (clus[i] >= nclus)
+      auto cl = digis.clus(i);
+      if (cl >= nclus)
         continue;
-      atomicAdd(&clusParams.charge[clus[i]], adc[i]);
-      if (clusParams.minRow[clus[i]] == x[i])
-        atomicAdd(&clusParams.Q_f_X[clus[i]], adc[i]);
-      if (clusParams.maxRow[clus[i]] == x[i])
-        atomicAdd(&clusParams.Q_l_X[clus[i]], adc[i]);
-      if (clusParams.minCol[clus[i]] == y[i])
-        atomicAdd(&clusParams.Q_f_Y[clus[i]], adc[i]);
-      if (clusParams.maxCol[clus[i]] == y[i])
-        atomicAdd(&clusParams.Q_l_Y[clus[i]], adc[i]);
+      auto x = digis.xx(i);
+      auto y = digis.yy(i);      
+      auto ch = digis.adc(i);
+      atomicAdd(&clusParams.charge[cl], ch);
+      if (clusParams.minRow[cl] == x)
+        atomicAdd(&clusParams.Q_f_X[cl], ch);
+      if (clusParams.maxRow[cl] == x)
+        atomicAdd(&clusParams.Q_l_X[cl], ch);
+      if (clusParams.minCol[cl] == y)
+        atomicAdd(&clusParams.Q_f_Y[cl], ch);
+      if (clusParams.maxCol[cl] == y)
+        atomicAdd(&clusParams.Q_l_Y[cl], ch);
     }
 
     __syncthreads();
