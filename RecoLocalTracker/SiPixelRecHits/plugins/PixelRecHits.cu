@@ -54,10 +54,7 @@ namespace pixelgpudetails {
                                                                             bs_d.data(),
                                                                             digis_d.view(),
                                                                             digis_d.nDigis(),
-                                                                            clusters_d.moduleStart(),
-                                                                            clusters_d.clusInModule(),
-                                                                            clusters_d.moduleId(),
-                                                                            clusters_d.clusModuleStart(),
+                                                                            clusters_d.view(),
                                                                             hits_d.view());
     cudaCheck(cudaGetLastError());
 

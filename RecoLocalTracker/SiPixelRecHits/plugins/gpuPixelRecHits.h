@@ -17,14 +17,12 @@ namespace gpuPixelRecHits {
                           BeamSpotCUDA::Data const* __restrict__ bs,
                           SiPixelDigisCUDA::DeviceConstView const * __restrict__ pdigis,
                           int numElements,
-                          uint32_t const* __restrict__ digiModuleStart,
-                          uint32_t const* __restrict__ clusInModule,
-                          uint32_t const* __restrict__ moduleId,
-                          uint32_t const* __restrict__ hitsModuleStart,
+                          SiPixelClustersCUDA::DeviceConstView const * __restrict__ pclusters,
                           TrackingRecHit2DSOAView* phits) {
     auto& hits = *phits;
 
     auto const digis = *pdigis; // the copy is intentional!
+    auto const & clusters = *pclusters;
 
     // to be moved in common namespace...
     constexpr uint16_t InvId = 9999;  // must be > MaxNumModules
@@ -35,9 +33,9 @@ namespace gpuPixelRecHits {
     // as usual one block per module
     __shared__ ClusParams clusParams;
 
-    auto first = digiModuleStart[1 + blockIdx.x];
-    auto me = moduleId[blockIdx.x];
-    auto nclus = clusInModule[me];
+    auto first = clusters.moduleStart(1 + blockIdx.x);
+    auto me = clusters.moduleId(blockIdx.x);
+    auto nclus = clusters.clusInModule(me);
 
     if (0 == nclus)
       return;
@@ -138,7 +136,7 @@ namespace gpuPixelRecHits {
     if (ic >= nclus)
       return;
 
-    first = hitsModuleStart[me];
+    first = clusters.clusModuleStart(me);
     auto h = first + ic;  // output index in global memory
 
     if (h >= TrackingRecHit2DSOAView::maxHits())
