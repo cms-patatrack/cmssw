@@ -67,9 +67,7 @@ namespace gpuPixelRecHits {
     }
     nclus = std::min(nclus, MaxHitsInModule);
 
-    auto ic = threadIdx.x;
-
-    if (ic < nclus) {
+    for (int ic = threadIdx.x; ic < nclus; ic += blockDim.x) {
       clusParams.minRow[ic] = std::numeric_limits<uint32_t>::max();
       clusParams.maxRow[ic] = 0;
       clusParams.minCol[ic] = std::numeric_limits<uint32_t>::max();
@@ -133,49 +131,49 @@ namespace gpuPixelRecHits {
 
     // next one cluster per thread...
 
-    if (ic >= nclus)
-      return;
-
     first = clusters.clusModuleStart(me);
-    auto h = first + ic;  // output index in global memory
 
-    if (h >= TrackingRecHit2DSOAView::maxHits())
-      return;  // overflow...
+    for (int ic = threadIdx.x; ic < nclus; ic += blockDim.x) {
+      auto h = first + ic;  // output index in global memory
 
-    pixelCPEforGPU::position(cpeParams->commonParams(), cpeParams->detParams(me), clusParams, ic);
-    pixelCPEforGPU::errorFromDB(cpeParams->commonParams(), cpeParams->detParams(me), clusParams, ic);
+      if (h >= TrackingRecHit2DSOAView::maxHits())
+        break;  // overflow...
 
-    // store it
+      pixelCPEforGPU::position(cpeParams->commonParams(), cpeParams->detParams(me), clusParams, ic);
+      pixelCPEforGPU::errorFromDB(cpeParams->commonParams(), cpeParams->detParams(me), clusParams, ic);
 
-    hits.charge(h) = clusParams.charge[ic];
+      // store it
 
-    hits.detectorIndex(h) = me;
+      hits.charge(h) = clusParams.charge[ic];
 
-    float xl, yl;
-    hits.xLocal(h) = xl = clusParams.xpos[ic];
-    hits.yLocal(h) = yl = clusParams.ypos[ic];
+      hits.detectorIndex(h) = me;
 
-    hits.clusterSizeX(h) = clusParams.xsize[ic];
-    hits.clusterSizeY(h) = clusParams.ysize[ic];
+      float xl, yl;
+      hits.xLocal(h) = xl = clusParams.xpos[ic];
+      hits.yLocal(h) = yl = clusParams.ypos[ic];
 
-    hits.xerrLocal(h) = clusParams.xerr[ic] * clusParams.xerr[ic];
-    hits.yerrLocal(h) = clusParams.yerr[ic] * clusParams.yerr[ic];
+      hits.clusterSizeX(h) = clusParams.xsize[ic];
+      hits.clusterSizeY(h) = clusParams.ysize[ic];
 
-    // keep it local for computations
-    float xg, yg, zg;
-    // to global and compute phi...
-    cpeParams->detParams(me).frame.toGlobal(xl, yl, xg, yg, zg);
-    // here correct for the beamspot...
-    xg -= bs->x;
-    yg -= bs->y;
-    zg -= bs->z;
+      hits.xerrLocal(h) = clusParams.xerr[ic] * clusParams.xerr[ic];
+      hits.yerrLocal(h) = clusParams.yerr[ic] * clusParams.yerr[ic];
 
-    hits.xGlobal(h) = xg;
-    hits.yGlobal(h) = yg;
-    hits.zGlobal(h) = zg;
+      // keep it local for computations
+      float xg, yg, zg;
+      // to global and compute phi...
+      cpeParams->detParams(me).frame.toGlobal(xl, yl, xg, yg, zg);
+      // here correct for the beamspot...
+      xg -= bs->x;
+      yg -= bs->y;
+      zg -= bs->z;
 
-    hits.rGlobal(h) = std::sqrt(xg * xg + yg * yg);
-    hits.iphi(h) = unsafe_atan2s<7>(yg, xg);
+      hits.xGlobal(h) = xg;
+      hits.yGlobal(h) = yg;
+      hits.zGlobal(h) = zg;
+
+      hits.rGlobal(h) = std::sqrt(xg * xg + yg * yg);
+      hits.iphi(h) = unsafe_atan2s<7>(yg, xg);
+    }
   }
 
 }  // namespace gpuPixelRecHits
