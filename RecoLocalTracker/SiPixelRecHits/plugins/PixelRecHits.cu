@@ -43,7 +43,7 @@ namespace pixelgpudetails {
     auto nHits = clusters_d.nClusters();
     TrackingRecHit2DCUDA hits_d(nHits, cpeParams, clusters_d.clusModuleStart(), stream);
 
-    int threadsPerBlock = 256;
+    int threadsPerBlock = 128;
     int blocks = digis_d.nModules();  // active modules (with digis)
 
 #ifdef GPU_DEBUG
