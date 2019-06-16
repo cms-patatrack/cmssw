@@ -19,6 +19,12 @@ namespace gpuPixelRecHits {
                           int numElements,
                           SiPixelClustersCUDA::DeviceConstView const * __restrict__ pclusters,
                           TrackingRecHit2DSOAView* phits) {
+
+    // FIXME
+    // the compiler seems NOT to optimize loads from views (even in a simple test case)
+    // The whole gimnastic here of copying or not is a pure heuristic exercise that seems to produce the fastest code with the above signature
+    // not using views (passing a gazzilion of array pointers) seems to produce the fastest code (but it is harder to mantain)  
+
     auto& hits = *phits;
 
     auto const digis = *pdigis; // the copy is intentional!
