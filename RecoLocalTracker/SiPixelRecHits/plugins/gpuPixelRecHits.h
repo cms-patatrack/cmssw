@@ -25,6 +25,9 @@ namespace gpuPixelRecHits {
     // The whole gimnastic here of copying or not is a pure heuristic exercise that seems to produce the fastest code with the above signature
     // not using views (passing a gazzilion of array pointers) seems to produce the fastest code (but it is harder to mantain)  
 
+    assert(phits);
+    assert(cpeParams);
+
     auto& hits = *phits;
 
     auto const digis = *pdigis; // the copy is intentional!
@@ -45,7 +48,7 @@ namespace gpuPixelRecHits {
       if(0==threadIdx.x) {
          agc.endCapZ[0] = ag.endCapZ[0] - bs->z;
          agc.endCapZ[1] = ag.endCapZ[1] - bs->z;
-         printf("endcapZ %f %f\n",agc.endCapZ[0],agc.endCapZ[1]);
+//         printf("endcapZ %f %f\n",agc.endCapZ[0],agc.endCapZ[1]);
       }
     }
 
