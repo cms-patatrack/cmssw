@@ -24,49 +24,40 @@ int main(int argc, char *argv[]) {
     edm::Wrapper<EBUncalibratedRecHitCollection> *wcpuEB = nullptr;
     edm::Wrapper<EEUncalibratedRecHitCollection> *wcpuEE = nullptr;
 
-
     std::string fileName = argv[1];
     std::string outFileName = argv[2];
 
     // output
     TFile rfout{outFileName.c_str(), "recreate"};
-    TH1D *hSOIAmplitudesEBGPU, *hSOIAmplitudesEEGPU;
-    TH1D *hSOIAmplitudesEBCPU, *hSOIAmplitudesEECPU;
-    TH1D *hChi2EBGPU, *hChi2EEGPU;
-    TH1D *hChi2EBCPU, *hChi2EECPU;
-    TH2D *hSOIAmplitudesEBGPUvsCPU, *hSOIAmplitudesEEGPUvsCPU;
-    TH2D *hChi2EBGPUvsCPU, *hChi2EEGPUvsCPU;
-    TH1D *hAmplitudesEB, *hAmplitudesEE;
 
-    int nbins = 100; int last = 1000;
-    hSOIAmplitudesEBGPU = new TH1D("hSOIAmplitudesEBGPU", "hSOIAmplitudesEBGPU",
-        nbins, 0, last);
-    hSOIAmplitudesEEGPU = new TH1D("hSOIAmplitudesEEGPU", "hSOIAmplitudesEEGPU",
-        nbins, 0, last);
-    hSOIAmplitudesEBCPU = new TH1D("hSOIAmplitudesEBCPU", "hSOIAmplitudesEBCPU",
-        nbins, 0, last);
-    hSOIAmplitudesEECPU = new TH1D("hSOIAmplitudesEECPU", "hSOIAmplitudesEECPU",
-        nbins, 0, last);
-    
-    int nbins_chi2 = 100; int last_chi2 = 100;
-    hChi2EBGPU = new TH1D("hChi2EBGPU", "hChi2EBGPU",
-        nbins_chi2, 0, last_chi2);
-    hChi2EEGPU = new TH1D("hChi2EEGPU", "hChi2EEGPU",
-        nbins_chi2, 0, last_chi2);
-    hChi2EBCPU = new TH1D("hChi2EBCPU", "hChi2EBCPU",
-        nbins_chi2, 0, last_chi2);
-    hChi2EECPU = new TH1D("hChi2EECPU", "hChi2EECPU",
-        nbins_chi2, 0, last_chi2);
-    
-    hSOIAmplitudesEBGPUvsCPU = new TH2D("hSOIAmplitudesEBGPUvsCPU", 
-        "hSOIAmplitudesEBGPUvsCPU", nbins, 0, last, nbins, 0, last);
-    hSOIAmplitudesEEGPUvsCPU = new TH2D("hSOIAmplitudesEEGPUvsCPU", 
-        "hSOIAmplitudesEEGPUvsCPU", nbins, 0, last, nbins, 0, last);
-    
-    hChi2EBGPUvsCPU = new TH2D("hChi2EBGPUvsCPU", 
-        "hChi2EBGPUvsCPU", nbins_chi2, 0, last_chi2, nbins_chi2, 0, last_chi2);
-    hChi2EEGPUvsCPU = new TH2D("hChi2EEGPUvsCPU", 
-        "hChi2EEGPUvsCPU", nbins_chi2, 0, last_chi2, nbins_chi2, 0, last_chi2);
+    int nbins = 300;
+    float last = 3000.;
+
+    int nbins_chi2 = 1000;
+    float last_chi2 = 1000.;
+
+    int nbins_delta = 201;  // use an odd number to center around 0
+    float delta = 0.2;
+
+    auto hSOIAmplitudesEBGPU = new TH1D("hSOIAmplitudesEBGPU", "hSOIAmplitudesEBGPU", nbins, 0, last);
+    auto hSOIAmplitudesEEGPU = new TH1D("hSOIAmplitudesEEGPU", "hSOIAmplitudesEEGPU", nbins, 0, last);
+    auto hSOIAmplitudesEBCPU = new TH1D("hSOIAmplitudesEBCPU", "hSOIAmplitudesEBCPU", nbins, 0, last);
+    auto hSOIAmplitudesEECPU = new TH1D("hSOIAmplitudesEECPU", "hSOIAmplitudesEECPU", nbins, 0, last);
+
+    auto hChi2EBGPU = new TH1D("hChi2EBGPU", "hChi2EBGPU", nbins_chi2, 0, last_chi2);
+    auto hChi2EEGPU = new TH1D("hChi2EEGPU", "hChi2EEGPU", nbins_chi2, 0, last_chi2);
+    auto hChi2EBCPU = new TH1D("hChi2EBCPU", "hChi2EBCPU", nbins_chi2, 0, last_chi2);
+    auto hChi2EECPU = new TH1D("hChi2EECPU", "hChi2EECPU", nbins_chi2, 0, last_chi2);
+
+    auto hSOIAmplitudesEBGPUvsCPU = new TH2D("hSOIAmplitudesEBGPUvsCPU", "hSOIAmplitudesEBGPUvsCPU", nbins, 0, last, nbins, 0, last);
+    auto hSOIAmplitudesEEGPUvsCPU = new TH2D("hSOIAmplitudesEEGPUvsCPU", "hSOIAmplitudesEEGPUvsCPU", nbins, 0, last, nbins, 0, last);
+    auto hSOIAmplitudesEBdeltavsCPU = new TH2D("hSOIAmplitudesEBdeltavsCPU", "hSOIAmplitudesEBdeltavsCPU", nbins, 0, last, nbins_delta, -delta, delta);
+    auto hSOIAmplitudesEEdeltavsCPU = new TH2D("hSOIAmplitudesEEdeltavsCPU", "hSOIAmplitudesEEdeltavsCPU", nbins, 0, last, nbins_delta, -delta, delta);
+
+    auto hChi2EBGPUvsCPU = new TH2D("hChi2EBGPUvsCPU", "hChi2EBGPUvsCPU", nbins_chi2, 0, last_chi2, nbins_chi2, 0, last_chi2);
+    auto hChi2EEGPUvsCPU = new TH2D("hChi2EEGPUvsCPU", "hChi2EEGPUvsCPU", nbins_chi2, 0, last_chi2, nbins_chi2, 0, last_chi2);
+    auto hChi2EBdeltavsCPU = new TH2D("hChi2EBdeltavsCPU", "hChi2EBdeltavsCPU", nbins_chi2, 0, last_chi2, nbins_delta, -delta, delta);
+    auto hChi2EEdeltavsCPU = new TH2D("hChi2EEdeltavsCPU", "hChi2EEdeltavsCPU", nbins_chi2, 0, last_chi2, nbins_delta, -delta, delta);
 
     // input
     std::cout << "validating file " << fileName << std::endl;
@@ -111,14 +102,16 @@ int main(int argc, char *argv[]) {
             hSOIAmplitudesEBGPU->Fill(soi_amp_gpu);
             hSOIAmplitudesEBCPU->Fill(soi_amp_cpu);
             hSOIAmplitudesEBGPUvsCPU->Fill(soi_amp_cpu, soi_amp_gpu);
+            hSOIAmplitudesEBdeltavsCPU->Fill(soi_amp_cpu, soi_amp_gpu-soi_amp_cpu);
             hChi2EBGPU->Fill(chi2_gpu);
             hChi2EBCPU->Fill(chi2_cpu);
             hChi2EBGPUvsCPU->Fill(chi2_cpu, chi2_gpu);
+            hChi2EBdeltavsCPU->Fill(chi2_cpu, chi2_gpu-chi2_cpu);
 
             if (std::abs(soi_amp_gpu - soi_amp_cpu) >= eps_diff)
                 printf("eb eventid = %d chid = %d amp_gpu = %f amp_cpu %f chi2_gpu = %f chi2_cpu = %f\n",
                     ie, i, soi_amp_gpu, soi_amp_cpu, chi2_gpu, chi2_cpu);
-            
+
             if (std::abs(chi2_gpu - chi2_cpu) >= eps_diff || std::isnan(chi2_gpu))
                 printf("eb eventid = %d chid = %d amp_gpu = %f amp_cpu %f chi2_gpu = %f chi2_cpu = %f\n",
                     ie, i, soi_amp_gpu, soi_amp_cpu, chi2_gpu, chi2_cpu);
@@ -135,14 +128,16 @@ int main(int argc, char *argv[]) {
             hSOIAmplitudesEEGPU->Fill(soi_amp_gpu);
             hSOIAmplitudesEECPU->Fill(soi_amp_cpu);
             hSOIAmplitudesEEGPUvsCPU->Fill(soi_amp_cpu, soi_amp_gpu);
+            hSOIAmplitudesEEdeltavsCPU->Fill(soi_amp_cpu, soi_amp_gpu-soi_amp_cpu);
             hChi2EEGPU->Fill(chi2_gpu);
             hChi2EECPU->Fill(chi2_cpu);
             hChi2EEGPUvsCPU->Fill(chi2_cpu, chi2_gpu);
-            
+            hChi2EEdeltavsCPU->Fill(chi2_cpu, chi2_gpu-chi2_cpu);
+
             if (std::abs(soi_amp_gpu - soi_amp_cpu) >= eps_diff)
                 printf("ee eventid = %d chid = %d amp_gpu = %f amp_cpu %f chi2_gpu = %f chi2_cpu = %f\n",
                     ie, static_cast<int>(i+neb), soi_amp_gpu, soi_amp_cpu, chi2_gpu, chi2_cpu);
-            
+
             if (std::abs(chi2_gpu - chi2_cpu) >= eps_diff || std::isnan(chi2_gpu))
                 printf("ee eventid = %d chid = %d amp_gpu = %f amp_cpu %f chi2_gpu = %f chi2_cpu = %f\n",
                     ie, static_cast<int>(neb+i), soi_amp_gpu, soi_amp_cpu, chi2_gpu, chi2_cpu);
