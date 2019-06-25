@@ -1,11 +1,12 @@
+#include <iomanip>
 #include <iostream>
 #include <string>
 #include <vector>
 
-#include "TFile.h"
-#include "TTree.h"
-#include "TH1D.h"
-#include "TH2D.h"
+#include <TFile.h>
+#include <TH1D.h>
+#include <TH2D.h>
+#include <TTree.h>
 
 #include "DataFormats/Common/interface/Wrapper.h"
 #include "DataFormats/EcalRecHit/interface/EcalUncalibratedRecHit.h"
@@ -83,6 +84,18 @@ int main(int argc, char *argv[]) {
     std::cout << "#events to validate over: " << nentries << std::endl;
     for (int ie=0; ie<nentries; ++ie) {
         rt->GetEntry(ie);
+
+        const char* ordinal[] = { "th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th" };
+        auto cpu_eb_size = wcpuEB->bareProduct().size();
+        auto cpu_ee_size = wcpuEE->bareProduct().size();
+        auto gpu_eb_size = wgpuEB->bareProduct().amplitude.size();
+        auto gpu_ee_size = wgpuEE->bareProduct().amplitude.size();
+        if (cpu_eb_size != gpu_eb_size or cpu_ee_size != gpu_ee_size) {
+          std::cerr << ie << ordinal[ie % 10] << " entry:\n"
+                    << "  EB size: " << std::setw(4) << cpu_eb_size << " (cpu) vs " << std::setw(4) << gpu_eb_size << " (gpu)\n"
+                    << "  EE size: " << std::setw(4) << cpu_ee_size << " (cpu) vs " << std::setw(4) << gpu_ee_size << " (gpu)" << std::endl;
+          continue;
+        }
 
         assert(wgpuEB->bareProduct().amplitude.size() == wcpuEB->bareProduct().size());
         assert(wgpuEE->bareProduct().amplitude.size() == wcpuEE->bareProduct().size());
