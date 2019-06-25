@@ -51,15 +51,13 @@ void EcalUncalibRecHitConvertGPU2CPUFormat::fillDescriptions(
 
 EcalUncalibRecHitConvertGPU2CPUFormat::EcalUncalibRecHitConvertGPU2CPUFormat(
         const edm::ParameterSet& ps) 
+    : recHitsGPUEB_{consumes<ecal::SoAUncalibratedRecHitCollection>(
+        ps.getParameter<edm::InputTag>("recHitsLabelGPUEB"))}
+    , recHitsGPUEE_{consumes<ecal::SoAUncalibratedRecHitCollection>(
+        ps.getParameter<edm::InputTag>("recHitsLabelGPUEE"))}
+    , recHitsLabelCPUEB_{ps.getParameter<std::string>("recHitsLabelCPUEB")}
+    , recHitsLabelCPUEE_{ps.getParameter<std::string>("recHitsLabelCPUEE")}
 {
-    recHitsGPUEB_ = consumes<ecal::SoAUncalibratedRecHitCollection>(
-        ps.getParameter<edm::InputTag>("recHitsLabelGPUEB"));
-    recHitsGPUEE_ = consumes<ecal::SoAUncalibratedRecHitCollection>(
-        ps.getParameter<edm::InputTag>("recHitsLabelGPUEE"));
-
-    recHitsLabelCPUEB_ = ps.getParameter<std::string>("recHitsLabelCPUEB");
-    recHitsLabelCPUEE_ = ps.getParameter<std::string>("recHitsLabelCPUEE");
-
     produces<EBUncalibratedRecHitCollection>(recHitsLabelCPUEB_);
     produces<EEUncalibratedRecHitCollection>(recHitsLabelCPUEE_);
 }
