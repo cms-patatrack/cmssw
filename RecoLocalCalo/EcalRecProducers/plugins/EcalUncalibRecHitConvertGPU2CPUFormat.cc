@@ -27,10 +27,10 @@ private:
     void produce(edm::Event&, edm::EventSetup const&) override;
 
 private:
-    edm::EDGetTokenT<ecal::SoAUncalibratedRecHitCollection> recHitsGPUEB_;
-    edm::EDGetTokenT<ecal::SoAUncalibratedRecHitCollection> recHitsGPUEE_;
+    const edm::EDGetTokenT<ecal::SoAUncalibratedRecHitCollection> recHitsGPUEB_;
+    const edm::EDGetTokenT<ecal::SoAUncalibratedRecHitCollection> recHitsGPUEE_;
 
-    std::string recHitsLabelCPUEB_, recHitsLabelCPUEE_;
+    const std::string recHitsLabelCPUEB_, recHitsLabelCPUEE_;
 };
 
 void EcalUncalibRecHitConvertGPU2CPUFormat::fillDescriptions(
