@@ -108,15 +108,14 @@ int main(int argc, char *argv[]) {
             hChi2EBGPUvsCPU->Fill(chi2_cpu, chi2_gpu);
             hChi2EBdeltavsCPU->Fill(chi2_cpu, chi2_gpu-chi2_cpu);
 
-            if (std::abs(soi_amp_gpu - soi_amp_cpu) >= eps_diff)
-                printf("eb eventid = %d chid = %d amp_gpu = %f amp_cpu %f chi2_gpu = %f chi2_cpu = %f\n",
+            if ((std::abs(soi_amp_gpu - soi_amp_cpu) >= eps_diff) or
+                (std::abs(chi2_gpu - chi2_cpu) >= eps_diff) or std::isnan(chi2_gpu))
+            {
+                printf("EB eventid = %d chid = %d amp_gpu = %f amp_cpu %f chi2_gpu = %f chi2_cpu = %f\n",
                     ie, i, soi_amp_gpu, soi_amp_cpu, chi2_gpu, chi2_cpu);
-
-            if (std::abs(chi2_gpu - chi2_cpu) >= eps_diff || std::isnan(chi2_gpu))
-                printf("eb eventid = %d chid = %d amp_gpu = %f amp_cpu %f chi2_gpu = %f chi2_cpu = %f\n",
-                    ie, i, soi_amp_gpu, soi_amp_cpu, chi2_gpu, chi2_cpu);
-            if (std::isnan(chi2_gpu))
-                printf("*** nan ***\n");
+                if (std::isnan(chi2_gpu))
+                  printf("*** nan ***\n");
+            }
         }
 
         for (uint32_t i=0; i<nee; ++i) {
@@ -134,15 +133,14 @@ int main(int argc, char *argv[]) {
             hChi2EEGPUvsCPU->Fill(chi2_cpu, chi2_gpu);
             hChi2EEdeltavsCPU->Fill(chi2_cpu, chi2_gpu-chi2_cpu);
 
-            if (std::abs(soi_amp_gpu - soi_amp_cpu) >= eps_diff)
-                printf("ee eventid = %d chid = %d amp_gpu = %f amp_cpu %f chi2_gpu = %f chi2_cpu = %f\n",
-                    ie, static_cast<int>(i+neb), soi_amp_gpu, soi_amp_cpu, chi2_gpu, chi2_cpu);
-
-            if (std::abs(chi2_gpu - chi2_cpu) >= eps_diff || std::isnan(chi2_gpu))
-                printf("ee eventid = %d chid = %d amp_gpu = %f amp_cpu %f chi2_gpu = %f chi2_cpu = %f\n",
+            if ((std::abs(soi_amp_gpu - soi_amp_cpu) >= eps_diff) or
+                (std::abs(chi2_gpu - chi2_cpu) >= eps_diff) or std::isnan(chi2_gpu))
+            {
+                printf("EE eventid = %d chid = %d amp_gpu = %f amp_cpu %f chi2_gpu = %f chi2_cpu = %f\n",
                     ie, static_cast<int>(neb+i), soi_amp_gpu, soi_amp_cpu, chi2_gpu, chi2_cpu);
-            if (std::isnan(chi2_gpu))
-                printf("*** nan ***\n");
+                if (std::isnan(chi2_gpu))
+                  printf("*** nan ***\n");
+            }
         }
     }
 
