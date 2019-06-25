@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 
+#include <TCanvas.h>
 #include <TFile.h>
 #include <TH1D.h>
 #include <TH2D.h>
@@ -144,8 +145,68 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    {
+      TCanvas c("plots", "plots", 4200, 6200);
+      c.Divide(2, 3);
+
+      c.cd(1);
+      gPad->SetLogy();
+      hSOIAmplitudesEBCPU->SetLineColor(kBlack);
+      hSOIAmplitudesEBCPU->SetLineWidth(1.);
+      hSOIAmplitudesEBCPU->Draw("");
+      hSOIAmplitudesEBGPU->SetLineColor(kBlue);
+      hSOIAmplitudesEBGPU->SetLineWidth(1.);
+      hSOIAmplitudesEBGPU->Draw("SAME");
+      c.cd(2);
+      gPad->SetLogy();
+      hSOIAmplitudesEECPU->SetLineColor(kBlack);
+      hSOIAmplitudesEECPU->SetLineWidth(1.);
+      hSOIAmplitudesEECPU->Draw("");
+      hSOIAmplitudesEEGPU->SetLineColor(kBlue);
+      hSOIAmplitudesEEGPU->SetLineWidth(1.);
+      hSOIAmplitudesEEGPU->Draw("SAME");
+      c.cd(3);
+      hSOIAmplitudesEBGPUvsCPU->Draw("COLZ");
+      c.cd(4);
+      hSOIAmplitudesEEGPUvsCPU->Draw("COLZ");
+      c.cd(5);
+      hSOIAmplitudesEBdeltavsCPU->Draw("COLZ");
+      c.cd(6);
+      hSOIAmplitudesEEdeltavsCPU->Draw("COLZ");
+
+      c.SaveAs("ecal-amplitudes.pdf");
+
+      c.cd(1);
+      gPad->SetLogy();
+      hChi2EBCPU->SetLineColor(kBlack);
+      hChi2EBCPU->SetLineWidth(1.);
+      hChi2EBCPU->Draw("");
+      hChi2EBGPU->SetLineColor(kBlue);
+      hChi2EBGPU->SetLineWidth(1.);
+      hChi2EBGPU->Draw("SAME");
+      c.cd(2);
+      gPad->SetLogy();
+      hChi2EECPU->SetLineColor(kBlack);
+      hChi2EECPU->SetLineWidth(1.);
+      hChi2EECPU->Draw("");
+      hChi2EEGPU->SetLineColor(kBlue);
+      hChi2EEGPU->SetLineWidth(1.);
+      hChi2EEGPU->Draw("SAME");
+      c.cd(3);
+      hChi2EBGPUvsCPU->Draw("COLZ");
+      c.cd(4);
+      hChi2EEGPUvsCPU->Draw("COLZ");
+      c.cd(5);
+      hChi2EBdeltavsCPU->Draw("COLZ");
+      c.cd(6);
+      hChi2EEdeltavsCPU->Draw("COLZ");
+
+      c.SaveAs("ecal-chi2.pdf");
+    }
+
     rf.Close();
     rfout.Write();
     rfout.Close();
+
     return 0;
 }
