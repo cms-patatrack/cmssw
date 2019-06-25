@@ -68,18 +68,15 @@ void EcalUncalibRecHitConvertGPU2CPUFormat::produce(
         edm::Event& event, 
         edm::EventSetup const& setup) 
 {
-    // get the gpu products
     edm::Handle<ecal::SoAUncalibratedRecHitCollection> hRecHitsGPUEB, hRecHitsGPUEE;
     event.getByToken(recHitsGPUEB_, hRecHitsGPUEB);
     event.getByToken(recHitsGPUEE_, hRecHitsGPUEE);
 
-    // allocate the output
     auto recHitsCPUEB = std::make_unique<EBUncalibratedRecHitCollection>();
     auto recHitsCPUEE = std::make_unique<EEUncalibratedRecHitCollection>();
     recHitsCPUEB->reserve(hRecHitsGPUEB->amplitude.size());
     recHitsCPUEE->reserve(hRecHitsGPUEE->amplitude.size());
 
-    // iterate over eb
     for (uint32_t i=0; i<hRecHitsGPUEB->amplitude.size(); ++i) {
         recHitsCPUEB->emplace_back(
             DetId{hRecHitsGPUEB->did[i]},
@@ -96,7 +93,6 @@ void EcalUncalibRecHitConvertGPU2CPUFormat::produce(
                 sample, hRecHitsGPUEB->amplitudesAll[offset + sample]);
     }
 
-    // iterate over ee
     for (uint32_t i=0; i<hRecHitsGPUEE->amplitude.size(); ++i) {
         recHitsCPUEE->emplace_back(
             DetId{hRecHitsGPUEE->did[i]},
@@ -113,7 +109,6 @@ void EcalUncalibRecHitConvertGPU2CPUFormat::produce(
                 sample, hRecHitsGPUEE->amplitudesAll[offset + sample]);
     }
 
-    // put into event
     event.put(std::move(recHitsCPUEB), recHitsLabelCPUEB_);
     event.put(std::move(recHitsCPUEE), recHitsLabelCPUEE_);
 }
