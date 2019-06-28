@@ -594,8 +594,11 @@ void CAHitQuadrupletGeneratorKernels::launchKernels(  // here goes algoparms....
   assert(nhits <= pixelGPUConstants::maxNumberOfHits);
 
   // std::cout << "N hits " << nhits << std::endl;
-  if (nhits<2) std::cout << "too few hits " << nhits << std::endl;
+  // if (nhits<2) std::cout << "too few hits " << nhits << std::endl;
 
+  //
+  // applying conbinatoric cleaning such as fishbone at this stage is too expensive
+  //
 
   auto nthTot = 64;
   auto stride = 4;
@@ -637,8 +640,6 @@ void CAHitQuadrupletGeneratorKernels::launchKernels(  // here goes algoparms....
         hh.view(), device_theCells_.get(), device_nCells_, device_isOuterHitOfCell_.get(), nhits, false);
     cudaCheck(cudaGetLastError());
   }
-
-
 
 
   blockSize = 64;
