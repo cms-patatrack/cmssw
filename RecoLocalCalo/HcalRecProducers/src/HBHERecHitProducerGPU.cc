@@ -10,6 +10,10 @@
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 
+#include "CondFormats/DataRecord/interface/HcalRecoParamsRcd.h"
+
+#include "RecoLocalCalo/HcalRecAlgos/interface/HcalRecoParamsGPU.h"
+
 class HBHERecHitProducerGPU : public edm::stream::EDProducer<edm::ExternalWork>
 {
 public:
@@ -46,7 +50,13 @@ void HBHERecHitProducerGPU::acquire(
         edm::EventSetup const& setup,
         edm::WaitingTaskWithArenaHolder holder) 
 {
-    CUDAScopedContextAcquire ctx{event.streamID(), std::move(holder), cudaState_};    
+    // raii
+    CUDAScopedContextAcquire ctx{event.streamID(), std::move(holder), cudaState_};
+
+    // conditions
+    edm::ESHandle<HcalRecoParamsGPU> recoParamsHandle;
+    setup.get<HcalRecoParamsRcd>().get(recoParamsHandle);
+    auto const& recoParamsProduct = recoParamsHandle->getProduct(ctx.stream());
 }
 
 void HBHERecHitProducerGPU::produce(
