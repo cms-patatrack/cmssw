@@ -15,6 +15,12 @@
 <use   name="CondFormats/DataRecord"/>
 <use   name="vdt_headers"/>
 <use   name="rootminuit2"/> 
+
+<use   name="cuda"/>
+<use   name="HeterogeneousCore/CUDAUtilities"/>
+<use   name="cuda-api-wrappers"/>
+<use   name="HeterogeneousCore/CUDACore"/>
+
 <export>
   <lib   name="1"/>
 </export>

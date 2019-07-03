@@ -10,3 +10,8 @@
 <use   name="Geometry/CaloGeometry"/>
 <use   name="CondFormats/EcalObjects"/>
 <use   name="boost"/>
+
+<use   name="HeterogeneousCore/CUDACore"/>
+<use   name="HeterogeneousCore/CUDAUtilities"/>
+<use   name="cuda-api-wrappers"/>
+<use   name="cuda"/>
