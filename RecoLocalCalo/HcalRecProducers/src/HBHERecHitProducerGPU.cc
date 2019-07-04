@@ -11,8 +11,24 @@
 #include "FWCore/Framework/interface/MakerMacros.h"
 
 #include "CondFormats/DataRecord/interface/HcalRecoParamsRcd.h"
+#include "CondFormats/DataRecord/interface/HcalGainWidthsRcd.h"
+#include "CondFormats/DataRecord/interface/HcalGainsRcd.h"
+#include "CondFormats/DataRecord/interface/HcalLUTCorrsRcd.h"
+#include "CondFormats/DataRecord/interface/HcalPedestalWidthsRcd.h"
+#include "CondFormats/DataRecord/interface/HcalPedestalsRcd.h"
+#include "CondFormats/DataRecord/interface/HcalQIEDataRcd.h"
+#include "CondFormats/DataRecord/interface/HcalRespCorrsRcd.h"
+#include "CondFormats/DataRecord/interface/HcalTimeCorrsRcd.h"
 
 #include "RecoLocalCalo/HcalRecAlgos/interface/HcalRecoParamsGPU.h"
+#include "RecoLocalCalo/HcalRecAlgos/interface/HcalGainWidthsGPU.h"
+#include "RecoLocalCalo/HcalRecAlgos/interface/HcalGainsGPU.h"
+#include "RecoLocalCalo/HcalRecAlgos/interface/HcalLUTCorrsGPU.h"
+#include "RecoLocalCalo/HcalRecAlgos/interface/HcalPedestalWidthsGPU.h"
+#include "RecoLocalCalo/HcalRecAlgos/interface/HcalPedestalsGPU.h"
+#include "RecoLocalCalo/HcalRecAlgos/interface/HcalQIECodersGPU.h"
+#include "RecoLocalCalo/HcalRecAlgos/interface/HcalRespCorrsGPU.h"
+#include "RecoLocalCalo/HcalRecAlgos/interface/HcalTimeCorrsGPU.h"
 
 class HBHERecHitProducerGPU : public edm::stream::EDProducer<edm::ExternalWork>
 {
@@ -41,7 +57,7 @@ void HBHERecHitProducerGPU::fillDescriptions(edm::ConfigurationDescriptions& cde
     edm::ParameterSetDescription desc;
     desc.add<uint32_t>("maxChannels", 10000u);
 
-    std::string label = "hcalRecHitProducerGPU";
+    std::string label = "hbheRecHitProducerGPU";
     cdesc.add(label, desc);
 }
 
@@ -50,6 +66,9 @@ void HBHERecHitProducerGPU::acquire(
         edm::EventSetup const& setup,
         edm::WaitingTaskWithArenaHolder holder) 
 {
+    // FIXME: remove debugging
+    auto start = std::chrono::high_resolution_clock::now();
+
     // raii
     CUDAScopedContextAcquire ctx{event.streamID(), std::move(holder), cudaState_};
 
@@ -57,6 +76,42 @@ void HBHERecHitProducerGPU::acquire(
     edm::ESHandle<HcalRecoParamsGPU> recoParamsHandle;
     setup.get<HcalRecoParamsRcd>().get(recoParamsHandle);
     auto const& recoParamsProduct = recoParamsHandle->getProduct(ctx.stream());
+    
+    edm::ESHandle<HcalGainWidthsGPU> gainWidthsHandle;
+    setup.get<HcalGainWidthsRcd>().get(gainWidthsHandle);
+    auto const& gainWidthsProduct = gainWidthsHandle->getProduct(ctx.stream());
+    
+    edm::ESHandle<HcalGainsGPU> gainsHandle;
+    setup.get<HcalGainsRcd>().get(gainsHandle);
+    auto const& gainsProduct = gainsHandle->getProduct(ctx.stream());
+    
+    edm::ESHandle<HcalLUTCorrsGPU> lutCorrsHandle;
+    setup.get<HcalLUTCorrsRcd>().get(lutCorrsHandle);
+    auto const& lutCorrsProduct = lutCorrsHandle->getProduct(ctx.stream());
+    
+    edm::ESHandle<HcalPedestalWidthsGPU> pedestalWidthsHandle;
+    setup.get<HcalPedestalWidthsRcd>().get(pedestalWidthsHandle);
+    auto const& pedestalWidthsProduct = pedestalWidthsHandle->getProduct(ctx.stream());
+    edm::ESHandle<HcalPedestalsGPU> pedestalsHandle;
+    setup.get<HcalPedestalsRcd>().get(pedestalsHandle);
+    auto const& pedestalsProduct = pedestalsHandle->getProduct(ctx.stream());
+    
+    edm::ESHandle<HcalQIECodersGPU> qieCodersHandle;
+    setup.get<HcalQIEDataRcd>().get(qieCodersHandle);
+    auto const& qieCodersProduct = qieCodersHandle->getProduct(ctx.stream());
+    
+    edm::ESHandle<HcalRespCorrsGPU> respCorrsHandle;
+    setup.get<HcalRespCorrsRcd>().get(respCorrsHandle);
+    auto const& respCorrsProduct = respCorrsHandle->getProduct(ctx.stream());
+    
+    edm::ESHandle<HcalTimeCorrsGPU> timeCorrsHandle;
+    setup.get<HcalTimeCorrsRcd>().get(timeCorrsHandle);
+    auto const& timeCorrsProduct = timeCorrsHandle->getProduct(ctx.stream());
+
+    // FIXME: remove debugging
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "acquire  duration = " << duration << std::endl;
 }
 
 void HBHERecHitProducerGPU::produce(
