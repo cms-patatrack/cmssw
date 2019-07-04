@@ -10,6 +10,8 @@
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 
+#include "DataFormats/HcalDigi/interface/HcalDigiCollections.h"
+
 #include "CondFormats/DataRecord/interface/HcalRecoParamsRcd.h"
 #include "CondFormats/DataRecord/interface/HcalGainWidthsRcd.h"
 #include "CondFormats/DataRecord/interface/HcalGainsRcd.h"
@@ -30,6 +32,9 @@
 #include "RecoLocalCalo/HcalRecAlgos/interface/HcalRespCorrsGPU.h"
 #include "RecoLocalCalo/HcalRecAlgos/interface/HcalTimeCorrsGPU.h"
 
+#include "RecoLocalCalo/HcalRecAlgos/interface/DeclsForKernels.h"
+#include "RecoLocalCalo/HcalRecAlgos/interface/HBHEMahiGPU.h"
+
 class HBHERecHitProducerGPU : public edm::stream::EDProducer<edm::ExternalWork>
 {
 public:
@@ -43,13 +48,21 @@ private:
                  edm::WaitingTaskWithArenaHolder) override;
     void produce(edm::Event&, edm::EventSetup const&) override;
 
+    edm::EDGetTokenT<HBHEDigiCollection> digisTokenQ8_;
+    edm::EDGetTokenT<QIE11DigiCollection> digisTokenQ11_;
+
     uint32_t maxChannels_;
     CUDAContextState cudaState_;
 };
 
 HBHERecHitProducerGPU::HBHERecHitProducerGPU(edm::ParameterSet const& ps) 
-    : maxChannels_{ps.getParameter<uint32_t>("maxChannels")}
-{}
+    : digisTokenQ8_{consumes<HBHEDigiCollection>(ps.getParameter<edm::InputTag>(
+        "digisLabelQIE8"))}
+    , digisTokenQ11_{consumes<QIE11DigiCollection>(ps.getParameter<edm::InputTag>(
+        "digisLabelQIE11"))}
+    , maxChannels_{ps.getParameter<uint32_t>("maxChannels")}
+{
+}
 
 HBHERecHitProducerGPU::~HBHERecHitProducerGPU() {}
 
@@ -107,6 +120,15 @@ void HBHERecHitProducerGPU::acquire(
     edm::ESHandle<HcalTimeCorrsGPU> timeCorrsHandle;
     setup.get<HcalTimeCorrsRcd>().get(timeCorrsHandle);
     auto const& timeCorrsProduct = timeCorrsHandle->getProduct(ctx.stream());
+
+    // event data
+    edm::Handle<HBHEDigiCollection> digisQ8;
+    edm::Handle<QIE11DigiCollection> digisQ11;
+    event.getByToken(digisTokenQ8_, digisQ8);
+    event.getByToken(digisTokenQ11_, digisQ11);
+
+    hcal::mahi::InputDataCPU inputCPU{*digisQ8, *digisQ11};
+    hcal::mahi::entryPoint(inputCPU);
 
     // FIXME: remove debugging
     auto end = std::chrono::high_resolution_clock::now();
