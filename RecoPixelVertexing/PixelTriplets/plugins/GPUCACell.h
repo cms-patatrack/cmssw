@@ -265,7 +265,7 @@ public:
     bool last=true;
     for (int j = 0; j < outerNeighbors().size(); ++j) {
       auto otherCell = outerNeighbors()[j];
-      if (cells[otherCell].theDoubletId<0 || cells[otherCell].theUsed>1) continue; // already in a track found in previous iteration
+      if (cells[otherCell].theDoubletId<0) continue; // killed by earlyFishbone
         last = false;
         cells[otherCell].find_ntuplets(
             hh, cells, cellTracks, foundNtuplets, apc, quality, tmpNtuplet, minHitsPerNtuplet,startAt0);
