@@ -133,7 +133,10 @@ __global__ void kernel_earlyDuplicateRemover(GPUCACell const *cells,
   auto first = threadIdx.x + blockIdx.x * blockDim.x;
   for (int idx = first, nt = (*nCells); idx<nt; idx += gridDim.x * blockDim.x) {
     auto const &thisCell = cells[idx];
-    if (thisCell.theDoubletId < 0) continue;
+
+    if (thisCell.tracks().size()<2) continue;
+    //if (0==thisCell.theUsed) continue;
+    // if (thisCell.theDoubletId < 0) continue;
 
     uint32_t maxNh = 0;
 
@@ -164,7 +167,8 @@ __global__ void kernel_fastDuplicateRemover(GPUCACell const * __restrict__ cells
   auto first = threadIdx.x + blockIdx.x * blockDim.x;
   for (int idx = first, nt = (*nCells); idx<nt; idx += gridDim.x * blockDim.x) {
     auto const &thisCell = cells[idx];
-    if (thisCell.theDoubletId < 0) continue;
+    if (thisCell.tracks().size()<2) continue;
+    // if (thisCell.theDoubletId < 0) continue;
 
     float mc = 10000.f;
     uint16_t im = 60000;
