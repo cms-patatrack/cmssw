@@ -69,7 +69,6 @@ CAHitNtupletGeneratorOnGPU::CAHitNtupletGeneratorOnGPU(const edm::ParameterSet &
               cfg.getParameter<bool>("doClusterCut"),
               cfg.getParameter<bool>("doZCut"),
               cfg.getParameter<bool>("doPhiCut"),
-              cfg.getParameter<bool>("doIterations"),
               cfg.getParameter<double>("ptmin"),
               cfg.getParameter<double>("CAThetaCutBarrel"),
               cfg.getParameter<double>("CAThetaCutForward"),
@@ -131,7 +130,6 @@ void CAHitNtupletGeneratorOnGPU::fillDescriptions(edm::ParameterSetDescription &
   desc.add<bool>("doClusterCut", true);
   desc.add<bool>("doZCut", true);
   desc.add<bool>("doPhiCut", true);
-  desc.add<bool>("doIterations", false);
   desc.add<bool>("useRiemannFit", false)->setComment("true for Riemann, false for BrokenLine");
 
   edm::ParameterSetDescription trackQualityCuts;
