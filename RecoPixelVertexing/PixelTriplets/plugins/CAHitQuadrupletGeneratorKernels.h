@@ -60,7 +60,6 @@ public:
                                   bool doClusterCut,
                                   bool doZCut,
                                   bool doPhiCut,
-                                  bool doIterations,
                                   float ptmin,
                                   float CAThetaCutBarrel,
                                   float CAThetaCutForward,
@@ -77,7 +76,6 @@ public:
         doClusterCut_(doClusterCut),
         doZCut_(doZCut),
         doPhiCut_(doPhiCut),
-        doIterations_(doIterations),
         ptmin_(ptmin),
         CAThetaCutBarrel_(CAThetaCutBarrel),
         CAThetaCutForward_(CAThetaCutForward),
@@ -134,7 +132,6 @@ private:
   const bool doClusterCut_;
   const bool doZCut_;
   const bool doPhiCut_;
-  const bool doIterations_;
   const float ptmin_;
   const float CAThetaCutBarrel_;
   const float CAThetaCutForward_;
