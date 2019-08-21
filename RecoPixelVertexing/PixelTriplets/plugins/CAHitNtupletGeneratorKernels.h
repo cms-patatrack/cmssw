@@ -56,6 +56,7 @@ namespace cAHitNtupletGenerator {
   struct Params {
     Params(bool onGPU, 
            uint32_t minHitsPerNtuplet,
+           uint32_t maxNumberOfDoublets,
                                   bool useRiemannFit,
                                   bool fit5as4,
                                   bool includeJumpingForwardDoublets,
@@ -75,6 +76,7 @@ namespace cAHitNtupletGenerator {
                                   QualityCuts const& cuts)
       : onGPU_(onGPU),
         minHitsPerNtuplet_(minHitsPerNtuplet),
+        maxNumberOfDoublets_(maxNumberOfDoublets),
         useRiemannFit_(useRiemannFit),
         fit5as4_(fit5as4),
         includeJumpingForwardDoublets_(includeJumpingForwardDoublets),
@@ -95,6 +97,7 @@ namespace cAHitNtupletGenerator {
 
   const bool onGPU_;
   const uint32_t minHitsPerNtuplet_;
+  const uint32_t maxNumberOfDoublets_;
   const bool useRiemannFit_;
   const bool fit5as4_;
   const bool includeJumpingForwardDoublets_;

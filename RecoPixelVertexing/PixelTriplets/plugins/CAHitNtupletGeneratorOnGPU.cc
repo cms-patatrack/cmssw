@@ -59,6 +59,7 @@ using namespace std;
 CAHitNtupletGeneratorOnGPU::CAHitNtupletGeneratorOnGPU(const edm::ParameterSet &cfg, edm::ConsumesCollector &iC)
     : m_params(cfg.getParameter<bool>("onGPU"),
               cfg.getParameter<unsigned int>("minHitsPerNtuplet"),
+              cfg.getParameter<unsigned int>("maxNumberOfDoublets"),
               cfg.getParameter<bool>("useRiemannFit"),
               cfg.getParameter<bool>("fit5as4"),
               cfg.getParameter<bool>("includeJumpingForwardDoublets"),
@@ -125,6 +126,7 @@ void CAHitNtupletGeneratorOnGPU::fillDescriptions(edm::ParameterSetDescription &
   desc.add<bool>("idealConditions", true);
   desc.add<bool>("fillStatistics", false);
   desc.add<unsigned int>("minHitsPerNtuplet", 4);
+  desc.add<unsigned int>("maxNumberOfDoublets", CAConstants::maxNumberOfDoublets());
   desc.add<bool>("includeJumpingForwardDoublets", false);
   desc.add<bool>("fit5as4", true);
   desc.add<bool>("doClusterCut", true);

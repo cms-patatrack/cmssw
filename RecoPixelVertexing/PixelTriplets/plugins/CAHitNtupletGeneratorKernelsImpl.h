@@ -42,6 +42,7 @@ __global__ void kernel_checkOverflows(HitContainer const * foundNtuplets,
                                       CellTracksVector const *cellTracks,
                                       GPUCACell::OuterHitOfCell const *__restrict__ isOuterHitOfCell,
                                       uint32_t nHits,
+                                      uint32_t maxNumberOfDoublets,
                                       CAHitNtupletGeneratorKernelsGPU::Counters *counters) {
 
   auto first = threadIdx.x + blockIdx.x * blockDim.x;
@@ -81,7 +82,7 @@ __global__ void kernel_checkOverflows(HitContainer const * foundNtuplets,
   if (0 == first) {
     if (apc->get().m >= CAConstants::maxNumberOfQuadruplets())
       printf("Tuples overflow\n");
-    if (*nCells >= CAConstants::maxNumberOfDoublets())
+    if (*nCells >= maxNumberOfDoublets)
       printf("Cells overflow\n");
   }
 
