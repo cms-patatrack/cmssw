@@ -56,6 +56,7 @@ namespace cAHitNtupletGenerator {
   struct Params {
     Params(bool onGPU, 
            uint32_t minHitsPerNtuplet,
+           uint32_t maxNumberOfDoublets,
                                   bool useRiemannFit,
                                   bool fit5as4,
                                   bool includeJumpingForwardDoublets,
@@ -66,7 +67,6 @@ namespace cAHitNtupletGenerator {
                                   bool doClusterCut,
                                   bool doZCut,
                                   bool doPhiCut,
-                                  bool doIterations,
                                   float ptmin,
                                   float CAThetaCutBarrel,
                                   float CAThetaCutForward,
@@ -76,6 +76,7 @@ namespace cAHitNtupletGenerator {
                                   QualityCuts const& cuts)
       : onGPU_(onGPU),
         minHitsPerNtuplet_(minHitsPerNtuplet),
+        maxNumberOfDoublets_(maxNumberOfDoublets),
         useRiemannFit_(useRiemannFit),
         fit5as4_(fit5as4),
         includeJumpingForwardDoublets_(includeJumpingForwardDoublets),
@@ -86,7 +87,6 @@ namespace cAHitNtupletGenerator {
         doClusterCut_(doClusterCut),
         doZCut_(doZCut),
         doPhiCut_(doPhiCut),
-        doIterations_(doIterations),
         ptmin_(ptmin),
         CAThetaCutBarrel_(CAThetaCutBarrel),
         CAThetaCutForward_(CAThetaCutForward),
@@ -97,6 +97,7 @@ namespace cAHitNtupletGenerator {
 
   const bool onGPU_;
   const uint32_t minHitsPerNtuplet_;
+  const uint32_t maxNumberOfDoublets_;
   const bool useRiemannFit_;
   const bool fit5as4_;
   const bool includeJumpingForwardDoublets_;
@@ -107,7 +108,6 @@ namespace cAHitNtupletGenerator {
   const bool doClusterCut_;
   const bool doZCut_;
   const bool doPhiCut_;
-  const bool doIterations_;
   const float ptmin_;
   const float CAThetaCutBarrel_;
   const float CAThetaCutForward_;

@@ -44,7 +44,7 @@ namespace CAConstants {
   using tindex_type = uint16_t;  //  for tuples
 
   using CellNeighbors = GPU::VecArray<uint32_t, 36>;
-  using CellTracks = GPU::VecArray<tindex_type, 56>;
+  using CellTracks = GPU::VecArray<tindex_type, 42>;
 
   using CellNeighborsVector = GPU::SimpleVector<CellNeighbors>;
   using CellTracksVector = GPU::SimpleVector<CellTracks>;

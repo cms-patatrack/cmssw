@@ -17,10 +17,6 @@
 
 namespace gpuPixelDoubletsAlgos {
 
-  constexpr uint32_t MaxNumOfDoublets = CAConstants::maxNumberOfDoublets();  // not really relevant
-
-  constexpr uint32_t MaxNumOfActiveDoublets = CAConstants::maxNumOfActiveDoublets();
-
   using CellNeighbors = CAConstants::CellNeighbors;
   using CellTracks = CAConstants::CellTracks;
   using CellNeighborsVector = CAConstants::CellNeighborsVector;
@@ -41,7 +37,8 @@ namespace gpuPixelDoubletsAlgos {
                                                     bool ideal_cond,
                                                     bool doClusterCut,
                                                     bool doZCut,
-                                                    bool doPhiCut) {
+                                                    bool doPhiCut,
+                                                    uint32_t maxNumOfDoublets) {
     // ysize cuts (z in the barrel)  times 8
     // these are used if doClusterCut is true
     constexpr int minYsizeB1 = 36;
@@ -204,7 +201,7 @@ namespace gpuPixelDoubletsAlgos {
               continue;
           }
           auto ind = atomicAdd(nCells, 1);
-          if (ind >= MaxNumOfDoublets) {
+          if (ind >= maxNumOfDoublets) {
             atomicSub(nCells, 1);
             break;
           }  // move to SimpleVector??

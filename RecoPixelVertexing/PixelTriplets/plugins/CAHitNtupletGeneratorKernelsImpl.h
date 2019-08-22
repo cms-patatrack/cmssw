@@ -42,6 +42,7 @@ __global__ void kernel_checkOverflows(HitContainer const * foundNtuplets,
                                       CellTracksVector const *cellTracks,
                                       GPUCACell::OuterHitOfCell const *__restrict__ isOuterHitOfCell,
                                       uint32_t nHits,
+                                      uint32_t maxNumberOfDoublets,
                                       CAHitNtupletGeneratorKernelsGPU::Counters *counters) {
 
   auto first = threadIdx.x + blockIdx.x * blockDim.x;
@@ -81,7 +82,7 @@ __global__ void kernel_checkOverflows(HitContainer const * foundNtuplets,
   if (0 == first) {
     if (apc->get().m >= CAConstants::maxNumberOfQuadruplets())
       printf("Tuples overflow\n");
-    if (*nCells >= CAConstants::maxNumberOfDoublets())
+    if (*nCells >= maxNumberOfDoublets)
       printf("Cells overflow\n");
   }
 
@@ -133,7 +134,10 @@ __global__ void kernel_earlyDuplicateRemover(GPUCACell const *cells,
   auto first = threadIdx.x + blockIdx.x * blockDim.x;
   for (int idx = first, nt = (*nCells); idx<nt; idx += gridDim.x * blockDim.x) {
     auto const &thisCell = cells[idx];
-    if (thisCell.theDoubletId < 0) continue;
+
+    if (thisCell.tracks().size()<2) continue;
+    //if (0==thisCell.theUsed) continue;
+    // if (thisCell.theDoubletId < 0) continue;
 
     uint32_t maxNh = 0;
 
@@ -164,7 +168,8 @@ __global__ void kernel_fastDuplicateRemover(GPUCACell const * __restrict__ cells
   auto first = threadIdx.x + blockIdx.x * blockDim.x;
   for (int idx = first, nt = (*nCells); idx<nt; idx += gridDim.x * blockDim.x) {
     auto const &thisCell = cells[idx];
-    if (thisCell.theDoubletId < 0) continue;
+    if (thisCell.tracks().size()<2) continue;
+    // if (thisCell.theDoubletId < 0) continue;
 
     float mc = 10000.f;
     uint16_t im = 60000;
@@ -268,24 +273,17 @@ __global__ void kernel_find_ntuplets(GPUCACell::Hits const *__restrict__ hhp,
                                      HitContainer *foundNtuplets,
                                      AtomicPairCounter *apc,
                                      Quality * __restrict__ quality,
-                                     unsigned int minHitsPerNtuplet, 
-                                     int start) {
+                                     unsigned int minHitsPerNtuplet) {
   // recursive: not obvious to widen
   auto const &hh = *hhp;
 
   auto first = threadIdx.x + blockIdx.x * blockDim.x;
   for (int idx = first, nt = (*nCells); idx<nt; idx += gridDim.x * blockDim.x) {
     auto const &thisCell = cells[idx];
-    if (thisCell.theDoubletId < 0 || thisCell.theUsed>1)
-      continue;
+    if (thisCell.theDoubletId < 0) continue;  // cut by earlyFishbone
 
-    // this stuff may need further optimization....
-    bool myStart[3];
-    myStart[0] =  thisCell.theLayerPairId <3; // inner layer is "0"
-    myStart[1] =  thisCell.theLayerPairId >2 && thisCell.theLayerPairId <8; // inner layer is "1"
-    myStart[2] =  thisCell.theLayerPairId > 12;  // jumps
-    //
-    auto doit = start>=0 ? myStart[start] : myStart[0]||myStart[1]||myStart[2];
+    auto pid = thisCell.theLayerPairId;
+    auto doit = minHitsPerNtuplet>3 ? pid<3 : pid <8 || pid > 12;
     if (doit) {
       GPUCACell::TmpTuple stack;
       stack.reset();
@@ -297,7 +295,7 @@ __global__ void kernel_find_ntuplets(GPUCACell::Hits const *__restrict__ hhp,
                            quality,
                            stack,
                            minHitsPerNtuplet, 
-                           myStart[0]);
+                           pid<3);
       assert(stack.size() == 0);
       // printf("in %d found quadruplets: %d\n", cellIndex, apc->get());
     }

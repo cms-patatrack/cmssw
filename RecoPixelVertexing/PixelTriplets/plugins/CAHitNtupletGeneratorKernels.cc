@@ -34,8 +34,8 @@ void CAHitNtupletGeneratorKernelsCPU::buildDoublets(HitsOnCPU const &hh, cuda::s
                                                                                    device_theCellTracks_,
                                                                                    device_theCellTracksContainer_.get());
 
-  // device_theCells_ = Traits:: template make_unique<GPUCACell[]>(cs, CAConstants::maxNumberOfDoublets(), stream);
-  device_theCells_.reset((GPUCACell*)malloc(sizeof(GPUCACell)*CAConstants::maxNumberOfDoublets()));
+  // device_theCells_ = Traits:: template make_unique<GPUCACell[]>(cs, m_params.maxNumberOfDoublets_, stream);
+  device_theCells_.reset((GPUCACell*)malloc(sizeof(GPUCACell)*m_params.maxNumberOfDoublets_));
   if (0 == nhits)
     return;  // protect against empty events
 
@@ -57,7 +57,8 @@ void CAHitNtupletGeneratorKernelsCPU::buildDoublets(HitsOnCPU const &hh, cuda::s
                                                                          m_params.idealConditions_,
                                                                          m_params.doClusterCut_,
                                                                          m_params.doZCut_,
-                                                                         m_params.doPhiCut_);
+                                                                         m_params.doPhiCut_,
+                                                                         m_params.maxNumberOfDoublets_);
 
 
 }
@@ -110,23 +111,18 @@ void CAHitNtupletGeneratorKernelsCPU::launchKernels(
   }
 
 
-  int nIter = m_params.doIterations_ ? 3 : 1;
-  if (m_params.minHitsPerNtuplet_>3) nIter=1;
-  for (int startLayer=0; startLayer<nIter; ++startLayer) {
-    kernel_find_ntuplets(hh.view(),
+  kernel_find_ntuplets(hh.view(),
                                                                      device_theCells_.get(),
                                                                      device_nCells_,
                                                                      device_theCellTracks_,
                                                                      tuples_d,
                                                                      device_hitTuple_apc_,
                                                                      quality_d,
-                                                                     m_params.minHitsPerNtuplet_,
-                                                                     m_params.doIterations_ ? startLayer : -1);
-    if (m_params.doIterations_ || m_params.doStats_)
+                                                                     m_params.minHitsPerNtuplet_);
+  if (m_params.doStats_)
     kernel_mark_used(hh.view(),
                                                                    device_theCells_.get(),
                                                                    device_nCells_);
-  }
 
 
   cudautils::finalizeBulk(device_hitTuple_apc_, tuples_d);
@@ -155,6 +151,7 @@ void CAHitNtupletGeneratorKernelsCPU::launchKernels(
                                                                         device_theCellTracks_,
                                                                         device_isOuterHitOfCell_.get(),
                                                                         nhits,
+                                                                        m_params.maxNumberOfDoublets_,
                                                                         counters_);
   }
 
