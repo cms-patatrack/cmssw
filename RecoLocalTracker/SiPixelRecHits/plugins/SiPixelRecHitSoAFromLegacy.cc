@@ -126,6 +126,8 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
 
     std::vector<edm::Ref<edmNew::DetSetVector<SiPixelCluster>, SiPixelCluster>> clusterRef;
 
+    constexpr uint32_t MaxHitsInModule = pixelCPEforGPU::MaxHitsInModule;
+
     HitModuleStart moduleStart_; // index of the first pixel of each module
     HitModuleStart clusInModule_;
     memset(&clusInModule_,0,sizeof(HitModuleStart)); // needed?? 
@@ -193,6 +195,7 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
     // std::cout << "in det " << gind << ": conv " << nclus << " hits from " << DSViter->size() << " legacy clusters"
     //          <<' '<< fc <<','<<lc<<std::endl;
     assert((lc-fc)==nclus);
+    if (nclus>MaxHitsInModule) printf("WARNING: too many clusters %d in Module %d. Only first %d Hits converted\n", nclus, gind, MaxHitsInModule);
 
     // fill digis
     xx_.clear();yy_.clear();adc_.clear();moduleInd_.clear(); clus_.clear();clusterRef.clear();
@@ -225,11 +228,15 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
     // we run on blockId.x==0
     gpuPixelRecHits::getHits(&cpeView, &bsHost, &digiView, ndigi, &clusterView, output->view());
     for (auto h=fc; h<lc; ++h)
-       assert(gind == output->view()->detectorIndex(h));
+      if (h-fc<MaxHitsInModule)
+        assert(gind == output->view()->detectorIndex(h));
+      else
+        assert(9999 == output->view()->detectorIndex(h));
     if (convert2Legacy_) {
       SiPixelRecHitCollectionNew::FastFiller recHitsOnDetUnit(*legacyOutput, detid);
       for (auto h=fc; h<lc; ++h) {
         auto ih = h-fc;
+        if (ih>=MaxHitsInModule) break;
         assert(ih<clusterRef.size());
         LocalPoint lp(output->view()->xLocal(h), output->view()->yLocal(h));
         LocalError le(output->view()->xerrLocal(h), 0, output->view()->yerrLocal(h));
