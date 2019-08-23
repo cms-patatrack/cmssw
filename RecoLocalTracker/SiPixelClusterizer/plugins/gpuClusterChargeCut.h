@@ -43,7 +43,10 @@ namespace gpuClustering {
           continue;  // not valid
         if (id[i] != thisModuleId)
           break;  // end of module
-        if (clusterId[i]>=MaxNumClustersPerModules) id[i]=InvId;
+        if (clusterId[i]>=MaxNumClustersPerModules) { 
+          id[i]=InvId;
+          clusterId[i]=InvId;
+        }
       }
       nclus = MaxNumClustersPerModules;
     }
