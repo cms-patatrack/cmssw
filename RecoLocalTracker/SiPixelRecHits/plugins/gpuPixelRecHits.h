@@ -81,7 +81,7 @@ namespace gpuPixelRecHits {
 #ifdef GPU_DEBUG
     if (me % 100 == 1)
       if (threadIdx.x == 0)
-        printf("hitbuilder: %d clusters in module %d. will write at %d\n", nclus, me, hitsModuleStart[me]);
+        printf("hitbuilder: %d clusters in module %d. will write at %d\n", nclus, me, clusters.clusModuleStart(me));
 #endif
 
 //      true on gpu only...
