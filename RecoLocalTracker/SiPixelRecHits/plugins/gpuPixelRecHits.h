@@ -81,7 +81,7 @@ namespace gpuPixelRecHits {
 #ifdef GPU_DEBUG
     if (me % 100 == 1)
       if (threadIdx.x == 0)
-        printf("hitbuilder: %d clusters in module %d. will write at %d\n", nclus, me, hitsModuleStart[me]);
+        printf("hitbuilder: %d clusters in module %d. will write at %d\n", nclus, me, clusters.clusModuleStart(me));
 #endif
 
 //      true on gpu only...
@@ -90,9 +90,10 @@ namespace gpuPixelRecHits {
     if (threadIdx.x == 0 && nclus > MaxHitsInModule) {
       printf("WARNING: too many clusters %d in Module %d. Only first %d processed\n", nclus, me, MaxHitsInModule);
       // zero charge: do not bother to do it in parallel
+      auto start = clusters.clusModuleStart(me);
       for (auto d = MaxHitsInModule; d < nclus; ++d) {
-        hits.charge(d) = 0;
-        hits.detectorIndex(d) = InvId;
+        hits.charge(start+d) = 0;
+        hits.detectorIndex(start+d) = InvId;
       }
     }
     nclus = std::min(nclus, MaxHitsInModule);
@@ -207,6 +208,7 @@ namespace gpuPixelRecHits {
       hits.rGlobal(h) = std::sqrt(xg * xg + yg * yg);
       hits.iphi(h) = unsafe_atan2s<7>(yg, xg);
     }
+
   }
 
 }  // namespace gpuPixelRecHits

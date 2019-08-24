@@ -21,6 +21,7 @@
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
 #include "HeterogeneousCore/CUDACore/interface/CUDAScopedContext.h"
 #include "HeterogeneousCore/CUDACore/interface/GPUCuda.h"
+#include "RecoLocalTracker/SiPixelRecHits/interface/pixelCPEforGPU.h"
 
 class SiPixelRecHitFromSOA : public edm::stream::EDProducer<edm::ExternalWork> {
 public:
@@ -106,6 +107,8 @@ void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es
 
   auto const& input = *hclusters;
 
+  constexpr uint32_t MaxHitsInModule = pixelCPEforGPU::MaxHitsInModule;
+
   int numberOfDetUnits = 0;
   int numberOfClusters = 0;
   for (auto DSViter = input.begin(); DSViter != input.end(); DSViter++) {
@@ -121,32 +124,33 @@ void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es
     auto lc = m_hitsModuleStart[gind + 1];
     auto nhits = lc - fc;
 
+    assert(lc>fc);
+    // std::cout << "in det " << gind << ": conv " << nhits << " hits from " << DSViter->size() << " legacy clusters"
+    //          <<' '<< fc <<','<<lc<<std::endl;
+    if (nhits>MaxHitsInModule) printf("WARNING: too many clusters %d in Module %d. Only first %d Hits converted\n", nhits, gind, MaxHitsInModule);
+    nhits = std::min(nhits,MaxHitsInModule);
+
     //std::cout << "in det " << gind << "conv " << nhits << " hits from " << DSViter->size() << " legacy clusters"
     //          <<' '<< lc <<','<<fc<<std::endl;
 
     if (0 == nhits)
       continue;
-    uint32_t ic = 0;
     auto jnd = [&](int k) { return fc + k; };
     assert(nhits <= DSViter->size());
     if (nhits != DSViter->size()) {
-      edm::LogWarning("GPUHits2CPU") << "nhits!= ndigi " << nhits << ' ' << DSViter->size() << std::endl;
+      edm::LogWarning("GPUHits2CPU") << "nhits!= nclus " << nhits << ' ' << DSViter->size() << std::endl;
     }
     for (auto const& clust : *DSViter) {
-      if (ic >= nhits) {
-        // FIXME add a way to handle this case, or at least notify via edm::LogError
-        break;
-      }
+      assert(clust.originalId() >= 0);
+      assert(clust.originalId() < DSViter->size());
+      if (clust.originalId()>=nhits) continue;
       auto ij = jnd(clust.originalId());
       if (ij >= TrackingRecHit2DSOAView::maxHits())
-        break;  // overflow...
-      assert(clust.originalId() >= 0);
-      assert(clust.originalId() < nhits);
+        continue;  // overflow...
       LocalPoint lp(xl[ij], yl[ij]);
       LocalError le(xe[ij], 0, ye[ij]);
       SiPixelRecHitQuality::QualWordType rqw = 0;
 
-      ++ic;
       numberOfClusters++;
 
       /*   cpu version....  (for reference)

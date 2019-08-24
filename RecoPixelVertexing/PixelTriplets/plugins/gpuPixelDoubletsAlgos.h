@@ -103,6 +103,9 @@ namespace gpuPixelDoubletsAlgos {
       assert(i < offsets[inner + 1]);
 
       // found hit corresponding to our cuda thread, now do the job
+      auto mi = hh.detectorIndex(i);
+      if (mi>2000) continue; // invalid
+
       auto mez = hh.zGlobal(i);
 
       if (doZCut && (mez < minz[pairLayerId] || mez > maxz[pairLayerId]))
@@ -111,7 +114,6 @@ namespace gpuPixelDoubletsAlgos {
       int16_t mes=-1;  // make compiler happy 
       if (doClusterCut) {
         // if ideal treat inner ladder as outer
-        auto mi = hh.detectorIndex(i);
         if (inner == 0)
           assert(mi < 96);
         isOuterLadder = ideal_cond ? true : 0 == (mi / 8) % 2;  // only for B1/B2/B3 B4 is opposite, FPIX:noclue...
@@ -191,6 +193,8 @@ namespace gpuPixelDoubletsAlgos {
           auto oi = __ldg(p);
           assert(oi >= offsets[outer]);
           assert(oi < offsets[outer + 1]);
+          auto mo = hh.detectorIndex(oi);
+          if (mo>2000) continue; //    invalid
           auto mop = hh.iphi(oi);
           if (std::min(std::abs(int16_t(mop - mep)), std::abs(int16_t(mep - mop))) > iphicut)
             continue;

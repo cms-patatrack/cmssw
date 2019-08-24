@@ -130,7 +130,7 @@ void PixelTrackProducerFromSoA::produce(edm::StreamID streamID, edm::Event& iEve
       auto const &clus = thit.firstClusterRef();
       assert(clus.isPixel());
       auto i = fc[detI] + clus.pixelCluster().originalId();
-      assert(i < nhits);
+      if(i >= hitmap.size()) hitmap.resize(i+256,nullptr);  // only in case of hit overflow in one module
       assert(nullptr==hitmap[i]);
       hitmap[i] = &h;
   }
