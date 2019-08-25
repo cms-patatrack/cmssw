@@ -13,8 +13,12 @@ namespace pixelGPUConstants {
 }  // namespace pixelGPUConstants
 
 namespace gpuClustering {
+#ifdef GPU_SMALL_EVENTS
+  constexpr uint32_t maxHitsInIter() { return 64; }
+#else
   // optimized for real data PU 50
   constexpr uint32_t maxHitsInIter() { return 160; }
+#endif
   constexpr uint32_t maxHitsInModule() { return 1024; }
 
   constexpr uint32_t MaxNumModules = 2000;

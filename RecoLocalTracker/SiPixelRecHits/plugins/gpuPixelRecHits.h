@@ -62,7 +62,6 @@ namespace gpuPixelRecHits {
     // as usual one block per module
     __shared__ ClusParams clusParams;
 
-    auto first = clusters.moduleStart(1 + blockIdx.x);
     auto me = clusters.moduleId(blockIdx.x);
     int nclus = clusters.clusInModule(me);
 
@@ -85,6 +84,7 @@ namespace gpuPixelRecHits {
 #endif
 
     for(int startClus=0, endClus=nclus; startClus<endClus; startClus+=MaxHitsInIter) {
+      auto first = clusters.moduleStart(1 + blockIdx.x);
 
       int nClusInIter = std::min(MaxHitsInIter,endClus-startClus);
       int lastClus = startClus + nClusInIter;
@@ -125,6 +125,8 @@ namespace gpuPixelRecHits {
         auto x = digis.xx(i);
         auto y = digis.yy(i);
         cl -=startClus;
+        assert(cl>=0);
+        assert(cl<MaxHitsInIter);
         atomicMin(&clusParams.minRow[cl], x);
         atomicMax(&clusParams.maxRow[cl], x);
         atomicMin(&clusParams.minCol[cl], y);
@@ -143,6 +145,8 @@ namespace gpuPixelRecHits {
         if (cl<startClus || cl >=lastClus)
           continue;
         cl -=startClus;
+        assert(cl>=0);
+        assert(cl<MaxHitsInIter);
         auto x = digis.xx(i);
         auto y = digis.yy(i);      
         auto ch = digis.adc(i);
