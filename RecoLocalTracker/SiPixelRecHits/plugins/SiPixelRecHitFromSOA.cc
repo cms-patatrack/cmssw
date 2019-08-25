@@ -107,7 +107,7 @@ void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es
 
   auto const& input = *hclusters;
 
-  constexpr uint32_t MaxHitsInModule = pixelCPEforGPU::MaxHitsInModule;
+  constexpr uint32_t MaxHitsInModule = gpuClustering::MaxHitsInModule;
 
   int numberOfDetUnits = 0;
   int numberOfClusters = 0;
