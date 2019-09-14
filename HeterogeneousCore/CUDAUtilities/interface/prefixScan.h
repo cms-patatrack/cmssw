@@ -139,7 +139,7 @@ __global__ void multiBlockPrefixScan(T const* __restrict__ ci, T* __restrict__ c
   __shared__ bool isLastBlockDone;
   if (0 == threadIdx.x) {
     auto value = atomicAdd(pc, 1);  // block counter
-    isLastBlockDone = (value == (gridDim.x - 1));
+    isLastBlockDone = (value == (int(gridDim.x) - 1));
   }
 
   __syncthreads();
