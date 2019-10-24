@@ -25,6 +25,21 @@
  *  Unlike the `kernel<<<...>>>(...)` syntax and the `cuda::launch(...)` 
  *  implementation from the CUDA API Wrappers, `cudautils::launch(...)` and 
  *  `cudautils::launch_cooperative` can be called from standard C++ host code.
+ *
+ *  Possible optimisations
+ *
+ *    - once C++17 is available in CUDA, replace the `pointer_setter` functor
+ *      with a simpler function using fold expressions:
+ *
+ *  template<int N, class Tuple, std::size_t... Is>
+ *  void pointer_setter(void* ptrs[N], Tuple const& t, std::index_sequence<Is...>)
+ *  {
+ *    ((ptrs[Is] = & std::get<Is>(t)), ...);
+ *  }
+ *
+ *    - add a template specialisation to `launch` and `launch_cooperative` to
+ *      avoid making a temporary copy of the parameters when they match the
+ *      kernel signature.
  */
 
 namespace cudautils {
@@ -74,12 +89,6 @@ namespace cudautils {
     };
 
 #if 0
-    // the above could be simplified using C++17 fold expressions:
-    template<int N, class Tuple, std::size_t... Is>
-    void pointer_setter(void* ptrs[N], Tuple const& t, std::index_sequence<Is...>)
-    {
-      ((ptrs[Is] = & std::get<Is>(t)), ...);
-    }
 #endif
 
   }  // namespace detail
