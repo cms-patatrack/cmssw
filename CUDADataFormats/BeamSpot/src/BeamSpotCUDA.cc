@@ -4,5 +4,5 @@
 
 BeamSpotCUDA::BeamSpotCUDA(Data const* data_h, cudaStream_t stream) {
   data_d_ = cudautils::make_device_unique<Data>(stream);
-  cuda::memory::async::copy(data_d_.get(), data_h, sizeof(Data), stream);
+  cudaMemcpyAsync(data_d_.get(), data_h, sizeof(Data), cudaMemcpyHostToDevice, stream);
 }

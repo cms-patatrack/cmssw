@@ -105,9 +105,9 @@ void go() {
   auto d_A = cuda::memory::device::make_unique<float[]>(current_device, numElements);
   auto d_B = cuda::memory::device::make_unique<float[]>(current_device, numElements);
   auto d_C = cuda::memory::device::make_unique<float[]>(current_device, numElements);
-
-  cuda::memory::copy(d_A.get(), h_A.get(), size);
-  cuda::memory::copy(d_B.get(), h_B.get(), size);
+  
+  cudaMemcpy(d_A.get(), h_A.get(), size, cudaMemcpyHostToDevice);
+  cudaMemcpy(d_B.get(), h_B.get(), size, cudaMemcpyHostToDevice);
   delta += (std::chrono::high_resolution_clock::now() - start);
   std::cout << "cuda alloc+copy took " << std::chrono::duration_cast<std::chrono::milliseconds>(delta).count() << " ms"
             << std::endl;
@@ -130,7 +130,7 @@ void go() {
             << std::endl;
 
   delta -= (std::chrono::high_resolution_clock::now() - start);
-  cuda::memory::copy(h_C.get(), d_C.get(), size);
+  cudaMemcpy(h_C.get(), d_C.get(), size, cudaMemcpyDeviceToHost);
   delta += (std::chrono::high_resolution_clock::now() - start);
   std::cout << "cuda copy back took " << std::chrono::duration_cast<std::chrono::milliseconds>(delta).count() << " ms"
             << std::endl;

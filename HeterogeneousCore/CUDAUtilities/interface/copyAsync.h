@@ -17,7 +17,7 @@ namespace cudautils {
     // Shouldn't compile for array types because of sizeof(T), but
     // let's add an assert with a more helpful message
     static_assert(std::is_array<T>::value == false, "For array types, use the other overload with the size parameter");
-    cuda::memory::async::copy(dst.get(), src.get(), sizeof(T), stream);
+    cudaMemcpyAsync(dst.get(), src.get(), sizeof(T), cudaMemcpyHostToDevice, stream);
   }
 
   template <typename T>
@@ -25,7 +25,7 @@ namespace cudautils {
                         const cudautils::device::unique_ptr<T>& src,
                         cudaStream_t stream) {
     static_assert(std::is_array<T>::value == false, "For array types, use the other overload with the size parameter");
-    cuda::memory::async::copy(dst.get(), src.get(), sizeof(T), stream);
+    cudaMemcpyAsync(dst.get(), src.get(), sizeof(T), cudaMemcpyHostToDevice, stream);
   }
 
   // Multiple elements
@@ -34,7 +34,7 @@ namespace cudautils {
                         const cudautils::host::unique_ptr<T[]>& src,
                         size_t nelements,
                         cudaStream_t stream) {
-    cuda::memory::async::copy(dst.get(), src.get(), nelements * sizeof(T), stream);
+  cudaMemcpyAsync(dst.get(), src.get(), nelements *  sizeof(T), cudaMemcpyHostToDevice, stream); 
   }
 
   template <typename T>
@@ -42,7 +42,7 @@ namespace cudautils {
                         const cudautils::device::unique_ptr<T[]>& src,
                         size_t nelements,
                         cudaStream_t stream) {
-    cuda::memory::async::copy(dst.get(), src.get(), nelements * sizeof(T), stream);
+  cudaMemcpyAsync(dst.get(), src.get(), nelements *  sizeof(T), cudaMemcpyHostToDevice, stream);
   }
 }  // namespace cudautils
 

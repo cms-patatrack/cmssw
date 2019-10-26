@@ -169,8 +169,8 @@ int main() {
   auto a_d = cuda::memory::device::make_unique<Assoc[]>(current_device, 1);
   auto sa_d = cuda::memory::device::make_unique<SmallAssoc[]>(current_device, 1);
   auto ws_d = cuda::memory::device::make_unique<uint8_t[]>(current_device, Assoc::wsSize());
-
-  cuda::memory::copy(v_d.get(), tr.data(), N * sizeof(std::array<uint16_t, 4>));
+  
+  cudaMemcpy(v_d.get(), tr.data(), N *  sizeof(std::array<uint16_t, 4>), cudaMemcpyHostToDevice);
 #else
   auto a_d = std::make_unique<Assoc>();
   auto sa_d = std::make_unique<SmallAssoc>();
@@ -198,7 +198,7 @@ int main() {
   Assoc la;
 
 #ifdef __CUDACC__
-  cuda::memory::copy(&la, a_d.get(), sizeof(Assoc));
+  cudaMemcpy(&la, a_d.get(), sizeof(Assoc), cudaMemcpyDeviceToHost); 
 #else
   memcpy(&la, a_d.get(), sizeof(Assoc));  // not required, easier
 #endif
@@ -231,7 +231,7 @@ int main() {
   cudautils::finalizeBulk<<<nBlocks, nThreads>>>(dc_d, a_d.get());
   verifyBulk<<<1, 1>>>(a_d.get(), dc_d);
 
-  cuda::memory::copy(&la, a_d.get(), sizeof(Assoc));
+  cudaMemcpy(&la, a_d.get(), sizeof(Assoc), cudaMemcpyDeviceToHost);
   cudaMemcpy(&dc, dc_d, sizeof(AtomicPairCounter), cudaMemcpyDeviceToHost);
 
   cudaMemset(dc_d, 0, sizeof(AtomicPairCounter));

@@ -155,9 +155,9 @@ cudautils::device::unique_ptr<unsigned char[]> SiPixelFedCablingMapGPUWrapper::g
       }
     }
   }
-
-  cuda::memory::async::copy(
-      modToUnpDevice.get(), modToUnpHost.get(), pixelgpudetails::MAX_SIZE * sizeof(unsigned char), cudaStream);
+  
+  cudaMemcpyAsync(
+      modToUnpDevice.get(), modToUnpHost.get(), pixelgpudetails::MAX_SIZE * sizeof(unsigned char), cudaMemcpyHostToDevice, cudaStream);
   return modToUnpDevice;
 }
 
