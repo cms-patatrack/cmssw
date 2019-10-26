@@ -149,13 +149,8 @@ void go(bool soa) {
     if (soa)
       cudautils::launch(invertSOA<DIM>, {blocksPerGrid, threadsPerBlock}, m_d.get(), SIZE);
     else
-<<<<<<< HEAD
       cudautils::launch(invert<MX, DIM>, {blocksPerGrid, threadsPerBlock}, (MX *)(m_d.get()), SIZE);
-=======
-      cuda::launch(invert<MX, DIM>, {blocksPerGrid, threadsPerBlock}, (MX *)(m_d.get()), SIZE);
-    
     cudaMemcpy(&mm, m_d.get(), stride() * sizeof(MX), cudaMemcpyDeviceToHost);
->>>>>>> Replace cuda::memory[::async]::copy() with cudaMemcpy[Async](), cuda::memory[::async]::zero() and
 
     delta += (std::chrono::high_resolution_clock::now() - start);
 
@@ -166,13 +161,8 @@ void go(bool soa) {
       delta1 -= (std::chrono::high_resolution_clock::now() - start);
 
 #ifndef DOPROF
-<<<<<<< HEAD
       cudautils::launch(invertSeq<MX, DIM>, {blocksPerGrid, threadsPerBlock}, (MX *)(m_d.get()), SIZE);
-=======
-      cuda::launch(invertSeq<MX, DIM>, {blocksPerGrid, threadsPerBlock}, (MX *)(m_d.get()), SIZE);
-      
       cudaMemcpy(&mm, m_d.get(), stride() * sizeof(MX), cudaMemcpyDeviceToHost);
->>>>>>> Replace cuda::memory[::async]::copy() with cudaMemcpy[Async](), cuda::memory[::async]::zero() and
 
 #endif
       delta1 += (std::chrono::high_resolution_clock::now() - start);
