@@ -26,7 +26,7 @@ namespace cudautils {
                         const cudautils::device::unique_ptr<T>& src,
                         cudaStream_t stream) {
     static_assert(std::is_array<T>::value == false, "For array types, use the other overload with the size parameter");
-    cudaCheck(cudaMemcpyAsync(dst.get(), src.get(), sizeof(T), cudaMemcpyHostToDevice, stream));
+    cudaCheck(cudaMemcpyAsync(dst.get(), src.get(), sizeof(T), cudaMemcpyDeviceToHost, stream));
   }
 
   // Multiple elements
@@ -43,7 +43,7 @@ namespace cudautils {
                         const cudautils::device::unique_ptr<T[]>& src,
                         size_t nelements,
                         cudaStream_t stream) {
-    cudaCheck(cudaMemcpyAsync(dst.get(), src.get(), nelements * sizeof(T), cudaMemcpyHostToDevice, stream));
+    cudaCheck(cudaMemcpyAsync(dst.get(), src.get(), nelements * sizeof(T), cudaMemcpyDeviceToHost, stream));
   }
 }  // namespace cudautils
 
