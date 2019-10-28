@@ -74,8 +74,8 @@ process.moduleToTest(process.toTest)
     REQUIRE(data != nullptr);
 
     float firstElements[10];
-    cudaCheck(cudaMemcpyAsync(firstElements, data, sizeof(float) * 10, cudaMemcpyDeviceToHost, prod->stream())); 
-    
+    cudaCheck(cudaMemcpyAsync(firstElements, data, sizeof(float) * 10, cudaMemcpyDeviceToHost, prod->stream()));
+
     std::cout << "Synchronizing with CUDA stream" << std::endl;
     auto stream = prod->stream();
     cudaCheck(cudaStreamSynchronize(stream));

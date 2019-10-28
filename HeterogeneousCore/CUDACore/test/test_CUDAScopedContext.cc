@@ -115,7 +115,7 @@ TEST_CASE("Use of CUDAScopedContext", "[CUDACore]") {
       h_a1 = 0;
       h_a2 = 0;
       int h_a3 = 0;
-      
+
       cudaCheck(cudaMemcpyAsync(&h_a1, d_a1.get(), sizeof(int), cudaMemcpyDeviceToHost, ctx.stream()));
       cudaCheck(cudaMemcpyAsync(&h_a2, d_a2.get(), sizeof(int), cudaMemcpyDeviceToHost, ctx.stream()));
       cudaCheck(cudaMemcpyAsync(&h_a3, d_a3.get(), sizeof(int), cudaMemcpyDeviceToHost, ctx.stream()));

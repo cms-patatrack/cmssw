@@ -106,7 +106,7 @@ void go() {
   auto d_A = cuda::memory::device::make_unique<float[]>(current_device, numElements);
   auto d_B = cuda::memory::device::make_unique<float[]>(current_device, numElements);
   auto d_C = cuda::memory::device::make_unique<float[]>(current_device, numElements);
-  
+
   cudaCheck(cudaMemcpy(d_A.get(), h_A.get(), size, cudaMemcpyHostToDevice));
   cudaCheck(cudaMemcpy(d_B.get(), h_B.get(), size, cudaMemcpyHostToDevice));
   delta += (std::chrono::high_resolution_clock::now() - start);
@@ -119,13 +119,15 @@ void go() {
   std::cout << "CUDA kernel launch with " << blocksPerGrid << " blocks of " << threadsPerBlock << " threads\n";
 
   delta -= (std::chrono::high_resolution_clock::now() - start);
-  cudautils::launch(vectorOp<USE, ADDY>, {blocksPerGrid, threadsPerBlock}, d_A.get(), d_B.get(), d_C.get(), numElements);
+  cudautils::launch(
+      vectorOp<USE, ADDY>, {blocksPerGrid, threadsPerBlock}, d_A.get(), d_B.get(), d_C.get(), numElements);
   delta += (std::chrono::high_resolution_clock::now() - start);
   std::cout << "cuda computation took " << std::chrono::duration_cast<std::chrono::milliseconds>(delta).count() << " ms"
             << std::endl;
 
   delta -= (std::chrono::high_resolution_clock::now() - start);
-  cudautils::launch(vectorOp<USE, ADDY>, {blocksPerGrid, threadsPerBlock}, d_A.get(), d_B.get(), d_C.get(), numElements);
+  cudautils::launch(
+      vectorOp<USE, ADDY>, {blocksPerGrid, threadsPerBlock}, d_A.get(), d_B.get(), d_C.get(), numElements);
   delta += (std::chrono::high_resolution_clock::now() - start);
   std::cout << "cuda computation took " << std::chrono::duration_cast<std::chrono::milliseconds>(delta).count() << " ms"
             << std::endl;

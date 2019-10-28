@@ -35,7 +35,7 @@ namespace cudautils {
                         const cudautils::host::unique_ptr<T[]>& src,
                         size_t nelements,
                         cudaStream_t stream) {
-  cudaCheck(cudaMemcpyAsync(dst.get(), src.get(), nelements *  sizeof(T), cudaMemcpyHostToDevice, stream)); 
+    cudaCheck(cudaMemcpyAsync(dst.get(), src.get(), nelements * sizeof(T), cudaMemcpyHostToDevice, stream));
   }
 
   template <typename T>
@@ -43,7 +43,7 @@ namespace cudautils {
                         const cudautils::device::unique_ptr<T[]>& src,
                         size_t nelements,
                         cudaStream_t stream) {
-  cudaCheck(cudaMemcpyAsync(dst.get(), src.get(), nelements *  sizeof(T), cudaMemcpyHostToDevice, stream));
+    cudaCheck(cudaMemcpyAsync(dst.get(), src.get(), nelements * sizeof(T), cudaMemcpyHostToDevice, stream));
   }
 }  // namespace cudautils
 

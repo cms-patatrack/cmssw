@@ -151,7 +151,7 @@ void go(bool soa) {
       cudautils::launch(invertSOA<DIM>, {blocksPerGrid, threadsPerBlock}, m_d.get(), SIZE);
     else
       cudautils::launch(invert<MX, DIM>, {blocksPerGrid, threadsPerBlock}, (MX *)(m_d.get()), SIZE);
-    
+
     cudaCheck(cudaMemcpy(&mm, m_d.get(), stride() * sizeof(MX), cudaMemcpyDeviceToHost));
 
     delta += (std::chrono::high_resolution_clock::now() - start);

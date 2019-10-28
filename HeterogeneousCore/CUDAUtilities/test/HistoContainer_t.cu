@@ -26,7 +26,7 @@ void go() {
   constexpr int N = 12000;
   T v[N];
   auto v_d = cuda::memory::device::make_unique<T[]>(current_device, N);
-  
+
   cudaCheck(cudaMemcpy(v_d.get(), v, N * sizeof(T), cudaMemcpyHostToDevice));
 
   constexpr uint32_t nParts = 10;
@@ -66,7 +66,7 @@ void go() {
       offsets[10] = 3297 + offsets[9];
     }
 
-   cudaCheck(cudaMemcpy(off_d.get(), offsets, 4 * (nParts + 1), cudaMemcpyHostToDevice));
+    cudaCheck(cudaMemcpy(off_d.get(), offsets, 4 * (nParts + 1), cudaMemcpyHostToDevice));
 
     for (long long j = 0; j < N; j++)
       v[j] = rgen(eng);
@@ -76,7 +76,7 @@ void go() {
         v[j] = sizeof(T) == 1 ? 22 : 3456;
     }
 
-   cudaCheck(cudaMemcpy(v_d.get(), v, N * sizeof(T), cudaMemcpyHostToDevice));
+    cudaCheck(cudaMemcpy(v_d.get(), v, N * sizeof(T), cudaMemcpyHostToDevice));
 
     cudautils::fillManyFromVector(h_d.get(), ws_d.get(), nParts, v_d.get(), off_d.get(), offsets[10], 256, 0);
     cudaCheck(cudaMemcpy(&h, h_d.get(), sizeof(Hist), cudaMemcpyDeviceToHost));

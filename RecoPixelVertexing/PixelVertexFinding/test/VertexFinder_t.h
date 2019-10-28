@@ -127,10 +127,10 @@ int main() {
       std::cout << "v,t size " << ev.zvert.size() << ' ' << ev.ztrack.size() << std::endl;
       auto nt = ev.ztrack.size();
 #ifdef __CUDACC__
-     cudaCheck(cudaMemcpy(LOC_WS(ntrks), &nt, sizeof(uint32_t), cudaMemcpyHostToDevice));
-     cudaCheck(cudaMemcpy(LOC_WS(zt), ev.ztrack.data(), sizeof(float) * ev.ztrack.size(), cudaMemcpyHostToDevice));
-     cudaCheck(cudaMemcpy(LOC_WS(ezt2), ev.eztrack.data(), sizeof(float) * ev.eztrack.size(), cudaMemcpyHostToDevice));
-     cudaCheck(cudaMemcpy(LOC_WS(ptt2), ev.pttrack.data(), sizeof(float) * ev.eztrack.size(), cudaMemcpyHostToDevice));
+      cudaCheck(cudaMemcpy(LOC_WS(ntrks), &nt, sizeof(uint32_t), cudaMemcpyHostToDevice));
+      cudaCheck(cudaMemcpy(LOC_WS(zt), ev.ztrack.data(), sizeof(float) * ev.ztrack.size(), cudaMemcpyHostToDevice));
+      cudaCheck(cudaMemcpy(LOC_WS(ezt2), ev.eztrack.data(), sizeof(float) * ev.eztrack.size(), cudaMemcpyHostToDevice));
+      cudaCheck(cudaMemcpy(LOC_WS(ptt2), ev.pttrack.data(), sizeof(float) * ev.eztrack.size(), cudaMemcpyHostToDevice));
 #else
       ::memcpy(LOC_WS(ntrks), &nt, sizeof(uint32_t));
       ::memcpy(LOC_WS(zt), ev.ztrack.data(), sizeof(float) * ev.ztrack.size());
@@ -261,7 +261,7 @@ int main() {
 
       cudautils::launch(sortByPt2, {1, 256}, onGPU_d.get(), ws_d.get());
       cudaCheck(cudaGetLastError());
-      cudaCheck(cudaMemcpy(&nv, LOC_ONGPU(nvFinal), sizeof(uint32_t), cudaMemcpyDeviceToHost)); 
+      cudaCheck(cudaMemcpy(&nv, LOC_ONGPU(nvFinal), sizeof(uint32_t), cudaMemcpyDeviceToHost));
 #else
       fitVertices(onGPU_d.get(), ws_d.get(), 5000.f);
       sortByPt2(onGPU_d.get(), ws_d.get());
@@ -279,8 +279,8 @@ int main() {
       cudaCheck(cudaMemcpy(wv, LOC_ONGPU(wv), nv * sizeof(float), cudaMemcpyDeviceToHost));
       cudaCheck(cudaMemcpy(chi2, LOC_ONGPU(chi2), nv * sizeof(float), cudaMemcpyDeviceToHost));
       cudaCheck(cudaMemcpy(ptv2, LOC_ONGPU(ptv2), nv * sizeof(float), cudaMemcpyDeviceToHost));
-      cudaCheck(cudaMemcpy(nn , LOC_ONGPU(ndof), nv * sizeof(int32_t), cudaMemcpyDeviceToHost));
-      cudaCheck(cudaMemcpy(ind ,LOC_ONGPU(sortInd), nv * sizeof(uint16_t), cudaMemcpyDeviceToHost)); 
+      cudaCheck(cudaMemcpy(nn, LOC_ONGPU(ndof), nv * sizeof(int32_t), cudaMemcpyDeviceToHost));
+      cudaCheck(cudaMemcpy(ind, LOC_ONGPU(sortInd), nv * sizeof(uint16_t), cudaMemcpyDeviceToHost));
 #endif
       for (auto j = 0U; j < nv; ++j)
         if (nn[j] > 0)

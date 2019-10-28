@@ -78,7 +78,8 @@ void testMultiply() {
   cudaCheck(cudaMalloc((void **)&multiply_resultGPU, sizeof(Eigen::Matrix<double, row1, col2>)));
   cudaCheck(cudaMemcpy(JGPU, &J, sizeof(Eigen::Matrix<double, row1, col1>), cudaMemcpyHostToDevice));
   cudaCheck(cudaMemcpy(CGPU, &C, sizeof(Eigen::Matrix<double, row2, col2>), cudaMemcpyHostToDevice));
-  cudaCheck(cudaMemcpy(multiply_resultGPU, &multiply_result, sizeof(Eigen::Matrix<double, row1, col2>), cudaMemcpyHostToDevice));
+  cudaCheck(cudaMemcpy(
+      multiply_resultGPU, &multiply_result, sizeof(Eigen::Matrix<double, row1, col2>), cudaMemcpyHostToDevice));
 
   kernelMultiply<<<1, 1>>>(JGPU, CGPU, multiply_resultGPU);
   cudaDeviceSynchronize();
@@ -203,7 +204,8 @@ void testEigenvalues() {
   cudaDeviceSynchronize();
 
   cudaCheck(cudaMemcpy(mgpudebug, m_gpu, sizeof(Matrix3d), cudaMemcpyDeviceToHost));
-  cudaCheck(cudaMemcpy(ret1, ret_gpu, sizeof(Eigen::SelfAdjointEigenSolver<Matrix3d>::RealVectorType), cudaMemcpyDeviceToHost));
+  cudaCheck(cudaMemcpy(
+      ret1, ret_gpu, sizeof(Eigen::SelfAdjointEigenSolver<Matrix3d>::RealVectorType), cudaMemcpyDeviceToHost));
 #if TEST_DEBUG
   std::cout << "GPU Generated Matrix M 3x3:\n" << (*mgpudebug) << std::endl;
   std::cout << "GPU The eigenvalues of M are:" << std::endl << (*ret1) << std::endl;

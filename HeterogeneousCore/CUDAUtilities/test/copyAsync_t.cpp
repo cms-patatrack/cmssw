@@ -39,7 +39,7 @@ TEST_CASE("copyAsync", "[cudaMemTools]") {
       auto host = cudautils::make_host_unique<int[]>(N, stream);
 
       SECTION("Copy all") {
-	cudaCheck(cudaMemcpyAsync(host.get(), device.get(), N *  sizeof(int), cudaMemcpyDeviceToHost, stream));
+        cudaCheck(cudaMemcpyAsync(host.get(), device.get(), N * sizeof(int), cudaMemcpyDeviceToHost, stream));
         cudautils::copyAsync(device, host_orig, N, stream);
         cudaCheck(cudaStreamSynchronize(stream));
         for (int i = 0; i < N; ++i) {
@@ -52,7 +52,7 @@ TEST_CASE("copyAsync", "[cudaMemTools]") {
       }
 
       SECTION("Copy some") {
-	cudaCheck(cudaMemcpyAsync(host.get(), device.get(), 42 * sizeof(int), cudaMemcpyDeviceToHost, stream));
+        cudaCheck(cudaMemcpyAsync(host.get(), device.get(), 42 * sizeof(int), cudaMemcpyDeviceToHost, stream));
         cudautils::copyAsync(device, host_orig, 42, stream);
         cudaCheck(cudaStreamSynchronize(stream));
         for (int i = 0; i < 42; ++i) {
@@ -89,7 +89,7 @@ TEST_CASE("copyAsync", "[cudaMemTools]") {
       auto host = cudautils::make_host_unique<int[]>(N, stream);
 
       SECTION("Copy all") {
-	cudaCheck(cudaMemcpyAsync(device.get(), host_orig.get(), N *  sizeof(int), cudaMemcpyHostToDevice, stream));
+        cudaCheck(cudaMemcpyAsync(device.get(), host_orig.get(), N * sizeof(int), cudaMemcpyHostToDevice, stream));
         cudautils::copyAsync(host, device, N, stream);
         cudaCheck(cudaStreamSynchronize(stream));
         for (int i = 0; i < N; ++i) {

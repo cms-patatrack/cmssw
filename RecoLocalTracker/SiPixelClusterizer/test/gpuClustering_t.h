@@ -251,8 +251,8 @@ int main(void) {
 #ifdef __CUDACC__
     size_t size32 = n * sizeof(unsigned int);
     size_t size16 = n * sizeof(unsigned short);
-    // size_t size8 = n * sizeof(uint8_t);    
-    
+    // size_t size8 = n * sizeof(uint8_t);
+
     cudaCheck(cudaMemcpy(d_moduleStart.get(), &nModules, sizeof(uint32_t), cudaMemcpyHostToDevice));
 
     cudaCheck(cudaMemcpy(d_id.get(), h_id.get(), size16, cudaMemcpyHostToDevice));
@@ -274,15 +274,15 @@ int main(void) {
     cudaCheck(cudaMemset(d_clusInModule.get(), 0, MaxNumModules * sizeof(uint32_t)));
 
     cudautils::launch(findClus,
-                 {blocksPerGrid, threadsPerBlock},
-                 d_id.get(),
-                 d_x.get(),
-                 d_y.get(),
-                 d_moduleStart.get(),
-                 d_clusInModule.get(),
-                 d_moduleId.get(),
-                 d_clus.get(),
-                 n);
+                      {blocksPerGrid, threadsPerBlock},
+                      d_id.get(),
+                      d_x.get(),
+                      d_y.get(),
+                      d_moduleStart.get(),
+                      d_clusInModule.get(),
+                      d_moduleId.get(),
+                      d_clus.get(),
+                      n);
     cudaDeviceSynchronize();
     cudaCheck(cudaMemcpy(&nModules, d_moduleStart.get(), sizeof(uint32_t), cudaMemcpyDeviceToHost));
 
@@ -300,14 +300,14 @@ int main(void) {
       std::cout << "ERROR!!!!! wrong number of cluster found" << std::endl;
 
     cudautils::launch(clusterChargeCut,
-                 {blocksPerGrid, threadsPerBlock},
-                 d_id.get(),
-                 d_adc.get(),
-                 d_moduleStart.get(),
-                 d_clusInModule.get(),
-                 d_moduleId.get(),
-                 d_clus.get(),
-                 n);
+                      {blocksPerGrid, threadsPerBlock},
+                      d_id.get(),
+                      d_adc.get(),
+                      d_moduleStart.get(),
+                      d_clusInModule.get(),
+                      d_moduleId.get(),
+                      d_clus.get(),
+                      n);
 
     cudaDeviceSynchronize();
 #else

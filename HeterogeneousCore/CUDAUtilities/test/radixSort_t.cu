@@ -102,9 +102,9 @@ void go(bool useShared) {
     auto ind_d = cuda::memory::device::make_unique<uint16_t[]>(current_device, N);
     auto ws_d = cuda::memory::device::make_unique<uint16_t[]>(current_device, N);
     auto off_d = cuda::memory::device::make_unique<uint32_t[]>(current_device, blocks + 1);
-    
-    cudaCheck(cudaMemcpy(v_d.get(), v , N * sizeof(T), cudaMemcpyHostToDevice));
-    cudaCheck(cudaMemcpy(off_d.get(), offsets, 4 * (blocks+1), cudaMemcpyHostToDevice));
+
+    cudaCheck(cudaMemcpy(v_d.get(), v, N * sizeof(T), cudaMemcpyHostToDevice));
+    cudaCheck(cudaMemcpy(off_d.get(), offsets, 4 * (blocks + 1), cudaMemcpyHostToDevice));
 
     if (i < 2)
       std::cout << "lauch for " << offsets[blocks] << std::endl;
@@ -117,12 +117,13 @@ void go(bool useShared) {
       cudautils::launch(
           radixSortMultiWrapper<U, NS>, {blocks, ntXBl, MaxSize * 2}, v_d.get(), ind_d.get(), off_d.get(), nullptr);
     else
-      cudautils::launch(radixSortMultiWrapper2<U, NS>, {blocks, ntXBl}, v_d.get(), ind_d.get(), off_d.get(), ws_d.get());
+      cudautils::launch(
+          radixSortMultiWrapper2<U, NS>, {blocks, ntXBl}, v_d.get(), ind_d.get(), off_d.get(), ws_d.get());
 
     if (i == 0)
       std::cout << "done for " << offsets[blocks] << std::endl;
 
-    cudaCheck(cudaMemcpy(ind, ind_d.get(), 2 * N, cudaMemcpyDeviceToHost));  
+    cudaCheck(cudaMemcpy(ind, ind_d.get(), 2 * N, cudaMemcpyDeviceToHost));
 
     delta += (std::chrono::high_resolution_clock::now() - start);
 

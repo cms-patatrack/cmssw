@@ -76,7 +76,6 @@ int main(void) {
   auto d_sf = cuda::memory::device::make_unique<char[]>(current_device, sizeof(SFrame));
   cudaCheck(cudaMemcpy(d_sf.get(), &sf1, sizeof(SFrame), cudaMemcpyHostToDevice));
 
-
   for (auto i = 0U; i < size; ++i) {
     xl[i] = yl[i] = 0.1f * float(i) - float(size / 2);
     le[3 * i] = 0.01f;
