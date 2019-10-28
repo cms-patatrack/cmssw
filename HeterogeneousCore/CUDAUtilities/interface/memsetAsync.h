@@ -13,7 +13,7 @@ namespace cudautils {
   inline void memsetAsync(cudautils::device::unique_ptr<T>& ptr, T value, cudaStream_t stream) {
     // Shouldn't compile for array types because of sizeof(T), but
     // let's add an assert with a more helpful message
-    static_assert(std::is_array<T>::value == false, "For array types, use the other overload with the size parameter");i
+    static_assert(std::is_array<T>::value == false, "For array types, use the other overload with the size parameter");
     cudaCheck(cudaMemsetAsync(ptr.get(), value, sizeof(T), stream));
   }
 

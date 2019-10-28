@@ -14,6 +14,7 @@
 
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/exitSansCUDADevices.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/launch.h"
 #endif
 
 #include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuClustering.h"
