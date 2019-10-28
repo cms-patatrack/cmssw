@@ -10,6 +10,7 @@
 
 #include <cuda/api_wrappers.h>
 
+#include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 #include "DataFormats/GeometrySurface/interface/GloballyPositioned.h"
 #include "DataFormats/GeometrySurface/interface/SOARotation.h"
 #include "DataFormats/GeometrySurface/interface/TkRotation.h"
@@ -73,7 +74,7 @@ int main(void) {
 
   // auto d_sf = cuda::memory::device::make_unique<SFrame[]>(current_device, 1);
   auto d_sf = cuda::memory::device::make_unique<char[]>(current_device, sizeof(SFrame));
-  cudaMemcpy(d_sf.get(), &sf1, sizeof(SFrame), cudaMemcpyHostToDevice);
+  cudaCheck(cudaMemcpy(d_sf.get(), &sf1, sizeof(SFrame), cudaMemcpyHostToDevice));
 
 
   for (auto i = 0U; i < size; ++i) {
@@ -85,9 +86,9 @@ int main(void) {
   std::random_shuffle(xl, xl + size);
   std::random_shuffle(yl, yl + size);
 
-  cudaMemcpy(d_xl.get(), xl, size32, cudaMemcpyHostToDevice);
-  cudaMemcpy(d_yl.get(), yl, size32, cudaMemcpyHostToDevice);
-  cudaMemcpy(d_le.get(), le, 3 * size32, cudaMemcpyHostToDevice);
+  cudaCheck(cudaMemcpy(d_xl.get(), xl, size32, cudaMemcpyHostToDevice));
+  cudaCheck(cudaMemcpy(d_yl.get(), yl, size32, cudaMemcpyHostToDevice));
+  cudaCheck(cudaMemcpy(d_le.get(), le, 3 * size32, cudaMemcpyHostToDevice));
 
   toGlobalWrapper((SFrame const *)(d_sf.get()),
                   d_xl.get(),
@@ -98,10 +99,10 @@ int main(void) {
                   d_le.get(),
                   d_ge.get(),
                   size);
-  cudaMemcpy(x, d_x.get(), size32, cudaMemcpyDeviceToHost);
-  cudaMemcpy(y, d_y.get(), size32, cudaMemcpyDeviceToHost);
-  cudaMemcpy(z, d_z.get(), size32, cudaMemcpyDeviceToHost);
-  cudaMemcpy(ge, d_ge.get(), 6 * size32, cudaMemcpyDeviceToHost);
+  cudaCheck(cudaMemcpy(x, d_x.get(), size32, cudaMemcpyDeviceToHost));
+  cudaCheck(cudaMemcpy(y, d_y.get(), size32, cudaMemcpyDeviceToHost));
+  cudaCheck(cudaMemcpy(z, d_z.get(), size32, cudaMemcpyDeviceToHost));
+  cudaCheck(cudaMemcpy(ge, d_ge.get(), 6 * size32, cudaMemcpyDeviceToHost));
 
   float eps = 0.;
   for (auto i = 0U; i < size; ++i) {

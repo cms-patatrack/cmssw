@@ -10,6 +10,7 @@
 
 #include <cuda/api_wrappers.h>
 
+#include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/exitSansCUDADevices.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/launch.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/radixSort.h"
@@ -102,8 +103,8 @@ void go(bool useShared) {
     auto ws_d = cuda::memory::device::make_unique<uint16_t[]>(current_device, N);
     auto off_d = cuda::memory::device::make_unique<uint32_t[]>(current_device, blocks + 1);
     
-    cudaMemcpy(v_d.get(), v , N * sizeof(T), cudaMemcpyHostToDevice);
-    cudaMemcpy(off_d.get(), offsets, 4 * (blocks+1), cudaMemcpyHostToDevice);
+    cudaCheck(cudaMemcpy(v_d.get(), v , N * sizeof(T), cudaMemcpyHostToDevice));
+    cudaCheck(cudaMemcpy(off_d.get(), offsets, 4 * (blocks+1), cudaMemcpyHostToDevice));
 
     if (i < 2)
       std::cout << "lauch for " << offsets[blocks] << std::endl;
@@ -121,7 +122,7 @@ void go(bool useShared) {
     if (i == 0)
       std::cout << "done for " << offsets[blocks] << std::endl;
 
-    cudaMemcpy(ind, ind_d.get(), 2 * N, cudaMemcpyDeviceToHost);  
+    cudaCheck(cudaMemcpy(ind, ind_d.get(), 2 * N, cudaMemcpyDeviceToHost));  
 
     delta += (std::chrono::high_resolution_clock::now() - start);
 

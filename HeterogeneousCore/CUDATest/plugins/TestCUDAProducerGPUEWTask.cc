@@ -10,6 +10,7 @@
 #include "FWCore/ServiceRegistry/interface/Service.h"
 
 #include "CUDADataFormats/Common/interface/CUDAProduct.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 #include "HeterogeneousCore/CUDACore/interface/CUDAScopedContext.h"
 #include "HeterogeneousCore/CUDACore/interface/CUDAContextState.h"
 #include "HeterogeneousCore/CUDAServices/interface/CUDAService.h"
@@ -75,7 +76,7 @@ void TestCUDAProducerGPUEWTask::acquire(const edm::Event& iEvent,
   // Mimick the need to transfer some of the GPU data back to CPU to
   // be used for something within this module, or to be put in the
   // event.
- cudaMemcpyAsync(hostData_.get(), devicePtr_.get() + 10, sizeof(float), cudaMemcpyDeviceToHost, ctx.stream());
+ cudaCheck(cudaMemcpyAsync(hostData_.get(), devicePtr_.get() + 10, sizeof(float), cudaMemcpyDeviceToHost, ctx.stream()));
   // Push a task to run addSimpleWork() after the asynchronous work
   // (and acquire()) has finished instead of produce()
   ctx.pushNextTask([iev = iEvent.id().event(), istr = iEvent.streamID(), this](CUDAScopedContextTask ctx) {
@@ -93,7 +94,7 @@ void TestCUDAProducerGPUEWTask::addSimpleWork(edm::EventNumber_t eventID,
     edm::LogVerbatim("TestCUDAProducerGPUEWTask")
         << label_ << " TestCUDAProducerGPUEWTask::addSimpleWork begin event " << eventID << " stream " << streamID
         << " 10th element " << *hostData_ << " not satisfied, queueing more work";
- cudaMemcpyAsync(hostData_.get(), devicePtr_.get() + 10, sizeof(float), cudaMemcpyDeviceToHost, ctx.stream());   
+ cudaCheck(cudaMemcpyAsync(hostData_.get(), devicePtr_.get() + 10, sizeof(float), cudaMemcpyDeviceToHost, ctx.stream()));   
 
     ctx.pushNextTask([eventID, streamID, this](CUDAScopedContextTask ctx) { addSimpleWork(eventID, streamID, ctx); });
     gpuAlgo_.runSimpleAlgo(devicePtr_.get(), ctx.stream());

@@ -39,6 +39,7 @@ end
 #include "DataFormats/Math/interface/approx_log.h"
 #include "DataFormats/Math/interface/approx_exp.h"
 #include "DataFormats/Math/interface/approx_atan2.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/exitSansCUDADevices.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/launch.h"
 
@@ -106,8 +107,8 @@ void go() {
   auto d_B = cuda::memory::device::make_unique<float[]>(current_device, numElements);
   auto d_C = cuda::memory::device::make_unique<float[]>(current_device, numElements);
   
-  cudaMemcpy(d_A.get(), h_A.get(), size, cudaMemcpyHostToDevice);
-  cudaMemcpy(d_B.get(), h_B.get(), size, cudaMemcpyHostToDevice);
+  cudaCheck(cudaMemcpy(d_A.get(), h_A.get(), size, cudaMemcpyHostToDevice));
+  cudaCheck(cudaMemcpy(d_B.get(), h_B.get(), size, cudaMemcpyHostToDevice));
   delta += (std::chrono::high_resolution_clock::now() - start);
   std::cout << "cuda alloc+copy took " << std::chrono::duration_cast<std::chrono::milliseconds>(delta).count() << " ms"
             << std::endl;
@@ -130,7 +131,7 @@ void go() {
             << std::endl;
 
   delta -= (std::chrono::high_resolution_clock::now() - start);
-  cudaMemcpy(h_C.get(), d_C.get(), size, cudaMemcpyDeviceToHost);
+  cudaCheck(cudaMemcpy(h_C.get(), d_C.get(), size, cudaMemcpyDeviceToHost));
   delta += (std::chrono::high_resolution_clock::now() - start);
   std::cout << "cuda copy back took " << std::chrono::duration_cast<std::chrono::milliseconds>(delta).count() << " ms"
             << std::endl;
