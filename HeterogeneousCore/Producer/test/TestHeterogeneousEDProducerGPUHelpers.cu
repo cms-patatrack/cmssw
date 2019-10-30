@@ -4,6 +4,7 @@
 
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/device_unique_ptr.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/host_unique_ptr.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/launch.h"
 #include "TestHeterogeneousEDProducerGPUHelpers.h"
@@ -65,9 +66,12 @@ int TestAcceleratorServiceProducerGPUHelpers_simple_kernel(int input) {
   auto current_device = cuda::device::current::get();
   auto stream = current_device.create_stream(cuda::stream::implicitly_synchronizes_with_default_stream);
 
-  auto h_a = cuda::memory::host::make_unique<int[]>(NUM_VALUES);
-  auto h_b = cuda::memory::host::make_unique<int[]>(NUM_VALUES);
-  auto h_c = cuda::memory::host::make_unique<int[]>(NUM_VALUES);
+  auto h_a = cudautils::make_host_unique<int[]>(NUM_VALUES, nullptr);
+  auto h_b = cudautils::make_host_unique<int[]>(NUM_VALUES, nullptr);
+  auto h_c = cudautils::make_host_unique<int[]>(NUM_VALUES, nullptr);
+  //  auto h_a = cuda::memory::host::make_unique<int[]>(NUM_VALUES);
+  //  auto h_b = cuda::memory::host::make_unique<int[]>(NUM_VALUES);
+  //  auto h_c = cuda::memory::host::make_unique<int[]>(NUM_VALUES);
 
   for (auto i = 0; i < NUM_VALUES; i++) {
     h_a[i] = input + i;
@@ -109,8 +113,10 @@ namespace {
 }
 
 TestHeterogeneousEDProducerGPUTask::TestHeterogeneousEDProducerGPUTask() {
-  h_a = cuda::memory::host::make_unique<float[]>(NUM_VALUES);
-  h_b = cuda::memory::host::make_unique<float[]>(NUM_VALUES);
+  h_a = cudautils::make_host_unique<float[]>(NUM_VALUES, nullptr);
+  h_b = cudautils::make_host_unique<float[]>(NUM_VALUES, nullptr);
+  //  h_a = cuda::memory::host::make_unique<float[]>(NUM_VALUES);
+  //  h_b = cuda::memory::host::make_unique<float[]>(NUM_VALUES);
 
   auto current_device = cuda::device::current::get();
   d_b = cudautils::make_device_unique<float[]>(NUM_VALUES, nullptr);

@@ -4,6 +4,7 @@
 #include <cuda/api_wrappers.h>
 
 #include "HeterogeneousCore/CUDAUtilities/interface/device_unique_ptr.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/host_unique_ptr.h"
 
 #include <functional>
 #include <memory>
@@ -32,8 +33,8 @@ private:
   std::unique_ptr<cuda::stream_t<>> streamPtr;
 
   // stored for the job duration
-  cuda::memory::host::unique_ptr<float[]> h_a;
-  cuda::memory::host::unique_ptr<float[]> h_b;
+  cudautils::host::unique_ptr<float[]> h_a;
+  cudautils::host::unique_ptr<float[]> h_b;
   cudautils::device::unique_ptr<float[]> d_b;
   cudautils::device::unique_ptr<float[]> d_ma;
   cudautils::device::unique_ptr<float[]> d_mb;
