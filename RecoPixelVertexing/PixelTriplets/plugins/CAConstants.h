@@ -10,7 +10,7 @@
 #include "HeterogeneousCore/CUDAUtilities/interface/GPUVecArray.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/HistoContainer.h"
 
-#define ONLY_PHICUT
+// #define ONLY_PHICUT
 
 namespace CAConstants {
 
