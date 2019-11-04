@@ -197,6 +197,10 @@ namespace gpuPixelDoubletsAlgos {
           auto mo = hh.detectorIndex(oi);
           if (mo > 2000)
             continue;  //    invalid
+
+
+          if (z0cutoff(oi)) continue;
+
           auto mop = hh.iphi(oi);
           uint16_t idphi = std::min(std::abs(int16_t(mop - mep)), std::abs(int16_t(mep - mop)));
           if (idphi > iphicut)  continue;
@@ -204,7 +208,7 @@ namespace gpuPixelDoubletsAlgos {
           if (doPhiCut) {
             if (doClusterCut && zsizeCut(oi))
               continue;
-            if (z0cutoff(oi) || ptcut(oi, idphi))
+            if (ptcut(oi, idphi))
               continue;
           }
           auto ind = atomicAdd(nCells, 1);
