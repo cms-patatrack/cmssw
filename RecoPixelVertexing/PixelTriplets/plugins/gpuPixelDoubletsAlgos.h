@@ -139,12 +139,11 @@ namespace gpuPixelDoubletsAlgos {
       constexpr float minRadius =
           hardPtCut * 87.78f;  // cm (1 GeV track has 1 GeV/c / (e * 3.8T) ~ 87 cm radius in a 3.8T field)
       constexpr float minRadius2T4 = 4.f * minRadius * minRadius;
-      auto ptcut = [&](int j, int16_t mop) {
+      auto ptcut = [&](int j, int16_t idphi) {
         auto r2t4 = minRadius2T4;
         auto ri = mer;
         auto ro = hh.rGlobal(j);
-        // auto mop = hh.iphi(j);
-        auto dphi = short2phi(std::min(std::abs(int16_t(mep - mop)), std::abs(int16_t(mop - mep))));
+        auto dphi = short2phi(idphi);
         return dphi * dphi * (r2t4 - ri * ro) > (ro - ri) * (ro - ri);
       };
       auto z0cutoff = [&](int j) {
@@ -173,6 +172,7 @@ namespace gpuPixelDoubletsAlgos {
       auto kl = Hist::bin(int16_t(mep - iphicut));
       auto kh = Hist::bin(int16_t(mep + iphicut));
       auto incr = [](auto& k) { return k = (k + 1) % Hist::nbins(); };
+      // bool piWrap = std::abs(kh-kl) > Hist::nbins()/2;
 
 #ifdef GPU_DEBUG
       int tot = 0;
@@ -197,13 +197,18 @@ namespace gpuPixelDoubletsAlgos {
           auto mo = hh.detectorIndex(oi);
           if (mo > 2000)
             continue;  //    invalid
+
+
+          if (z0cutoff(oi)) continue;
+
           auto mop = hh.iphi(oi);
-          if (std::min(std::abs(int16_t(mop - mep)), std::abs(int16_t(mep - mop))) > iphicut)
-            continue;
+          uint16_t idphi = std::min(std::abs(int16_t(mop - mep)), std::abs(int16_t(mep - mop)));
+          if (idphi > iphicut)  continue;
+
           if (doPhiCut) {
             if (doClusterCut && zsizeCut(oi))
               continue;
-            if (z0cutoff(oi) || ptcut(oi, mop))
+            if (ptcut(oi, idphi))
               continue;
           }
           auto ind = atomicAdd(nCells, 1);
