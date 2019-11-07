@@ -108,10 +108,17 @@ namespace gpuPixelDoubletsAlgos {
       if (mi > 2000)
         continue;  // invalid
 
-      auto mez = hh.zGlobal(i);
+      /* maybe clever, not effective when zoCut is on
+      auto bpos = (mi%8)/4;  // if barrel is 1 for z>0
+      auto fpos = (outer>3) & (outer<7);
+      if ( ((inner<3) & (outer>3)) && bpos!=fpos) continue;
+      */
 
+      auto mez = hh.zGlobal(i);
+      
       if (doZCut && (mez < minz[pairLayerId] || mez > maxz[pairLayerId]))
         continue;
+      
 
       int16_t mes = -1;  // make compiler happy
       if (doClusterCut) {
