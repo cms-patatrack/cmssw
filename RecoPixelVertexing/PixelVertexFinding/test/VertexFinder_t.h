@@ -96,8 +96,6 @@ int main() {
 #ifdef __CUDACC__
   exitSansCUDADevices();
 
-  auto current_device = cuda::device::current::get();
-
   auto onGPU_d = cudautils::make_device_unique<ZVertices[]>(1, nullptr);
   auto ws_d = cudautils::make_device_unique<WorkSpace[]>(1, nullptr);
 #else

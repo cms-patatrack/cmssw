@@ -50,7 +50,6 @@ int main(void) {
   float le[3 * size];
   float ge[6 * size];
 
-  auto current_device = cuda::device::current::get();
   auto d_xl = cudautils::make_device_unique<float[]>(size, nullptr);
   auto d_yl = cudautils::make_device_unique<float[]>(size, nullptr);
 

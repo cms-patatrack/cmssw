@@ -16,6 +16,7 @@
 #include "HeterogeneousCore/CUDAUtilities/interface/CUDAStreamCache.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/device_unique_ptr.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/host_unique_ptr.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/currentDevice.h"
 #include "HeterogeneousCore/CUDAUtilities/src/getCachingDeviceAllocator.h"
 #include "HeterogeneousCore/CUDAUtilities/src/getCachingHostAllocator.h"
 
@@ -393,4 +394,4 @@ int CUDAService::deviceWithMostFreeMemory() const {
 
 void CUDAService::setCurrentDevice(int device) const { cuda::device::current::set(device); }
 
-int CUDAService::getCurrentDevice() const { return cuda::device::current::get().id(); }
+int CUDAService::getCurrentDevice() const { return cudautils::currentDevice(); }

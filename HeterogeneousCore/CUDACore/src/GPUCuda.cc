@@ -3,6 +3,8 @@
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "HeterogeneousCore/CUDAServices/interface/CUDAService.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/currentDevice.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/SharedStreamPtr.h"
 #include "chooseCUDADevice.h"
 #include <cuda.h>
 
@@ -52,7 +54,7 @@ namespace heterogeneous {
     // Create the CUDA stream for this module-edm::Stream pair
     auto current_device = cuda::device::current::get();
     cudaStream_ = std::make_unique<cuda::stream_t<>>(
-        current_device.create_stream(cuda::stream::no_implicit_synchronization_with_default_stream));
+      current_device.create_stream(cuda::stream::no_implicit_synchronization_with_default_stream));
 
     beginStreamGPUCuda(id, *cudaStream_);
   }
