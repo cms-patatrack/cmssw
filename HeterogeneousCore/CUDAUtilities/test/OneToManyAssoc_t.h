@@ -101,7 +101,7 @@ __global__ void verifyBulk(Assoc const* __restrict__ assoc, AtomicPairCounter co
 int main() {
 #ifdef __CUDACC__
   exitSansCUDADevices();
-  auto current_device = cudautils::currentDevice(); 
+  auto current_device = cudautils::currentDevice();
 #else
   // make sure cuda emulation is working
   std::cout << "cuda x's " << threadIdx.x << ' ' << blockIdx.x << ' ' << blockDim.x << ' ' << gridDim.x << std::endl;

@@ -26,7 +26,7 @@ int main(void) {
 #ifdef __CUDACC__
   exitSansCUDADevices();
 
-  if (cudautils::cudaDeviceCount()== 0) {
+  if (cudautils::cudaDeviceCount() == 0) {
     std::cerr << "No CUDA devices on this system"
               << "\n";
     exit(EXIT_FAILURE);

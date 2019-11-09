@@ -33,6 +33,7 @@
 #include "HeterogeneousCore/CUDACore/interface/GPUCuda.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/eventIsOccurred.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/currentDevice.h"
 #include "HeterogeneousCore/Producer/interface/HeterogeneousEDProducer.h"
 #include "SimDataFormats/Track/interface/SimTrackContainer.h"
 #include "SimDataFormats/TrackerDigiSimLink/interface/PixelDigiSimLink.h"
@@ -191,7 +192,7 @@ void ClusterTPAssociationHeterogeneous::acquireGPUCuda(const edm::HeterogeneousE
   edm::Handle<CUDAProduct<TrackingRecHit2DCUDA>> gh;
   iEvent.getByToken(tGpuHits, gh);
   // temporary check (until the migration)
-  assert(gd->device() == cuda::device::current::get().id());
+  assert(gd->device() == cudautils::currentDevice());
 
   // We're processing in a stream given by base class, so need to
   // synchronize explicitly (implementation is from

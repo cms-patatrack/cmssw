@@ -93,7 +93,7 @@ void go(bool soa) {
   auto delta = start - start;
   auto delta1 = delta;
   auto delta2 = delta;
-  
+
   if (cudautils::cudaDeviceCount() == 0) {
     std::cerr << "No CUDA devices on this system"
               << "\n";

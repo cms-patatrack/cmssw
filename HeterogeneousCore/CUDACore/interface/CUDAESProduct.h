@@ -29,7 +29,7 @@ public:
   // to the CUDA stream
   template <typename F>
   const T& dataForCurrentDeviceAsync(cudaStream_t cudaStream, F transferAsync) const {
-    auto device = cudautils::currentDevice(); 
+    auto device = cudautils::currentDevice();
 
     auto& data = gpuDataPerDevice_[device];
 

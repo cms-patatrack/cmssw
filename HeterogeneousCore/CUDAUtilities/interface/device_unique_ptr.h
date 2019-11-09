@@ -53,7 +53,7 @@ namespace cudautils {
   typename device::impl::make_device_unique_selector<T>::non_array make_device_unique(cudaStream_t stream) {
     static_assert(std::is_trivially_constructible<T>::value,
                   "Allocating with non-trivial constructor on the device memory is not supported");
-    int dev = cudautils::currentDevice(); 
+    int dev = cudautils::currentDevice();
     void *mem = cudautils::allocate_device(dev, sizeof(T), stream);
     return typename device::impl::make_device_unique_selector<T>::non_array{reinterpret_cast<T *>(mem),
                                                                             device::impl::DeviceDeleter{dev}};
@@ -65,7 +65,7 @@ namespace cudautils {
     using element_type = typename std::remove_extent<T>::type;
     static_assert(std::is_trivially_constructible<element_type>::value,
                   "Allocating with non-trivial constructor on the device memory is not supported");
-    int dev = cudautils::currentDevice(); 
+    int dev = cudautils::currentDevice();
     void *mem = cudautils::allocate_device(dev, n * sizeof(element_type), stream);
     return typename device::impl::make_device_unique_selector<T>::unbounded_array{reinterpret_cast<element_type *>(mem),
                                                                                   device::impl::DeviceDeleter{dev}};
@@ -78,7 +78,7 @@ namespace cudautils {
   template <typename T>
   typename device::impl::make_device_unique_selector<T>::non_array make_device_unique_uninitialized(
       cudaStream_t stream) {
-    int dev = cudautils::currentDevice(); 
+    int dev = cudautils::currentDevice();
     void *mem = cudautils::allocate_device(dev, sizeof(T), stream);
     return typename device::impl::make_device_unique_selector<T>::non_array{reinterpret_cast<T *>(mem),
                                                                             device::impl::DeviceDeleter{dev}};
@@ -88,7 +88,7 @@ namespace cudautils {
   typename device::impl::make_device_unique_selector<T>::unbounded_array make_device_unique_uninitialized(
       size_t n, cudaStream_t stream) {
     using element_type = typename std::remove_extent<T>::type;
-    int dev = cudautils::currentDevice(); 
+    int dev = cudautils::currentDevice();
     void *mem = cudautils::allocate_device(dev, n * sizeof(element_type), stream);
     return typename device::impl::make_device_unique_selector<T>::unbounded_array{reinterpret_cast<element_type *>(mem),
                                                                                   device::impl::DeviceDeleter{dev}};

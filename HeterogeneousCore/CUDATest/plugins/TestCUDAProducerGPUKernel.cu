@@ -120,8 +120,8 @@ cudautils::device::unique_ptr<float[]> TestCUDAProducerGPUKernel::runAlgo(const 
   matrixMulVector<<<blocksPerGrid, threadsPerBlock, 0, stream>>>(d_mc.get(), d_b.get(), d_c.get(), NUM_VALUES);
 
   edm::LogVerbatim("TestHeterogeneousEDProducerGPU")
-      << "  " << label << " GPU kernels launched, returning return pointer device " << current_device
-      << " CUDA stream " << stream;
+      << "  " << label << " GPU kernels launched, returning return pointer device " << current_device << " CUDA stream "
+      << stream;
   return d_a;
 }
 

@@ -392,6 +392,6 @@ int CUDAService::deviceWithMostFreeMemory() const {
   return device;
 }
 
-void CUDAService::setCurrentDevice(int device) const { cuda::device::current::set(device); }
+void CUDAService::setCurrentDevice(int device) const { cudaCheck(cudaSetDevice(device)); }
 
 int CUDAService::getCurrentDevice() const { return cudautils::currentDevice(); }

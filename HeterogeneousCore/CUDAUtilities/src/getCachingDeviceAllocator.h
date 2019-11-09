@@ -30,7 +30,7 @@ namespace cudautils {
       size_t ret = std::numeric_limits<size_t>::max();
       int currentDevice;
       cudaCheck(cudaGetDevice(&currentDevice));
-      const int numberOfDevices = cudaDeviceCount(); 
+      const int numberOfDevices = cudaDeviceCount();
       for (int i = 0; i < numberOfDevices; ++i) {
         size_t freeMemory, totalMemory;
         cudaCheck(cudaSetDevice(i));

@@ -14,4 +14,3 @@ namespace cudautils {
 }  // namespace cudautils
 
 #endif
-
