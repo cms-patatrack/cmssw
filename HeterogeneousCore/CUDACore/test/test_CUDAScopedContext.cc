@@ -12,6 +12,7 @@
 #include "HeterogeneousCore/CUDAUtilities/interface/CUDAStreamCache.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/CUDAEventCache.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/currentDevice.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/ScopedSetDevice.h"
 
 #include "test_CUDAScopedContextKernels.h"
 
@@ -85,7 +86,8 @@ TEST_CASE("Use of CUDAScopedContext", "[CUDACore]") {
     }
 
     SECTION("Joining multiple CUDA streams") {
-      cuda::device::current::scoped_override_t<> setDeviceForThisScope(defaultDevice);
+      cudautils::ScopedSetDevice setDeviceForThisScope(defaultDevice);
+      auto current_device = cuda::device::current::get();
 
       // Mimick a producer on the first CUDA stream
       int h_a1 = 1;
