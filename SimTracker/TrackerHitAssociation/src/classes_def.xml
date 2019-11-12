@@ -23,5 +23,6 @@
 
   <class name="trackerHitAssociationHeterogeneous::ProductCUDA" persistent="false"/>
   <class name="CUDAProduct<trackerHitAssociationHeterogeneous::ProductCUDA>" persistent="false"/>
+  <class name="edm::Wrapper<CUDAProduct<trackerHitAssociationHeterogeneous::ProductCUDA>>" persistent="false"/>
 
 </lcgdict>
