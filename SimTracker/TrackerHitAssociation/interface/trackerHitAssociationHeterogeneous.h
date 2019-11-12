@@ -29,6 +29,8 @@ namespace trackerHitAssociationHeterogeneous {
 
     Product() = default;
     ~Product() = default;
+    Product(Product const&) =  delete;
+    Product(Product &&) =  default;
 
     Product(int nlinks, int nhits, cudaStream_t stream);
 

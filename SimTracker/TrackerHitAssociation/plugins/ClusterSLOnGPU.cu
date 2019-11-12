@@ -20,7 +20,7 @@ __global__ void simLink(const SiPixelDigisCUDA::DeviceConstView* dd,
                         ClusterSLView sl,
                         uint32_t n) {
 
-  constexpr int32_t invTK = 0;      // std::numeric_limits<int32_t>::max();
+  constexpr uint32_t invTK = 0;  // std::numeric_limits<int32_t>::max();
   constexpr uint16_t InvId = 9999;  // must be > MaxNumModules
 
   auto const& hh = *hhp;
@@ -88,11 +88,6 @@ void doZero(uint32_t nhits, ClusterSLView sl) {
   sl.n1_d[i] = 0;
   sl.tkId2_d[i] = 0;
   sl.n2_d[i] = 0;
-  auto & tk = sl.links_d[0];
-  tk[0] = 0;
-  tk[1] = 0;
-  tk[2] = 0;
-  tk[3] = 0;
 
 }
 
@@ -144,8 +139,6 @@ __global__ void dumpLink(
 
 namespace clusterSLOnGPU {
 
-  constexpr uint32_t invTK = 0;  // std::numeric_limits<int32_t>::max();
-
   void printCSVHeader() {
 #ifdef DUMP_TK2
     printf("HIT: %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n",
@@ -184,7 +177,7 @@ namespace clusterSLOnGPU {
   std::atomic<int> evId(0);
   std::once_flag doneCSVHeader;
 
-  Kernel::Kernel(cudaStream_t stream, bool dump) : doDump(dump) {
+  Kernel::Kernel(bool dump) : doDump(dump) {
     if (doDump)
       std::call_once(doneCSVHeader, printCSVHeader);
   }
@@ -196,13 +189,13 @@ namespace clusterSLOnGPU {
                     Clus2TP const * digi2tp,
                     uint32_t nhits,
                     uint32_t nlinks,
-                    cudaStream_t stream) {
+                    cudaStream_t stream) const {
 
     trackerHitAssociationHeterogeneous::ProductCUDA  product(nlinks,nhits,stream);
     auto & csl = product.view();
 
     cudaCheck(cudaMemcpyAsync(
-      csl.links_d, digi2tp, sizeof(Clus2TP) * nliks, cudaMemcpyDefault, stream
+      csl.links_d, digi2tp, sizeof(Clus2TP) * nlinks, cudaMemcpyDefault, stream
              ));
 
     if (0 == nhits)
@@ -212,18 +205,17 @@ namespace clusterSLOnGPU {
     int threadsPerBlock = 256;
 
     int blocks = (nhits + threadsPerBlock - 1) / threadsPerBlock;
-    doZero<<<blocks, threadsPerBlock, 0, stream>>>(nhits, sl.me_d);
+    doZero<<<blocks, threadsPerBlock, 0, stream>>>(nhits, csl);
     cudaCheck(cudaGetLastError());
 
     blocks = (ndigis + threadsPerBlock - 1) / threadsPerBlock;
-
-    simLink<<<blocks, threadsPerBlock, 0, stream>>>(dd.view(), ndigis, hh.view(), csl, n);
+    simLink<<<blocks, threadsPerBlock, 0, stream>>>(dd.view(), ndigis, hh.view(), csl, nlinks);
     cudaCheck(cudaGetLastError());
 
     if (doDump) {
       cudaStreamSynchronize(stream);  // flush previous printf
       // one line == 200B so each kernel can print only 5K lines....
-      blocks = 16;  // (nhits + threadsPerBlock - 1) / threadsPerBlock;
+      blocks = 16;
       for (int first = 0; first < int(nhits); first += blocks * threadsPerBlock) {
         dumpLink<<<blocks, threadsPerBlock, 0, stream>>>(first, ev, hh.view(), nhits, csl);
         cudaCheck(cudaGetLastError());

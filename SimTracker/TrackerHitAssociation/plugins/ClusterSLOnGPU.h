@@ -26,7 +26,7 @@ namespace clusterSLOnGPU {
               Clus2TP const * digi2tp,
               uint32_t nhits,
               uint32_t nlinks,
-              cudaStream_t stream);
+              cudaStream_t stream) const;
 
   private:
 

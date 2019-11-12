@@ -8,9 +8,12 @@
 <use   name="DataFormats/TrackerRecHit2D"/>
 <use   name="TrackingTools/TransientTrackingRecHit"/>
 <use   name="DataFormats/SiPixelDetId"/>
+<use   name="CUDADataFormats/Common"/>
 <use   name="clhep"/>
 <use   name="boost"/>
 <use   name="root"/>
+<use name="cuda"/>
+<use name="cuda-api-wrappers"/>
 <export>
   <lib    name="1"/>
 </export>
