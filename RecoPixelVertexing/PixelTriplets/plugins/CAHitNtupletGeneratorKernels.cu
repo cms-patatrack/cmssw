@@ -208,8 +208,8 @@ void CAHitNtupletGeneratorKernelsGPU::buildDoublets(HitsOnCPU const &hh, cudaStr
                                                                     nActualPairs,
                                                                     m_params.idealConditions_,
                                                                     m_params.doClusterCut_,
-                                                                    m_params.doZCut_,
-                                                                    m_params.doPhiCut_,
+                                                                    m_params.doZ0Cut_,
+                                                                    m_params.doPtCut_,
                                                                     m_params.maxNumberOfDoublets_);
   cudaCheck(cudaGetLastError());
 

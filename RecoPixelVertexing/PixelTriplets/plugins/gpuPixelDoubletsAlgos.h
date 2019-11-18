@@ -36,8 +36,8 @@ namespace gpuPixelDoubletsAlgos {
                                                     float const* __restrict__ maxr,
                                                     bool ideal_cond,
                                                     bool doClusterCut,
-                                                    bool doZCut,
-                                                    bool doPhiCut,
+                                                    bool doZ0Cut,
+                                                    bool doPtCut,
                                                     uint32_t maxNumOfDoublets) {
     // ysize cuts (z in the barrel)  times 8
     // these are used if doClusterCut is true
@@ -115,10 +115,9 @@ namespace gpuPixelDoubletsAlgos {
       */
 
       auto mez = hh.zGlobal(i);
-      
-      if (doZCut && (mez < minz[pairLayerId] || mez > maxz[pairLayerId]))
+
+      if (mez < minz[pairLayerId] || mez > maxz[pairLayerId])
         continue;
-      
 
       int16_t mes = -1;  // make compiler happy
       if (doClusterCut) {
@@ -204,20 +203,16 @@ namespace gpuPixelDoubletsAlgos {
           auto mo = hh.detectorIndex(oi);
           if (mo > 2000)
             continue;  //    invalid
-
-
-          if (z0cutoff(oi)) continue;
+          
+          if (doZ0Cut && z0cutoff(oi)) continue;
 
           auto mop = hh.iphi(oi);
           uint16_t idphi = std::min(std::abs(int16_t(mop - mep)), std::abs(int16_t(mep - mop)));
           if (idphi > iphicut)  continue;
 
-          if (doPhiCut) {
-            if (doClusterCut && zsizeCut(oi))
-              continue;
-            if (ptcut(oi, idphi))
-              continue;
-          }
+         if (doClusterCut && zsizeCut(oi)) continue;
+         if (doPtCut && ptcut(oi, idphi)) continue;
+      
           auto ind = atomicAdd(nCells, 1);
           if (ind >= maxNumOfDoublets) {
             atomicSub(nCells, 1);
