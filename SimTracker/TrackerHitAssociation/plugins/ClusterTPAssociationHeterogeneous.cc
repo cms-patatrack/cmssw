@@ -192,7 +192,7 @@ void ClusterTPAssociationHeterogeneous::acquireGPUCuda(const edm::HeterogeneousE
   edm::Handle<CUDAProduct<TrackingRecHit2DCUDA>> gh;
   iEvent.getByToken(tGpuHits, gh);
   // temporary check (until the migration)
-  assert(gd->device() == cudautils::currentDevice());
+  assert(gd->device() == cuda::device::current::get().id());
 
   // We're processing in a stream given by base class, so need to
   // synchronize explicitly (implementation is from
