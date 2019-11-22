@@ -19,6 +19,14 @@
 <use name="SimDataFormats/Track"/>
 <use name="TrackingTools/TransientTrack"/>
 
+
+<bin file="gpuVertexFinder_t.cu" name="gpuVertexFinderOneKernel_t">
+  <use name="cuda"/>
+  <flags CUDA_FLAGS="-g -DGPU_DEBUG -DONE_KERNEL"/>
+  <flags CXXFLAGS="-g"/>
+</bin>
+
+
 <bin file="gpuVertexFinder_t.cu" name="gpuVertexFinderByDensity_t">
   <use name="cuda"/>
   <flags CUDA_FLAGS="-g -DGPU_DEBUG"/>

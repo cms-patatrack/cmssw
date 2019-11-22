@@ -12,7 +12,7 @@
 
 namespace gpuVertexFinder {
 
-  __global__ void splitVertices(ZVertices* pdata, WorkSpace* pws, float maxChi2) {
+  __device__ __forceinline__ void splitVertices(ZVertices* pdata, WorkSpace* pws, float maxChi2) {
     constexpr bool verbose = false;  // in principle the compiler should optmize out if false
 
     auto& __restrict__ data = *pdata;
@@ -126,6 +126,10 @@ namespace gpuVertexFinder {
       if (1 == newV[k])
         iv[it[k]] = igv;
     }
+  }
+
+  __global__ void splitVerticesKernel(ZVertices* pdata, WorkSpace* pws, float maxChi2) {
+     splitVertices(pdata, pws, maxChi2);
   }
 
 }  // namespace gpuVertexFinder
