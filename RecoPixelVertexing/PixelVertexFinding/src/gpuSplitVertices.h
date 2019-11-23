@@ -39,7 +39,7 @@ namespace gpuVertexFinder {
     if (chi2[kv] < maxChi2 * float(nn[kv]))
       continue;
 
-    constexpr int MAXTK = 256;
+    constexpr int MAXTK = 512;
     assert(nn[kv] < MAXTK);
     if (nn[kv] >= MAXTK) continue; // too bad FIXME
     __shared__ uint32_t it[MAXTK];   // track index

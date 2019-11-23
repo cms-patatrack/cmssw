@@ -46,7 +46,7 @@ namespace gpuVertexFinder {
   }
 
 #ifdef __CUDACC__
-// #define ONE_KERNEL
+#define ONE_KERNEL
 #ifdef ONE_KERNEL
   __global__ void vertexFinderOneKernel(gpuVertexFinder::ZVertices* pdata,
                                         gpuVertexFinder::WorkSpace* pws,
