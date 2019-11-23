@@ -59,17 +59,7 @@ namespace gpuVertexFinder {
     __syncthreads();
     fitVertices(pdata,pws, 50.);
     __syncthreads();
-
-    
-    // one block per vertex...
-    if (0==threadIdx.x) {
-      cudaStream_t stream = 0;
-      cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking);
-      splitVerticesKernel<<<1024, 128, 0, stream>>>(pdata,pws, 9.f);
-      cudaStreamDestroy(stream);
-      cudaDeviceSynchronize();
-    }
-   
+    splitVertices(pdata,pws, 9.f);
     __syncthreads();
     fitVertices(pdata,pws, 5000.);
     __syncthreads();
@@ -133,6 +123,7 @@ __global__ void vertexFinderKernel2(gpuVertexFinder::ZVertices* pdata,
 #ifdef ONE_KERNEL
     vertexFinderOneKernel<<<1, 1024 - 256, 0, stream>>>(soa, ws_d.get(), minT, eps, errmax, chi2max);
 #else 
+/*
     vertexFinderKernel1<<<1, 1024 - 256, 0, stream>>>(soa, ws_d.get(), minT, eps, errmax, chi2max);
     cudaCheck(cudaGetLastError());
     // one block per vertex...
@@ -140,8 +131,7 @@ __global__ void vertexFinderKernel2(gpuVertexFinder::ZVertices* pdata,
     cudaCheck(cudaGetLastError());
     vertexFinderKernel2<<<1, 1024 - 256, 0, stream>>>(soa, ws_d.get());
     cudaStreamSynchronize(stream);
-    
-    /*
+*/    
     clusterTracksByDensityKernel<<<1, 1024 - 256, 0, stream>>>(soa, ws_d.get(), minT, eps, errmax, chi2max);
     cudaCheck(cudaGetLastError());
     fitVerticesKernel<<<1, 1024 - 256, 0, stream>>>(soa, ws_d.get(), 50.);
@@ -152,17 +142,16 @@ __global__ void vertexFinderKernel2(gpuVertexFinder::ZVertices* pdata,
     fitVerticesKernel<<<1, 1024 - 256, 0, stream>>>(soa, ws_d.get(), 5000.);
     cudaCheck(cudaGetLastError());
     sortByPt2Kernel<<<1, 1024-256, 0, stream>>>(soa, ws_d.get());
-    */
 #endif
     cudaCheck(cudaGetLastError());
 #else
     clusterTracksByDensity(soa, ws_d.get(), minT, eps, errmax, chi2max);
     // std::cout << "found " << (*ws_d).nvIntermediate << " vertices " << std::endl;
     fitVertices(soa, ws_d.get(), 50.);
-    for (blockIdx.x = 0; blockIdx.x < 1024; ++blockIdx.x) {
-      splitVertices(soa, ws_d.get(), 9.f);
-    }
-    blockIdx.x = 0;
+    // one block per vertex!
+    blockIdx.x = 0; gridDim.x=1;
+    splitVertices(soa, ws_d.get(), 9.f);
+    resetGrid();
     fitVertices(soa, ws_d.get(), 5000.);
     sortByPt2(soa, ws_d.get());
 #endif

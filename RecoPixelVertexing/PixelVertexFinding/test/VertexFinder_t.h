@@ -34,17 +34,7 @@
     __syncthreads();
     fitVertices(pdata,pws, 50.);
     __syncthreads();
-
-    
-    // one block per vertex...
-    if (0==threadIdx.x) {
-      cudaStream_t stream = 0;
-      cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking);
-      splitVerticesKernel<<<1024, 128, 0, stream>>>(pdata,pws, 9.f);
-      cudaStreamDestroy(stream);
-      cudaDeviceSynchronize();
-    }
-    
+    splitVertices(pdata,pws, 9.f);    
     __syncthreads();
     fitVertices(pdata,pws, 5000.);
     __syncthreads();
@@ -275,13 +265,13 @@ int main() {
 
 #ifdef __CUDACC__
       // one vertex per block!!!
+ //     cudautils::launch(splitVerticesKernel, {1, 256}, onGPU_d.get(), ws_d.get(), 9.f);
       cudautils::launch(splitVerticesKernel, {1024, 64}, onGPU_d.get(), ws_d.get(), 9.f);
       cudaCheck(cudaMemcpy(&nv, LOC_WS(nvIntermediate), sizeof(uint32_t), cudaMemcpyDeviceToHost));
 #else
-      gridDim.x = 1024;  // nv ????
+      gridDim.x = 1;
       assert(blockIdx.x == 0);
-      for (; blockIdx.x < gridDim.x; ++blockIdx.x)
-        splitVertices(onGPU_d.get(), ws_d.get(), 9.f);
+      splitVertices(onGPU_d.get(), ws_d.get(), 9.f);
       resetGrid();
       nv = ws_d->nvIntermediate;
 #endif
