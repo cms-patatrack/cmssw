@@ -7,8 +7,6 @@
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/currentDevice.h"
 
-#include <cuda/api_wrappers.h>
-
 namespace {
   template <typename T>
   __global__ void vectorAddConstant(T *a, T b, int numElements) {

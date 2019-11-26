@@ -12,8 +12,6 @@
 #include <Eigen/Core>
 #include <Eigen/Eigenvalues>
 
-#include <cuda/api_wrappers.h>
-
 #include "DataFormats/Math/interface/choleskyInversion.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/device_unique_ptr.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"

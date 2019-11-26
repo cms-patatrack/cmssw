@@ -7,7 +7,6 @@
 #include <memory>
 
 #ifdef __CUDACC__
-#include <cuda/api_wrappers.h>
 #include "HeterogeneousCore/CUDAUtilities/interface/device_unique_ptr.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/exitSansCUDADevices.h"

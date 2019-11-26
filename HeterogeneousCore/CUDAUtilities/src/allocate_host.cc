@@ -3,8 +3,7 @@
 #include "FWCore/Utilities/interface/Likely.h"
 
 #include "getCachingHostAllocator.h"
-
-#include <cuda/api_wrappers.h>
+#include "cuda/api_wrappers.h"
 
 #include <limits>
 

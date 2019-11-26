@@ -4,8 +4,6 @@
 #include <random>
 #include <vector>
 
-#include <cuda/api_wrappers.h>
-
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/exitSansCUDADevices.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/launch.h"

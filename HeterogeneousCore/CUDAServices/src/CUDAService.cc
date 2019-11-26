@@ -3,7 +3,6 @@
 #include <limits>
 
 #include <cuda.h>
-#include <cuda/api_wrappers.h>
 
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"

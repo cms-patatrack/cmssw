@@ -3,7 +3,6 @@
 #include "HeterogeneousCore/CUDAUtilities/interface/currentDevice.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/ScopedSetDevice.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaDeviceCount.h"
-#include <cuda/api_wrappers.h>
 
 namespace cudautils {
   void CUDAEventCache::Deleter::operator()(cudaEvent_t event) const {

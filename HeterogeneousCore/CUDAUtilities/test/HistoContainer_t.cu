@@ -4,8 +4,6 @@
 #include <limits>
 #include <random>
 
-#include <cuda/api_wrappers.h>
-
 #include "HeterogeneousCore/CUDAUtilities/interface/device_unique_ptr.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/HistoContainer.h"

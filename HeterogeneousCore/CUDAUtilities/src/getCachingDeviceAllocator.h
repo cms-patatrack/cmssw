@@ -6,8 +6,6 @@
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaDeviceCount.h"
 #include "CachingDeviceAllocator.h"
 
-#include <cuda/api_wrappers.h>
-
 #include <iomanip>
 
 namespace cudautils {

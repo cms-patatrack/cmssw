@@ -4,8 +4,6 @@
 #include <memory>
 #include <functional>
 
-#include <cuda/api_wrappers.h>
-
 #include "FWCore/Utilities/interface/Likely.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/allocate_device.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/currentDevice.h"

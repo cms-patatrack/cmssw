@@ -1,8 +1,6 @@
 #include <cassert>
 #include <iostream>
 
-#include <cuda/api_wrappers.h>
-
 #include "HeterogeneousCore/CUDAUtilities/interface/cudastdAlgorithm.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/exitSansCUDADevices.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/launch.h"
