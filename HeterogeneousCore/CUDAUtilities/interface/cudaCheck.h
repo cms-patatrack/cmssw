@@ -15,8 +15,12 @@
 
 namespace cudautils {
 
-  [[noreturn]] inline void abortOnCudaError(
-      const char* file, int line, const char* cmd, const char* error, const char* message, const char* description = nullptr) {
+  [[noreturn]] inline void abortOnCudaError(const char* file,
+                                            int line,
+                                            const char* cmd,
+                                            const char* error,
+                                            const char* message,
+                                            const char* description = nullptr) {
     std::ostringstream out;
     out << "\n";
     out << file << ", line " << line << ":\n";
@@ -27,7 +31,8 @@ namespace cudautils {
     throw std::runtime_error(out.str());
   }
 
-  inline bool cudaCheck_(const char* file, int line, const char* cmd, CUresult result, const char* description = nullptr) {
+  inline bool cudaCheck_(
+      const char* file, int line, const char* cmd, CUresult result, const char* description = nullptr) {
     if (LIKELY(result == CUDA_SUCCESS))
       return true;
 
@@ -39,7 +44,8 @@ namespace cudautils {
     return false;
   }
 
-  inline bool cudaCheck_(const char* file, int line, const char* cmd, cudaError_t result, const char* description = nullptr) {
+  inline bool cudaCheck_(
+      const char* file, int line, const char* cmd, cudaError_t result, const char* description = nullptr) {
     if (LIKELY(result == cudaSuccess))
       return true;
 
@@ -51,6 +57,6 @@ namespace cudautils {
 
 }  // namespace cudautils
 
-#define cudaCheck(ARG, ...) (cudautils::cudaCheck_(__FILE__, __LINE__, #ARG, (ARG), ## __VA_ARGS__))
+#define cudaCheck(ARG, ...) (cudautils::cudaCheck_(__FILE__, __LINE__, #ARG, (ARG), ##__VA_ARGS__))
 
 #endif  // HeterogeneousCore_CUDAUtilities_cudaCheck_h
