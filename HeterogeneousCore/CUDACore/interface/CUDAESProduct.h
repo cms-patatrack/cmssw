@@ -61,7 +61,7 @@ public:
           // wait on the CUDA stream and return the value. Subsequent
           // work queued on the stream will wait for the event to
           // occur (i.e. transfer to finish).
-          cudaCheckVerbose(cudaStreamWaitEvent(cudaStream, data.m_event.get(), 0), "Failed to make a stream to wait for an event");
+          cudaCheck(cudaStreamWaitEvent(cudaStream, data.m_event.get(), 0), "Failed to make a stream to wait for an event");
         }
         // else: filling is still going on. But for the same CUDA
         // stream (which would be a bit strange but fine), we can just

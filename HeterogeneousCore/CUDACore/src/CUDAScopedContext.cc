@@ -78,7 +78,7 @@ namespace impl {
         // wait for an event, so all subsequent work in the stream
         // will run only after the event has "occurred" (i.e. data
         // product became available).
-        cudaCheckVerbose(cudaStreamWaitEvent(stream(), dataEvent, 0), "Failed to make a stream to wait for an event");
+        cudaCheck(cudaStreamWaitEvent(stream(), dataEvent, 0), "Failed to make a stream to wait for an event");
       }
     }
   }

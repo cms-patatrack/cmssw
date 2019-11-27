@@ -51,7 +51,6 @@ namespace cudautils {
 
 }  // namespace cudautils
 
-#define cudaCheck(ARG) (cudautils::cudaCheck_(__FILE__, __LINE__, #ARG, (ARG)))
-#define cudaCheckVerbose(ARG, DESC) (cudautils::cudaCheck_(__FILE__, __LINE__, #ARG, (ARG), DESC))
+#define cudaCheck(ARG, ...) (cudautils::cudaCheck_(__FILE__, __LINE__, #ARG, (ARG), ## __VA_ARGS__))
 
 #endif  // HeterogeneousCore_CUDAUtilities_cudaCheck_h
