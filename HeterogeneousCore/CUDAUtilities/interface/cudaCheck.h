@@ -10,6 +10,9 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
+// CMSSW headers
+#include "FWCore/Utilities/interface/Likely.h"
+
 namespace cudautils {
 
   [[noreturn]] inline void abortOnCudaError(
@@ -25,7 +28,7 @@ namespace cudautils {
 }  // namespace cudautils
 
 inline bool cudaCheck_(const char* file, int line, const char* cmd, CUresult result) {
-  if (__builtin_expect(result == CUDA_SUCCESS, true))
+  if (LIKELY(result == CUDA_SUCCESS))
     return true;
 
   const char* error;
@@ -37,7 +40,7 @@ inline bool cudaCheck_(const char* file, int line, const char* cmd, CUresult res
 }
 
 inline bool cudaCheck_(const char* file, int line, const char* cmd, cudaError_t result) {
-  if (__builtin_expect(result == cudaSuccess, true))
+  if (LIKELY(result == cudaSuccess))
     return true;
 
   const char* error = cudaGetErrorName(result);
@@ -66,7 +69,7 @@ namespace cudautils {
 
 template <typename T>
 inline bool cudaCheckVerbose_(const char* file, int line, const char* cmd, CUresult result, T const& description) {
-  if (__builtin_expect(result == CUDA_SUCCESS, true))
+  if (LIKELY(result == CUDA_SUCCESS))
     return true;
 
   const char* error;
@@ -79,7 +82,7 @@ inline bool cudaCheckVerbose_(const char* file, int line, const char* cmd, CUres
 
 template <typename T>
 inline bool cudaCheckVerbose_(const char* file, int line, const char* cmd, cudaError_t result, T const& description) {
-  if (__builtin_expect(result == cudaSuccess, true))
+  if (LIKELY(result == cudaSuccess))
     return true;
 
   const char* error = cudaGetErrorName(result);
