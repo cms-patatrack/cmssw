@@ -10,7 +10,7 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-namespace {
+namespace cudautils {
 
   [[noreturn]] inline void abortOnCudaError(
       const char* file, int line, const char* cmd, const char* error, const char* message) {
@@ -22,7 +22,7 @@ namespace {
     throw std::runtime_error(out.str());
   }
 
-}  // namespace
+}  // namespace cudautils
 
 inline bool cudaCheck_(const char* file, int line, const char* cmd, CUresult result) {
   if (__builtin_expect(result == CUDA_SUCCESS, true))
@@ -32,7 +32,7 @@ inline bool cudaCheck_(const char* file, int line, const char* cmd, CUresult res
   const char* message;
   cuGetErrorName(result, &error);
   cuGetErrorString(result, &message);
-  abortOnCudaError(file, line, cmd, error, message);
+  cudautils::abortOnCudaError(file, line, cmd, error, message);
   return false;
 }
 
@@ -42,14 +42,13 @@ inline bool cudaCheck_(const char* file, int line, const char* cmd, cudaError_t 
 
   const char* error = cudaGetErrorName(result);
   const char* message = cudaGetErrorString(result);
-  abortOnCudaError(file, line, cmd, error, message);
+  cudautils::abortOnCudaError(file, line, cmd, error, message);
   return false;
 }
 
 #define cudaCheck(ARG) (cudaCheck_(__FILE__, __LINE__, #ARG, (ARG)))
 
-
-namespace {
+namespace cudautils {
 
   template <typename T>
   [[noreturn]] inline void abortOnCudaErrorVerbose(
@@ -63,7 +62,7 @@ namespace {
     throw std::runtime_error(out.str());
   }
 
-}  // namespace
+}  // namespace cudautils
 
 template <typename T>
 inline bool cudaCheckVerbose_(const char* file, int line, const char* cmd, CUresult result, T const& description) {
@@ -74,7 +73,7 @@ inline bool cudaCheckVerbose_(const char* file, int line, const char* cmd, CUres
   const char* message;
   cuGetErrorName(result, &error);
   cuGetErrorString(result, &message);
-  abortOnCudaErrorVerbose(file, line, cmd, error, message, description);
+  cudautils::abortOnCudaErrorVerbose(file, line, cmd, error, message, description);
   return false;
 }
 
@@ -85,7 +84,7 @@ inline bool cudaCheckVerbose_(const char* file, int line, const char* cmd, cudaE
 
   const char* error = cudaGetErrorName(result);
   const char* message = cudaGetErrorString(result);
-  abortOnCudaErrorVerbose(file, line, cmd, error, message, description);
+  cudautils::abortOnCudaErrorVerbose(file, line, cmd, error, message, description);
   return false;
 }
 
