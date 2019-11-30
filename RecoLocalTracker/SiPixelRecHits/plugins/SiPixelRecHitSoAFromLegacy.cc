@@ -27,7 +27,7 @@
 #include "RecoLocalTracker/SiPixelRecHits/interface/PixelCPEBase.h"
 #include "RecoLocalTracker/SiPixelRecHits/interface/PixelCPEFast.h"
 
-#include "RecoLocalTracker/SiPixelRecHits/plugins/gpuPixelRecHits.h"
+#include "gpuPixelRecHits.h"
 
 class SiPixelRecHitSoAFromLegacy : public edm::global::EDProducer<> {
 public:

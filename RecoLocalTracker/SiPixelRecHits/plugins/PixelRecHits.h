@@ -28,6 +28,7 @@ namespace pixelgpudetails {
                                        pixelCPEforGPU::ParamsOnGPU const* cpeParams,
                                        cudaStream_t stream) const;
   };
+
 }  // namespace pixelgpudetails
 
 #endif  // RecoLocalTracker_SiPixelRecHits_plugins_PixelRecHits_h

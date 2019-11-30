@@ -214,6 +214,21 @@ namespace gpuPixelRecHits {
     }  // end loop on batches
   }
 
+  __global__ void setHitsLayerStart(uint32_t const* __restrict__ hitsModuleStart,
+                                    pixelCPEforGPU::ParamsOnGPU const* cpeParams,
+                                    uint32_t* hitsLayerStart) {
+    auto i = blockIdx.x * blockDim.x + threadIdx.x;
+
+    assert(0 == hitsModuleStart[0]);
+
+    if (i < 11) {
+      hitsLayerStart[i] = hitsModuleStart[cpeParams->layerGeometry().layerStart[i]];
+#ifdef GPU_DEBUG
+      printf("LayerStart %d %d: %d\n", i, cpeParams->layerGeometry().layerStart[i], hitsLayerStart[i]);
+#endif
+    }
+  }
+
 }  // namespace gpuPixelRecHits
 
 #endif  // RecoLocalTracker_SiPixelRecHits_plugins_gpuPixelRecHits_h
