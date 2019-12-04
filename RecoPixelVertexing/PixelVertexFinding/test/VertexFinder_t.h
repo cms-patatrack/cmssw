@@ -22,7 +22,6 @@
 #include "RecoPixelVertexing/PixelVertexFinding/src/gpuSplitVertices.h"
 
 #ifdef ONE_KERNEL
-#ifdef __CUDACC__
 __global__ void vertexFinderOneKernel(gpuVertexFinder::ZVertices* pdata,
                                       gpuVertexFinder::WorkSpace* pws,
                                       int minT,      // min number of neighbours to be "seed"
@@ -40,7 +39,6 @@ __global__ void vertexFinderOneKernel(gpuVertexFinder::ZVertices* pdata,
   __syncthreads();
   sortByPt2(pdata, pws);
 }
-#endif
 #endif
 
 using namespace gpuVertexFinder;
@@ -128,7 +126,7 @@ __global__ void linit(ZVertices * pdata, WorkSpace * pws, int nt) {
 }
 
 int main() {
-#ifdef __CUDACC__
+#ifndef CUDA_KERNELS_ON_CPU
   requireCUDADevices();
 
   auto onGPU_d = cudautils::make_device_unique<ZVertices[]>(1, nullptr);
@@ -157,7 +155,7 @@ int main() {
       assert(ntori<int(ZVertexSoA::MAXTRACKS));
       assert(nvori< int(ZVertexSoA::MAXVTX));
 
-#ifdef __CUDACC__
+#ifndef CUDA_KERNELS_ON_CPU
       init<<<1, 1, 0, 0>>>(onGPU_d.get(), ws_d.get());
       linit<<<1, 1, 0, 0>>>(onGPU_d.get(), ws_d.get(),ntori);
 #else
@@ -166,7 +164,7 @@ int main() {
       for (int16_t i=0; i<ntori; ++i) {  ws_d->itrk[i]=i; onGPU_d->idv[i] = -1;}  // FIXME do the same on GPU....
 #endif
 
-#ifdef __CUDACC__
+#ifndef CUDA_KERNELS_ON_CPU
       cudaCheck(cudaMemcpy(LOC_WS(ntrks), &nt, sizeof(uint32_t), cudaMemcpyHostToDevice));
       cudaCheck(cudaMemcpy(LOC_WS(zt), ev.ztrack.data(), sizeof(float) * ev.ztrack.size(), cudaMemcpyHostToDevice));
       cudaCheck(cudaMemcpy(LOC_WS(ezt2), ev.eztrack.data(), sizeof(float) * ev.eztrack.size(), cudaMemcpyHostToDevice));
@@ -191,7 +189,7 @@ int main() {
         par = {{0.7f * eps, 0.01f, 9.0f}};
 
       uint32_t nv = 0;
-#ifdef __CUDACC__
+#ifndef CUDA_KERNELS_ON_CPU
       print<<<1, 1, 0, 0>>>(onGPU_d.get(), ws_d.get());
       cudaCheck(cudaGetLastError());
       cudaDeviceSynchronize();
@@ -233,7 +231,7 @@ int main() {
       // keep chi2 separated...
       float chi2[2 * nv];  // make space for splitting...
 
-#ifdef __CUDACC__
+#ifndef CUDA_KERNELS_ON_CPU
       int16_t hidv[16000];
       float hzv[2 * nv];
       float hwv[2 * nv];
@@ -256,7 +254,7 @@ int main() {
       ind = onGPU_d->sortInd;
 #endif
 
-#ifdef __CUDACC__
+#ifndef CUDA_KERNELS_ON_CPU
       cudaCheck(cudaMemcpy(nn, LOC_ONGPU(ndof), nv * sizeof(int32_t), cudaMemcpyDeviceToHost));
       cudaCheck(cudaMemcpy(chi2, LOC_ONGPU(chi2), nv * sizeof(float), cudaMemcpyDeviceToHost));
 #else
@@ -329,7 +327,7 @@ int main() {
         std::cout << "after fit nv, min max chi2 " << nv << " " << *mx.first << ' ' << *mx.second << std::endl;
       }
 
-#ifdef __CUDACC__
+#ifndef CUDA_KERNELS_ON_CPU
       cudautils::launch(fitVerticesKernel, {1, 1024 - 256}, onGPU_d.get(), ws_d.get(), 50.f);
       cudaCheck(cudaMemcpy(&nv, LOC_ONGPU(nvFinal), sizeof(uint32_t), cudaMemcpyDeviceToHost));
       cudaCheck(cudaMemcpy(nn, LOC_ONGPU(ndof), nv * sizeof(int32_t), cudaMemcpyDeviceToHost));
@@ -348,7 +346,7 @@ int main() {
         std::cout << "before splitting nv, min max chi2 " << nv << " " << *mx.first << ' ' << *mx.second << std::endl;
       }
 
-#ifdef __CUDACC__
+#ifndef CUDA_KERNELS_ON_CPU
       // one vertex per block!!!
       cudautils::launch(splitVerticesKernel, {1024, 64}, onGPU_d.get(), ws_d.get(), 9.f);
       cudaCheck(cudaMemcpy(&nv, LOC_WS(nvIntermediate), sizeof(uint32_t), cudaMemcpyDeviceToHost));
@@ -361,12 +359,9 @@ int main() {
 #endif
       std::cout << "after split " << nv << std::endl;
 
-#ifdef __CUDACC__
+#ifndef CUDA_KERNELS_ON_CPU
       cudautils::launch(fitVerticesKernel, {1, 1024 - 256}, onGPU_d.get(), ws_d.get(), 5000.f);
-      cudaCheck(cudaGetLastError());
-
       cudautils::launch(sortByPt2Kernel, {1, 256}, onGPU_d.get(), ws_d.get());
-      cudaCheck(cudaGetLastError());
       cudaCheck(cudaMemcpy(&nv, LOC_ONGPU(nvFinal), sizeof(uint32_t), cudaMemcpyDeviceToHost));
 #else
       fitVertices(onGPU_d.get(), ws_d.get(), 5000.f);
@@ -380,7 +375,7 @@ int main() {
         continue;
       }
 
-#ifdef __CUDACC__
+#ifndef CUDA_KERNELS_ON_CPU
       cudaCheck(cudaMemcpy(zv, LOC_ONGPU(zv), nv * sizeof(float), cudaMemcpyDeviceToHost));
       cudaCheck(cudaMemcpy(wv, LOC_ONGPU(wv), nv * sizeof(float), cudaMemcpyDeviceToHost));
       cudaCheck(cudaMemcpy(chi2, LOC_ONGPU(chi2), nv * sizeof(float), cudaMemcpyDeviceToHost));

@@ -94,7 +94,7 @@ namespace cudautils {
   }  // namespace detail
 
   // wrappers for cudaLaunchKernel
-
+  inline
   void launch(void (*kernel)(), LaunchParameters config) {
 #ifdef CUDA_KERNELS_ON_CPU
     kernel();
@@ -127,7 +127,7 @@ namespace cudautils {
   }
 
   // wrappers for cudaLaunchCooperativeKernel
-
+  inline
   void launch_cooperative(void (*kernel)(), LaunchParameters config) {
     cudaCheck(cudaLaunchCooperativeKernel(
         (const void*)kernel, config.gridDim, config.blockDim, nullptr, config.sharedMem, config.stream));

@@ -1,12 +1,14 @@
-#include "RecoPixelVertexing/PixelVertexFinding/src/gpuClusterTracksByDensity.h"
-#include "RecoPixelVertexing/PixelVertexFinding/src/gpuClusterTracksDBSCAN.h"
-#include "RecoPixelVertexing/PixelVertexFinding/src/gpuClusterTracksIterative.h"
+#include "gpuClusterTracksByDensity.h"
+#include "gpuClusterTracksDBSCAN.h"
+#include "gpuClusterTracksIterative.h"
 
 #include "gpuFitVertices.h"
 #include "gpuSortByPt2.h"
 #include "gpuSplitVertices.h"
 
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/launch.h"
+
 
 namespace gpuVertexFinder {
 
@@ -84,38 +86,32 @@ namespace gpuVertexFinder {
   }
 #endif
 
-#ifdef __CUDACC__
+#ifndef CUDA_KERNELS_ON_CPU
   ZVertexHeterogeneous Producer::makeAsync(cudaStream_t stream, TkSoA const* tksoa, float ptMin) const {
     // std::cout << "producing Vertices on GPU" << std::endl;
     ZVertexHeterogeneous vertices(cudautils::make_device_unique<ZVertexSoA>(stream));
 #else
   ZVertexHeterogeneous Producer::make(TkSoA const* tksoa, float ptMin) const {
+    cudaStream_t stream = 0;
     // std::cout << "producing Vertices on  CPU" <<    std::endl;
-    ZVertexHeterogeneous vertices(std::make_unique<ZVertexSoA>());
+    ZVertexHeterogeneous vertices(cudautils::make_cpu_unique<ZVertexSoA>());
 #endif
     assert(tksoa);
     auto* soa = vertices.get();
     assert(soa);
 
-#ifdef __CUDACC__
+#ifndef CUDA_KERNELS_ON_CPU
     auto ws_d = cudautils::make_device_unique<WorkSpace>(stream);
 #else
-    auto ws_d = std::make_unique<WorkSpace>();
+    auto ws_d = cudautils::make_cpu_unique<WorkSpace>();
 #endif
 
-#ifdef __CUDACC__
-    init<<<1, 1, 0, stream>>>(soa, ws_d.get());
     auto blockSize = 128;
     auto numberOfBlocks = (TkSoA::stride() + blockSize - 1) / blockSize;
-    loadTracks<<<numberOfBlocks, blockSize, 0, stream>>>(tksoa, soa, ws_d.get(), ptMin);
-    cudaCheck(cudaGetLastError());
-#else
-    cudaCompat::resetGrid();
-    init(soa, ws_d.get());
-    loadTracks(tksoa, soa, ws_d.get(), ptMin);
-#endif
+    cudautils::launch(init,{1,1,0,stream},soa, ws_d.get());
+    cudautils::launch(loadTracks, {numberOfBlocks, blockSize, 0, stream}, tksoa, soa, ws_d.get(), ptMin);
 
-#ifdef __CUDACC__
+#ifndef CUDA_KERNELS_ON_CPU
     if (oneKernel_) {
       // implemented only for density clustesrs
 #ifndef THREE_KERNELS
