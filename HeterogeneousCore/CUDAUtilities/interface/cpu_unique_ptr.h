@@ -5,6 +5,7 @@
 #include <functional>
 
 #include <cstdlib>
+#include <cuda_runtime.h>
 
 namespace cudautils {
   namespace cpu {
@@ -40,7 +41,7 @@ namespace cudautils {
   }    // namespace cpu
 
   template <typename T>
-  typename cpu::impl::make_cpu_unique_selector<T>::non_array make_cpu_unique() {
+  typename cpu::impl::make_cpu_unique_selector<T>::non_array make_cpu_unique(cudaStream_t) {
     static_assert(std::is_trivially_constructible<T>::value,
                   "Allocating with non-trivial constructor on the cpu memory is not supported");
     void *mem = ::malloc(sizeof(T));
@@ -49,7 +50,7 @@ namespace cudautils {
   }
 
   template <typename T>
-  typename cpu::impl::make_cpu_unique_selector<T>::unbounded_array make_cpu_unique(size_t n) {
+  typename cpu::impl::make_cpu_unique_selector<T>::unbounded_array make_cpu_unique(size_t n, cudaStream_t) {
     using element_type = typename std::remove_extent<T>::type;
     static_assert(std::is_trivially_constructible<element_type>::value,
                   "Allocating with non-trivial constructor on the cpu memory is not supported");
@@ -63,14 +64,14 @@ namespace cudautils {
 
   // No check for the trivial constructor, make it clear in the interface
   template <typename T>
-  typename cpu::impl::make_cpu_unique_selector<T>::non_array make_cpu_unique_uninitialized() {
+  typename cpu::impl::make_cpu_unique_selector<T>::non_array make_cpu_unique_uninitialized(cudaStream_t) {
     void *mem = ::malloc(sizeof(T));
     return typename cpu::impl::make_cpu_unique_selector<T>::non_array{reinterpret_cast<T *>(mem),
                                                                             cpu::impl::CPUDeleter()};
   }
 
   template <typename T>
-  typename cpu::impl::make_cpu_unique_selector<T>::unbounded_array make_cpu_unique_uninitialized(size_t n) {
+  typename cpu::impl::make_cpu_unique_selector<T>::unbounded_array make_cpu_unique_uninitialized(size_t n, cudaStream_t) {
     using element_type = typename std::remove_extent<T>::type;
     void *mem = ::malloc(n * sizeof(element_type));
     return typename cpu::impl::make_cpu_unique_selector<T>::unbounded_array{reinterpret_cast<element_type *>(mem),

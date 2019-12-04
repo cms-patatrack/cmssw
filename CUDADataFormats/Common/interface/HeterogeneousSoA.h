@@ -115,37 +115,37 @@ namespace cudaCompat {
 
     template <typename T>
     static auto make_unique() {
-      return cudautils::make_cpu_unique<T>();
+      return cudautils::make_cpu_unique<T>(0);
     }
 
     template <typename T>
     static auto make_unique(size_t size) {
-      return cudautils::make_cpu_unique<T>(size);
+      return cudautils::make_cpu_unique<T>(size,0);
     }
 
     template <typename T>
-    static auto make_unique(cudaStream_t) {
-      return cudautils::make_cpu_unique<T>();
+    static auto make_unique(cudaStream_t stream) {
+      return cudautils::make_cpu_unique<T>(stream);
     }
 
     template <typename T>
-    static auto make_unique(size_t size, cudaStream_t) {
-      return cudautils::make_cpu_unique<T>(size);
+    static auto make_unique(size_t size, cudaStream_t stream) {
+      return cudautils::make_cpu_unique<T>(size, stream);
     }
 
     template <typename T>
-    static auto make_host_unique(cudaStream_t) {
-      return cudautils::make_cpu_unique<T>();
+    static auto make_host_unique(cudaStream_t stream) {
+      return cudautils::make_cpu_unique<T>(stream);
     }
 
     template <typename T>
-    static auto make_device_unique(cudaStream_t) {
-      return cudautils::make_cpu_unique<T>();
+    static auto make_device_unique(cudaStream_t stream) {
+      return cudautils::make_cpu_unique<T>(stream);
     }
 
     template <typename T>
-    static auto make_device_unique(size_t size, cudaStream_t) {
-      return cudautils::make_cpu_unique<T>(size);
+    static auto make_device_unique(size_t size, cudaStream_t stream) {
+      return cudautils::make_cpu_unique<T>(size, stream);
     }
   };
 

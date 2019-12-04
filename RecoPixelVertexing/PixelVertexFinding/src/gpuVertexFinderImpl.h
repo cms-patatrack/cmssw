@@ -85,16 +85,17 @@ namespace gpuVertexFinder {
     sortByPt2(pdata, pws);
   }
 #endif
-
 #ifndef CUDA_KERNELS_ON_CPU
   ZVertexHeterogeneous Producer::makeAsync(cudaStream_t stream, TkSoA const* tksoa, float ptMin) const {
+#else
+  ZVertexHeterogeneous Producer::make(cudaStream_t stream, TkSoA const* tksoa, float ptMin) const {
+#endif
+#ifndef CUDA_KERNELS_ON_CPU
     // std::cout << "producing Vertices on GPU" << std::endl;
     ZVertexHeterogeneous vertices(cudautils::make_device_unique<ZVertexSoA>(stream));
 #else
-  ZVertexHeterogeneous Producer::make(TkSoA const* tksoa, float ptMin) const {
-    cudaStream_t stream = 0;
     // std::cout << "producing Vertices on  CPU" <<    std::endl;
-    ZVertexHeterogeneous vertices(cudautils::make_cpu_unique<ZVertexSoA>());
+    ZVertexHeterogeneous vertices(cudautils::make_cpu_unique<ZVertexSoA>(stream));
 #endif
     assert(tksoa);
     auto* soa = vertices.get();
@@ -103,7 +104,7 @@ namespace gpuVertexFinder {
 #ifndef CUDA_KERNELS_ON_CPU
     auto ws_d = cudautils::make_device_unique<WorkSpace>(stream);
 #else
-    auto ws_d = cudautils::make_cpu_unique<WorkSpace>();
+    auto ws_d = cudautils::make_cpu_unique<WorkSpace>(stream);
 #endif
 
     auto blockSize = 128;
@@ -111,56 +112,30 @@ namespace gpuVertexFinder {
     cudautils::launch(init,{1,1,0,stream},soa, ws_d.get());
     cudautils::launch(loadTracks, {numberOfBlocks, blockSize, 0, stream}, tksoa, soa, ws_d.get(), ptMin);
 
-#ifndef CUDA_KERNELS_ON_CPU
     if (oneKernel_) {
       // implemented only for density clustesrs
 #ifndef THREE_KERNELS
-      vertexFinderOneKernel<<<1, 1024 - 256, 0, stream>>>(soa, ws_d.get(), minT, eps, errmax, chi2max);
+      cudautils::launch(vertexFinderOneKernel,{1, 1024 - 256, 0, stream},soa, ws_d.get(), minT, eps, errmax, chi2max);
 #else
-      vertexFinderKernel1<<<1, 1024 - 256, 0, stream>>>(soa, ws_d.get(), minT, eps, errmax, chi2max);
-      cudaCheck(cudaGetLastError());
+      cudautils::launch(vertexFinderKernel1,{1, 1024 - 256, 0, stream},soa, ws_d.get(), minT, eps, errmax, chi2max);
       // one block per vertex...
-      splitVerticesKernel<<<1024, 128, 0, stream>>>(soa, ws_d.get(), 9.f);
-      cudaCheck(cudaGetLastError());
-      vertexFinderKernel2<<<1, 1024 - 256, 0, stream>>>(soa, ws_d.get());
+      cudautils::launch(splitVerticesKernel,{1024, 128, 0, stream},soa, ws_d.get(), 9.f);
+      cudautils::launch(vertexFinderKernel2,{1, 1024 - 256, 0, stream},soa, ws_d.get());
 #endif
     } else {  // five kernels
       if (useDensity_) {
-        clusterTracksByDensityKernel<<<1, 1024 - 256, 0, stream>>>(soa, ws_d.get(), minT, eps, errmax, chi2max);
+        cudautils::launch(clusterTracksByDensityKernel,{1, 1024 - 256, 0, stream},soa, ws_d.get(), minT, eps, errmax, chi2max);
       } else if (useDBSCAN_) {
-        clusterTracksDBSCAN<<<1, 1024 - 256, 0, stream>>>(soa, ws_d.get(), minT, eps, errmax, chi2max);
+        cudautils::launch(clusterTracksDBSCAN,{1, 1024 - 256, 0, stream},soa, ws_d.get(), minT, eps, errmax, chi2max);
       } else if (useIterative_) {
-        clusterTracksIterative<<<1, 1024 - 256, 0, stream>>>(soa, ws_d.get(), minT, eps, errmax, chi2max);
+        cudautils::launch(clusterTracksIterative,{1, 1024 - 256, 0, stream},soa, ws_d.get(), minT, eps, errmax, chi2max);
       }
-      cudaCheck(cudaGetLastError());
-      fitVerticesKernel<<<1, 1024 - 256, 0, stream>>>(soa, ws_d.get(), 50.);
-      cudaCheck(cudaGetLastError());
+      cudautils::launch(fitVerticesKernel,{1, 1024 - 256, 0, stream},soa, ws_d.get(), 50.);
       // one block per vertex...
-      splitVerticesKernel<<<1024, 128, 0, stream>>>(soa, ws_d.get(), 9.f);
-      cudaCheck(cudaGetLastError());
-      fitVerticesKernel<<<1, 1024 - 256, 0, stream>>>(soa, ws_d.get(), 5000.);
-      cudaCheck(cudaGetLastError());
-      sortByPt2Kernel<<<1, 1024 - 256, 0, stream>>>(soa, ws_d.get());
+      cudautils::launch(splitVerticesKernel,{1024, 128, 0, stream},soa, ws_d.get(), 9.f);
+      cudautils::launch(fitVerticesKernel,{1, 1024 - 256, 0, stream},soa, ws_d.get(), 5000.);
+      cudautils::launch(sortByPt2Kernel,{1, 1024 - 256, 0, stream},soa, ws_d.get());
     }
-    cudaCheck(cudaGetLastError());
-#else  // __CUDACC__
-    if (useDensity_) {
-      clusterTracksByDensity(soa, ws_d.get(), minT, eps, errmax, chi2max);
-    } else if (useDBSCAN_) {
-      clusterTracksDBSCAN(soa, ws_d.get(), minT, eps, errmax, chi2max);
-    } else if (useIterative_) {
-      clusterTracksIterative(soa, ws_d.get(), minT, eps, errmax, chi2max);
-    }
-    // std::cout << "found " << (*ws_d).nvIntermediate << " vertices " << std::endl;
-    fitVertices(soa, ws_d.get(), 50.);
-    // one block per vertex!
-    blockIdx.x = 0;
-    gridDim.x = 1;
-    splitVertices(soa, ws_d.get(), 9.f);
-    resetGrid();
-    fitVertices(soa, ws_d.get(), 5000.);
-    sortByPt2(soa, ws_d.get());
-#endif
 
     return vertices;
   }
