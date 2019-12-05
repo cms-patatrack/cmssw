@@ -63,8 +63,10 @@ namespace gpuVertexFinder {
 
     ~Producer() = default;
 
-    ZVertexHeterogeneous makeAsync(cudaStream_t stream, TkSoA const* tksoa, float ptMin) const;
-    ZVertexHeterogeneous make(cudaStream_t stream, TkSoA const* tksoa, float ptMin) const;
+    template<typename Traits>
+    ZVertexHeterogeneous makeImpl(cudaStream_t stream, TkSoA const* tksoa, float ptMin) const;
+
+    ZVertexHeterogeneous make(cudaStream_t stream, TkSoA const* tksoa, float ptMin, bool onGPU) const;
 
   private:
     const bool oneKernel_;

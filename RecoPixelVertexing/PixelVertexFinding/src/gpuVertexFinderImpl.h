@@ -85,27 +85,16 @@ namespace gpuVertexFinder {
     sortByPt2(pdata, pws);
   }
 #endif
-#ifndef CUDA_KERNELS_ON_CPU
-  ZVertexHeterogeneous Producer::makeAsync(cudaStream_t stream, TkSoA const* tksoa, float ptMin) const {
-#else
-  ZVertexHeterogeneous Producer::make(cudaStream_t stream, TkSoA const* tksoa, float ptMin) const {
-#endif
-#ifndef CUDA_KERNELS_ON_CPU
-    // std::cout << "producing Vertices on GPU" << std::endl;
-    ZVertexHeterogeneous vertices(cudautils::make_device_unique<ZVertexSoA>(stream));
-#else
-    // std::cout << "producing Vertices on  CPU" <<    std::endl;
-    ZVertexHeterogeneous vertices(cudautils::make_cpu_unique<ZVertexSoA>(stream));
-#endif
+
+  template<typename Traits>
+  ZVertexHeterogeneous Producer::makeImpl(cudaStream_t stream, TkSoA const* tksoa, float ptMin) const {
+    std::cout << "producing Vertices on " << Traits::name << std::endl;
+    ZVertexHeterogeneous vertices(Traits::template make_unique<ZVertexSoA>(stream));
     assert(tksoa);
     auto* soa = vertices.get();
     assert(soa);
 
-#ifndef CUDA_KERNELS_ON_CPU
-    auto ws_d = cudautils::make_device_unique<WorkSpace>(stream);
-#else
-    auto ws_d = cudautils::make_cpu_unique<WorkSpace>(stream);
-#endif
+    auto ws_d = Traits::template make_unique<WorkSpace>(stream);
 
     auto blockSize = 128;
     auto numberOfBlocks = (TkSoA::stride() + blockSize - 1) / blockSize;
@@ -139,6 +128,13 @@ namespace gpuVertexFinder {
 
     return vertices;
   }
+
+    ZVertexHeterogeneous Producer::make(cudaStream_t stream, TkSoA const* tksoa, float ptMin, bool onGPU) const {
+       return onGPU ?
+         makeImpl<cudaCompat::GPUTraits>(stream,tksoa,ptMin) :
+         makeImpl<cudaCompat::CPUTraits>(stream,tksoa,ptMin);
+    }
+
 
 }  // namespace gpuVertexFinder
 

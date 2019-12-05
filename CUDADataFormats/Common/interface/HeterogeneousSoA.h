@@ -54,6 +54,8 @@ private:
 namespace cudaCompat {
 
   struct GPUTraits {
+    static constexpr const char * name = "GPU"; 
+
     template <typename T>
     using unique_ptr = cudautils::device::unique_ptr<T>;
 
@@ -84,6 +86,8 @@ namespace cudaCompat {
   };
 
   struct HostTraits {
+    static constexpr const char * name = "HOST";
+
     template <typename T>
     using unique_ptr = cudautils::host::unique_ptr<T>;
 
@@ -109,6 +113,8 @@ namespace cudaCompat {
   };
 
   struct CPUTraits {
+    static constexpr const char * name = "CPU";
+
     template <typename T>
     using unique_ptr = cudautils::cpu::unique_ptr<T>;;
 
