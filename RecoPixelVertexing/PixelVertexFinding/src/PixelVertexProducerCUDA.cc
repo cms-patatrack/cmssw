@@ -96,7 +96,7 @@ void PixelVertexProducerCUDA::produce(edm::StreamID streamID, edm::Event& iEvent
 
     assert(tracks);
 
-    ctx.emplace(iEvent, tokenGPUVertex_, m_gpuAlgo.make(ctx.stream(), tracks, m_ptMin,m_OnGPU));
+    ctx.emplace(iEvent, tokenGPUVertex_, m_gpuAlgo.make<cudaCompat::GPUTraits>(ctx.stream(), tracks, m_ptMin,m_OnGPU));
 
   } else {
     auto const* tracks = iEvent.get(tokenCPUTrack_).get();
@@ -118,7 +118,7 @@ void PixelVertexProducerCUDA::produce(edm::StreamID streamID, edm::Event& iEvent
     */
 
     cudaStream_t stream=0;
-    iEvent.emplace(tokenCPUVertex_, m_gpuAlgo.make(stream,tracks, m_ptMin,m_OnGPU));
+    iEvent.emplace(tokenCPUVertex_, m_gpuAlgo.make<cudaCompat::CPUTraits>(stream,tracks, m_ptMin,m_OnGPU));
   }
 }
 

@@ -66,6 +66,7 @@ namespace gpuVertexFinder {
     template<typename Traits>
     ZVertexHeterogeneous makeImpl(cudaStream_t stream, TkSoA const* tksoa, float ptMin) const;
 
+    template<typename Traits>
     ZVertexHeterogeneous make(cudaStream_t stream, TkSoA const* tksoa, float ptMin, bool onGPU) const;
 
   private:

@@ -129,13 +129,6 @@ namespace gpuVertexFinder {
     return vertices;
   }
 
-    ZVertexHeterogeneous Producer::make(cudaStream_t stream, TkSoA const* tksoa, float ptMin, bool onGPU) const {
-       return onGPU ?
-         makeImpl<cudaCompat::GPUTraits>(stream,tksoa,ptMin) :
-         makeImpl<cudaCompat::CPUTraits>(stream,tksoa,ptMin);
-    }
-
-
 }  // namespace gpuVertexFinder
 
 #undef FROM
