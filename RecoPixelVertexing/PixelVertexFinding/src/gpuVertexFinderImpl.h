@@ -88,7 +88,7 @@ namespace gpuVertexFinder {
 
   template<typename Traits>
   ZVertexHeterogeneous Producer::makeImpl(cudaStream_t stream, TkSoA const* tksoa, float ptMin) const {
-    std::cout << "producing Vertices on " << Traits::name << std::endl;
+    // std::cout << "producing Vertices on " << Traits::name << std::endl;
     ZVertexHeterogeneous vertices(Traits::template make_unique<ZVertexSoA>(stream));
     assert(tksoa);
     auto* soa = vertices.get();
