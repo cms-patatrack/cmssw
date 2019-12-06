@@ -699,12 +699,7 @@ void CAHitNtupletGeneratorKernels<TTraits>::launchKernels(HitsOnCPU const &hh, T
 #endif
   blockSize = 128;
   numberOfBlocks = (HitContainer::totbins() + blockSize - 1) / blockSize;
-//  cudautils::launch(cudautils::finalizeBulk<decltype(*tuples_d)>,{numberOfBlocks, blockSize, 0, cudaStream},device_hitTuple_apc_, tuples_d);
-#ifdef __CUDACC__
-  cudautils::finalizeBulk<<<numberOfBlocks, blockSize, 0, cudaStream>>>(device_hitTuple_apc_, tuples_d);
-#else
- cudautils::finalizeBulk(device_hitTuple_apc_, tuples_d);
-#endif
+  cudautils::launch(cudautils::finalizeBulk<std::remove_pointer<decltype(tuples_d)>::type>,{numberOfBlocks, blockSize, 0, cudaStream},device_hitTuple_apc_, tuples_d);
 
   // remove duplicates (tracks that share a doublet)
   numberOfBlocks = (3 * m_params.maxNumberOfDoublets_ / 4 + blockSize - 1) / blockSize;
