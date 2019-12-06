@@ -89,11 +89,7 @@ PixelTrackHeterogeneous CAHitNtupletGeneratorOnGPU::makeTuples(Hits2D const& hit
   HelixFitOnGPU fitter(bfield, m_params.fit5as4_);
   fitter.allocate(&(soa->hitIndices), kernels.tupleMultiplicity(), soa);
   if (m_params.useRiemannFit_) {
-    if constexpr (Traits::runOnDevice) {
-      fitter.launchRiemannKernels(hits_d.view(), hits_d.nHits(), CAConstants::maxNumberOfQuadruplets(), stream);
-    }else {
-      fitter.launchRiemannKernelsOnCPU(hits_d.view(), hits_d.nHits(), CAConstants::maxNumberOfQuadruplets());
-    }
+    fitter.launchRiemannKernels<Traits>(hits_d.view(), hits_d.nHits(), CAConstants::maxNumberOfQuadruplets(), stream);
   } else {
     fitter.launchBrokenLineKernels<Traits>(hits_d.view(), hits_d.nHits(), CAConstants::maxNumberOfQuadruplets(), stream);
   }

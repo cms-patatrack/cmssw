@@ -44,12 +44,12 @@ public:
   ~HelixFitOnGPU() { deallocate(); }
 
   void setBField(double bField) { bField_ = bField; }
+
+  template<typename Traits>
   void launchRiemannKernels(HitsView const *hv, uint32_t nhits, uint32_t maxNumberOfTuples, cudaStream_t cudaStream);
 
   template<typename Traits>
   void launchBrokenLineKernels(HitsView const *hv, uint32_t nhits, uint32_t maxNumberOfTuples, cudaStream_t cudaStream);
-
-  void launchRiemannKernelsOnCPU(HitsView const *hv, uint32_t nhits, uint32_t maxNumberOfTuples);
 
   void allocate(Tuples const *tuples, TupleMultiplicity const *tupleMultiplicity, OutputSoA *outputSoA);
   void deallocate();

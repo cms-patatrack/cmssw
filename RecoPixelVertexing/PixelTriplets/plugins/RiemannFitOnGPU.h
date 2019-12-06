@@ -187,3 +187,134 @@ __global__ void kernelLineFit(CAConstants::TupleMultiplicity const *__restrict__
 #endif
   }
 }
+#include "HeterogeneousCore/CUDAUtilities/interface/launch.h"
+
+template<typename Traits>
+void HelixFitOnGPU::launchRiemannKernels(HitsView const *hv,
+                                         uint32_t nhits,
+                                         uint32_t maxNumberOfTuples,
+                                         cudaStream_t stream) {
+  assert(tuples_d);
+
+  int blockSize = 64;
+  int numberOfBlocks = (maxNumberOfConcurrentFits_ + blockSize - 1) / blockSize;
+
+  //  Fit internals
+  auto hitsGPU_ = Traits:: template make_unique<double[]>(
+      maxNumberOfConcurrentFits_ * sizeof(Rfit::Matrix3xNd<4>) / sizeof(double), stream);
+  auto hits_geGPU_ = Traits:: template make_unique<float[]>(
+      maxNumberOfConcurrentFits_ * sizeof(Rfit::Matrix6x4f) / sizeof(float), stream);
+  auto fast_fit_resultsGPU_ = Traits:: template make_unique<double[]>(
+      maxNumberOfConcurrentFits_ * sizeof(Rfit::Vector4d) / sizeof(double), stream);
+  auto circle_fit_resultsGPU_holder =
+      Traits:: template make_unique<char[]>(maxNumberOfConcurrentFits_ * sizeof(Rfit::circle_fit), stream);
+  Rfit::circle_fit *circle_fit_resultsGPU_ = (Rfit::circle_fit *)(circle_fit_resultsGPU_holder.get());
+
+  for (uint32_t offset = 0; offset < maxNumberOfTuples; offset += maxNumberOfConcurrentFits_) {
+    // triplets
+    cudautils::launch(kernelFastFit<3>,{numberOfBlocks, blockSize, 0, stream},
+        tuples_d, tupleMultiplicity_d, 3, hv, hitsGPU_.get(), hits_geGPU_.get(), fast_fit_resultsGPU_.get(), offset);
+    cudaCheck(cudaGetLastError());
+
+    cudautils::launch(kernelCircleFit<3>,{numberOfBlocks, blockSize, 0, stream},tupleMultiplicity_d,
+                                                                 3,
+                                                                 bField_,
+                                                                 hitsGPU_.get(),
+                                                                 hits_geGPU_.get(),
+                                                                 fast_fit_resultsGPU_.get(),
+                                                                 circle_fit_resultsGPU_,
+                                                                 offset);
+    cudaCheck(cudaGetLastError());
+
+    cudautils::launch(kernelLineFit<3>,{numberOfBlocks, blockSize, 0, stream},tupleMultiplicity_d,
+                                                               3,
+                                                               bField_,
+                                                               outputSoa_d,
+                                                               hitsGPU_.get(),
+                                                               hits_geGPU_.get(),
+                                                               fast_fit_resultsGPU_.get(),
+                                                               circle_fit_resultsGPU_,
+                                                               offset);
+    cudaCheck(cudaGetLastError());
+
+    // quads
+    cudautils::launch(kernelFastFit<4>,{numberOfBlocks / 4, blockSize, 0, stream},
+        tuples_d, tupleMultiplicity_d, 4, hv, hitsGPU_.get(), hits_geGPU_.get(), fast_fit_resultsGPU_.get(), offset);
+    cudaCheck(cudaGetLastError());
+
+    cudautils::launch(kernelCircleFit<4>,{numberOfBlocks / 4, blockSize, 0, stream},tupleMultiplicity_d,
+                                                                     4,
+                                                                     bField_,
+                                                                     hitsGPU_.get(),
+                                                                     hits_geGPU_.get(),
+                                                                     fast_fit_resultsGPU_.get(),
+                                                                     circle_fit_resultsGPU_,
+                                                                     offset);
+    cudaCheck(cudaGetLastError());
+
+    cudautils::launch(kernelLineFit<4>,{numberOfBlocks / 4, blockSize, 0, stream},tupleMultiplicity_d,
+                                                                   4,
+                                                                   bField_,
+                                                                   outputSoa_d,
+                                                                   hitsGPU_.get(),
+                                                                   hits_geGPU_.get(),
+                                                                   fast_fit_resultsGPU_.get(),
+                                                                   circle_fit_resultsGPU_,
+                                                                   offset);
+    cudaCheck(cudaGetLastError());
+
+    if (fit5as4_) {
+      // penta
+      cudautils::launch(kernelFastFit<4>,{numberOfBlocks / 4, blockSize, 0, stream},
+          tuples_d, tupleMultiplicity_d, 5, hv, hitsGPU_.get(), hits_geGPU_.get(), fast_fit_resultsGPU_.get(), offset);
+      cudaCheck(cudaGetLastError());
+
+      cudautils::launch(kernelCircleFit<4>,{numberOfBlocks / 4, blockSize, 0, stream},tupleMultiplicity_d,
+                                                                       5,
+                                                                       bField_,
+                                                                       hitsGPU_.get(),
+                                                                       hits_geGPU_.get(),
+                                                                       fast_fit_resultsGPU_.get(),
+                                                                       circle_fit_resultsGPU_,
+                                                                       offset);
+      cudaCheck(cudaGetLastError());
+
+      cudautils::launch(kernelLineFit<4>,{numberOfBlocks / 4, blockSize, 0, stream},tupleMultiplicity_d,
+                                                                     5,
+                                                                     bField_,
+                                                                     outputSoa_d,
+                                                                     hitsGPU_.get(),
+                                                                     hits_geGPU_.get(),
+                                                                     fast_fit_resultsGPU_.get(),
+                                                                     circle_fit_resultsGPU_,
+                                                                     offset);
+      cudaCheck(cudaGetLastError());
+    } else {
+      // penta all 5
+      cudautils::launch(kernelFastFit<5>,{numberOfBlocks / 4, blockSize, 0, stream},
+          tuples_d, tupleMultiplicity_d, 5, hv, hitsGPU_.get(), hits_geGPU_.get(), fast_fit_resultsGPU_.get(), offset);
+      cudaCheck(cudaGetLastError());
+
+      cudautils::launch(kernelCircleFit<5>,{numberOfBlocks / 4, blockSize, 0, stream},tupleMultiplicity_d,
+                                                                       5,
+                                                                       bField_,
+                                                                       hitsGPU_.get(),
+                                                                       hits_geGPU_.get(),
+                                                                       fast_fit_resultsGPU_.get(),
+                                                                       circle_fit_resultsGPU_,
+                                                                       offset);
+      cudaCheck(cudaGetLastError());
+
+      cudautils::launch(kernelLineFit<5>,{numberOfBlocks / 4, blockSize, 0, stream},tupleMultiplicity_d,
+                                                                     5,
+                                                                     bField_,
+                                                                     outputSoa_d,
+                                                                     hitsGPU_.get(),
+                                                                     hits_geGPU_.get(),
+                                                                     fast_fit_resultsGPU_.get(),
+                                                                     circle_fit_resultsGPU_,
+                                                                     offset);
+      cudaCheck(cudaGetLastError());
+    }
+  }
+}
