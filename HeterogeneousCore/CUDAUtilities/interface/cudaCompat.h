@@ -6,6 +6,10 @@
  */
 
 #ifndef __CUDACC__
+  #define CUDA_KERNELS_ON_CPU
+#endif
+
+#ifdef CUDA_KERNELS_ON_CPU
 
 #include <algorithm>
 #include <cstdint>
@@ -98,6 +102,6 @@ namespace cudaCompat {
 using namespace cudaCompat;
 #endif
 
-#endif
+#endif  // CUDA_KERNELS_ON_CPU
 
 #endif  // HeterogeneousCore_CUDAUtilities_interface_cudaCompat_h

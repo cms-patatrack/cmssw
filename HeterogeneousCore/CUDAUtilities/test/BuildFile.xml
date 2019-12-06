@@ -7,6 +7,13 @@
   <flags CUDA_FLAGS="-g -DGPU_DEBUG"/>
 </bin>
 
+<bin file="Launch_t.cpp Launch_t.cu" name="gpuLaunch_t">
+</bin>
+
+<bin file="Launch_t.cpp" name="cpuLaunch_t">
+  <flags CXXFLAGS="-DCUDA_KERNELS_ON_CPU"/>
+</bin>
+
 <bin file="test_GPUSimpleVector.cu" name="test_GPUSimpleVector">
   <flags CUDA_FLAGS="-g -DGPU_DEBUG"/>
 </bin>

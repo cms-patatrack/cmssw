@@ -94,10 +94,14 @@ namespace cudautils {
   }  // namespace detail
 
   // wrappers for cudaLaunchKernel
-
+  inline
   void launch(void (*kernel)(), LaunchParameters config) {
+#ifdef CUDA_KERNELS_ON_CPU
+    kernel();
+#else
     cudaCheck(cudaLaunchKernel(
         (const void*)kernel, config.gridDim, config.blockDim, nullptr, config.sharedMem, config.stream));
+#endif
   }
 
   template <typename F, typename... Args>
@@ -107,6 +111,9 @@ namespace cudautils {
   std::enable_if_t<std::is_void<std::result_of_t<F && (Args && ...)> >::value>
 #endif
   launch(F* kernel, LaunchParameters config, Args&&... args) {
+#ifdef CUDA_KERNELS_ON_CPU
+    kernel(args...);
+#else
     using function_type = detail::kernel_traits<F>;
     typename function_type::argument_type_tuple args_copy(args...);
 
@@ -116,10 +123,11 @@ namespace cudautils {
     detail::pointer_setter<size>()(pointers, args_copy);
     cudaCheck(cudaLaunchKernel(
         (const void*)kernel, config.gridDim, config.blockDim, (void**)pointers, config.sharedMem, config.stream));
+#endif
   }
 
   // wrappers for cudaLaunchCooperativeKernel
-
+  inline
   void launch_cooperative(void (*kernel)(), LaunchParameters config) {
     cudaCheck(cudaLaunchCooperativeKernel(
         (const void*)kernel, config.gridDim, config.blockDim, nullptr, config.sharedMem, config.stream));
