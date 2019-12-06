@@ -103,7 +103,7 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
   auto const& input = *hclusters;
 
   // yes a unique ptr of a unique ptr so edm is happy and the pointer stay still...
-  auto hmsp = std::make_unique<uint32_t[]>(gpuClustering::MaxNumModules + 1);
+  auto hmsp = cudautils::make_cpu_unique<uint32_t[]>(gpuClustering::MaxNumModules + 1,cudaStreamDefault);
   auto hitsModuleStart = hmsp.get();
   auto hms = std::make_unique<HMSstorage>(std::move(hmsp));  // hmsp is gone
   iEvent.put(tokenModuleStart_, std::move(hms));             // hms is gone! hitsModuleStart still alive and kicking...
