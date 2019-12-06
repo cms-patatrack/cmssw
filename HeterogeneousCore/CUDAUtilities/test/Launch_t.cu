@@ -1,10 +1,12 @@
-#include<cstdio>
+#ifdef CUDA_KERNELS_ON_CPU
+#undef CUDA_KERNELS_ON_CPU
+#endif
 
-__global__
-void hello(float k) {
+#include "Launch_t.h"
 
-  printf("hello %f\n",k);
-
-}
-
-
+#ifdef LaunchInCU
+  void wrapperInCU() {
+    printf("in cu wrapper\n");
+    wrapper();
+  }
+#endif

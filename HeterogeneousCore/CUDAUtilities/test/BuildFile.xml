@@ -14,6 +14,11 @@
   <flags CXXFLAGS="-DCUDA_KERNELS_ON_CPU"/>
 </bin>
 
+<bin file="Launch_t.cpp Launch_t.cu" name="mixedLaunch_t">
+  <flags CXXFLAGS="-DCUDA_KERNELS_ON_CPU -DLaunchInCU"/>
+</bin>
+
+
 <bin file="test_GPUSimpleVector.cu" name="test_GPUSimpleVector">
   <flags CUDA_FLAGS="-g -DGPU_DEBUG"/>
 </bin>

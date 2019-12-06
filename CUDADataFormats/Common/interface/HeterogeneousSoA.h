@@ -121,12 +121,12 @@ namespace cudaCompat {
 
     template <typename T>
     static auto make_unique() {
-      return cudautils::make_cpu_unique<T>(0);
+      return cudautils::make_cpu_unique<T>(cudaStreamDefault);
     }
 
     template <typename T>
     static auto make_unique(size_t size) {
-      return cudautils::make_cpu_unique<T>(size,0);
+      return cudautils::make_cpu_unique<T>(size,cudaStreamDefault);
     }
 
     template <typename T>

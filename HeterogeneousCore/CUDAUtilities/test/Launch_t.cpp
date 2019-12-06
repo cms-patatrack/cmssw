@@ -1,31 +1,24 @@
-#include "HeterogeneousCore/CUDAUtilities/interface/launch.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/requireCUDADevices.h"
 
+#include "Launch_t.h"
 
-
-#include <cuda_runtime.h>
-#include<cstdio>
-
-#undef __global__
-#define __global__ inline __attribute__((always_inline))
-
-
-__global__
-void hello(float k) {
-
-  printf("hello %f\n",k);
-
-}
-
-
+#ifdef LaunchInCU
+  void wrapperInCU();
+#endif
 
 
 int main() {
 
   requireCUDADevices();
 
-  cudautils::launch(hello,{1, 1},3.14);
-  cudaDeviceSynchronize();
+  printf("in Main\n");
+  printEnv();
+
+  wrapper();
+
+#ifdef LaunchInCU
+  wrapperInCU();
+#endif
 
   return 0;
 }

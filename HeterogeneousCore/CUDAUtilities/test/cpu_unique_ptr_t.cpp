@@ -5,12 +5,12 @@
 TEST_CASE("cpu_unique_ptr", "[cudaMemTools]") {
 
   SECTION("Single element") {
-    auto ptr = cudautils::make_cpu_unique<int>(0);
+    auto ptr = cudautils::make_cpu_unique<int>(cudaStreamDefault);
     REQUIRE(ptr != nullptr);
   }
 
   SECTION("Reset") {
-    auto ptr = cudautils::make_cpu_unique<int>(0);
+    auto ptr = cudautils::make_cpu_unique<int>(cudaStreamDefault);
     REQUIRE(ptr != nullptr);
 
     ptr.reset();
@@ -18,13 +18,13 @@ TEST_CASE("cpu_unique_ptr", "[cudaMemTools]") {
   }
 
   SECTION("Multiple elements") {
-    auto ptr = cudautils::make_host_unique<int[]>(10,0);
+    auto ptr = cudautils::make_cpu_unique<int[]>(10,cudaStreamDefault);
     REQUIRE(ptr != nullptr);
   }
 
   SECTION("Allocating too much") {
     constexpr size_t maxSize = 1 << 30;  // 8**10
-    auto ptr = cudautils::make_cpu_unique<char[]>(maxSize+1,0);
+    auto ptr = cudautils::make_cpu_unique<char[]>(maxSize+1,cudaStreamDefault);
     ptr.reset();
     REQUIRE(ptr != nullptr);
   }
