@@ -75,7 +75,7 @@ PixelTrackHeterogeneous CAHitNtupletGeneratorOnGPU::makeTuples(Hits2D const& hit
 
   NTupletGeneratorKernels kernels(m_params);
   kernels.counters_ = m_counters;
-  kernels.allocateOnGPU(stream);
+  kernels.allocate(stream);
 
   kernels.buildDoublets(hits_d, stream);
   kernels.launchKernels(hits_d, soa, stream);
@@ -87,7 +87,7 @@ PixelTrackHeterogeneous CAHitNtupletGeneratorOnGPU::makeTuples(Hits2D const& hit
 
   // now fit
   HelixFitOnGPU fitter(bfield, m_params.fit5as4_);
-  fitter.allocateOnGPU(&(soa->hitIndices), kernels.tupleMultiplicity(), soa);
+  fitter.allocate(&(soa->hitIndices), kernels.tupleMultiplicity(), soa);
   if (m_params.useRiemannFit_) {
     if constexpr (Traits::runOnDevice) {
       fitter.launchRiemannKernels(hits_d.view(), hits_d.nHits(), CAConstants::maxNumberOfQuadruplets(), stream);
@@ -95,11 +95,7 @@ PixelTrackHeterogeneous CAHitNtupletGeneratorOnGPU::makeTuples(Hits2D const& hit
       fitter.launchRiemannKernelsOnCPU(hits_d.view(), hits_d.nHits(), CAConstants::maxNumberOfQuadruplets());
     }
   } else {
-    if constexpr (Traits::runOnDevice) {
-      fitter.launchBrokenLineKernels(hits_d.view(), hits_d.nHits(), CAConstants::maxNumberOfQuadruplets(), stream);
-    } else {
-      fitter.launchBrokenLineKernelsOnCPU(hits_d.view(), hits_d.nHits(), CAConstants::maxNumberOfQuadruplets());
-    }
+    fitter.launchBrokenLineKernels<Traits>(hits_d.view(), hits_d.nHits(), CAConstants::maxNumberOfQuadruplets(), stream);
   }
   kernels.classifyTuples(hits_d, soa, stream);
 

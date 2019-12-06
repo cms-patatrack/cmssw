@@ -1,7 +1,7 @@
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 #include "HelixFitOnGPU.h"
 
-void HelixFitOnGPU::allocateOnGPU(Tuples const *tuples,
+void HelixFitOnGPU::allocate(Tuples const *tuples,
                                   TupleMultiplicity const *tupleMultiplicity,
                                   OutputSoA *helix_fit_results) {
   tuples_d = tuples;
@@ -13,4 +13,4 @@ void HelixFitOnGPU::allocateOnGPU(Tuples const *tuples,
   assert(outputSoa_d);
 }
 
-void HelixFitOnGPU::deallocateOnGPU() {}
+void HelixFitOnGPU::deallocate() {}

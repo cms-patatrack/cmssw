@@ -41,17 +41,18 @@ public:
   using TupleMultiplicity = CAConstants::TupleMultiplicity;
 
   explicit HelixFitOnGPU(float bf, bool fit5as4) : bField_(bf), fit5as4_(fit5as4) {}
-  ~HelixFitOnGPU() { deallocateOnGPU(); }
+  ~HelixFitOnGPU() { deallocate(); }
 
   void setBField(double bField) { bField_ = bField; }
   void launchRiemannKernels(HitsView const *hv, uint32_t nhits, uint32_t maxNumberOfTuples, cudaStream_t cudaStream);
+
+  template<typename Traits>
   void launchBrokenLineKernels(HitsView const *hv, uint32_t nhits, uint32_t maxNumberOfTuples, cudaStream_t cudaStream);
 
   void launchRiemannKernelsOnCPU(HitsView const *hv, uint32_t nhits, uint32_t maxNumberOfTuples);
-  void launchBrokenLineKernelsOnCPU(HitsView const *hv, uint32_t nhits, uint32_t maxNumberOfTuples);
 
-  void allocateOnGPU(Tuples const *tuples, TupleMultiplicity const *tupleMultiplicity, OutputSoA *outputSoA);
-  void deallocateOnGPU();
+  void allocate(Tuples const *tuples, TupleMultiplicity const *tupleMultiplicity, OutputSoA *outputSoA);
+  void deallocate();
 
 private:
   static constexpr uint32_t maxNumberOfConcurrentFits_ = Rfit::maxNumberOfConcurrentFits();
