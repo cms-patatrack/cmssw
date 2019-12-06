@@ -55,6 +55,7 @@ namespace cudaCompat {
 
   struct GPUTraits {
     static constexpr const char * name = "GPU"; 
+    static constexpr bool runOnDevice = true;
 
     template <typename T>
     using unique_ptr = cudautils::device::unique_ptr<T>;
@@ -87,6 +88,7 @@ namespace cudaCompat {
 
   struct HostTraits {
     static constexpr const char * name = "HOST";
+    static constexpr bool runOnDevice = false;
 
     template <typename T>
     using unique_ptr = cudautils::host::unique_ptr<T>;
@@ -114,10 +116,10 @@ namespace cudaCompat {
 
   struct CPUTraits {
     static constexpr const char * name = "CPU";
+    static constexpr bool runOnDevice = false;
 
     template <typename T>
     using unique_ptr = cudautils::cpu::unique_ptr<T>;;
-
 
     template <typename T>
     static auto make_unique() {
