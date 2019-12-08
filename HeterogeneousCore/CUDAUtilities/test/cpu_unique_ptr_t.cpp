@@ -33,7 +33,6 @@ TEST_CASE("cpu_unique_ptr", "[cudaMemTools]") {
   SECTION("Allocating too much") {
     constexpr size_t maxSize = 1 << 30;  // 8**10
     auto ptr = cudautils::make_cpu_unique<char[]>(maxSize+1,cudaStreamDefault);
-    ptr.reset();
     REQUIRE(ptr != nullptr);
   }
 }
