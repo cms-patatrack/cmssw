@@ -56,9 +56,6 @@ RecHitSoATest::RecHitSoATest(const edm::ParameterSet& iConfig) : m_onGPU(iConfig
 }
 
 
-/*
-  most of (all?) the code below is boiler-plate. we hope in future to fully wrap it so that a single (templated?) source will work for both gpu and cpu 
-*/
 void RecHitSoATest::analyze(edm::StreamID streamID, edm::Event const& iEvent, const edm::EventSetup& iSetup) const {
   if (m_onGPU) {
     auto const & gh = iEvent.get(tGpuHits);
@@ -77,11 +74,5 @@ void RecHitSoATest::fillDescriptions(edm::ConfigurationDescriptions& description
   desc.add<edm::InputTag>("heterogeneousPixelRecHitSrc", edm::InputTag("siPixelRecHitsCUDAPreSplitting"));
   descriptions.add("RecHitSoATest", desc);
 }
-
-
-#include "RecHitSoATest.h"
-template
-void analyzeImpl<cudaCompat::CPUTraits>(TrackingRecHit2DHeterogeneous<cudaCompat::CPUTraits> const & ghits, cudaStream_t stream);
-
 
 DEFINE_FWK_MODULE(RecHitSoATest);

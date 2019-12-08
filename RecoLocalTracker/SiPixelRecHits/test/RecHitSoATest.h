@@ -8,12 +8,21 @@
 __global__
 void analyzeHits(TrackingRecHit2DSOAView const* hhp, uint32_t nhits, double * ws) {
 
+  assert(hhp);
+  assert(ws);
 
   auto const& hh = *hhp;
   auto first = blockIdx.x * blockDim.x + threadIdx.x;
 
+#ifdef CUDA_KERNELS_ON_CPU
+  std::cout << "kernel ON CPU!" << std::endl;
+#else
+  if (0 == first) printf("kernel ON GPU!\n");
+#endif
+
+
   if (0 == first)
-    printf("in analyzeClusterTP\n");
+    printf("in analyzeHits SoA\n");
 
   __shared__ int nh;
   __shared__ double sch;
@@ -42,6 +51,14 @@ void analyzeHits(TrackingRecHit2DSOAView const* hhp, uint32_t nhits, double * ws
 
 template<typename Traits>
 void analyzeImpl(TrackingRecHit2DHeterogeneous<Traits> const & gHits, cudaStream_t stream) {
+#ifdef CUDA_KERNELS_ON_CPU
+  std::cout << "launching ON CPU!" << std::endl;
+  assert(!Traits::runOnDevice);
+#else
+  printf("launching ON GPU!\n");
+  assert(Traits::runOnDevice);
+#endif
+
     auto nhits = gHits.nHits();
 
     if (0 == nhits) return;
@@ -51,5 +68,4 @@ void analyzeImpl(TrackingRecHit2DHeterogeneous<Traits> const & gHits, cudaStream
     int threadsPerBlock = 256;
     int blocks = (nhits + threadsPerBlock - 1) / threadsPerBlock;
     cudautils::launch(analyzeHits,{threadsPerBlock,blocks,0,stream} , gHits.view(), nhits, ws_d.get());
-
 }

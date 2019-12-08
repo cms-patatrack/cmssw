@@ -23,7 +23,7 @@
 </library>
 
 
-<library file="RecHitSoATest.cc RecHitSoATest.cu" name="PixelRecHitSoATest">
+<library file="RecHitSoATest.cc RecHitSoATestCPU.cc RecHitSoATestGPU.cu" name="PixelRecHitSoATest">
   <use name="cuda"/>
   <use name="CUDADataFormats/BeamSpot"/>
   <use name="CUDADataFormats/TrackingRecHit"/>
