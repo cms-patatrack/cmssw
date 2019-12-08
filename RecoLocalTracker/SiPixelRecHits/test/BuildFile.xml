@@ -21,3 +21,12 @@
 <library file="ReadPixelRecHit.cc" name="ReadPixelRecHit">
   <flags EDM_PLUGIN="1"/>
 </library>
+
+
+<library file="RecHitSoATest.cc RecHitSoATest.cu" name="PixelRecHitSoATest">
+  <use name="cuda"/>
+  <use name="CUDADataFormats/BeamSpot"/>
+  <use name="CUDADataFormats/TrackingRecHit"/>
+  <use name="HeterogeneousCore/CUDACore"/>
+  <flags EDM_PLUGIN="1"/>
+</library>
