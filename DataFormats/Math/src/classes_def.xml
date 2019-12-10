@@ -10,6 +10,7 @@
   <class pattern="ROOT::Math::MatRepStd<*>" />
   <class pattern="ROOT::Math::RowOffsets<*>" />
   <class pattern="ROOT::Math::SVector<*>" />
+  <class pattern="std::vector<ROOT::Math::DisplacementVector3D<*>>" />
   <class pattern="std::vector<ROOT::Math::SMatrix<*>>" />
   <class pattern="std::vector<std::pair<ROOT::Math::PositionVector3D<*>,float> >"/>
 </selection>
