@@ -12,6 +12,8 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/Utilities/interface/StreamID.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/device_unique_ptr.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/host_noncached_unique_ptr.h"
 
 #include "cudavectors.h"
 
@@ -43,23 +45,21 @@ void ConvertToCartesianVectorsCUDA::produce(edm::Event& event, const edm::EventS
   auto product = std::make_unique<CartesianVectors>(elements);
 
   // allocate memory on the GPU for the cylindrical and cartesian vectors
-  cudavectors::CylindricalVector* gpu_input;
-  cudavectors::CartesianVector* gpu_product;
-  cudaCheck(cudaMalloc(&gpu_input, sizeof(cudavectors::CylindricalVector) * elements));
-  cudaCheck(cudaMalloc(&gpu_product, sizeof(cudavectors::CartesianVector) * elements));
+  auto gpu_input = cudautils::make_device_unique<cudavectors::CylindricalVector[]>(elements, cudaStreamDefault);
+  auto gpu_product = cudautils::make_device_unique<cudavectors::CartesianVector[]>(elements, cudaStreamDefault);
+
+  // allocate memory on the CPU for the transfer buffer
+  auto cpu_input = cudautils::make_host_noncached_unique<cudavectors::CylindricalVector[]>(elements, cudaHostAllocWriteCombined);
+  std::memcpy(cpu_input.get(), input.data(), sizeof(cudavectors::CylindricalVector) * elements);
 
   // copy the input data to the GPU
-  cudaCheck(cudaMemcpy(gpu_input, input.data(), sizeof(cudavectors::CylindricalVector) * elements, cudaMemcpyHostToDevice));
+  cudaCheck(cudaMemcpy(gpu_input.get(), cpu_input.get(), sizeof(cudavectors::CylindricalVector) * elements, cudaMemcpyHostToDevice));
 
   // convert the vectors from cylindrical to cartesian coordinates, on the GPU
-  cudavectors::convertWrapper(gpu_input, gpu_product, elements);
+  cudavectors::convertWrapper(gpu_input.get(), gpu_product.get(), elements);
 
   // copy the result from the GPU
-  cudaCheck(cudaMemcpy(product->data(), gpu_product, sizeof(cudavectors::CartesianVector) * elements, cudaMemcpyDeviceToHost));
-
-  // free the GPU memory
-  cudaCheck(cudaFree(gpu_input));
-  cudaCheck(cudaFree(gpu_product));
+  cudaCheck(cudaMemcpy(product->data(), gpu_product.get(), sizeof(cudavectors::CartesianVector) * elements, cudaMemcpyDeviceToHost));
 
   event.put(output_, std::move(product));
 }
