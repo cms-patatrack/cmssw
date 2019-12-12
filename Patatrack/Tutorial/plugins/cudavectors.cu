@@ -25,10 +25,10 @@ namespace cudavectors {
     }
   }
 
-  void convertWrapper(CylindricalVector const* cylindrical, CartesianVector* cartesian, size_t size) {
+  void convertWrapper(CylindricalVector const* cylindrical, CartesianVector* cartesian, size_t size, cudaStream_t stream) {
     auto blockSize = 512;                                // somewhat arbitrary
     auto gridSize = (size + blockSize - 1) / blockSize;  // round up to cover the sample size
-    convertKernel<<<gridSize, blockSize>>>(cylindrical, cartesian, size);
+    convertKernel<<<gridSize, blockSize, 0, stream>>>(cylindrical, cartesian, size);
     cudaCheck(cudaGetLastError());
   }
 
