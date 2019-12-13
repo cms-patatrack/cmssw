@@ -88,19 +88,16 @@ namespace cudautils {
       void operator()(void const* ptrs[], Tuple const& t) {}
     };
 
-#if 0
-#endif
-
   }  // namespace detail
 
   // wrappers for cudaLaunchKernel
 
-  void launch(void (*kernel)(), LaunchParameters config) {
+  inline void launch(void (*kernel)(), LaunchParameters config) {
     cudaCheck(cudaLaunchKernel(
         (const void*)kernel, config.gridDim, config.blockDim, nullptr, config.sharedMem, config.stream));
   }
 
-  template <typename F, typename... Args>
+  template <typename F, typename... Args> inline
 #if __cplusplus >= 201703L
   std::enable_if_t<std::is_invocable_r<void, F, Args&&...>::value>
 #else
@@ -120,12 +117,12 @@ namespace cudautils {
 
   // wrappers for cudaLaunchCooperativeKernel
 
-  void launch_cooperative(void (*kernel)(), LaunchParameters config) {
+  inline void launch_cooperative(void (*kernel)(), LaunchParameters config) {
     cudaCheck(cudaLaunchCooperativeKernel(
         (const void*)kernel, config.gridDim, config.blockDim, nullptr, config.sharedMem, config.stream));
   }
 
-  template <typename F, typename... Args>
+  template <typename F, typename... Args> inline
 #if __cplusplus >= 201703L
   std::enable_if_t<std::is_invocable_r<void, F, Args&&...>::value>
 #else
