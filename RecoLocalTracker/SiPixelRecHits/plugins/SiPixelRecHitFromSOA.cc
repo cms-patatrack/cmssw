@@ -81,7 +81,7 @@ void SiPixelRecHitFromSOA::acquire(edm::Event const& iEvent,
 void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es) {
   // yes a unique ptr of a unique ptr so edm is happy
   auto sizeOfHitModuleStart = gpuClustering::MaxNumModules + 1;
-  auto hmsp = std::make_unique<uint32_t[]>(sizeOfHitModuleStart);
+  auto hmsp = cudautils::make_cpu_unique<uint32_t[]>(sizeOfHitModuleStart,cudaStreamDefault);
   std::copy(m_hitsModuleStart.get(), m_hitsModuleStart.get() + sizeOfHitModuleStart, hmsp.get());
   auto hms = std::make_unique<HMSstorage>(std::move(hmsp));  // hmsp is gone
   iEvent.put(std::move(hms));                                // hms is gone!

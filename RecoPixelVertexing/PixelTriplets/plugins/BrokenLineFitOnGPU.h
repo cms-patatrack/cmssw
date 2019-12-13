@@ -185,3 +185,84 @@ __global__ void kernelBLFit(CAConstants::TupleMultiplicity const *__restrict__ t
 #endif
   }
 }
+
+
+#include "HeterogeneousCore/CUDAUtilities/interface/launch.h"
+
+template<typename Traits>
+void HelixFitOnGPU::launchBrokenLineKernels(HitsView const *hv,
+                                            uint32_t hitsInFit,
+                                            uint32_t maxNumberOfTuples,
+                                            cudaStream_t stream) {
+  assert(tuples_d);
+
+  int blockSize = 64;
+  int numberOfBlocks = (maxNumberOfConcurrentFits_ + blockSize - 1) / blockSize;
+
+  //  Fit internals
+  auto hitsGPU_ = Traits:: template make_unique<double[]>(
+      maxNumberOfConcurrentFits_ * sizeof(Rfit::Matrix3xNd<4>) / sizeof(double), stream);
+  auto hits_geGPU_ =  Traits:: template make_unique<float[]>(
+      maxNumberOfConcurrentFits_ * sizeof(Rfit::Matrix6x4f) / sizeof(float), stream);
+  auto fast_fit_resultsGPU_ =  Traits:: template make_unique<double[]>(
+      maxNumberOfConcurrentFits_ * sizeof(Rfit::Vector4d) / sizeof(double), stream);
+
+  for (uint32_t offset = 0; offset < maxNumberOfTuples; offset += maxNumberOfConcurrentFits_) {
+    // fit triplets
+    cudautils::launch(kernelBLFastFit<3>,{numberOfBlocks, blockSize, 0, stream},
+        tuples_d, tupleMultiplicity_d, hv, hitsGPU_.get(), hits_geGPU_.get(), fast_fit_resultsGPU_.get(), 3, offset);
+    cudaCheck(cudaGetLastError());
+
+    cudautils::launch(kernelBLFit<3>,{numberOfBlocks, blockSize, 0, stream},tupleMultiplicity_d,
+                                                             bField_,
+                                                             outputSoa_d,
+                                                             hitsGPU_.get(),
+                                                             hits_geGPU_.get(),
+                                                             fast_fit_resultsGPU_.get(),
+                                                             3,
+                                                             offset);
+
+    // fit quads
+    cudautils::launch(kernelBLFastFit<4>,{numberOfBlocks / 4, blockSize, 0, stream},
+        tuples_d, tupleMultiplicity_d, hv, hitsGPU_.get(), hits_geGPU_.get(), fast_fit_resultsGPU_.get(), 4, offset);
+    cudaCheck(cudaGetLastError());
+
+    cudautils::launch(kernelBLFit<4>,{numberOfBlocks / 4, blockSize, 0, stream},tupleMultiplicity_d,
+                                                                 bField_,
+                                                                 outputSoa_d,
+                                                                 hitsGPU_.get(),
+                                                                 hits_geGPU_.get(),
+                                                                 fast_fit_resultsGPU_.get(),
+                                                                 4,
+                                                                 offset);
+
+    if (fit5as4_) {
+      // fit penta (only first 4)
+      cudautils::launch(kernelBLFastFit<4>,{numberOfBlocks / 4, blockSize, 0, stream},
+          tuples_d, tupleMultiplicity_d, hv, hitsGPU_.get(), hits_geGPU_.get(), fast_fit_resultsGPU_.get(), 5, offset);
+
+      cudautils::launch(kernelBLFit<4>,{numberOfBlocks / 4, blockSize, 0, stream},tupleMultiplicity_d,
+                                                                   bField_,
+                                                                   outputSoa_d,
+                                                                   hitsGPU_.get(),
+                                                                   hits_geGPU_.get(),
+                                                                   fast_fit_resultsGPU_.get(),
+                                                                   5,
+                                                                   offset);
+    } else {
+      // fit penta (all 5)
+      cudautils::launch(kernelBLFastFit<5>,{numberOfBlocks / 4, blockSize, 0, stream},
+          tuples_d, tupleMultiplicity_d, hv, hitsGPU_.get(), hits_geGPU_.get(), fast_fit_resultsGPU_.get(), 5, offset);
+
+      cudautils::launch(kernelBLFit<5>,{numberOfBlocks / 4, blockSize, 0, stream},tupleMultiplicity_d,
+                                                                   bField_,
+                                                                   outputSoa_d,
+                                                                   hitsGPU_.get(),
+                                                                   hits_geGPU_.get(),
+                                                                   fast_fit_resultsGPU_.get(),
+                                                                   5,
+                                                                   offset);
+    }
+
+  }  // loop on concurrent fits
+}

@@ -5,6 +5,7 @@
 
 #include "HeterogeneousCore/CUDAUtilities/interface/copyAsync.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/cpu_unique_ptr.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/device_unique_ptr.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/host_unique_ptr.h"
 
@@ -21,15 +22,15 @@ public:
 
   explicit HeterogeneousSoA(cudautils::device::unique_ptr<T> &&p) : dm_ptr(std::move(p)) {}
   explicit HeterogeneousSoA(cudautils::host::unique_ptr<T> &&p) : hm_ptr(std::move(p)) {}
-  explicit HeterogeneousSoA(std::unique_ptr<T> &&p) : std_ptr(std::move(p)) {}
+  explicit HeterogeneousSoA(cudautils::cpu::unique_ptr<T> &&p) : cm_ptr(std::move(p)) {}
 
-  auto const *get() const { return dm_ptr ? dm_ptr.get() : (hm_ptr ? hm_ptr.get() : std_ptr.get()); }
+  auto const *get() const { return dm_ptr ? dm_ptr.get() : (hm_ptr ? hm_ptr.get() : cm_ptr.get()); }
 
   auto const &operator*() const { return *get(); }
 
   auto const *operator-> () const { return get(); }
 
-  auto *get() { return dm_ptr ? dm_ptr.get() : (hm_ptr ? hm_ptr.get() : std_ptr.get()); }
+  auto *get() { return dm_ptr ? dm_ptr.get() : (hm_ptr ? hm_ptr.get() : cm_ptr.get()); }
 
   auto &operator*() { return *get(); }
 
@@ -47,12 +48,15 @@ private:
   // a union wan't do it, a variant will not be more efficienct
   cudautils::device::unique_ptr<T> dm_ptr;  //!
   cudautils::host::unique_ptr<T> hm_ptr;    //!
-  std::unique_ptr<T> std_ptr;               //!
+  cudautils::cpu::unique_ptr<T> cm_ptr;    //!
 };
 
 namespace cudaCompat {
 
   struct GPUTraits {
+    static constexpr const char * name = "GPU"; 
+    static constexpr bool runOnDevice = true;
+
     template <typename T>
     using unique_ptr = cudautils::device::unique_ptr<T>;
 
@@ -83,6 +87,9 @@ namespace cudaCompat {
   };
 
   struct HostTraits {
+    static constexpr const char * name = "HOST";
+    static constexpr bool runOnDevice = false;
+
     template <typename T>
     using unique_ptr = cudautils::host::unique_ptr<T>;
 
@@ -108,32 +115,45 @@ namespace cudaCompat {
   };
 
   struct CPUTraits {
-    template <typename T>
-    using unique_ptr = std::unique_ptr<T>;
+    static constexpr const char * name = "CPU";
+    static constexpr bool runOnDevice = false;
 
     template <typename T>
-    static auto make_unique(cudaStream_t) {
-      return std::make_unique<T>();
+    using unique_ptr = cudautils::cpu::unique_ptr<T>;;
+
+    template <typename T>
+    static auto make_unique() {
+      return cudautils::make_cpu_unique<T>(cudaStreamDefault);
     }
 
     template <typename T>
-    static auto make_unique(size_t size, cudaStream_t) {
-      return std::make_unique<T>(size);
+    static auto make_unique(size_t size) {
+      return cudautils::make_cpu_unique<T>(size,cudaStreamDefault);
     }
 
     template <typename T>
-    static auto make_host_unique(cudaStream_t) {
-      return std::make_unique<T>();
+    static auto make_unique(cudaStream_t stream) {
+      return cudautils::make_cpu_unique<T>(stream);
     }
 
     template <typename T>
-    static auto make_device_unique(cudaStream_t) {
-      return std::make_unique<T>();
+    static auto make_unique(size_t size, cudaStream_t stream) {
+      return cudautils::make_cpu_unique<T>(size, stream);
     }
 
     template <typename T>
-    static auto make_device_unique(size_t size, cudaStream_t) {
-      return std::make_unique<T>(size);
+    static auto make_host_unique(cudaStream_t stream) {
+      return cudautils::make_cpu_unique<T>(stream);
+    }
+
+    template <typename T>
+    static auto make_device_unique(cudaStream_t stream) {
+      return cudautils::make_cpu_unique<T>(stream);
+    }
+
+    template <typename T>
+    static auto make_device_unique(size_t size, cudaStream_t stream) {
+      return cudautils::make_cpu_unique<T>(size, stream);
     }
   };
 

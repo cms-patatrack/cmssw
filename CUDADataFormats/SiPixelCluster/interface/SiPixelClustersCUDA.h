@@ -2,7 +2,6 @@
 #define CUDADataFormats_SiPixelCluster_interface_SiPixelClustersCUDA_h
 
 #include "HeterogeneousCore/CUDAUtilities/interface/device_unique_ptr.h"
-#include "HeterogeneousCore/CUDAUtilities/interface/host_unique_ptr.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCompat.h"
 
 #include <cuda_runtime.h>

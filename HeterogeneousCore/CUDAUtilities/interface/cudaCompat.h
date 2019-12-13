@@ -6,6 +6,10 @@
  */
 
 #ifndef __CUDACC__
+  #define CUDA_KERNELS_ON_CPU
+#endif
+
+#ifdef CUDA_KERNELS_ON_CPU
 
 #include <algorithm>
 #include <cstdint>
@@ -86,18 +90,20 @@ namespace cudaCompat {
 #define __forceinline__
 #endif
 
-// make sure function are inlined to avoid multiple definition
 #ifndef __CUDA_ARCH__
+using namespace cudaCompat;
+#endif
+
+#endif  // CUDA_KERNELS_ON_CPU
+
+
+// make sure function are inlined to avoid multiple definition
+#ifndef __CUDACC__
 #undef __global__
 #define __global__ inline __attribute__((always_inline))
 #undef __forceinline__
 #define __forceinline__ inline __attribute__((always_inline))
 #endif
 
-#ifndef __CUDA_ARCH__
-using namespace cudaCompat;
-#endif
-
-#endif
 
 #endif  // HeterogeneousCore_CUDAUtilities_interface_cudaCompat_h

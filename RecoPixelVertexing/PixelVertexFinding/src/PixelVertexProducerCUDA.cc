@@ -96,7 +96,7 @@ void PixelVertexProducerCUDA::produce(edm::StreamID streamID, edm::Event& iEvent
 
     assert(tracks);
 
-    ctx.emplace(iEvent, tokenGPUVertex_, m_gpuAlgo.makeAsync(ctx.stream(), tracks, m_ptMin));
+    ctx.emplace(iEvent, tokenGPUVertex_, m_gpuAlgo.make<cudaCompat::GPUTraits>(ctx.stream(), tracks, m_ptMin,m_OnGPU));
 
   } else {
     auto const* tracks = iEvent.get(tokenCPUTrack_).get();
@@ -117,7 +117,8 @@ void PixelVertexProducerCUDA::produce(edm::StreamID streamID, edm::Event& iEvent
     std::cout << "found " << nt << " tracks in cpu SoA for Vertexing at " << tracks << std::endl;
     */
 
-    iEvent.emplace(tokenCPUVertex_, m_gpuAlgo.make(tracks, m_ptMin));
+    cudaStream_t stream=cudaStreamDefault;
+    iEvent.emplace(tokenCPUVertex_, m_gpuAlgo.make<cudaCompat::CPUTraits>(stream,tracks, m_ptMin,m_OnGPU));
   }
 }
 

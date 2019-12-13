@@ -74,10 +74,10 @@ void CAHitNtupletCUDA::produce(edm::StreamID streamID, edm::Event& iEvent, const
     CUDAScopedContextProduce ctx{*hHits};
     auto const& hits = ctx.get(*hHits);
 
-    ctx.emplace(iEvent, tokenTrackGPU_, gpuAlgo_.makeTuplesAsync(hits, bf, ctx.stream()));
+    ctx.emplace(iEvent, tokenTrackGPU_, gpuAlgo_.makeTuples<cudaCompat::GPUTraits>(hits, bf, ctx.stream()));
   } else {
     auto const& hits = iEvent.get(tokenHitCPU_);
-    iEvent.emplace(tokenTrackCPU_, gpuAlgo_.makeTuples(hits, bf));
+    iEvent.emplace(tokenTrackCPU_, gpuAlgo_.makeTuples<cudaCompat::CPUTraits>(hits, bf,cudaStreamDefault));
   }
 }
 

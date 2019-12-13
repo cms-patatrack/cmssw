@@ -72,7 +72,7 @@ namespace cudautils {
   inline void launchFinalize(Histo *__restrict__ h,
                              uint8_t *__restrict__ ws
 #ifndef __CUDACC__
-                             = cudaStreamDefault
+                             = nullptr
 #endif
                              ,
                              cudaStream_t stream
