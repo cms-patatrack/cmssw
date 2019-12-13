@@ -88,14 +88,11 @@ namespace cudautils {
       void operator()(void const* ptrs[], Tuple const& t) {}
     };
 
-#if 0
-#endif
-
   }  // namespace detail
 
   // wrappers for cudaLaunchKernel
-  inline
-  void launch(void (*kernel)(), LaunchParameters config) {
+
+  inline void launch(void (*kernel)(), LaunchParameters config) {
 #ifdef CUDA_KERNELS_ON_CPU
     kernel();
 #else
@@ -127,8 +124,8 @@ namespace cudautils {
   }
 
   // wrappers for cudaLaunchCooperativeKernel
-  inline
-  void launch_cooperative(void (*kernel)(), LaunchParameters config) {
+
+  inline void launch_cooperative(void (*kernel)(), LaunchParameters config) {
     cudaCheck(cudaLaunchCooperativeKernel(
         (const void*)kernel, config.gridDim, config.blockDim, nullptr, config.sharedMem, config.stream));
   }
