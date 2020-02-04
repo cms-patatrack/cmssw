@@ -73,11 +73,13 @@ TrackingRecHit2DHeterogeneous<Traits>::TrackingRecHit2DHeterogeneous(uint32_t nH
                                                                      uint32_t const* hitsModuleStart,
                                                                      cudaStream_t stream)
     : m_nHits(nHits), m_hitsModuleStart(hitsModuleStart) {
+  // device-side ownership to guarantee that the host memory is alive
+  // until the copy finishes
   auto view = Traits::template make_host_unique<TrackingRecHit2DSOAView>(stream);
 
   view->m_nHits = nHits;
-  m_view = Traits::template make_device_unique<TrackingRecHit2DSOAView>(stream);
-  m_AverageGeometryStore = Traits::template make_device_unique<TrackingRecHit2DSOAView::AverageGeometry>(stream);
+  m_view = Traits::template make_device_unique<TrackingRecHit2DSOAView>();
+  m_AverageGeometryStore = Traits::template make_device_unique<TrackingRecHit2DSOAView::AverageGeometry>();
   view->m_averageGeometry = m_AverageGeometryStore.get();
   view->m_cpeParams = cpeParams;
   view->m_hitsModuleStart = hitsModuleStart;
@@ -101,9 +103,9 @@ TrackingRecHit2DHeterogeneous<Traits>::TrackingRecHit2DHeterogeneous(uint32_t nH
   // if ordering is relevant they may have to be stored phi-ordered by layer or so
   // this will break 1to1 correspondence with cluster and module locality
   // so unless proven VERY inefficient we keep it ordered as generated
-  m_store16 = Traits::template make_device_unique<uint16_t[]>(nHits * n16, stream);
-  m_store32 = Traits::template make_device_unique<float[]>(nHits * n32 + 11, stream);
-  m_HistStore = Traits::template make_device_unique<TrackingRecHit2DSOAView::Hist>(stream);
+  m_store16 = Traits::template make_device_unique<uint16_t[]>(nHits * n16);
+  m_store32 = Traits::template make_device_unique<float[]>(nHits * n32 + 11);
+  m_HistStore = Traits::template make_device_unique<TrackingRecHit2DSOAView::Hist>();
 
   auto get16 = [&](int i) { return m_store16.get() + i * nHits; };
   auto get32 = [&](int i) { return m_store32.get() + i * nHits; };

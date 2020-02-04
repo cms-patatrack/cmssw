@@ -12,6 +12,20 @@ namespace {
 }
 
 namespace cms::cuda {
+  void *allocate_host(size_t nbytes) {
+    void *ptr = nullptr;
+    if constexpr (allocator::useCaching) {
+      if (UNLIKELY(nbytes > maxAllocationSize)) {
+        throw std::runtime_error("Tried to allocate " + std::to_string(nbytes) +
+                                 " bytes, but the allocator maximum is " + std::to_string(maxAllocationSize));
+      }
+      cudaCheck(allocator::getCachingHostAllocator().HostAllocate(&ptr, nbytes, false));
+    } else {
+      cudaCheck(cudaMallocHost(&ptr, nbytes));
+    }
+    return ptr;
+  }
+
   void *allocate_host(size_t nbytes, cudaStream_t stream) {
     void *ptr = nullptr;
     if constexpr (allocator::useCaching) {
@@ -19,7 +33,7 @@ namespace cms::cuda {
         throw std::runtime_error("Tried to allocate " + std::to_string(nbytes) +
                                  " bytes, but the allocator maximum is " + std::to_string(maxAllocationSize));
       }
-      cudaCheck(allocator::getCachingHostAllocator().HostAllocate(&ptr, nbytes, stream));
+      cudaCheck(allocator::getCachingHostAllocator().HostAllocate(&ptr, nbytes, true, stream));
     } else {
       cudaCheck(cudaMallocHost(&ptr, nbytes));
     }

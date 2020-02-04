@@ -127,6 +127,7 @@ namespace notcub {
       int device;                      // device ordinal
       cudaStream_t associated_stream;  // Associated associated_stream
       cudaEvent_t ready_event;  // Signal when associated stream has run to the point at which this block was freed
+      bool has_stream;          // Whether or not the block has an associated stream
 
       // Constructor (suitable for searching maps for a specific block, given its pointer)
       BlockDescriptor(void *d_ptr)
@@ -135,7 +136,8 @@ namespace notcub {
             bin(INVALID_BIN),
             device(INVALID_DEVICE_ORDINAL),
             associated_stream(nullptr),
-            ready_event(nullptr) {}
+            ready_event(nullptr),
+            has_stream(false) {}
 
       // Constructor (suitable for searching maps for a range of suitable blocks)
       BlockDescriptor()
@@ -144,7 +146,8 @@ namespace notcub {
             bin(INVALID_BIN),
             device(INVALID_DEVICE_ORDINAL),
             associated_stream(nullptr),
-            ready_event(nullptr) {}
+            ready_event(nullptr),
+            has_stream(false) {}
 
       // Comparison functor for comparing host pointers
       static bool PtrCompare(const BlockDescriptor &a, const BlockDescriptor &b) { return (a.d_ptr < b.d_ptr); }
@@ -312,6 +315,7 @@ namespace notcub {
     cudaError_t HostAllocate(
         void **d_ptr,                          ///< [out] Reference to pointer to the allocation
         size_t bytes,                          ///< [in] Minimum number of bytes for the allocation
+        bool has_stream,                       ///< [in] Whether or not associate the stream with this allocation
         cudaStream_t active_stream = nullptr)  ///< [in] The stream to be associated with this allocation
     {
       *d_ptr = nullptr;
@@ -325,6 +329,7 @@ namespace notcub {
       bool found = false;
       BlockDescriptor search_key;
       search_key.device = device;
+      search_key.has_stream = has_stream;
       search_key.associated_stream = active_stream;
       NearestPowerOf(search_key.bin, search_key.bytes, bin_growth, bytes);
 
@@ -347,12 +352,15 @@ namespace notcub {
         // Iterate through the range of cached blocks in the same bin
         CachedBlocks::iterator block_itr = cached_blocks.lower_bound(search_key);
         while ((block_itr != cached_blocks.end()) && (block_itr->bin == search_key.bin)) {
-          // To prevent races with reusing blocks returned by the host but still
-          // in use for transfers, only consider cached blocks that are from an idle stream
-          if (cudaEventQuery(block_itr->ready_event) != cudaErrorNotReady) {
+          // To prevent races with reusing blocks returned by the host
+          // but still in use for transfers, only consider cached
+          // blocks that are from an idle stream or have no stream
+          // association
+          if ((!block_itr->has_stream) or cudaEventQuery(block_itr->ready_event) != cudaErrorNotReady) {
             // Reuse existing cache block.  Insert into live blocks.
             found = true;
             search_key = *block_itr;
+            search_key.has_stream = has_stream;
             search_key.associated_stream = active_stream;
             if (search_key.device != device) {
               // If "associated" device changes, need to re-create the event on the right device
@@ -373,17 +381,29 @@ namespace notcub {
             cached_bytes.free -= search_key.bytes;
             cached_bytes.live += search_key.bytes;
 
-            if (debug)
-              _CubLog(
-                  "\tHost reused cached block at %p (%lld bytes) for stream %lld, event %lld on device %lld "
-                  "(previously associated with stream %lld, event %lld).\n",
-                  search_key.d_ptr,
-                  (long long)search_key.bytes,
-                  (long long)search_key.associated_stream,
-                  (long long)search_key.ready_event,
-                  (long long)search_key.device,
-                  (long long)block_itr->associated_stream,
-                  (long long)block_itr->ready_event);
+            if (debug) {
+              if (search_key.has_stream) {
+                _CubLog(
+                    "\tHost reused cached block at %p (%lld bytes) for stream %lld, event %lld on device %lld "
+                    "(previously associated with stream %lld, event %lld).\n",
+                    search_key.d_ptr,
+                    (long long)search_key.bytes,
+                    (long long)search_key.associated_stream,
+                    (long long)search_key.ready_event,
+                    (long long)search_key.device,
+                    (long long)block_itr->associated_stream,
+                    (long long)block_itr->ready_event);
+              } else {
+                _CubLog(
+                    "\tHost reused cached block at %p (%lld bytes) without stream association "
+                    "(previously associated %d with stream %lld, event %lld).\n",
+                    search_key.d_ptr,
+                    (long long)search_key.bytes,
+                    block_itr->has_stream,
+                    (long long)block_itr->associated_stream,
+                    (long long)block_itr->ready_event);
+              }
+            }
 
             cached_blocks.erase(block_itr);
 
@@ -403,13 +423,21 @@ namespace notcub {
         if (CubDebug(error = cudaHostAlloc(&search_key.d_ptr, search_key.bytes, cudaHostAllocDefault)) ==
             cudaErrorMemoryAllocation) {
           // The allocation attempt failed: free all cached blocks on device and retry
-          if (debug)
-            _CubLog(
-                "\tHost failed to allocate %lld bytes for stream %lld on device %lld, retrying after freeing cached "
-                "allocations",
-                (long long)search_key.bytes,
-                (long long)search_key.associated_stream,
-                (long long)search_key.device);
+          if (debug) {
+            if (search_key.has_stream) {
+              _CubLog(
+                  "\tHost failed to allocate %lld bytes for stream %lld on device %lld, retrying after freeing cached "
+                  "allocations",
+                  (long long)search_key.bytes,
+                  (long long)search_key.associated_stream,
+                  (long long)search_key.device);
+            } else {
+              _CubLog(
+                  "\tHost failed to allocate %lld bytes without stream association, retrying after freeing cached "
+                  "allocations",
+                  (long long)search_key.bytes);
+            }
+          }
 
           error = cudaSuccess;  // Reset the error we will return
           cudaGetLastError();   // Reset CUDART's error
@@ -471,15 +499,22 @@ namespace notcub {
         cached_bytes.live += search_key.bytes;
         mutex.Unlock();
 
-        if (debug)
-          _CubLog(
-              "\tHost allocated new host block at %p (%lld bytes associated with stream %lld, event %lld on device "
-              "%lld).\n",
-              search_key.d_ptr,
-              (long long)search_key.bytes,
-              (long long)search_key.associated_stream,
-              (long long)search_key.ready_event,
-              (long long)search_key.device);
+        if (debug) {
+          if (search_key.has_stream) {
+            _CubLog(
+                "\tHost allocated new host block at %p (%lld bytes associated with stream %lld, event %lld on device "
+                "%lld).\n",
+                search_key.d_ptr,
+                (long long)search_key.bytes,
+                (long long)search_key.associated_stream,
+                (long long)search_key.ready_event,
+                (long long)search_key.device);
+          } else {
+            _CubLog("\tHost allocated new host block at %p (%lld bytes without stream association).\n",
+                    search_key.d_ptr,
+                    (long long)search_key.bytes);
+          }
+        }
       }
 
       // Copy host pointer to output parameter
@@ -524,18 +559,30 @@ namespace notcub {
           cached_blocks.insert(search_key);
           cached_bytes.free += search_key.bytes;
 
-          if (debug)
-            _CubLog(
-                "\tHost returned %lld bytes from associated stream %lld, event %lld on device %lld.\n\t\t %lld "
-                "available blocks cached (%lld bytes), %lld live blocks outstanding. (%lld bytes)\n",
-                (long long)search_key.bytes,
-                (long long)search_key.associated_stream,
-                (long long)search_key.ready_event,
-                (long long)search_key.device,
-                (long long)cached_blocks.size(),
-                (long long)cached_bytes.free,
-                (long long)live_blocks.size(),
-                (long long)cached_bytes.live);
+          if (debug) {
+            if (search_key.has_stream) {
+              _CubLog(
+                  "\tHost returned %lld bytes from associated stream %lld, event %lld on device %lld.\n\t\t %lld "
+                  "available blocks cached (%lld bytes), %lld live blocks outstanding. (%lld bytes)\n",
+                  (long long)search_key.bytes,
+                  (long long)search_key.associated_stream,
+                  (long long)search_key.ready_event,
+                  (long long)search_key.device,
+                  (long long)cached_blocks.size(),
+                  (long long)cached_bytes.free,
+                  (long long)live_blocks.size(),
+                  (long long)cached_bytes.live);
+            } else {
+              _CubLog(
+                  "\tHost returned %lld bytes without stream association.\n\t\t %lld "
+                  "available blocks cached (%lld bytes), %lld live blocks outstanding. (%lld bytes)\n",
+                  (long long)search_key.bytes,
+                  (long long)cached_blocks.size(),
+                  (long long)cached_bytes.free,
+                  (long long)live_blocks.size(),
+                  (long long)cached_bytes.live);
+            }
+          }
         }
       }
 
@@ -546,7 +593,7 @@ namespace notcub {
           return error;
       }
 
-      if (recached) {
+      if (recached && search_key.has_stream) {
         // Insert the ready event in the associated stream (must have current device set properly)
         if (CubDebug(error = cudaEventRecord(search_key.ready_event, search_key.associated_stream)))
           return error;
@@ -562,18 +609,30 @@ namespace notcub {
         if (CubDebug(error = cudaEventDestroy(search_key.ready_event)))
           return error;
 
-        if (debug)
-          _CubLog(
-              "\tHost freed %lld bytes from associated stream %lld, event %lld on device %lld.\n\t\t  %lld available "
-              "blocks cached (%lld bytes), %lld live blocks (%lld bytes) outstanding.\n",
-              (long long)search_key.bytes,
-              (long long)search_key.associated_stream,
-              (long long)search_key.ready_event,
-              (long long)search_key.device,
-              (long long)cached_blocks.size(),
-              (long long)cached_bytes.free,
-              (long long)live_blocks.size(),
-              (long long)cached_bytes.live);
+        if (debug) {
+          if (search_key.has_stream) {
+            _CubLog(
+                "\tHost freed %lld bytes from associated stream %lld, event %lld on device %lld.\n\t\t  %lld available "
+                "blocks cached (%lld bytes), %lld live blocks (%lld bytes) outstanding.\n",
+                (long long)search_key.bytes,
+                (long long)search_key.associated_stream,
+                (long long)search_key.ready_event,
+                (long long)search_key.device,
+                (long long)cached_blocks.size(),
+                (long long)cached_bytes.free,
+                (long long)live_blocks.size(),
+                (long long)cached_bytes.live);
+          } else {
+            _CubLog(
+                "\tHost freed %lld bytes without stream association.\n\t\t  %lld available "
+                "blocks cached (%lld bytes), %lld live blocks (%lld bytes) outstanding.\n",
+                (long long)search_key.bytes,
+                (long long)cached_blocks.size(),
+                (long long)cached_bytes.free,
+                (long long)live_blocks.size(),
+                (long long)cached_bytes.live);
+          }
+        }
       }
 
       // Reset device

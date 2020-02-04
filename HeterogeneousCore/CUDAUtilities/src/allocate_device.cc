@@ -13,6 +13,21 @@ namespace {
 }
 
 namespace cms::cuda {
+  void *allocate_device(int dev, size_t nbytes) {
+    void *ptr = nullptr;
+    if constexpr (allocator::useCaching) {
+      if (UNLIKELY(nbytes > maxAllocationSize)) {
+        throw std::runtime_error("Tried to allocate " + std::to_string(nbytes) +
+                                 " bytes, but the allocator maximum is " + std::to_string(maxAllocationSize));
+      }
+      cudaCheck(allocator::getCachingDeviceAllocator().DeviceAllocate(dev, &ptr, nbytes, false));
+    } else {
+      ScopedSetDevice setDeviceForThisScope(dev);
+      cudaCheck(cudaMalloc(&ptr, nbytes));
+    }
+    return ptr;
+  }
+
   void *allocate_device(int dev, size_t nbytes, cudaStream_t stream) {
     void *ptr = nullptr;
     if constexpr (allocator::useCaching) {
@@ -20,7 +35,7 @@ namespace cms::cuda {
         throw std::runtime_error("Tried to allocate " + std::to_string(nbytes) +
                                  " bytes, but the allocator maximum is " + std::to_string(maxAllocationSize));
       }
-      cudaCheck(allocator::getCachingDeviceAllocator().DeviceAllocate(dev, &ptr, nbytes, stream));
+      cudaCheck(allocator::getCachingDeviceAllocator().DeviceAllocate(dev, &ptr, nbytes, true, stream));
     } else {
       ScopedSetDevice setDeviceForThisScope(dev);
       cudaCheck(cudaMalloc(&ptr, nbytes));

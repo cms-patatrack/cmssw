@@ -5,15 +5,17 @@
 #include "HeterogeneousCore/CUDAUtilities/interface/copyAsync.h"
 
 SiPixelDigisCUDA::SiPixelDigisCUDA(size_t maxFedWords, cudaStream_t stream) {
-  xx_d = cms::cuda::make_device_unique<uint16_t[]>(maxFedWords, stream);
-  yy_d = cms::cuda::make_device_unique<uint16_t[]>(maxFedWords, stream);
-  adc_d = cms::cuda::make_device_unique<uint16_t[]>(maxFedWords, stream);
-  moduleInd_d = cms::cuda::make_device_unique<uint16_t[]>(maxFedWords, stream);
-  clus_d = cms::cuda::make_device_unique<int32_t[]>(maxFedWords, stream);
+  xx_d = cms::cuda::make_device_unique<uint16_t[]>(maxFedWords);
+  yy_d = cms::cuda::make_device_unique<uint16_t[]>(maxFedWords);
+  adc_d = cms::cuda::make_device_unique<uint16_t[]>(maxFedWords);
+  moduleInd_d = cms::cuda::make_device_unique<uint16_t[]>(maxFedWords);
+  clus_d = cms::cuda::make_device_unique<int32_t[]>(maxFedWords);
 
-  pdigi_d = cms::cuda::make_device_unique<uint32_t[]>(maxFedWords, stream);
-  rawIdArr_d = cms::cuda::make_device_unique<uint32_t[]>(maxFedWords, stream);
+  pdigi_d = cms::cuda::make_device_unique<uint32_t[]>(maxFedWords);
+  rawIdArr_d = cms::cuda::make_device_unique<uint32_t[]>(maxFedWords);
 
+  // device-side ownership to guarantee that the host memory is alive
+  // until the copy finishes
   auto view = cms::cuda::make_host_unique<DeviceConstView>(stream);
   view->xx_ = xx_d.get();
   view->yy_ = yy_d.get();
@@ -21,7 +23,7 @@ SiPixelDigisCUDA::SiPixelDigisCUDA(size_t maxFedWords, cudaStream_t stream) {
   view->moduleInd_ = moduleInd_d.get();
   view->clus_ = clus_d.get();
 
-  view_d = cms::cuda::make_device_unique<DeviceConstView>(stream);
+  view_d = cms::cuda::make_device_unique<DeviceConstView>();
   cms::cuda::copyAsync(view_d, view, stream);
 }
 
