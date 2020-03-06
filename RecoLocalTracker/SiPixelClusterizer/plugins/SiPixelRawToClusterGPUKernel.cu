@@ -365,7 +365,7 @@ namespace pixelgpudetails {
                                    uint32_t *pdigi,
                                    uint32_t *rawIdArr,
                                    uint16_t *moduleId,
-                                   GPU::SimpleVector<PixelErrorCompact> *err,
+                                   cms::cuda::SimpleVector<PixelErrorCompact> *err,
                                    bool useQualityInfo,
                                    bool includeErrors,
                                    bool debug) {
