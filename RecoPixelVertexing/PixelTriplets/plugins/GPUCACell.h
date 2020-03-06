@@ -246,7 +246,7 @@ public:
                                        GPUCACell* __restrict__ cells,
                                        CellTracksVector& cellTracks,
                                        HitContainer& foundNtuplets,
-                                       AtomicPairCounter& apc,
+                                       cms::cuda::AtomicPairCounter& apc,
                                        Quality* __restrict__ quality,
                                        TmpTuple& tmpNtuplet,
                                        const unsigned int minHitsPerNtuplet,

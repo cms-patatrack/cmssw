@@ -24,13 +24,13 @@ void CAHitNtupletGeneratorKernelsCPU::allocateOnGPU(cudaStream_t stream) {
   device_tupleMultiplicity_ = Traits::template make_unique<TupleMultiplicity>(stream);
 
   auto storageSize =
-      3 + (std::max(TupleMultiplicity::wsSize(), HitToTuple::wsSize()) + sizeof(AtomicPairCounter::c_type)) /
-              sizeof(AtomicPairCounter::c_type);
+      3 + (std::max(TupleMultiplicity::wsSize(), HitToTuple::wsSize()) + sizeof(cms::cuda::AtomicPairCounter::c_type)) /
+              sizeof(cms::cuda::AtomicPairCounter::c_type);
 
-  device_storage_ = Traits::template make_unique<AtomicPairCounter::c_type[]>(storageSize, stream);
+  device_storage_ = Traits::template make_unique<cms::cuda::AtomicPairCounter::c_type[]>(storageSize, stream);
 
-  device_hitTuple_apc_ = (AtomicPairCounter*)device_storage_.get();
-  device_hitToTuple_apc_ = (AtomicPairCounter*)device_storage_.get() + 1;
+  device_hitTuple_apc_ = (cms::cuda::AtomicPairCounter*)device_storage_.get();
+  device_hitToTuple_apc_ = (cms::cuda::AtomicPairCounter*)device_storage_.get() + 1;
   device_nCells_ = (uint32_t*)(device_storage_.get() + 2);
   device_tmws_ = (uint8_t*)(device_storage_.get() + 3);
 
