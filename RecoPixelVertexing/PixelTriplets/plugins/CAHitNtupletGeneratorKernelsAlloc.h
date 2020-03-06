@@ -41,7 +41,7 @@ void CAHitNtupletGeneratorKernelsCPU::allocateOnGPU(cudaStream_t stream) {
 #ifndef __CUDACC__
       constexpr
 #endif
-      (std::is_same<Traits, cudaCompat::GPUTraits>::value) {
+      (std::is_same<Traits, cms::cudacompat::GPUTraits>::value) {
     cudaCheck(cudaMemsetAsync(device_nCells_, 0, sizeof(uint32_t), stream));
   } else {
     *device_nCells_ = 0;

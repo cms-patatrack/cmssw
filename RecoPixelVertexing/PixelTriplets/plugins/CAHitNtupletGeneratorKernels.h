@@ -202,7 +202,7 @@ private:
   Params const& m_params;
 };
 
-using CAHitNtupletGeneratorKernelsGPU = CAHitNtupletGeneratorKernels<cudaCompat::GPUTraits>;
-using CAHitNtupletGeneratorKernelsCPU = CAHitNtupletGeneratorKernels<cudaCompat::CPUTraits>;
+using CAHitNtupletGeneratorKernelsGPU = CAHitNtupletGeneratorKernels<cms::cudacompat::GPUTraits>;
+using CAHitNtupletGeneratorKernelsCPU = CAHitNtupletGeneratorKernels<cms::cudacompat::CPUTraits>;
 
 #endif  // RecoPixelVertexing_PixelTriplets_plugins_CAHitNtupletGeneratorKernels_h
