@@ -852,7 +852,7 @@ namespace ecal {
         auto const did = DetId{dids[ch]};
         auto const isBarrel = did.subdetId() == EcalBarrel;
         auto const sample_mask = did.subdetId() == EcalBarrel ? sample_maskEB : sample_maskEE;
-        auto const hashedId = isBarrel ? hashedIndexEB(did.rawId()) : offsetForHashes + hashedIndexEE(did.rawId());
+        auto const hashedId = isBarrel ? ecal::reconstruction::hashedIndexEB(did.rawId()) : offsetForHashes + ecal::reconstruction::hashedIndexEE(did.rawId());
 
         // set pedestal
         // TODO this branch is non-divergent for a group of 10 threads
@@ -1022,7 +1022,7 @@ namespace ecal {
 
       auto const did = DetId{dids[gtx]};
       auto const isBarrel = did.subdetId() == EcalBarrel;
-      auto const hashedId = isBarrel ? hashedIndexEB(did.rawId()) : offsetForHashes + hashedIndexEE(did.rawId());
+      auto const hashedId = isBarrel ? ecal::reconstruction::hashedIndexEB(did.rawId()) : offsetForHashes + ecal::reconstruction::hashedIndexEE(did.rawId());
       auto const* amplitudeBins = isBarrel ? amplitudeBinsEB : amplitudeBinsEE;
       auto const* shiftBins = isBarrel ? shiftBinsEB : shiftBinsEE;
       auto const amplitudeBinsSize = isBarrel ? amplitudeBinsSizeEB : amplitudeBinsSizeEE;

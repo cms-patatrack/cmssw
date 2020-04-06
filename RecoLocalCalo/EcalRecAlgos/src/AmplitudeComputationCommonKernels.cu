@@ -77,7 +77,7 @@ namespace ecal {
         auto const did = DetId{dids[ch]};
         auto const isBarrel = did.subdetId() == EcalBarrel;
         // TODO offset for ee, 0 for eb
-        auto const hashedId = isBarrel ? hashedIndexEB(did.rawId()) : offsetForHashes + hashedIndexEE(did.rawId());
+        auto const hashedId = isBarrel ? ecal::reconstruction::hashedIndexEB(did.rawId()) : offsetForHashes + ecal::reconstruction::hashedIndexEE(did.rawId());
 
         //
         // pulse shape template
@@ -334,7 +334,7 @@ namespace ecal {
       bool tmp1 = hasSwitchToGain1[ch];
       auto const did = DetId{dids[ch]};
       auto const isBarrel = did.subdetId() == EcalBarrel;
-      auto const hashedId = isBarrel ? hashedIndexEB(did.rawId()) : offsetForHashes + hashedIndexEE(did.rawId());
+      auto const hashedId = isBarrel ? ecal::reconstruction::hashedIndexEB(did.rawId()) : offsetForHashes + ecal::reconstruction::hashedIndexEE(did.rawId());
       auto const G12SamplesCorrelation = isBarrel ? G12SamplesCorrelationEB : G12SamplesCorrelationEE;
       auto const* G6SamplesCorrelation = isBarrel ? G6SamplesCorrelationEB : G6SamplesCorrelationEE;
       auto const* G1SamplesCorrelation = isBarrel ? G1SamplesCorrelationEB : G1SamplesCorrelationEE;

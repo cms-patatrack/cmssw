@@ -18,6 +18,22 @@ namespace ecal {
 
   }  // namespace Tag
 
+  
+  namespace Detail {
+    
+    // empty base 
+    template<typename T>
+    struct Base {};
+    
+    // add number of values for ptr case
+    template<>
+    struct Base<::ecal::Tag::ptr> {
+      uint32_t size;
+    };
+    
+  }
+  
+  
   template <typename T, typename L = Tag::soa>
   struct type_wrapper {
     //#ifndef ECAL_MULTIFIT_DONOT_USE_PINNED_MEM
