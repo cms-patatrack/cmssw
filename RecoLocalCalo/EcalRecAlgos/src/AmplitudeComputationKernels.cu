@@ -173,8 +173,8 @@ void kernel_minimize(
         auto const did = DetId{dids[inputCh]};
         auto const isBarrel = did.subdetId() == EcalBarrel;
         auto const hashedId = isBarrel
-            ? hashedIndexEB(did.rawId())
-            : offsetForHashes + hashedIndexEE(did.rawId());
+            ?  ecal::reconstruction::hashedIndexEB(did.rawId())
+            : offsetForHashes +  ecal::reconstruction::hashedIndexEE(did.rawId());
 
         // inits
         int iter = 0;

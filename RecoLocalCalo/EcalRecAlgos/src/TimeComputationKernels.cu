@@ -957,12 +957,8 @@ void kernel_time_computation_init(uint16_t const* digis_eb,
         auto const gainId1 = ecal::mgpa::gainId(digis[input_ch_start+1]);
         auto const did = DetId{dids[inputCh]};
         auto const isBarrel = did.subdetId() == EcalBarrel;
-        auto const sample_mask = did.subdetId() == EcalBarrel
-            ? sample_maskEB
-            : sample_maskEE;
-        auto const hashedId = isBarrel
-            ? hashedIndexEB(did.rawId())
-            : offsetForHashes + hashedIndexEE(did.rawId());
+        auto const sample_mask = did.subdetId() == EcalBarrel ? sample_maskEB : sample_maskEE;
+        auto const hashedId = isBarrel ? ecal::reconstruction::hashedIndexEB(did.rawId()) : offsetForHashes + ecal::reconstruction::hashedIndexEE(did.rawId());
 
         // set pedestal
         // TODO this branch is non-divergent for a group of 10 threads
@@ -1160,8 +1156,8 @@ void kernel_time_correction_and_finalize(
     auto const did = DetId{dids[inputGtx]};
     auto const isBarrel = did.subdetId() == EcalBarrel;
     auto const hashedId = isBarrel
-        ? hashedIndexEB(did.rawId())
-        : offsetForHashes + hashedIndexEE(did.rawId());
+        ?  ecal::reconstruction::hashedIndexEB(did.rawId())
+        : offsetForHashes +  ecal::reconstruction::hashedIndexEE(did.rawId());
     auto const* amplitudeBins = isBarrel
         ? amplitudeBinsEB
         : amplitudeBinsEE;

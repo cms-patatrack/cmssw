@@ -101,10 +101,7 @@ void kernel_prep_1d_and_initialize(
         auto const did = DetId{dids[inputCh]};
         auto const isBarrel = did.subdetId() == EcalBarrel;
         // TODO offset for ee, 0 for eb
-        auto const hashedId = isBarrel
-            ? hashedIndexEB(did.rawId())
-            : offsetForHashes + hashedIndexEE(did.rawId());
-
+        auto const hashedId = isBarrel ? ecal::reconstruction::hashedIndexEB(did.rawId()) : offsetForHashes + ecal::reconstruction::hashedIndexEE(did.rawId());
 
         //
         // pulse shape template
@@ -390,9 +387,7 @@ void kernel_prep_2d(SampleGainVector const* gainNoise,
     bool tmp1 = hasSwitchToGain1[ch];
     auto const did = DetId{dids[inputCh]};
     auto const isBarrel = did.subdetId() == EcalBarrel;
-    auto const hashedId = isBarrel
-        ? hashedIndexEB(did.rawId())
-        : offsetForHashes + hashedIndexEE(did.rawId());
+    auto const hashedId = isBarrel ? ecal::reconstruction::hashedIndexEB(did.rawId()) : offsetForHashes + ecal::reconstruction::hashedIndexEE(did.rawId());
     auto const G12SamplesCorrelation = isBarrel
         ? G12SamplesCorrelationEB
         : G12SamplesCorrelationEE;
