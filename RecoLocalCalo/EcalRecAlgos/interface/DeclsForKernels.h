@@ -98,6 +98,7 @@ struct EventOutputDataGPU final : public ::ecal::UncalibratedRecHit<::ecal::Tag:
         cudaCheck( cudaMalloc((void**)&pedestal,
             size * sizeof(::ecal::reco::StorageScalarType)) );
 
+
         if (configParameters.shouldRunTimingComputation) {
             cudaCheck( cudaMalloc((void**)&jitter,
                 size * sizeof(::ecal::reco::StorageScalarType)) );
@@ -270,16 +271,10 @@ struct conf_data {
     cudaStream_t cuStream;
 };
 
-}}
-
-
-
-
-
-
-
-
-
+}}        
+        
+        
+  
 // 
 // ECAL Rechit producer
 // 
@@ -400,9 +395,5 @@ namespace ecal {
     
   }
 }
-
-
-
-
 
 #endif
