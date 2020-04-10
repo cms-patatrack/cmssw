@@ -154,7 +154,7 @@ process.load('Configuration.StandardSequences.Reconstruction_cff')
     
 process.load("RecoLocalCalo.EcalRecProducers.ecalADCToGeVConstantGPUESProducer_cfi")
 process.load("RecoLocalCalo.EcalRecProducers.ecalIntercalibConstantsGPUESProducer_cfi")
-#process.load("RecoLocalCalo.EcalRecProducers.ecalChannelStatusGPUESProducer_cfi")
+process.load("RecoLocalCalo.EcalRecProducers.ecalChannelStatusGPUESProducer_cfi")
     
 process.load("RecoLocalCalo.EcalRecProducers.ecalLaserAPDPNRatiosGPUESProducer_cfi")
 process.load("RecoLocalCalo.EcalRecProducers.ecalLaserAPDPNRatiosRefGPUESProducer_cfi")

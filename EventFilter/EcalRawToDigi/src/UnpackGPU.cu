@@ -317,6 +317,7 @@ namespace ecal {
                                                                    scratchGPU.pChannelsCounter,
                                                                    conditions.eMappingProduct.eid2did,
                                                                    nbytesTotal);
+      
       cudaCheck(cudaGetLastError());
 
       // transfer the counters for how many eb and ee channels we got
