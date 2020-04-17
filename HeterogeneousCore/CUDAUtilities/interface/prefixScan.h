@@ -129,13 +129,14 @@ namespace cms {
 
     // limited to 1024*1024 elements....
     template <typename T>
-    __global__ void multiBlockPrefixScan(T const* __restrict__ ci, T* __restrict__ co, int32_t size, int32_t* pc) {
+    __global__ void multiBlockPrefixScan(T const* ci, T* co, int32_t size, int32_t* pc) {
       __shared__ T ws[32];
       // first each block does a scan of size 1024; (better be enough blocks....)
-      assert(1024 * gridDim.x >= size);
-      int off = 1024 * blockIdx.x;
+      assert(gridDim.x <= 1024);
+      assert(blockDim.x * gridDim.x >= size);
+      int off = blockDim.x * blockIdx.x;
       if (size - off > 0)
-        blockPrefixScan(ci + off, co + off, std::min(1024, size - off), ws);
+        blockPrefixScan(ci + off, co + off, std::min(int(blockDim.x), size - off), ws);
 
       // count blocks that finished
       __shared__ bool isLastBlockDone;
@@ -152,9 +153,9 @@ namespace cms {
       // good each block has done its work and now we are left in last block
 
       // let's get the partial sums from each block
-      __shared__ T psum[1024];
+      extern __shared__ T psum[];
       for (int i = threadIdx.x, ni = gridDim.x; i < ni; i += blockDim.x) {
-        auto j = 1024 * i + 1023;
+        auto j = blockDim.x * i + blockDim.x -1;
         psum[i] = (j < size) ? co[j] : T(0);
       }
       __syncthreads();
@@ -162,8 +163,8 @@ namespace cms {
 
       // now it would have been handy to have the other blocks around...
       int first = threadIdx.x;                                 // + blockDim.x * blockIdx.x
-      for (int i = first + 1024; i < size; i += blockDim.x) {  //  *gridDim.x) {
-        auto k = i / 1024;                                     // block
+      for (int i = first + blockDim.x; i < size; i += blockDim.x) {  //  *gridDim.x) {
+        auto k = i / blockDim.x;                                     // block
         co[i] += psum[k - 1];
       }
     }
