@@ -150,6 +150,8 @@ namespace cms {
       if (!isLastBlockDone)
         return;
 
+      assert(int(gridDim.x)==*pc);
+
       // good each block has done its work and now we are left in last block
 
       // let's get the partial sums from each block
