@@ -9,20 +9,30 @@
   <flags CUDA_FLAGS="-g -DGPU_DEBUG"/>
 </bin>
 
-<bin file="test_SimpleVector.cu" name="test_SimpleVector">
+<bin file="test_SimpleVector.cu" name="gpuSimpleVector_t">
   <flags CUDA_FLAGS="-g"/>
 </bin>
+
+<bin file="test_SimpleVector.cu" name="gpuSimpleVector_debug">
+  <flags CUDA_FLAGS="-g -DGPU_DEBUG"/>
+</bin>
+
 
 <bin file="cudastdAlgorithm_t.cpp">
   <flags CUDA_FLAGS="-g"/>
 </bin>
 
+
 <bin file="cudastdAlgorithm_t.cu" name="gpuCudastdAlgorithm_t">
   <flags CUDA_FLAGS="-g"/>
 </bin>
 
-<bin file="radixSort_t.cu" name="gpuRadixSort_t">
+<bin file="cudastdAlgorithm_t.cu" name="gpuCudastdAlgorithm_debug">
   <flags CUDA_FLAGS="-g -DGPU_DEBUG"/>
+</bin>
+
+<bin file="radixSort_t.cu" name="gpuRadixSort_t">
+  <flags CUDA_FLAGS="-g"/>
 </bin>
 
 <bin file="radixSort_t.cu" name="gpuRadixSort_debug">
