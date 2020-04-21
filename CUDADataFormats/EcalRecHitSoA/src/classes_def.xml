@@ -2,6 +2,7 @@
     <class name="std::vector<float, CUDAHostAllocator<float, 0>>" />
     <class name="std::vector<double, CUDAHostAllocator<double, 0>>" />
     <class name="std::vector<uint32_t, CUDAHostAllocator<uint32_t, 0>>" />
+    <class name="std::vector<uint16_t, CUDAHostAllocator<uint16_t, 0>>" />
     <class name="ecal::Tag::soa"/>
     <class name="ecal::Detail::Base<ecal::Tag::soa>" />
 

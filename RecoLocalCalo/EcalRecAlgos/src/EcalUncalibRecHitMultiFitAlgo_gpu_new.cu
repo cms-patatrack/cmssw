@@ -83,7 +83,7 @@ namespace ecal {
           gainSwitchUseMaxSampleEB,
           gainSwitchUseMaxSampleEE,
           totalChannels);
-      cudaCheck(cudaGetLastError());
+//       cudaCheck(cudaGetLastError());
 
       //
       // 2d preparation kernel
@@ -112,7 +112,7 @@ namespace ecal {
                                                                scratch.isSaturated,
                                                                offsetForHashes,
                                                                offsetForInputs);
-      cudaCheck(cudaGetLastError());
+//       cudaCheck(cudaGetLastError());
 
       // run minimization kernels
       v1::minimization_procedure(eventInputGPU, eventOutputGPU, scratch, conditions, configParameters, cudaStream);
@@ -148,7 +148,7 @@ namespace ecal {
             conditions.sampleMask.getEcalSampleMaskRecordEB(),
             conditions.sampleMask.getEcalSampleMaskRecordEE(),
             totalChannels);
-        cudaCheck(cudaGetLastError());
+//         cudaCheck(cudaGetLastError());
 
         //
         // TODO: small kernel only for EB. It needs to be checked if
@@ -170,7 +170,7 @@ namespace ecal {
             conditions.sampleMask.getEcalSampleMaskRecordEB(),
             totalChannels,
             offsetForInputs);
-        cudaCheck(cudaGetLastError());
+//         cudaCheck(cudaGetLastError());
 
         //
         //
@@ -186,7 +186,7 @@ namespace ecal {
             scratch.sum0sNullHypot,
             scratch.sumAAsNullHypot,
             totalChannels);
-        cudaCheck(cudaGetLastError());
+//         cudaCheck(cudaGetLastError());
 
         unsigned int nchannels_per_block_makeratio = 10;
         unsigned int threads_makeratio = 45 * nchannels_per_block_makeratio;
@@ -220,7 +220,7 @@ namespace ecal {
             configParameters.timeFitLimitsSecondEE,
             totalChannels,
             offsetForInputs);
-        cudaCheck(cudaGetLastError());
+//         cudaCheck(cudaGetLastError());
 
         //
         //
@@ -252,7 +252,7 @@ namespace ecal {
                                                                     scratch.timeError,
                                                                     totalChannels,
                                                                     offsetForInputs);
-        cudaCheck(cudaGetLastError());
+//         cudaCheck(cudaGetLastError());
 
         //
         //
@@ -298,7 +298,7 @@ namespace ecal {
             offsetForHashes,
             offsetForInputs,
             totalChannels);
-        cudaCheck(cudaGetLastError());
+//         cudaCheck(cudaGetLastError());
       }
 
       /*

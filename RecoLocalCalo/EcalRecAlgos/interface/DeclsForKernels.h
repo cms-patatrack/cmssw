@@ -15,7 +15,6 @@
 #include "CondFormats/EcalObjects/interface/EcalPedestals.h"
 #include "CondFormats/EcalObjects/interface/EcalGainRatios.h"
 #include "CondFormats/EcalObjects/interface/EcalTimeBiasCorrections.h"
-#include "CondFormats/EcalObjects/interface/EcalWeightSet.h"
 #include "CondFormats/EcalObjects/interface/EcalTimeOffsetConstant.h"
 
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalPedestalsGPU.h"
@@ -281,16 +280,17 @@ struct conf_data {
 
 #include "CUDADataFormats/EcalRecHitSoA/interface/EcalRecHit_soa.h"
 
+#include "CondFormats/EcalObjects/interface/EcalChannelStatus.h"
+#include "CondFormats/EcalObjects/interface/EcalChannelStatusCode.h"
+
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalADCToGeVConstantGPU.h"
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalIntercalibConstantsGPU.h"
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalChannelStatusGPU.h"
-
 
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalLaserAPDPNRatiosGPU.h"
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalLaserAPDPNRatiosRefGPU.h"
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalLaserAlphasGPU.h"
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalLinearCorrectionsGPU.h"
-
 
 
 
@@ -378,14 +378,14 @@ namespace ecal {
     
     // const refs products to conditions
     struct ConditionsProducts {
-      EcalADCToGeVConstantGPU::Product    const& ADCToGeV;
-      EcalIntercalibConstantsGPU::Product const& Intercalib;
-      EcalChannelStatusGPU::Product       const& ChannelStatus;
+      EcalADCToGeVConstantGPU::Product    const& ADCToGeV      ;
+      EcalIntercalibConstantsGPU::Product const& Intercalib    ;
+      EcalChannelStatusGPU::Product       const& ChannelStatus ;
       //     
-      EcalLaserAPDPNRatiosGPU::Product     const& LaserAPDPNRatios   ;
-      EcalLaserAPDPNRatiosRefGPU::Product  const& LaserAPDPNRatiosRef;
-      EcalLaserAlphasGPU::Product          const& LaserAlphas        ;
-      EcalLinearCorrectionsGPU::Product    const& LinearCorrections  ;
+      EcalLaserAPDPNRatiosGPU::Product     const& LaserAPDPNRatios    ;
+      EcalLaserAPDPNRatiosRefGPU::Product  const& LaserAPDPNRatiosRef ;
+      EcalLaserAlphasGPU::Product          const& LaserAlphas         ;
+      EcalLinearCorrectionsGPU::Product    const& LinearCorrections   ;
       //     
       //     
       uint32_t offsetForHashes;    

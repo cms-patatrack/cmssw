@@ -45,3 +45,5 @@ EcalChannelStatusGPU::Product const& EcalChannelStatusGPU::getProduct(cudaStream
 }
 
 TYPELOOKUP_DATA_REG(EcalChannelStatusGPU);
+
+

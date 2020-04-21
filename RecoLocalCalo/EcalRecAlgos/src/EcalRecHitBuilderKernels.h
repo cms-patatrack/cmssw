@@ -3,6 +3,7 @@
 //
 
 #include "CUDADataFormats/EcalRecHitSoA/interface/EcalUncalibratedRecHit_soa.h"
+#include "CUDADataFormats/EcalRecHitSoA/interface/EcalRecHit_soa.h"
 
 #include "RecoLocalCalo/EcalRecAlgos/interface/DeclsForKernels.h"
 #include "RecoLocalCalo/EcalRecAlgos/interface/Common.h"

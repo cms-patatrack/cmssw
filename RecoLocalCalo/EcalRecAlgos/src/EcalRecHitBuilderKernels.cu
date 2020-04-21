@@ -648,15 +648,20 @@ namespace ecal {
       
       int nchannels = eventInputGPU.ebUncalibRecHits.size + eventInputGPU.eeUncalibRecHits.size ;
       
-      unsigned int nchannels_per_block = 32;
-      unsigned int threads_1d = nchannels_per_block;
-      unsigned int blocks_1d = (nchannels + threads_1d) / threads_1d; // TEST : to be optimized (AM)
-      
+//       unsigned int nchannels_per_block = 32;
+      unsigned int nchannels_per_block = 16;
+      unsigned int threads_min = nchannels_per_block;
+      unsigned int blocks_min = (nchannels + threads_min - 1) / threads_min; // TEST : to be optimized (AM)
       
       // 
       // kernel create rechit
       //
-      kernel_create_ecal_rehit <<< blocks_1d, threads_1d >>> (
+      
+//       auto const nbytesShared = 2 * threads_min * MapSymM<DataType, SampleVector::RowsAtCompileTime>::total * sizeof(DataType);
+      
+      kernel_create_ecal_rehit <<< blocks_min, threads_min, 0, cudaStream >>> (
+//       kernel_create_ecal_rehit <<< blocks_min, threads_min, nbytesShared, cudaStream >>> (
+//       kernel_create_ecal_rehit <<< blocks_min, threads_min >>> (
         // configuration 
         configParameters.ChannelStatusToBeExcluded,
         configParameters.ChannelStatusToBeExcludedSize,

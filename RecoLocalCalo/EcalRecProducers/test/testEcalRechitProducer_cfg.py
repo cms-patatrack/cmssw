@@ -152,7 +152,7 @@ process.load('Configuration.StandardSequences.Reconstruction_cff')
 
     
     
-process.load("RecoLocalCalo.EcalRecProducers.ecalADCToGeVConstantGPUESProducer_cfi")
+#process.load("RecoLocalCalo.EcalRecProducers.ecalADCToGeVConstantGPUESProducer_cfi")
 process.load("RecoLocalCalo.EcalRecProducers.ecalIntercalibConstantsGPUESProducer_cfi")
 process.load("RecoLocalCalo.EcalRecProducers.ecalChannelStatusGPUESProducer_cfi")
     
@@ -161,8 +161,8 @@ process.load("RecoLocalCalo.EcalRecProducers.ecalLaserAPDPNRatiosRefGPUESProduce
 process.load("RecoLocalCalo.EcalRecProducers.ecalLaserAlphasGPUESProducer_cfi")
 process.load("RecoLocalCalo.EcalRecProducers.ecalLinearCorrectionsGPUESProducer_cfi")
     
-process.load("RecoLocalCalo.EcalRecProducers.ecalRecHitGPU_cfi")
-process.ecalRecHitProducerGPU = process.ecalRecHitGPU.clone()
+#process.load("RecoLocalCalo.EcalRecProducers.ecalRecHitGPU_cfi")
+#process.ecalRecHitProducerGPU = process.ecalRecHitGPU.clone()
  
  
 #
@@ -273,7 +273,7 @@ process.recoPath = cms.Path(
 #   gpu
     *process.ecalUncalibRecHitProducerGPU
     *process.ecalCPUUncalibRecHitProducer
-    *process.ecalRecHitProducerGPU
+    #*process.ecalRecHitProducerGPU
     #*process.ecalCPURecHitProducer
 )
 

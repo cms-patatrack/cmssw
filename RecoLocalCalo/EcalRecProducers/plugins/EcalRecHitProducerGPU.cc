@@ -401,9 +401,6 @@ void EcalRecHitProducerGPU::acquire(
     ctx.stream()
   );
   
-  
-  
-  
   cudaCheck(cudaGetLastError());
   
   

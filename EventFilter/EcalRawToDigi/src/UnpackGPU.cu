@@ -307,7 +307,8 @@ namespace ecal {
       cudaCheck(cudaMemcpyAsync(
           inputGPU.feds, inputCPU.feds.data(), nfedsWithData * sizeof(int), cudaMemcpyHostToDevice, cudaStream));
 
-      kernel_unpack_test<32><<<nfedsWithData, 32, 0, cudaStream>>>(inputGPU.data,
+//       kernel_unpack_test<32><<<nfedsWithData, 32, 0, cudaStream>>>(inputGPU.data,
+      kernel_unpack_test<16><<<nfedsWithData, 16, 0, cudaStream>>>(inputGPU.data,
                                                                    inputGPU.offsets,
                                                                    inputGPU.feds,
                                                                    outputGPU.samplesEB,
