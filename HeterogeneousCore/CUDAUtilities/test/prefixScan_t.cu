@@ -1,7 +1,5 @@
 #include <iostream>
 
-#include <cub/cub.cuh>
-
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/prefixScan.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/requireDevices.h"
@@ -145,26 +143,6 @@ int main() {
     cudaCheck(cudaGetLastError());
     cudaDeviceSynchronize();
 
-    // test cub
-    std::cout << "cub" << std::endl;
-    // Determine temporary device storage requirements for inclusive prefix sum
-    void *d_temp_storage = nullptr;
-    size_t temp_storage_bytes = 0;
-    cub::DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, d_in, d_out2, num_items);
-
-    std::cout << "temp storage " << temp_storage_bytes << std::endl;
-
-    // Allocate temporary storage for inclusive prefix sum
-    // fake larger ws already available
-    temp_storage_bytes *= 8;
-    cudaCheck(cudaMalloc(&d_temp_storage, temp_storage_bytes));
-    std::cout << "temp storage " << temp_storage_bytes << std::endl;
-    // Run inclusive prefix sum
-    CubDebugExit(cub::DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, d_in, d_out2, num_items));
-    std::cout << "temp storage " << temp_storage_bytes << std::endl;
-
-    verify<<<nblocks, nthreads, 0>>>(d_out2, num_items);
-    cudaDeviceSynchronize();
   }  // ksize
   return 0;
 }

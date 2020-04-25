@@ -1,4 +1,3 @@
-<use name="cub"/>
 <use name="cuda"/>
 <use name="CUDADataFormats/SiPixelCluster"/>
 <use name="CUDADataFormats/SiPixelDigi"/>
