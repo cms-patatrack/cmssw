@@ -14,17 +14,18 @@
 template <typename Target, typename Source, typename Record>
 class EcalESProducerGPU : public edm::ESProducer {
 public:
-  explicit EcalESProducerGPU(edm::ParameterSet const& ps) : label_{ps.getParameter<std::string>("label")} {
+  explicit EcalESProducerGPU(edm::ParameterSet const& ps) {
+    auto const label = ps.getParameter<std::string>("label");
     std::string name = ps.getParameter<std::string>("ComponentName");
-    setWhatProduced(this, name);
+    auto cc = setWhatProduced(this, name);
+    cc.setConsumes(token_, edm::ESInputTag{"", label});
   }
 
   std::unique_ptr<Target> produce(Record const& record) {
     // retrieve conditions in old format
-    edm::ESTransientHandle<Source> product;
-    record.get(label_, product);
+    auto sourceProduct = record.getTransientHandle(token_);
 
-    return std::make_unique<Target>(*product);
+    return std::make_unique<Target>(*sourceProduct);
   }
 
   static void fillDescriptions(edm::ConfigurationDescriptions& confDesc) {
@@ -37,7 +38,7 @@ public:
   }
 
 private:
-  std::string label_;
+  edm::ESGetToken<Source, Record> token_;
 };
 
 #endif

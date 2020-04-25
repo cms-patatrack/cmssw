@@ -51,13 +51,9 @@ private:
   void acquire(edm::Event const&, edm::EventSetup const&, edm::WaitingTaskWithArenaHolder) override;
   void produce(edm::Event&, edm::EventSetup const&) override;
 
-  void transferToHost(RecHitType& ebRecHits, RecHitType& eeRecHits, cudaStream_t cudaStream);
-
 private:
-  edm::EDGetTokenT<EBDigiCollection> digisTokenEB_;
-  edm::EDGetTokenT<EEDigiCollection> digisTokenEE_;
-
-  std::string recHitsLabelEB_, recHitsLabelEE_;
+  edm::EDGetTokenT<cms::cuda::Product<ecal::DigisCollection>> digisTokenEB_, digisTokenEE_;
+  edm::EDPutTokenT<cms::cuda::Product<ecal::UncalibratedRecHit<ecal::Tag::ptr>>> recHitsTokenEB_, recHitsTokenEE_;
 
   // conditions handles
   edm::ESHandle<EcalPedestalsGPU> pedestalsHandle_;
@@ -74,23 +70,21 @@ private:
   ecal::multifit::ConfigurationParameters configParameters_;
 
   // event data
-  ecal::multifit::EventInputDataGPU eventInputDataGPU_;
   ecal::multifit::EventOutputDataGPU eventOutputDataGPU_;
   ecal::multifit::EventDataForScratchGPU eventDataForScratchGPU_;
   bool shouldTransferToHost_{true};
 
   cms::cuda::ContextState cudaState_;
 
-  std::unique_ptr<ecal::UncalibratedRecHit<ecal::Tag::soa>> ebRecHits_{nullptr}, eeRecHits_{nullptr};
-
   uint32_t maxNumberHits_;
+  uint32_t neb_, nee_;
 };
 
 void EcalUncalibRecHitProducerGPU::fillDescriptions(edm::ConfigurationDescriptions& confDesc) {
   edm::ParameterSetDescription desc;
 
-  desc.add<edm::InputTag>("digisLabelEB", edm::InputTag("ecalDigis", "ebDigis"));
-  desc.add<edm::InputTag>("digisLabelEE", edm::InputTag("ecalDigis", "eeDigis"));
+  desc.add<edm::InputTag>("digisLabelEB", edm::InputTag("ecalRawToDigiGPU", "ebDigisGPU"));
+  desc.add<edm::InputTag>("digisLabelEE", edm::InputTag("ecalRawToDigiGPU", "eeDigisGPU"));
 
   desc.add<std::string>("recHitsLabelEB", "EcalUncalibRecHitsEB");
   desc.add<std::string>("recHitsLabelEE", "EcalUncalibRecHitsEE");
@@ -142,13 +136,15 @@ void EcalUncalibRecHitProducerGPU::fillDescriptions(edm::ConfigurationDescriptio
   confDesc.add(label, desc);
 }
 
-EcalUncalibRecHitProducerGPU::EcalUncalibRecHitProducerGPU(const edm::ParameterSet& ps) {
-  digisTokenEB_ = consumes<EBDigiCollection>(ps.getParameter<edm::InputTag>("digisLabelEB"));
-  digisTokenEE_ = consumes<EEDigiCollection>(ps.getParameter<edm::InputTag>("digisLabelEE"));
-
-  recHitsLabelEB_ = ps.getParameter<std::string>("recHitsLabelEB");
-  recHitsLabelEE_ = ps.getParameter<std::string>("recHitsLabelEE");
-
+EcalUncalibRecHitProducerGPU::EcalUncalibRecHitProducerGPU(const edm::ParameterSet& ps)
+    : digisTokenEB_{consumes<cms::cuda::Product<ecal::DigisCollection>>(
+          ps.getParameter<edm::InputTag>("digisLabelEB"))},
+      digisTokenEE_{
+          consumes<cms::cuda::Product<ecal::DigisCollection>>(ps.getParameter<edm::InputTag>("digisLabelEE"))},
+      recHitsTokenEB_{produces<cms::cuda::Product<ecal::UncalibratedRecHit<ecal::Tag::ptr>>>(
+          ps.getParameter<std::string>("recHitsLabelEB"))},
+      recHitsTokenEE_{produces<cms::cuda::Product<ecal::UncalibratedRecHit<ecal::Tag::ptr>>>(
+          ps.getParameter<std::string>("recHitsLabelEE"))} {
   auto EBamplitudeFitParameters = ps.getParameter<std::vector<double>>("EBamplitudeFitParameters");
   auto EEamplitudeFitParameters = ps.getParameter<std::vector<double>>("EEamplitudeFitParameters");
   auto EBtimeFitParameters = ps.getParameter<std::vector<double>>("EBtimeFitParameters");
@@ -189,9 +185,6 @@ EcalUncalibRecHitProducerGPU::EcalUncalibRecHitProducerGPU(const edm::ParameterS
   configParameters_.kernelMinimizeThreads[0] = threadsMinimize[0];
   configParameters_.kernelMinimizeThreads[1] = threadsMinimize[1];
   configParameters_.kernelMinimizeThreads[2] = threadsMinimize[2];
-
-  produces<ecal::SoAUncalibratedRecHitCollection>(recHitsLabelEB_);
-  produces<ecal::SoAUncalibratedRecHitCollection>(recHitsLabelEE_);
 
   //
   // configuration and physics parameters: done once
@@ -255,9 +248,6 @@ EcalUncalibRecHitProducerGPU::EcalUncalibRecHitProducerGPU(const edm::ParameterS
   configParameters_.outOfTimeThreshG61mEB = outOfTimeThreshG61mEB;
   configParameters_.outOfTimeThreshG61mEE = outOfTimeThreshG61mEE;
 
-  // allocate event input data
-  eventInputDataGPU_.allocate(maxNumberHits_);
-
   // allocate event output data
   eventOutputDataGPU_.allocate(configParameters_, maxNumberHits_);
 
@@ -277,9 +267,6 @@ EcalUncalibRecHitProducerGPU::~EcalUncalibRecHitProducerGPU() {
     cudaCheck(cudaFree(configParameters_.timeFitParametersEB));
     cudaCheck(cudaFree(configParameters_.timeFitParametersEE));
 
-    // free event input data
-    eventInputDataGPU_.deallocate();
-
     // free event ouput data
     eventOutputDataGPU_.deallocate(configParameters_);
 
@@ -291,10 +278,19 @@ EcalUncalibRecHitProducerGPU::~EcalUncalibRecHitProducerGPU() {
 void EcalUncalibRecHitProducerGPU::acquire(edm::Event const& event,
                                            edm::EventSetup const& setup,
                                            edm::WaitingTaskWithArenaHolder holder) {
-  //DurationMeasurer<std::chrono::milliseconds> timer{std::string{"acquire duration"}};
+  // cuda products
+  auto const& ebDigisProduct = event.get(digisTokenEB_);
+  auto const& eeDigisProduct = event.get(digisTokenEE_);
 
   // raii
-  cms::cuda::ScopedContextAcquire ctx{event.streamID(), std::move(holder), cudaState_};
+  cms::cuda::ScopedContextAcquire ctx{ebDigisProduct, std::move(holder), cudaState_};
+
+  // get actual obj
+  auto const& ebDigis = ctx.get(ebDigisProduct);
+  auto const& eeDigis = ctx.get(eeDigisProduct);
+  ecal::multifit::EventInputDataGPU inputDataGPU{ebDigis, eeDigis};
+  neb_ = ebDigis.ndigis;
+  nee_ = eeDigis.ndigis;
 
   // conditions
   setup.get<EcalPedestalsRcd>().get(pedestalsHandle_);
@@ -328,138 +324,39 @@ void EcalUncalibRecHitProducerGPU::acquire(edm::Event const& event,
                                                 timeCalibConstantsHandle_->getOffset()};
 
   //
-  // retrieve collections
-  //
-  edm::Handle<EBDigiCollection> ebDigis;
-  edm::Handle<EEDigiCollection> eeDigis;
-  event.getByToken(digisTokenEB_, ebDigis);
-  event.getByToken(digisTokenEE_, eeDigis);
-
-  ecal::multifit::EventInputDataCPU eventInputDataCPU{*ebDigis, *eeDigis};
-
-  //
   // schedule algorithms
   //
-  ecal::multifit::entryPoint(eventInputDataCPU,
-                             eventInputDataGPU_,
-                             eventOutputDataGPU_,
-                             eventDataForScratchGPU_,
-                             conditions,
-                             configParameters_,
-                             ctx.stream());
-
-  ebRecHits_ = std::make_unique<ecal::UncalibratedRecHit<ecal::Tag::soa>>();
-  eeRecHits_ = std::make_unique<ecal::UncalibratedRecHit<ecal::Tag::soa>>();
-
-  if (shouldTransferToHost_) {
-    // allocate for the result while kernels are running
-    ebRecHits_->resize(ebDigis->size());
-    eeRecHits_->resize(eeDigis->size());
-
-    // det ids are host copy only - no need to run device -> host
-    std::memcpy(ebRecHits_->did.data(), ebDigis->ids().data(), ebDigis->ids().size() * sizeof(uint32_t));
-    std::memcpy(eeRecHits_->did.data(), eeDigis->ids().data(), eeDigis->ids().size() * sizeof(uint32_t));
-  }
+  ecal::multifit::entryPoint(
+      inputDataGPU, eventOutputDataGPU_, eventDataForScratchGPU_, conditions, configParameters_, ctx.stream());
 }
 
 void EcalUncalibRecHitProducerGPU::produce(edm::Event& event, edm::EventSetup const& setup) {
   //DurationMeasurer<std::chrono::milliseconds> timer{std::string{"produce duration"}};
   cms::cuda::ScopedContextProduce ctx{cudaState_};
 
-  if (shouldTransferToHost_) {
-    // rec hits objects were not originally member variables
-    transferToHost(*ebRecHits_, *eeRecHits_, ctx.stream());
+  // copy construct output collections
+  // note, output collections do not own device memory!
+  ecal::UncalibratedRecHit<ecal::Tag::ptr> ebRecHits{eventOutputDataGPU_}, eeRecHits{eventOutputDataGPU_};
 
-    // TODO
-    // for now just sync on the host when transferring back products
-    cudaStreamSynchronize(ctx.stream());
-  }
+  // set the size of eb and ee
+  ebRecHits.size = neb_;
+  eeRecHits.size = nee_;
 
-  event.put(std::move(ebRecHits_), recHitsLabelEB_);
-  event.put(std::move(eeRecHits_), recHitsLabelEE_);
-}
-
-void EcalUncalibRecHitProducerGPU::transferToHost(RecHitType& ebRecHits,
-                                                  RecHitType& eeRecHits,
-                                                  cudaStream_t cudaStream) {
-  cudaCheck(cudaMemcpyAsync(ebRecHits.amplitude.data(),
-                            eventOutputDataGPU_.amplitude,
-                            ebRecHits.amplitude.size() * sizeof(ecal::reco::StorageScalarType),
-                            cudaMemcpyDeviceToHost,
-                            cudaStream));
-  cudaCheck(cudaMemcpyAsync(eeRecHits.amplitude.data(),
-                            eventOutputDataGPU_.amplitude + ebRecHits.amplitude.size(),
-                            eeRecHits.amplitude.size() * sizeof(ecal::reco::StorageScalarType),
-                            cudaMemcpyDeviceToHost,
-                            cudaStream));
-
-  cudaCheck(cudaMemcpyAsync(ebRecHits.pedestal.data(),
-                            eventOutputDataGPU_.pedestal,
-                            ebRecHits.pedestal.size() * sizeof(ecal::reco::StorageScalarType),
-                            cudaMemcpyDeviceToHost,
-                            cudaStream));
-  cudaCheck(cudaMemcpyAsync(eeRecHits.pedestal.data(),
-                            eventOutputDataGPU_.pedestal + ebRecHits.pedestal.size(),
-                            eeRecHits.pedestal.size() * sizeof(ecal::reco::StorageScalarType),
-                            cudaMemcpyDeviceToHost,
-                            cudaStream));
-
-  cudaCheck(cudaMemcpyAsync(ebRecHits.chi2.data(),
-                            eventOutputDataGPU_.chi2,
-                            ebRecHits.chi2.size() * sizeof(ecal::reco::StorageScalarType),
-                            cudaMemcpyDeviceToHost,
-                            cudaStream));
-  cudaCheck(cudaMemcpyAsync(eeRecHits.chi2.data(),
-                            eventOutputDataGPU_.chi2 + ebRecHits.chi2.size(),
-                            eeRecHits.chi2.size() * sizeof(ecal::reco::StorageScalarType),
-                            cudaMemcpyDeviceToHost,
-                            cudaStream));
-
+  // shift ptrs for ee
+  eeRecHits.amplitudesAll += neb_ * EcalDataFrame::MAXSAMPLES;
+  eeRecHits.amplitude += neb_;
+  eeRecHits.chi2 += neb_;
+  eeRecHits.pedestal += neb_;
+  eeRecHits.did += neb_;
+  eeRecHits.flags += neb_;
   if (configParameters_.shouldRunTimingComputation) {
-    cudaCheck(cudaMemcpyAsync(ebRecHits.jitter.data(),
-                              eventOutputDataGPU_.jitter,
-                              ebRecHits.jitter.size() * sizeof(ecal::reco::StorageScalarType),
-                              cudaMemcpyDeviceToHost,
-                              cudaStream));
-    cudaCheck(cudaMemcpyAsync(eeRecHits.jitter.data(),
-                              eventOutputDataGPU_.jitter + ebRecHits.jitter.size(),
-                              eeRecHits.jitter.size() * sizeof(ecal::reco::StorageScalarType),
-                              cudaMemcpyDeviceToHost,
-                              cudaStream));
-
-    cudaCheck(cudaMemcpyAsync(ebRecHits.jitterError.data(),
-                              eventOutputDataGPU_.jitterError,
-                              ebRecHits.jitterError.size() * sizeof(ecal::reco::StorageScalarType),
-                              cudaMemcpyDeviceToHost,
-                              cudaStream));
-    cudaCheck(cudaMemcpyAsync(eeRecHits.jitterError.data(),
-                              eventOutputDataGPU_.jitterError + ebRecHits.jitterError.size(),
-                              eeRecHits.jitterError.size() * sizeof(ecal::reco::StorageScalarType),
-                              cudaMemcpyDeviceToHost,
-                              cudaStream));
+    eeRecHits.jitter += neb_;
+    eeRecHits.jitterError += neb_;
   }
 
-  cudaCheck(cudaMemcpyAsync(ebRecHits.flags.data(),
-                            eventOutputDataGPU_.flags,
-                            ebRecHits.flags.size() * sizeof(uint32_t),
-                            cudaMemcpyDeviceToHost,
-                            cudaStream));
-  cudaCheck(cudaMemcpyAsync(eeRecHits.flags.data(),
-                            eventOutputDataGPU_.flags + ebRecHits.flags.size(),
-                            eeRecHits.flags.size() * sizeof(uint32_t),
-                            cudaMemcpyDeviceToHost,
-                            cudaStream));
-
-  cudaCheck(cudaMemcpyAsync(ebRecHits.amplitudesAll.data(),
-                            eventOutputDataGPU_.amplitudesAll,
-                            ebRecHits.amplitudesAll.size() * sizeof(ecal::reco::ComputationScalarType),
-                            cudaMemcpyDeviceToHost,
-                            cudaStream));
-  cudaCheck(cudaMemcpyAsync(eeRecHits.amplitudesAll.data(),
-                            eventOutputDataGPU_.amplitudesAll + ebRecHits.amplitudesAll.size(),
-                            eeRecHits.amplitudesAll.size() * sizeof(ecal::reco::ComputationScalarType),
-                            cudaMemcpyDeviceToHost,
-                            cudaStream));
+  // put into the event
+  ctx.emplace(event, recHitsTokenEB_, std::move(ebRecHits));
+  ctx.emplace(event, recHitsTokenEE_, std::move(eeRecHits));
 }
 
 DEFINE_FWK_MODULE(EcalUncalibRecHitProducerGPU);
