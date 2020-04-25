@@ -26,6 +26,8 @@
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalTimeBiasCorrectionsGPU.h"
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalTimeCalibConstantsGPU.h"
 
+#include "CUDADataFormats/EcalDigi/interface/DigisCollection.h"
+
 struct EcalPulseShape;
 class EcalSampleMask;
 class EcalTimeBiasCorrections;
@@ -46,26 +48,10 @@ namespace ecal {
       Precomputed = 2,
     };
 
-    // event input data on cpu, just const refs
-    struct EventInputDataCPU {
-      EBDigiCollection const& ebDigis;
-      EEDigiCollection const& eeDigis;
-    };
-
     //
     struct EventInputDataGPU {
-      uint16_t* digis;
-      uint32_t* ids;
-
-      void allocate(uint32_t size) {
-        cudaCheck(cudaMalloc((void**)&digis, sizeof(uint16_t) * size * EcalDataFrame::MAXSAMPLES));
-        cudaCheck(cudaMalloc((void**)&ids, sizeof(uint32_t) * size));
-      }
-
-      void deallocate() {
-        cudaCheck(cudaFree(digis));
-        cudaCheck(cudaFree(ids));
-      }
+      ecal::DigisCollection const& ebDigis;
+      ecal::DigisCollection const& eeDigis;
     };
 
     // parameters have a fixed type
@@ -134,7 +120,6 @@ namespace ecal {
 
       SampleMatrix* noisecov = nullptr;
       PulseMatrixType* pulse_matrix = nullptr;
-      FullSampleMatrix* pulse_covariances = nullptr;
       BXVectorType* activeBXs = nullptr;
       char* acState = nullptr;
 
@@ -156,7 +141,6 @@ namespace ecal {
         cudaCheck(cudaMalloc((void**)&samples, size * sizeof(SampleVector)));
         cudaCheck(cudaMalloc((void**)&gainsNoise, size * sizeof(SampleGainVector)));
 
-        cudaCheck(cudaMalloc((void**)&pulse_covariances, size * sizeof(FullSampleMatrix)));
         cudaCheck(cudaMalloc((void**)&noisecov, size * sizeof(SampleMatrix)));
         cudaCheck(cudaMalloc((void**)&pulse_matrix, size * sizeof(PulseMatrixType)));
         cudaCheck(cudaMalloc((void**)&activeBXs, size * sizeof(BXVectorType)));
@@ -191,7 +175,6 @@ namespace ecal {
         cudaCheck(cudaFree(samples));
         cudaCheck(cudaFree(gainsNoise));
 
-        cudaCheck(cudaFree(pulse_covariances));
         cudaCheck(cudaFree(noisecov));
         cudaCheck(cudaFree(pulse_matrix));
         cudaCheck(cudaFree(activeBXs));
