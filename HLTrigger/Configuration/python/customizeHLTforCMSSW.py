@@ -164,47 +164,30 @@ def customiseFor2017DtUnpacking(process):
 
     return process
 
-def customiseFor28936(process):
-    """ Adapt a misconfiguration in hltBoostedDBSVAK8TagInfosPF. Issue #29203 """
-    if hasattr(process, 'hltBoostedDBSVAK8TagInfosPF'):
-      del process.hltBoostedDBSVAK8TagInfosPF.trackSelection.variableJTAParsi
+def customiseFor29512(process):
+    """Refresh configuration of ElectronNHitSeedProducer instances.
+    
+    Loops over some parameters of ElectronNHitSeedProducer instances and changes their type from string to ESInputTag.
+
+    For PR https://github.com/cms-sw/cmssw/pull/29512 "ElectronNHitSeedProducer modernization"
+    """
+
+    for producer in producers_by_type(process, "ElectronNHitSeedProducer"):
+        matcherConfig = producer.matcherConfig
+        for parameter_name in ("detLayerGeom", "navSchool", "paramMagField"):
+            if hasattr(matcherConfig, parameter_name):
+                old_parameter = getattr(matcherConfig, parameter_name)
+                if old_parameter.pythonTypeName().endswith("string"):
+                    old_value = old_parameter.pythonValue()[1:-1]
+                    setattr(matcherConfig, parameter_name, cms.ESInputTag("", old_value))
+
     return process
-
-def customiseFor29049(process) :
-
-   listHltPFRecHitHBHE=['hltParticleFlowRecHitHBHE',
-                        'hltParticleFlowRecHitHBHEForEgamma',
-                        'hltParticleFlowRecHitHBHEForEgammaUnseeded',
-                        'hltParticleFlowRecHitHBHEForMuons',
-                        'hltParticleFlowRecHitHBHERegForMuons']
-   for att in listHltPFRecHitHBHE:
-      if hasattr(process,att):
-         prod = getattr(process, att)
-         pset_navi = prod.navigator
-         if hasattr(pset_navi, "sigmaCut"): delattr(pset_navi,'sigmaCut')
-         if hasattr(pset_navi, "timeResolutionCalc"): delattr(pset_navi,'timeResolutionCalc')
-         pset_navi.name = cms.string("PFRecHitHCALDenseIdNavigator")
-         pset_navi.hcalEnums = cms.vint32(1,2)
-
-   listHltPFRecHitHF=['hltParticleFlowRecHitHF',
-                      'hltParticleFlowRecHitHFForEgammaUnseeded']
-   for att in listHltPFRecHitHF:
-      if hasattr(process,att):
-         prod = getattr(process, att)
-         pset_navi = prod.navigator
-         if hasattr(pset_navi, "barrel"): delattr(pset_navi,'barrel')
-         if hasattr(pset_navi, "endcap"): delattr(pset_navi,'endcap')
-         pset_navi.name = cms.string("PFRecHitHCALDenseIdNavigator")
-         pset_navi.hcalEnums = cms.vint32(4)
-
-   return process
 
 # CMSSW version specific customizations
 def customizeHLTforCMSSW(process, menuType="GRun"):
 
     # add call to action function in proper order: newest last!
     # process = customiseFor12718(process)
-    process = customiseFor29049(process)
-    process = customiseFor28936(process)
+    process = customiseFor29512(process)
 
     return process

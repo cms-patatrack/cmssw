@@ -30,7 +30,7 @@ namespace ecal {
                                                   SampleVector::Scalar* chi2s,
                                                   SampleVector::Scalar* sum0s,
                                                   SampleVector::Scalar* sumAAs,
-                                                  int const nchannels) {
+                                                  const int nchannels) {
       using ScalarType = SampleVector::Scalar;
       constexpr int nsamples = EcalDataFrame::MAXSAMPLES;
 
@@ -54,9 +54,9 @@ namespace ecal {
         SampleVector::Scalar* s_sumAA = s_sumA + nchannels_per_block * nsamples;
 
         // TODO make sure no div by 0
-        auto const inv_error =
+        const auto inv_error =
             useless_sample_values[tx] ? 0.0 : 1.0 / (sample_value_errors[tx] * sample_value_errors[tx]);
-        auto const sample_value = sample_values[tx];
+        const auto sample_value = sample_values[tx];
         s_sum0[ltx] = useless_sample_values[tx] ? 0 : 1;
         s_sum1[ltx] = inv_error;
         s_sumA[ltx] = sample_value * inv_error;
@@ -87,11 +87,11 @@ namespace ecal {
           //s_sum1[ltx] += s_sum1[ltx+1] - s_sum1[ltx+3];
           //s_sumA[ltx] += s_sumA[ltx+1] - s_sumA[ltx+3];
           //s_sumAA[ltx] += s_sumAA[ltx+1] - s_sumAA[ltx+3];
-          auto const sum0 = s_sum0[ltx] + s_sum0[ltx + 1] - s_sum0[ltx + 3];
-          auto const sum1 = s_sum1[ltx] + s_sum1[ltx + 1] - s_sum1[ltx + 3];
-          auto const sumA = s_sumA[ltx] + s_sumA[ltx + 1] - s_sumA[ltx + 3];
-          auto const sumAA = s_sumAA[ltx] + s_sumAA[ltx + 1] - s_sumAA[ltx + 3];
-          auto const chi2 = sum0 > 0 ? (sumAA - sumA * sumA / sum1) / sum0 : static_cast<ScalarType>(0);
+          const auto sum0 = s_sum0[ltx] + s_sum0[ltx + 1] - s_sum0[ltx + 3];
+          const auto sum1 = s_sum1[ltx] + s_sum1[ltx + 1] - s_sum1[ltx + 3];
+          const auto sumA = s_sumA[ltx] + s_sumA[ltx + 1] - s_sumA[ltx + 3];
+          const auto sumAA = s_sumAA[ltx] + s_sumAA[ltx + 1] - s_sumAA[ltx + 3];
+          const auto chi2 = sum0 > 0 ? (sumAA - sumA * sumA / sum1) / sum0 : static_cast<ScalarType>(0);
           chi2s[ch] = chi2;
           sum0s[ch] = sum0;
           sumAAs[ch] = sumAA;
@@ -118,7 +118,8 @@ namespace ecal {
     //
     __global__ void kernel_time_compute_makeratio(SampleVector::Scalar const* sample_values,
                                                   SampleVector::Scalar const* sample_value_errors,
-                                                  uint32_t const* dids,
+                                                  uint32_t const* dids_eb,
+                                                  uint32_t const* dids_ee,
                                                   bool const* useless_sample_values,
                                                   char const* pedestal_nums,
                                                   ConfigurationParameters::type const* amplitudeFitParametersEB,
@@ -132,13 +133,14 @@ namespace ecal {
                                                   SampleVector::Scalar* g_accTimeMax,
                                                   SampleVector::Scalar* g_accTimeWgt,
                                                   TimeComputationState* g_state,
-                                                  unsigned int const timeFitParameters_sizeEB,
-                                                  unsigned int const timeFitParameters_sizeEE,
+                                                  unsigned const int timeFitParameters_sizeEB,
+                                                  unsigned const int timeFitParameters_sizeEE,
                                                   ConfigurationParameters::type const timeFitLimits_firstEB,
                                                   ConfigurationParameters::type const timeFitLimits_firstEE,
                                                   ConfigurationParameters::type const timeFitLimits_secondEB,
                                                   ConfigurationParameters::type const timeFitLimits_secondEE,
-                                                  int const nchannels) {
+                                                  const int nchannels,
+                                                  uint32_t const offsetForInputs) {
       using ScalarType = SampleVector::Scalar;
 
       // constants
@@ -146,26 +148,25 @@ namespace ecal {
       constexpr int nsamples = EcalDataFrame::MAXSAMPLES;
 
       // indices
-      int const gtx = threadIdx.x + blockDim.x * blockIdx.x;
-      int const ch = gtx / nthreads_per_channel;
-      int const lch = threadIdx.x / nthreads_per_channel;
-      int const ltx = threadIdx.x % nthreads_per_channel;
-      int const ch_start = ch * nsamples;
-      int const lch_start = lch * nthreads_per_channel;
-      int const nchannels_per_block = blockDim.x / nthreads_per_channel;
+      const int gtx = threadIdx.x + blockDim.x * blockIdx.x;
+      const int ch = gtx / nthreads_per_channel;
+      const int ltx = threadIdx.x % nthreads_per_channel;
+      const int ch_start = ch * nsamples;
+      const auto* dids = ch >= offsetForInputs ? dids_ee : dids_eb;
+      const int inputCh = ch >= offsetForInputs ? ch - offsetForInputs : ch;
 
       // rmeove inactive threads
       // TODO: need to understand if this is 100% safe in presence of syncthreads
       if (ch >= nchannels)
         return;
 
-      auto const did = DetId{dids[ch]};
-      auto const isBarrel = did.subdetId() == EcalBarrel;
-      auto const* amplitudeFitParameters = isBarrel ? amplitudeFitParametersEB : amplitudeFitParametersEE;
-      auto const* timeFitParameters = isBarrel ? timeFitParametersEB : timeFitParametersEE;
-      auto const timeFitParameters_size = isBarrel ? timeFitParameters_sizeEB : timeFitParameters_sizeEE;
-      auto const timeFitLimits_first = isBarrel ? timeFitLimits_firstEB : timeFitLimits_firstEE;
-      auto const timeFitLimits_second = isBarrel ? timeFitLimits_secondEB : timeFitLimits_secondEE;
+      const auto did = DetId{dids[inputCh]};
+      const auto isBarrel = did.subdetId() == EcalBarrel;
+      const auto* amplitudeFitParameters = isBarrel ? amplitudeFitParametersEB : amplitudeFitParametersEE;
+      const auto* timeFitParameters = isBarrel ? timeFitParametersEB : timeFitParametersEE;
+      const auto timeFitParameters_size = isBarrel ? timeFitParameters_sizeEB : timeFitParameters_sizeEE;
+      const auto timeFitLimits_first = isBarrel ? timeFitLimits_firstEB : timeFitLimits_firstEE;
+      const auto timeFitLimits_second = isBarrel ? timeFitLimits_secondEB : timeFitLimits_secondEE;
 
       extern __shared__ char smem[];
       ScalarType* shr_chi2s = reinterpret_cast<ScalarType*>(smem);
@@ -206,8 +207,8 @@ namespace ecal {
       } else
         assert(false);
 
-      auto const tx_i = ch_start + sample_i;
-      auto const tx_j = ch_start + sample_j;
+      const auto tx_i = ch_start + sample_i;
+      const auto tx_j = ch_start + sample_j;
 
       //
       // note, given the way we partition the block, with 45 threads per channel
@@ -235,33 +236,33 @@ namespace ecal {
       bool internalCondForSkipping1 = true;
       bool internalCondForSkipping2 = true;
       if (!condForUselessSamples) {
-        auto const rtmp = sample_values[tx_i] / sample_values[tx_j];
-        auto const invampl_i = 1.0 / sample_values[tx_i];
-        auto const relErr2_i = sample_value_errors[tx_i] * sample_value_errors[tx_i] * invampl_i * invampl_i;
-        auto const invampl_j = 1.0 / sample_values[tx_j];
-        auto const relErr2_j = sample_value_errors[tx_j] * sample_value_errors[tx_j] * invampl_j * invampl_j;
-        auto const err1 = rtmp * rtmp * (relErr2_i + relErr2_j);
+        const auto rtmp = sample_values[tx_i] / sample_values[tx_j];
+        const auto invampl_i = 1.0 / sample_values[tx_i];
+        const auto relErr2_i = sample_value_errors[tx_i] * sample_value_errors[tx_i] * invampl_i * invampl_i;
+        const auto invampl_j = 1.0 / sample_values[tx_j];
+        const auto relErr2_j = sample_value_errors[tx_j] * sample_value_errors[tx_j] * invampl_j * invampl_j;
+        const auto err1 = rtmp * rtmp * (relErr2_i + relErr2_j);
         auto err2 = sample_value_errors[tx_j] * (sample_values[tx_i] - sample_values[tx_j]) * (invampl_j * invampl_j);
         // TODO non-divergent branch for a block if each block has 1 channel
         // otherwise non-divergent for groups of 45 threads
         // at this point, pedestal_nums[ch] can be either 0, 1 or 2
         if (pedestal_nums[ch] == 2)
           err2 *= err2 * 0.5;
-        auto const err3 = (0.289 * 0.289) * (invampl_j * invampl_j);
-        auto const total_error = std::sqrt(err1 + err2 + err3);
+        const auto err3 = (0.289 * 0.289) * (invampl_j * invampl_j);
+        const auto total_error = std::sqrt(err1 + err2 + err3);
 
-        auto const alpha = amplitudeFitParameters[0];
-        auto const beta = amplitudeFitParameters[1];
-        auto const alphabeta = alpha * beta;
-        auto const invalphabeta = 1.0 / alphabeta;
+        const auto alpha = amplitudeFitParameters[0];
+        const auto beta = amplitudeFitParameters[1];
+        const auto alphabeta = alpha * beta;
+        const auto invalphabeta = 1.0 / alphabeta;
 
         // variables instead of a struct
-        auto const ratio_index = sample_i;
-        auto const ratio_step = sample_j - sample_i;
-        auto const ratio_value = rtmp;
-        auto const ratio_error = total_error;
+        const auto ratio_index = sample_i;
+        const auto ratio_step = sample_j - sample_i;
+        const auto ratio_value = rtmp;
+        const auto ratio_error = total_error;
 
-        auto const rlim_i_j = fast_expf(static_cast<ScalarType>(sample_j - sample_i) / beta) - 0.001;
+        const auto rlim_i_j = fast_expf(static_cast<ScalarType>(sample_j - sample_i) / beta) - 0.001;
         internalCondForSkipping1 = !(total_error < 1.0 && rtmp > 0.001 && rtmp < rlim_i_j);
         if (!internalCondForSkipping1) {
           //
@@ -270,10 +271,10 @@ namespace ecal {
           // however easier to do it here (precompute) and then just filter out
           // if not needed
           //
-          auto const l_timeFitLimits_first = timeFitLimits_first;
-          auto const l_timeFitLimits_second = timeFitLimits_second;
+          const auto l_timeFitLimits_first = timeFitLimits_first;
+          const auto l_timeFitLimits_second = timeFitLimits_second;
           if (ratio_step == 1 && ratio_value >= l_timeFitLimits_first && ratio_value <= l_timeFitLimits_second) {
-            auto const time_max_i = static_cast<ScalarType>(ratio_index);
+            const auto time_max_i = static_cast<ScalarType>(ratio_index);
             auto u = timeFitParameters[timeFitParameters_size - 1];
 #pragma unroll
             for (int k = timeFitParameters_size - 2; k >= 0; k--)
@@ -283,9 +284,9 @@ namespace ecal {
             for (int k = timeFitParameters_size - 2; k >= 1; k--)
               du = du * ratio_value + k * timeFitParameters[k];
 
-            auto const error2 = ratio_error * ratio_error * du * du;
-            auto const time_max = error2 > 0 ? (time_max_i - u) / error2 : static_cast<ScalarType>(0);
-            auto const time_wgt = error2 > 0 ? 1.0 / error2 : static_cast<ScalarType>(0);
+            const auto error2 = ratio_error * ratio_error * du * du;
+            const auto time_max = error2 > 0 ? (time_max_i - u) / error2 : static_cast<ScalarType>(0);
+            const auto time_wgt = error2 > 0 ? 1.0 / error2 : static_cast<ScalarType>(0);
 
             // store into shared mem
             // note, this name is essentially identical to the one used
@@ -298,13 +299,13 @@ namespace ecal {
           }
 
           // continue with ratios
-          auto const stepOverBeta = static_cast<SampleVector::Scalar>(ratio_step) / beta;
-          auto const offset = static_cast<SampleVector::Scalar>(ratio_index) + alphabeta;
-          auto const rmin = std::max(ratio_value - ratio_error, 0.001);
-          auto const rmax = std::min(ratio_value + ratio_error,
+          const auto stepOverBeta = static_cast<SampleVector::Scalar>(ratio_step) / beta;
+          const auto offset = static_cast<SampleVector::Scalar>(ratio_index) + alphabeta;
+          const auto rmin = std::max(ratio_value - ratio_error, 0.001);
+          const auto rmax = std::min(ratio_value + ratio_error,
                                      fast_expf(static_cast<SampleVector::Scalar>(ratio_step) / beta) - 0.001);
-          auto const time1 = offset - ratio_step / (fast_expf((stepOverBeta - fast_logf(rmin)) / alpha) - 1.0);
-          auto const time2 = offset - ratio_step / (fast_expf((stepOverBeta - fast_logf(rmax)) / alpha) - 1.0);
+          const auto time1 = offset - ratio_step / (fast_expf((stepOverBeta - fast_logf(rmin)) / alpha) - 1.0);
+          const auto time2 = offset - ratio_step / (fast_expf((stepOverBeta - fast_logf(rmax)) / alpha) - 1.0);
 
           // set these guys
           tmax = 0.5 * (time1 + time2);
@@ -325,28 +326,26 @@ namespace ecal {
 
           SampleVector::Scalar sumAf = 0;
           SampleVector::Scalar sumff = 0;
-          int const itmin = std::max(-1, static_cast<int>(std::floor(tmax - alphabeta)));
+          const int itmin = std::max(-1, static_cast<int>(std::floor(tmax - alphabeta)));
           auto loffset = (static_cast<ScalarType>(itmin) - tmax) * invalphabeta;
           // TODO: data dependence
           for (int it = itmin + 1; it < nsamples; it++) {
             loffset += invalphabeta;
             if (useless_sample_values[ch_start + it])
               continue;
-            auto const inverr2 = 1.0 / (sample_value_errors[ch_start + it] * sample_value_errors[ch_start + it]);
-            auto const term1 = 1.0 + loffset;
-            auto const f = (term1 > 1e-6) ? fast_expf(alpha * (fast_logf(term1) - loffset)) : 0;
+            const auto inverr2 = 1.0 / (sample_value_errors[ch_start + it] * sample_value_errors[ch_start + it]);
+            const auto term1 = 1.0 + loffset;
+            const auto f = (term1 > 1e-6) ? fast_expf(alpha * (fast_logf(term1) - loffset)) : 0;
             sumAf += sample_values[ch_start + it] * (f * inverr2);
             sumff += f * (f * inverr2);
           }
 
-          auto const sumAA = sumAAsNullHypot[ch];
-          auto const sum0 = sum0sNullHypot[ch];
+          const auto sumAA = sumAAsNullHypot[ch];
+          const auto sum0 = sum0sNullHypot[ch];
           chi2 = sumAA;
-          ScalarType amp = 0;
           // TODO: sum0 can not be 0 below, need to introduce the check upfront
           if (sumff > 0) {
             chi2 = sumAA - sumAf * (sumAf / sumff);
-            amp = sumAf / sumff;
           }
           chi2 /= sum0;
 
@@ -396,9 +395,9 @@ namespace ecal {
       if (!condForUselessSamples && !internalCondForSkipping1 && !internalCondForSkipping2) {
         // min chi2, now compute weighted average of tmax measurements
         // see cpu version for more explanation
-        auto const chi2min = shr_chi2s[threadIdx.x - ltx];
-        auto const chi2Limit = chi2min + 1.0;
-        auto const inverseSigmaSquared = chi2 < chi2Limit ? 1.0 / (tmaxerr * tmaxerr) : 0.0;
+        const auto chi2min = shr_chi2s[threadIdx.x - ltx];
+        const auto chi2Limit = chi2min + 1.0;
+        const auto inverseSigmaSquared = chi2 < chi2Limit ? 1.0 / (tmaxerr * tmaxerr) : 0.0;
 
 #ifdef DEBUG_TC_MAKERATIO
         if (ch == 1 || ch == 0)
@@ -450,8 +449,8 @@ namespace ecal {
       // compute
       // store into global mem
       if (ltx == 0) {
-        auto const tmp_time_max = shr_time_max[threadIdx.x];
-        auto const tmp_time_wgt = shr_time_wgt[threadIdx.x];
+        const auto tmp_time_max = shr_time_max[threadIdx.x];
+        const auto tmp_time_wgt = shr_time_wgt[threadIdx.x];
 
         // we are done if there number of time ratios is 0
         if (tmp_time_wgt == 0 && tmp_time_max == 0) {
@@ -460,8 +459,8 @@ namespace ecal {
         }
 
         // no div by 0
-        auto const tMaxAlphaBeta = tmp_time_max / tmp_time_wgt;
-        auto const tMaxErrorAlphaBeta = 1.0 / std::sqrt(tmp_time_wgt);
+        const auto tMaxAlphaBeta = tmp_time_max / tmp_time_wgt;
+        const auto tMaxErrorAlphaBeta = 1.0 / std::sqrt(tmp_time_wgt);
 
         tMaxAlphaBetas[ch] = tMaxAlphaBeta;
         tMaxErrorAlphaBetas[ch] = tMaxErrorAlphaBeta;
@@ -488,7 +487,8 @@ namespace ecal {
     __global__ void kernel_time_compute_findamplchi2_and_finish(
         SampleVector::Scalar const* sample_values,
         SampleVector::Scalar const* sample_value_errors,
-        uint32_t const* dids,
+        uint32_t const* dids_eb,
+        uint32_t const* dids_ee,
         bool const* useless_samples,
         SampleVector::Scalar const* g_tMaxAlphaBeta,
         SampleVector::Scalar const* g_tMaxErrorAlphaBeta,
@@ -504,17 +504,19 @@ namespace ecal {
         SampleVector::Scalar* g_ampMaxError,
         SampleVector::Scalar* g_timeMax,
         SampleVector::Scalar* g_timeError,
-        int const nchannels) {
+        const int nchannels,
+        uint32_t const offsetForInputs) {
       using ScalarType = SampleVector::Scalar;
 
       // constants
       constexpr int nsamples = EcalDataFrame::MAXSAMPLES;
 
       // indices
-      int const gtx = threadIdx.x + blockIdx.x * blockDim.x;
-      int const ch = gtx / nsamples;
-      int const sample = threadIdx.x % nsamples;
-      int const ch_start = ch * nsamples;
+      const int gtx = threadIdx.x + blockIdx.x * blockDim.x;
+      const int ch = gtx / nsamples;
+      const int sample = threadIdx.x % nsamples;
+      const auto* dids = ch >= offsetForInputs ? dids_ee : dids_eb;
+      const int inputCh = ch >= offsetForInputs ? ch - offsetForInputs : ch;
 
       // configure shared mem
       // per block, we need #threads per block * 2 * sizeof(ScalarType)
@@ -527,27 +529,27 @@ namespace ecal {
         return;
 
       auto state = g_state[ch];
-      auto const did = DetId{dids[ch]};
-      auto const* amplitudeFitParameters =
+      const auto did = DetId{dids[inputCh]};
+      const auto* amplitudeFitParameters =
           did.subdetId() == EcalBarrel ? amplitudeFitParametersEB : amplitudeFitParametersEE;
 
       // TODO is that better than storing into global and launching another kernel
       // for the first 10 threads
       if (state == TimeComputationState::NotFinished) {
-        auto const alpha = amplitudeFitParameters[0];
-        auto const beta = amplitudeFitParameters[1];
-        auto const alphabeta = alpha * beta;
-        auto const invalphabeta = 1.0 / alphabeta;
-        auto const tMaxAlphaBeta = g_tMaxAlphaBeta[ch];
-        auto const sample_value = sample_values[gtx];
-        auto const sample_value_error = sample_value_errors[gtx];
-        auto const inverr2 =
+        const auto alpha = amplitudeFitParameters[0];
+        const auto beta = amplitudeFitParameters[1];
+        const auto alphabeta = alpha * beta;
+        const auto invalphabeta = 1.0 / alphabeta;
+        const auto tMaxAlphaBeta = g_tMaxAlphaBeta[ch];
+        const auto sample_value = sample_values[gtx];
+        const auto sample_value_error = sample_value_errors[gtx];
+        const auto inverr2 =
             useless_samples[gtx] ? static_cast<ScalarType>(0) : 1.0 / (sample_value_error * sample_value_error);
-        auto const offset = (static_cast<ScalarType>(sample) - tMaxAlphaBeta) * invalphabeta;
-        auto const term1 = 1.0 + offset;
-        auto const f = term1 > 1e-6 ? fast_expf(alpha * (fast_logf(term1) - offset)) : static_cast<ScalarType>(0.0);
-        auto const sumAf = sample_value * (f * inverr2);
-        auto const sumff = f * (f * inverr2);
+        const auto offset = (static_cast<ScalarType>(sample) - tMaxAlphaBeta) * invalphabeta;
+        const auto term1 = 1.0 + offset;
+        const auto f = term1 > 1e-6 ? fast_expf(alpha * (fast_logf(term1) - offset)) : static_cast<ScalarType>(0.0);
+        const auto sumAf = sample_value * (f * inverr2);
+        const auto sumff = f * (f * inverr2);
 
         // store into shared mem
         shr_sumAf[threadIdx.x] = sumAf;
@@ -583,15 +585,15 @@ namespace ecal {
         }
 
         // subtract to avoid double counting
-        auto const sumff = shr_sumff[threadIdx.x] + shr_sumff[threadIdx.x + 1] - shr_sumff[threadIdx.x + 3];
-        auto const sumAf = shr_sumAf[threadIdx.x] + shr_sumAf[threadIdx.x + 1] - shr_sumAf[threadIdx.x + 3];
+        const auto sumff = shr_sumff[threadIdx.x] + shr_sumff[threadIdx.x + 1] - shr_sumff[threadIdx.x + 3];
+        const auto sumAf = shr_sumAf[threadIdx.x] + shr_sumAf[threadIdx.x + 1] - shr_sumAf[threadIdx.x + 3];
 
-        auto const ampMaxAlphaBeta = sumff > 0 ? sumAf / sumff : 0;
-        auto const sumAA = sumAAsNullHypot[ch];
-        auto const sum0 = sum0sNullHypot[ch];
-        auto const nullChi2 = chi2sNullHypot[ch];
+        const auto ampMaxAlphaBeta = sumff > 0 ? sumAf / sumff : 0;
+        const auto sumAA = sumAAsNullHypot[ch];
+        const auto sum0 = sum0sNullHypot[ch];
+        const auto nullChi2 = chi2sNullHypot[ch];
         if (sumff > 0) {
-          auto const chi2AlphaBeta = (sumAA - sumAf * sumAf / sumff) / sum0;
+          const auto chi2AlphaBeta = (sumAA - sumAf * sumAf / sumff) / sum0;
           if (chi2AlphaBeta > nullChi2) {
             // null hypothesis is better
             state = TimeComputationState::Finished;
@@ -628,17 +630,17 @@ namespace ecal {
           return;
         }
 
-        auto const ampMaxError = g_ampMaxError[ch];
-        auto const test_ratio = ampMaxAlphaBeta / ampMaxError;
-        auto const accTimeMax = g_accTimeMax[ch];
-        auto const accTimeWgt = g_accTimeWgt[ch];
-        auto const tMaxAlphaBeta = g_tMaxAlphaBeta[ch];
-        auto const tMaxErrorAlphaBeta = g_tMaxErrorAlphaBeta[ch];
+        const auto ampMaxError = g_ampMaxError[ch];
+        const auto test_ratio = ampMaxAlphaBeta / ampMaxError;
+        const auto accTimeMax = g_accTimeMax[ch];
+        const auto accTimeWgt = g_accTimeWgt[ch];
+        const auto tMaxAlphaBeta = g_tMaxAlphaBeta[ch];
+        const auto tMaxErrorAlphaBeta = g_tMaxErrorAlphaBeta[ch];
         // branch to separate large vs small pulses
         // see cpu version for more info
         if (test_ratio > 5.0 && accTimeWgt > 0) {
-          auto const tMaxRatio = accTimeWgt > 0 ? accTimeMax / accTimeWgt : static_cast<ScalarType>(0);
-          auto const tMaxErrorRatio = accTimeWgt > 0 ? 1.0 / std::sqrt(accTimeWgt) : static_cast<ScalarType>(0);
+          const auto tMaxRatio = accTimeWgt > 0 ? accTimeMax / accTimeWgt : static_cast<ScalarType>(0);
+          const auto tMaxErrorRatio = accTimeWgt > 0 ? 1.0 / std::sqrt(accTimeWgt) : static_cast<ScalarType>(0);
 
           if (test_ratio > 10.0) {
             g_timeMax[ch] = tMaxRatio;
@@ -648,10 +650,10 @@ namespace ecal {
             printf("ch = %d tMaxRatio = %f tMaxErrorRatio = %f\n", ch, tMaxRatio, tMaxErrorRatio);
 #endif
           } else {
-            auto const timeMax = (tMaxAlphaBeta * (10.0 - ampMaxAlphaBeta / ampMaxError) +
+            const auto timeMax = (tMaxAlphaBeta * (10.0 - ampMaxAlphaBeta / ampMaxError) +
                                   tMaxRatio * (ampMaxAlphaBeta / ampMaxError - 5.0)) /
                                  5.0;
-            auto const timeError = (tMaxErrorAlphaBeta * (10.0 - ampMaxAlphaBeta / ampMaxError) +
+            const auto timeError = (tMaxErrorAlphaBeta * (10.0 - ampMaxAlphaBeta / ampMaxError) +
                                     tMaxErrorRatio * (ampMaxAlphaBeta / ampMaxError - 5.0)) /
                                    5.0;
             state = TimeComputationState::Finished;
@@ -676,21 +678,25 @@ namespace ecal {
       }
     }
 
-    __global__ void kernel_time_compute_fixMGPAslew(uint16_t const* digis,
+    __global__ void kernel_time_compute_fixMGPAslew(uint16_t const* digis_eb,
+                                                    uint16_t const* digis_ee,
                                                     SampleVector::Scalar* sample_values,
                                                     SampleVector::Scalar* sample_value_errors,
                                                     bool* useless_sample_values,
-                                                    unsigned int const sample_mask,
-                                                    int const nchannels) {
+                                                    unsigned const int sample_mask,
+                                                    const int nchannels,
+                                                    uint32_t const offsetForInputs) {
       using ScalarType = SampleVector::Scalar;
 
       // constants
       constexpr int nsamples = EcalDataFrame::MAXSAMPLES;
 
       // indices
-      int const gtx = threadIdx.x + blockIdx.x * blockDim.x;
-      int const ch = gtx / nsamples;
-      int const sample = threadIdx.x % nsamples;
+      const int gtx = threadIdx.x + blockIdx.x * blockDim.x;
+      const int ch = gtx / nsamples;
+      const int sample = threadIdx.x % nsamples;
+      const int inputGtx = ch >= offsetForInputs ? gtx - offsetForInputs * nsamples : gtx;
+      const auto* digis = ch >= offsetForInputs ? digis_ee : digis_eb;
 
       // remove thread for sample 0, oversubscribing is easier than ....
       if (ch >= nchannels || sample == 0)
@@ -699,8 +705,8 @@ namespace ecal {
       if (!use_sample(sample_mask, sample))
         return;
 
-      auto const gainIdPrev = ecal::mgpa::gainId(digis[gtx - 1]);
-      auto const gainIdNext = ecal::mgpa::gainId(digis[gtx]);
+      const auto gainIdPrev = ecal::mgpa::gainId(digis[inputGtx - 1]);
+      const auto gainIdNext = ecal::mgpa::gainId(digis[inputGtx]);
       if (gainIdPrev >= 1 && gainIdPrev <= 3 && gainIdNext >= 1 && gainIdNext <= 3 && gainIdPrev < gainIdNext) {
         sample_values[gtx - 1] = 0;
         sample_value_errors[gtx - 1] = 1e+9;
@@ -716,7 +722,7 @@ namespace ecal {
                                              SampleVector::Scalar const* amplitudeFitParametersEB,
                                              SampleVector::Scalar const* amplitudeFitParametersEE,
                                              SampleVector::Scalar* g_amplitudeMax,
-                                             int const nchannels) {
+                                             const int nchannels) {
       using ScalarType = SampleVector::Scalar;
 
       // constants
@@ -725,15 +731,15 @@ namespace ecal {
       constexpr int nsamples = EcalDataFrame::MAXSAMPLES;
 
       // indices
-      int const gtx = threadIdx.x + blockIdx.x * blockDim.x;
-      int const ch = gtx / nsamples;
-      int const sample = threadIdx.x % nsamples;
+      const int gtx = threadIdx.x + blockIdx.x * blockDim.x;
+      const int ch = gtx / nsamples;
+      const int sample = threadIdx.x % nsamples;
 
       if (ch >= nchannels)
         return;
 
-      auto const did = DetId{dids[ch]};
-      auto const* amplitudeFitParameters =
+      const auto did = DetId{dids[ch]};
+      const auto* amplitudeFitParameters =
           did.subdetId() == EcalBarrel ? amplitudeFitParametersEB : amplitudeFitParametersEE;
 
       // configure shared mem
@@ -744,16 +750,16 @@ namespace ecal {
       auto* shr_sumAF = shr_sumF + blockDim.x;
       auto* shr_sumFF = shr_sumAF + blockDim.x;
 
-      auto const alpha = amplitudeFitParameters[0];
-      auto const beta = amplitudeFitParameters[1];
-      auto const timeMax = g_timeMax[ch];
-      auto const pedestalLimit = timeMax - (alpha * beta) - 1.0;
-      auto const sample_value = sample_values[gtx];
-      auto const sample_value_error = sample_value_errors[gtx];
-      auto const inverr2 =
+      const auto alpha = amplitudeFitParameters[0];
+      const auto beta = amplitudeFitParameters[1];
+      const auto timeMax = g_timeMax[ch];
+      const auto pedestalLimit = timeMax - (alpha * beta) - 1.0;
+      const auto sample_value = sample_values[gtx];
+      const auto sample_value_error = sample_value_errors[gtx];
+      const auto inverr2 =
           sample_value_error > 0 ? 1. / (sample_value_error * sample_value_error) : static_cast<ScalarType>(0);
-      auto const termOne = 1 + (sample - timeMax) / (alpha * beta);
-      auto const f = termOne > 1.e-5 ? fast_expf(alpha * fast_logf(termOne) - (sample - timeMax) / beta)
+      const auto termOne = 1 + (sample - timeMax) / (alpha * beta);
+      const auto f = termOne > 1.e-5 ? fast_expf(alpha * fast_logf(termOne) - (sample - timeMax) / beta)
                                      : static_cast<ScalarType>(0.);
 
       bool const cond = ((sample < pedestalLimit) || (f > 0.6 * corr6 && sample <= timeMax) ||
@@ -788,15 +794,15 @@ namespace ecal {
       __syncthreads();
 
       if (sample == 0) {
-        auto const sum1 = shr_sum1[threadIdx.x] + shr_sum1[threadIdx.x + 1] - shr_sum1[threadIdx.x + 3];
-        auto const sumA = shr_sumA[threadIdx.x] + shr_sumA[threadIdx.x + 1] - shr_sumA[threadIdx.x + 3];
-        auto const sumF = shr_sumF[threadIdx.x] + shr_sumF[threadIdx.x + 1] - shr_sumF[threadIdx.x + 3];
-        auto const sumAF = shr_sumAF[threadIdx.x] + shr_sumAF[threadIdx.x + 1] - shr_sumAF[threadIdx.x + 3];
-        auto const sumFF = shr_sumFF[threadIdx.x] + shr_sumFF[threadIdx.x + 1] - shr_sumFF[threadIdx.x + 3];
+        const auto sum1 = shr_sum1[threadIdx.x] + shr_sum1[threadIdx.x + 1] - shr_sum1[threadIdx.x + 3];
+        const auto sumA = shr_sumA[threadIdx.x] + shr_sumA[threadIdx.x + 1] - shr_sumA[threadIdx.x + 3];
+        const auto sumF = shr_sumF[threadIdx.x] + shr_sumF[threadIdx.x + 1] - shr_sumF[threadIdx.x + 3];
+        const auto sumAF = shr_sumAF[threadIdx.x] + shr_sumAF[threadIdx.x + 1] - shr_sumAF[threadIdx.x + 3];
+        const auto sumFF = shr_sumFF[threadIdx.x] + shr_sumFF[threadIdx.x + 1] - shr_sumFF[threadIdx.x + 3];
 
-        auto const denom = sumFF * sum1 - sumF * sumF;
-        auto const condForDenom = sum1 > 0 && ecal::abs(denom) > 1.e-20;
-        auto const amplitudeMax = condForDenom ? (sumAF * sum1 - sumA * sumF) / denom : static_cast<ScalarType>(0.);
+        const auto denom = sumFF * sum1 - sumF * sumF;
+        const auto condForDenom = sum1 > 0 && ecal::abs(denom) > 1.e-20;
+        const auto amplitudeMax = condForDenom ? (sumAF * sum1 - sumA * sumF) / denom : static_cast<ScalarType>(0.);
 
         // store into global mem
         g_amplitudeMax[ch] = amplitudeMax;
@@ -804,8 +810,10 @@ namespace ecal {
     }
 
     //#define ECAL_RECO_CUDA_TC_INIT_DEBUG
-    __global__ void kernel_time_computation_init(uint16_t const* digis,
-                                                 uint32_t const* dids,
+    __global__ void kernel_time_computation_init(uint16_t const* digis_eb,
+                                                 uint32_t const* dids_eb,
+                                                 uint16_t const* digis_ee,
+                                                 uint32_t const* dids_ee,
                                                  float const* rms_x12,
                                                  float const* rms_x6,
                                                  float const* rms_x1,
@@ -820,8 +828,9 @@ namespace ecal {
                                                  bool* useless_sample_values,
                                                  char* pedestal_nums,
                                                  uint32_t const offsetForHashes,
-                                                 unsigned int const sample_maskEB,
-                                                 unsigned int const sample_maskEE,
+                                                 uint32_t const offsetForInputs,
+                                                 unsigned const int sample_maskEB,
+                                                 unsigned const int sample_maskEE,
                                                  int nchannels) {
       using ScalarType = SampleVector::Scalar;
 
@@ -829,13 +838,17 @@ namespace ecal {
       constexpr int nsamples = EcalDataFrame::MAXSAMPLES;
 
       // indices
-      int tx = threadIdx.x + blockDim.x * blockIdx.x;
-      int ch = tx / nsamples;
+      const int tx = threadIdx.x + blockDim.x * blockIdx.x;
+      const int ch = tx / nsamples;
+      const int inputTx = ch >= offsetForInputs ? tx - offsetForInputs * nsamples : tx;
+      const int inputCh = ch >= offsetForInputs ? ch - offsetForInputs : ch;
+      const auto* digis = ch >= offsetForInputs ? digis_ee : digis_eb;
+      const auto* dids = ch >= offsetForInputs ? dids_ee : dids_eb;
 
       if (ch < nchannels) {
         // indices/inits
-        int sample = tx % nsamples;
-        int ch_start = ch * nsamples;
+        const int sample = tx % nsamples;
+        const int input_ch_start = inputCh * nsamples;
         SampleVector::Scalar pedestal = 0.;
         int num = 0;
 
@@ -845,14 +858,14 @@ namespace ecal {
         ScalarType* shrSampleValueErrors = shrSampleValues + blockDim.x;
 
         // 0 and 1 sample values
-        auto const adc0 = ecal::mgpa::adc(digis[ch_start]);
-        auto const gainId0 = ecal::mgpa::gainId(digis[ch_start]);
-        auto const adc1 = ecal::mgpa::adc(digis[ch_start + 1]);
-        auto const gainId1 = ecal::mgpa::gainId(digis[ch_start + 1]);
-        auto const did = DetId{dids[ch]};
-        auto const isBarrel = did.subdetId() == EcalBarrel;
-        auto const sample_mask = did.subdetId() == EcalBarrel ? sample_maskEB : sample_maskEE;
-        auto const hashedId = isBarrel ? hashedIndexEB(did.rawId()) : offsetForHashes + hashedIndexEE(did.rawId());
+        const auto adc0 = ecal::mgpa::adc(digis[input_ch_start]);
+        const auto gainId0 = ecal::mgpa::gainId(digis[input_ch_start]);
+        const auto adc1 = ecal::mgpa::adc(digis[input_ch_start + 1]);
+        const auto gainId1 = ecal::mgpa::gainId(digis[input_ch_start + 1]);
+        const auto did = DetId{dids[inputCh]};
+        const auto isBarrel = did.subdetId() == EcalBarrel;
+        const auto sample_mask = did.subdetId() == EcalBarrel ? sample_maskEB : sample_maskEE;
+        const auto hashedId = isBarrel ? hashedIndexEB(did.rawId()) : offsetForHashes + hashedIndexEE(did.rawId());
 
         // set pedestal
         // TODO this branch is non-divergent for a group of 10 threads
@@ -860,7 +873,7 @@ namespace ecal {
           pedestal = static_cast<SampleVector::Scalar>(adc0);
           num = 1;
 
-          auto const diff = adc1 - adc0;
+          const auto diff = adc1 - adc0;
           if (gainId1 == 1 && use_sample(sample_mask, 1) && std::abs(diff) < 3 * rms_x12[hashedId]) {
             pedestal = (pedestal + static_cast<SampleVector::Scalar>(adc1)) / 2.0;
             num = 2;
@@ -870,8 +883,8 @@ namespace ecal {
         }
 
         // ped subtracted and gain-renormalized samples.
-        auto const gainId = ecal::mgpa::gainId(digis[tx]);
-        auto const adc = ecal::mgpa::adc(digis[tx]);
+        const auto gainId = ecal::mgpa::gainId(digis[inputTx]);
+        const auto adc = ecal::mgpa::adc(digis[inputTx]);
 
         bool bad = false;
         SampleVector::Scalar sample_value, sample_value_error;
@@ -899,7 +912,7 @@ namespace ecal {
         }
 
         // TODO: make sure we save things correctly when sample is useless
-        auto const useless_sample = (sample_value_error <= 0) | bad;
+        const auto useless_sample = (sample_value_error <= 0) | bad;
         useless_sample_values[tx] = useless_sample;
         sample_values[tx] = sample_value;
         sample_value_errors[tx] = useless_sample ? 1e+9 : sample_value_error;
@@ -949,7 +962,7 @@ namespace ecal {
 
         if (sample == 0) {
           // we only needd the max error
-          auto const maxSampleValueError = shrSampleValues[threadIdx.x] < shrSampleValues[threadIdx.x + 1]
+          const auto maxSampleValueError = shrSampleValues[threadIdx.x] < shrSampleValues[threadIdx.x + 1]
                                                ? shrSampleValueErrors[threadIdx.x + 1]
                                                : shrSampleValueErrors[threadIdx.x];
 
@@ -975,8 +988,10 @@ namespace ecal {
     __global__ void kernel_time_correction_and_finalize(
         //        SampleVector::Scalar const* g_amplitude,
         ::ecal::reco::StorageScalarType const* g_amplitude,
-        uint16_t const* digis,
-        uint32_t const* dids,
+        uint16_t const* digis_eb,
+        uint32_t const* dids_eb,
+        uint16_t const* digis_ee,
+        uint32_t const* dids_ee,
         float const* amplitudeBinsEB,
         float const* amplitudeBinsEE,
         float const* shiftBinsEB,
@@ -988,8 +1003,8 @@ namespace ecal {
         float* g_jitter,
         float* g_jitterError,
         uint32_t* flags,
-        int const amplitudeBinsSizeEB,
-        int const amplitudeBinsSizeEE,
+        const int amplitudeBinsSizeEB,
+        const int amplitudeBinsSizeEE,
         ConfigurationParameters::type const timeConstantTermEB,
         ConfigurationParameters::type const timeConstantTermEE,
         float const offsetTimeValueEB,
@@ -1007,38 +1022,42 @@ namespace ecal {
         ConfigurationParameters::type const outOfTimeThreshG61mEB,
         ConfigurationParameters::type const outOfTimeThreshG61mEE,
         uint32_t const offsetForHashes,
-        int const nchannels) {
+        uint32_t const offsetForInputs,
+        const int nchannels) {
       using ScalarType = SampleVector::Scalar;
 
       // constants
       constexpr int nsamples = EcalDataFrame::MAXSAMPLES;
 
       // indices
-      int const gtx = threadIdx.x + blockIdx.x * blockDim.x;
+      const int gtx = threadIdx.x + blockIdx.x * blockDim.x;
+      const int inputGtx = gtx >= offsetForInputs ? gtx - offsetForInputs : gtx;
+      const auto* dids = gtx >= offsetForInputs ? dids_ee : dids_eb;
+      const auto& digis = gtx >= offsetForInputs ? digis_ee : digis_eb;
 
       // filter out outside of range threads
       if (gtx >= nchannels)
         return;
 
-      auto const did = DetId{dids[gtx]};
-      auto const isBarrel = did.subdetId() == EcalBarrel;
-      auto const hashedId = isBarrel ? hashedIndexEB(did.rawId()) : offsetForHashes + hashedIndexEE(did.rawId());
-      auto const* amplitudeBins = isBarrel ? amplitudeBinsEB : amplitudeBinsEE;
-      auto const* shiftBins = isBarrel ? shiftBinsEB : shiftBinsEE;
-      auto const amplitudeBinsSize = isBarrel ? amplitudeBinsSizeEB : amplitudeBinsSizeEE;
-      auto const timeConstantTerm = isBarrel ? timeConstantTermEB : timeConstantTermEE;
-      auto const timeNconst = isBarrel ? timeNconstEB : timeNconstEE;
-      auto const offsetTimeValue = isBarrel ? offsetTimeValueEB : offsetTimeValueEE;
-      auto const amplitudeThreshold = isBarrel ? amplitudeThresholdEB : amplitudeThresholdEE;
-      auto const outOfTimeThreshG12p = isBarrel ? outOfTimeThreshG12pEB : outOfTimeThreshG12pEE;
-      auto const outOfTimeThreshG12m = isBarrel ? outOfTimeThreshG12mEB : outOfTimeThreshG12mEE;
-      auto const outOfTimeThreshG61p = isBarrel ? outOfTimeThreshG61pEB : outOfTimeThreshG61pEE;
-      auto const outOfTimeThreshG61m = isBarrel ? outOfTimeThreshG61mEB : outOfTimeThreshG61mEE;
+      const auto did = DetId{dids[inputGtx]};
+      const auto isBarrel = did.subdetId() == EcalBarrel;
+      const auto hashedId = isBarrel ? hashedIndexEB(did.rawId()) : offsetForHashes + hashedIndexEE(did.rawId());
+      const auto* amplitudeBins = isBarrel ? amplitudeBinsEB : amplitudeBinsEE;
+      const auto* shiftBins = isBarrel ? shiftBinsEB : shiftBinsEE;
+      const auto amplitudeBinsSize = isBarrel ? amplitudeBinsSizeEB : amplitudeBinsSizeEE;
+      const auto timeConstantTerm = isBarrel ? timeConstantTermEB : timeConstantTermEE;
+      const auto timeNconst = isBarrel ? timeNconstEB : timeNconstEE;
+      const auto offsetTimeValue = isBarrel ? offsetTimeValueEB : offsetTimeValueEE;
+      const auto amplitudeThreshold = isBarrel ? amplitudeThresholdEB : amplitudeThresholdEE;
+      const auto outOfTimeThreshG12p = isBarrel ? outOfTimeThreshG12pEB : outOfTimeThreshG12pEE;
+      const auto outOfTimeThreshG12m = isBarrel ? outOfTimeThreshG12mEB : outOfTimeThreshG12mEE;
+      const auto outOfTimeThreshG61p = isBarrel ? outOfTimeThreshG61pEB : outOfTimeThreshG61pEE;
+      const auto outOfTimeThreshG61m = isBarrel ? outOfTimeThreshG61mEB : outOfTimeThreshG61mEE;
 
       // load some
-      auto const amplitude = g_amplitude[gtx];
-      auto const rms_x12 = g_rms_x12[hashedId];
-      auto const timeCalibConst = timeCalibConstant[hashedId];
+      const auto amplitude = g_amplitude[gtx];
+      const auto rms_x12 = g_rms_x12[hashedId];
+      const auto timeCalibConst = timeCalibConstant[hashedId];
 
       int myBin = -1;
       for (int bin = 0; bin < amplitudeBinsSize; bin++) {
@@ -1061,10 +1080,10 @@ namespace ecal {
 
       // correction * 1./25.
       correction = correction * 0.04;
-      auto const timeMax = g_timeMax[gtx];
-      auto const timeError = g_timeError[gtx];
-      auto const jitter = timeMax - 5 + correction;
-      auto const jitterError =
+      const auto timeMax = g_timeMax[gtx];
+      const auto timeError = g_timeError[gtx];
+      const auto jitter = timeMax - 5 + correction;
+      const auto jitterError =
           std::sqrt(timeError * timeError + timeConstantTerm * timeConstantTerm * 0.04 * 0.04);  // 0.04 = 1./25.
 
 #ifdef DEBUG_TIME_CORRECTION
@@ -1090,7 +1109,7 @@ namespace ecal {
         auto threshM = outOfTimeThreshG12m;
         if (amplitude > 3000.) {
           for (int isample = 0; isample < nsamples; isample++) {
-            int gainid = ecal::mgpa::gainId(digis[nsamples * gtx + isample]);
+            int gainid = ecal::mgpa::gainId(digis[nsamples * inputGtx + isample]);
             if (gainid != 1) {
               threshP = outOfTimeThreshG61p;
               threshM = outOfTimeThreshG61m;
@@ -1099,9 +1118,9 @@ namespace ecal {
           }
         }
 
-        auto const correctedTime = (timeMax - 5) * 25 + timeCalibConst + offsetTimeValue;
-        auto const nterm = timeNconst * rms_x12 / amplitude;
-        auto const sigmat = std::sqrt(nterm * nterm + timeConstantTerm * timeConstantTerm);
+        const auto correctedTime = (timeMax - 5) * 25 + timeCalibConst + offsetTimeValue;
+        const auto nterm = timeNconst * rms_x12 / amplitude;
+        const auto sigmat = std::sqrt(nterm * nterm + timeConstantTerm * timeConstantTerm);
         if (correctedTime > sigmat * threshP || correctedTime < -sigmat * threshM)
           flags[gtx] |= 0x1 << EcalUncalibratedRecHit::kOutOfTime;
       }

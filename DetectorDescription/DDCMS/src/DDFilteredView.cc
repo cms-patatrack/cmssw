@@ -7,6 +7,7 @@
 #include <TGeoBBox.h>
 #include <TGeoBoolNode.h>
 #include <vector>
+#include <charconv>
 
 using namespace cms;
 using namespace edm;
@@ -14,7 +15,7 @@ using namespace std;
 using namespace cms::dd;
 
 dd4hep::Solid DDSolid::solidA() const {
-  if (dd4hep::isA<dd4hep::SubtractionSolid>(solid_) || dd4hep::isA<dd4hep::UnionSolid>(solid_) ||
+  if (dd4hep::isA<dd4hep::SubtractionSolid>(solid_) or dd4hep::isA<dd4hep::UnionSolid>(solid_) or
       dd4hep::isA<dd4hep::IntersectionSolid>(solid_)) {
     const TGeoCompositeShape* sh = (const TGeoCompositeShape*)solid_.ptr();
     const TGeoBoolNode* boolean = sh->GetBoolNode();
@@ -25,7 +26,7 @@ dd4hep::Solid DDSolid::solidA() const {
 }
 
 dd4hep::Solid DDSolid::solidB() const {
-  if (dd4hep::isA<dd4hep::SubtractionSolid>(solid_) || dd4hep::isA<dd4hep::UnionSolid>(solid_) ||
+  if (dd4hep::isA<dd4hep::SubtractionSolid>(solid_) or dd4hep::isA<dd4hep::UnionSolid>(solid_) or
       dd4hep::isA<dd4hep::IntersectionSolid>(solid_)) {
     const TGeoCompositeShape* sh = static_cast<const TGeoCompositeShape*>(solid_.ptr());
     const TGeoBoolNode* boolean = sh->GetBoolNode();
@@ -73,6 +74,9 @@ const PlacedVolume DDFilteredView::volume() const {
 // This should be used for debug purpose only
 //
 const std::string DDFilteredView::path() const {
+  if (it_.empty()) {
+    return std::string();
+  }
   TString fullPath;
   it_.back().GetPath(fullPath);
   return std::string(fullPath.Data());
@@ -85,8 +89,10 @@ const std::string DDFilteredView::path() const {
 const std::vector<int> DDFilteredView::copyNos() const {
   std::vector<int> result;
 
-  for (int i = it_.back().GetLevel(); i > 0; --i) {
-    result.emplace_back(it_.back().GetNode(i)->GetNumber());
+  if (not it_.empty()) {
+    for (int i = it_.back().GetLevel(); i > 0; --i) {
+      result.emplace_back(it_.back().GetNode(i)->GetNumber());
+    }
   }
 
   return result;
@@ -100,6 +106,17 @@ const Translation DDFilteredView::translation() const {
   return Translation(translation[0], translation[1], translation[2]);
 }
 
+const Translation DDFilteredView::translation(const std::vector<Node*>& nodes) const {
+  const TGeoMatrix* current = it_.back().GetCurrentMatrix();
+  TGeoHMatrix matrix(*current);
+  for (const auto& n : nodes) {
+    matrix.Multiply(n->GetMatrix());
+  }
+  const Double_t* translation = matrix.GetTranslation();
+  assert(translation);
+  return Translation(translation[0], translation[1], translation[2]);
+}
+
 const Double_t* DDFilteredView::rot() const { return it_.back().GetCurrentMatrix()->GetRotationMatrix(); }
 
 const RotationMatrix DDFilteredView::rotation() const {
@@ -109,8 +126,6 @@ const RotationMatrix DDFilteredView::rotation() const {
     return RotationMatrix();
   }
 
-  LogVerbatim("DDFilteredView") << "Rotation matrix components (1st 3) = " << rotation[0] << ", " << rotation[1] << ", "
-                                << rotation[2];
   RotationMatrix rotMatrix;
   rotMatrix.SetComponents(rotation[0],
                           rotation[1],
@@ -130,8 +145,6 @@ void DDFilteredView::rot(dd4hep::Rotation3D& matrixOut) const {
     LogError("DDFilteredView") << "Current node has no valid rotation matrix.";
     return;
   }
-  LogVerbatim("DDFilteredView") << "Rotation matrix components (1st 3) = " << rotation[0] << ", " << rotation[1] << ", "
-                                << rotation[2];
   matrixOut.SetComponents(rotation[0],
                           rotation[1],
                           rotation[2],
@@ -152,35 +165,53 @@ void DDFilteredView::mergedSpecifics(DDSpecParRefs const& specs) {
     for (const auto& j : i->paths) {
       vector<string_view> toks = split(j, "/");
       auto const& filter = find_if(begin(filters_), end(filters_), [&](auto const& f) {
-        auto const& k = find_if(begin(f->keys), end(f->keys), [&](auto const& p) {
-          return std::regex_match(std::string({toks.front().data(), toks.front().size()}), p);
+        auto const& k = find_if(begin(f->skeys), end(f->skeys), [&](auto const& p) {
+          return std::string({toks.front().data(), toks.front().size()}) == p;
         });
-        if (k != end(f->keys)) {
+        if (k != end(f->skeys)) {
           currentFilter_ = f.get();
           return true;
         }
         return false;
       });
       if (filter == end(filters_)) {
-        filters_.emplace_back(unique_ptr<Filter>(
-            new Filter{{std::regex(std::string(toks.front().data(), toks.front().size()))}, nullptr, nullptr, i}));
+        filters_.emplace_back(
+            unique_ptr<Filter>(new Filter{{std::string(toks.front().data(), toks.front().size())},
+                                          {std::regex(std::string(toks.front().data(), toks.front().size()))},
+                                          nullptr,
+                                          nullptr,
+                                          i}));
+        // initialize current filter if it's empty
+        if (currentFilter_ == nullptr) {
+          currentFilter_ = filters_.back().get();
+        }
       }
       // all next levels
       for (size_t pos = 1; pos < toks.size(); ++pos) {
         if (currentFilter_->next != nullptr) {
           currentFilter_ = currentFilter_->next.get();
-          auto const& l = find_if(begin(currentFilter_->keys), end(currentFilter_->keys), [&](auto const& p) {
-            return std::regex_match(std::string({toks.front().data(), toks.front().size()}), p);
+          auto const& l = find_if(begin(currentFilter_->skeys), end(currentFilter_->skeys), [&](auto const& p) {
+            return std::string({toks.front().data(), toks.front().size()}) == p;
           });
-          if (l == end(currentFilter_->keys)) {
+          if (l == end(currentFilter_->skeys)) {
+            currentFilter_->skeys.emplace_back(std::string(toks[pos].data(), toks[pos].size()));
             currentFilter_->keys.emplace_back(std::string(toks[pos].data(), toks[pos].size()));
           }
         } else {
-          currentFilter_->next.reset(
-              new Filter{{std::regex(std::string(toks[pos].data(), toks[pos].size()))}, nullptr, currentFilter_, i});
+          currentFilter_->next.reset(new Filter{{std::string(toks[pos].data(), toks[pos].size())},
+                                                {std::regex(std::string(toks[pos].data(), toks[pos].size()))},
+                                                nullptr,
+                                                currentFilter_,
+                                                i});
         }
       }
     }
+  }
+}
+
+void DDFilteredView::printFilter() const {
+  for (const auto& f : filters_) {
+    f->print();
   }
 }
 
@@ -194,6 +225,7 @@ bool DDFilteredView::firstChild() {
   while ((node = it_.back().Next())) {
     if (accept(noNamespace(node->GetVolume()->GetName()))) {
       node_ = node;
+      startLevel_ = it_.back().GetLevel();
       return true;
     }
   }
@@ -201,9 +233,99 @@ bool DDFilteredView::firstChild() {
   return false;
 }
 
+int DDFilteredView::nodeCopyNo(const std::string_view copyNo) const {
+  int result;
+  if (auto [p, ec] = std::from_chars(copyNo.data(), copyNo.data() + copyNo.size(), result); ec == std::errc()) {
+    return result;
+  }
+  return -1;
+}
+
+std::vector<std::pair<std::string_view, int>> DDFilteredView::toNodeNames(const std::string& path) {
+  std::vector<std::pair<std::string_view, int>> result;
+  std::vector<string_view> names = split(path, "/");
+  for (const auto& i : names) {
+    auto name = noNamespace(i);
+    int copyNo = -1;
+    auto lpos = name.find_first_of('[');
+    if (lpos != std::string::npos) {
+      auto rpos = name.find_last_of(']');
+      if (rpos != std::string::npos) {
+        copyNo = nodeCopyNo(name.substr(lpos + 1, rpos - 1));
+      }
+      result.emplace_back(name.substr(0, lpos), copyNo);
+    } else {
+      result.emplace_back(name, -1);
+    }
+  }
+
+  return result;
+}
+
+bool DDFilteredView::match(const std::string& path, const std::vector<std::pair<std::string_view, int>>& names) const {
+  std::vector<std::pair<std::string_view, int>> toks;
+  std::vector<string_view> pnames = split(path, "/");
+  for (const auto& i : pnames) {
+    auto name = noNamespace(i);
+    auto lpos = name.find_first_of('_');
+    if (lpos != std::string::npos) {
+      int copyNo = nodeCopyNo(name.substr(lpos + 1));
+      toks.emplace_back(name.substr(0, lpos), copyNo);
+    }
+  }
+  if (toks.size() != names.size()) {
+    return false;
+  }
+
+  for (unsigned int i = 0; i < names.size(); i++) {
+    if (names[i].first != toks[i].first) {
+      return false;
+    } else {
+      if (names[i].second != -1 and names[i].second != toks[i].second) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+std::vector<std::vector<Node*>> DDFilteredView::children(const std::string& selectPath) {
+  std::vector<std::vector<Node*>> paths;
+  if (it_.empty()) {
+    LogVerbatim("DDFilteredView") << "Iterator vector has zero size.";
+    return paths;
+  }
+  if (node_ == nullptr) {
+    throw cms::Exception("DDFilteredView") << "Can't get children of a null node. Please, call firstChild().";
+  }
+  it_.back().SetType(0);
+  std::vector<std::pair<std::string_view, int>> names = toNodeNames(selectPath);
+  auto rit = names.rbegin();
+  Node* node = it_.back().Next();
+  while (node != nullptr) {
+    if (node->GetVolume()->GetName() == std::string({rit->first.data(), rit->first.size()})) {
+      std::string pathToNode = path();
+      std::string::size_type n = pathToNode.find(node_->GetName());
+      std::string pathFromParent = pathToNode.substr(n);
+
+      if (match(pathFromParent, names)) {
+        std::vector<Node*> result;
+        LogVerbatim("Geometry") << "Match found: " << pathFromParent;
+        for (int i = startLevel_; i < it_.back().GetLevel(); i++) {
+          result.emplace_back(it_.back().GetNode(i));
+        }
+        result.emplace_back(node);
+        paths.emplace_back(result);
+      }
+    }
+    node = it_.back().Next();
+  }
+  return paths;
+}
+
 bool DDFilteredView::firstSibling() {
   assert(node_);
-  if (it_.empty() || currentFilter_ == nullptr)
+  if (it_.empty() or currentFilter_ == nullptr)
     return false;
   Node* node = nullptr;
   if (next(0) == false)
@@ -211,7 +333,7 @@ bool DDFilteredView::firstSibling() {
   node = node_;
   it_.emplace_back(Iterator(it_.back()));
   it_.back().SetType(1);
-  if (currentFilter_ != nullptr && currentFilter_->next != nullptr)
+  if (currentFilter_ != nullptr and currentFilter_->next != nullptr)
     currentFilter_ = currentFilter_->next.get();
   else
     return false;
@@ -227,7 +349,7 @@ bool DDFilteredView::firstSibling() {
 
 bool DDFilteredView::nextSibling() {
   assert(node_);
-  if (it_.empty() || currentFilter_ == nullptr)
+  if (it_.empty() or currentFilter_ == nullptr)
     return false;
   if (it_.back().GetType() == 0)
     return firstSibling();
@@ -247,7 +369,7 @@ bool DDFilteredView::nextSibling() {
 }
 
 bool DDFilteredView::sibling() {
-  if (it_.empty() || currentFilter_ == nullptr)
+  if (it_.empty() or currentFilter_ == nullptr)
     return false;
   it_.back().SetType(1);
   Node* node = nullptr;
@@ -261,7 +383,7 @@ bool DDFilteredView::sibling() {
 }
 
 bool DDFilteredView::checkChild() {
-  if (it_.empty() || currentFilter_ == nullptr)
+  if (it_.empty() or currentFilter_ == nullptr)
     return false;
   it_.back().SetType(1);
   Node* node = nullptr;
@@ -274,7 +396,7 @@ bool DDFilteredView::checkChild() {
 }
 
 bool DDFilteredView::parent() {
-  if (it_.empty() || currentFilter_ == nullptr)
+  if (it_.empty() or currentFilter_ == nullptr)
     return false;
   up();
   it_.back().SetType(0);
@@ -295,7 +417,7 @@ bool DDFilteredView::next(int type) {
 }
 
 void DDFilteredView::down() {
-  if (it_.empty() || currentFilter_ == nullptr)
+  if (it_.empty() or currentFilter_ == nullptr)
     return;
   it_.emplace_back(Iterator(it_.back()));
   next(0);
@@ -304,7 +426,7 @@ void DDFilteredView::down() {
 }
 
 void DDFilteredView::up() {
-  if (it_.size() > 1 && currentFilter_ != nullptr) {
+  if (it_.size() > 1 and currentFilter_ != nullptr) {
     it_.pop_back();
     it_.back().SetType(0);
     if (currentFilter_->up)
@@ -358,7 +480,7 @@ std::string_view DDFilteredView::get<string_view>(const string& key) const {
       auto const& names = split(realTopName(j), "/");
       int count = names.size();
       bool flag = false;
-      for (int nit = level; count > 0 && nit > 0; --nit) {
+      for (int nit = level; count > 0 and nit > 0; --nit) {
         if (!compareEqual(noNamespace(it_.back().GetNode(nit)->GetVolume()->GetName()), names[--count])) {
           flag = false;
           break;
@@ -433,6 +555,18 @@ DDFilteredView::nav_type DDFilteredView::navPos() const {
   return pos;
 }
 
+const std::vector<const Node*> DDFilteredView::geoHistory() const {
+  std::vector<const Node*> result;
+  if (not it_.empty()) {
+    int level = it_.back().GetLevel();
+    for (int nit = level; nit > 0; --nit) {
+      result.emplace_back(it_.back().GetNode(nit));
+    }
+  }
+
+  return result;
+}
+
 const ExpandedNodes& DDFilteredView::history() {
   assert(registry_);
   nodes_.tags.clear();
@@ -444,9 +578,9 @@ const ExpandedNodes& DDFilteredView::history() {
   for (int nit = level; nit > 0; --nit) {
     for_each(begin(registry_->specpars), end(registry_->specpars), [&](auto const& i) {
       auto k = find_if(begin(i.second.paths), end(i.second.paths), [&](auto const& j) {
-        return (
-            isMatch(noNamespace(it_.back().GetNode(nit)->GetVolume()->GetName()), *begin(split(realTopName(j), "/"))) &&
-            (i.second.hasValue("CopyNoTag") || i.second.hasValue("CopyNoOffset")));
+        return (isMatch(noNamespace(it_.back().GetNode(nit)->GetVolume()->GetName()),
+                        *begin(split(realTopName(j), "/"))) and
+                (i.second.hasValue("CopyNoTag") or i.second.hasValue("CopyNoOffset")));
       });
       if (k != end(i.second.paths)) {
         nodes_.tags.emplace_back(i.second.dblValue("CopyNoTag"));
@@ -464,22 +598,6 @@ const TClass* DDFilteredView::getShape() const {
   assert(node_);
   Volume currVol = node_->GetVolume();
   return (currVol->GetShape()->IsA());
-}
-
-bool DDFilteredView::isABox() const { return isA<dd4hep::Box>(); }
-
-bool DDFilteredView::isAConeSeg() const { return isA<dd4hep::ConeSegment>(); }
-
-bool DDFilteredView::isAPseudoTrap() const { return isA<dd4hep::PseudoTrap>(); }
-
-bool DDFilteredView::isATrapezoid() const { return isA<dd4hep::Trap>(); }
-
-bool DDFilteredView::isATruncTube() const { return isA<dd4hep::TruncatedTube>(); }
-
-bool DDFilteredView::isATubeSeg() const { return isA<dd4hep::Tube>(); }
-
-bool DDFilteredView::isASubtraction() const {
-  return (isA<dd4hep::SubtractionSolid>() && !isA<dd4hep::TruncatedTube>() && !isA<dd4hep::PseudoTrap>());
 }
 
 std::string_view DDFilteredView::name() const { return (volume().volume().name()); }

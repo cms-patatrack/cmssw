@@ -6,16 +6,14 @@ namespace ecal {
     using matrix_t = SampleMatrix;
     using vector_t = SampleVector;
 
-    __device__ bool inplace_fnnls(matrix_t const& A,
-                                  vector_t const& b,
+    __device__ bool inplace_fnnls(matrix_t& AtA,
+                                  vector_t& Atb,
                                   vector_t& x,
                                   int& npassive,
                                   BXVectorType& activeBXs,
                                   PulseMatrixType& pulse_matrix,
                                   const double eps,
                                   const unsigned int max_iterations) {
-      matrix_t AtA = A.transpose() * A;
-      vector_t Atb = A.transpose() * b;
       vector_t s;
       vector_t w;
 

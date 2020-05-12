@@ -8,16 +8,13 @@
 <use name="DataFormats/TrackerRecHit2D"/>
 <use name="FWCore/Framework"/>
 <use name="FWCore/ParameterSet"/>
-<use name="FWCore/PluginManager"/>
 <use name="Geometry/TrackerGeometryBuilder"/>
 <use name="RecoLocalTracker/ClusterParameterEstimator"/>
 <use name="RecoLocalTracker/Records"/>
-<use name="TrackingTools/TransientTrack"/>
-
-<library file="CPEAccessTester.cc" name="CPEAccessTester">
-  <flags EDM_PLUGIN="1"/>
-</library>
+<flags EDM_PLUGIN="1"/>
 
 <library file="ReadPixelRecHit.cc" name="ReadPixelRecHit">
-  <flags EDM_PLUGIN="1"/>
+</library>
+
+<library file="CPEAccessTester.cc" name="CPEAccessTester">
 </library>

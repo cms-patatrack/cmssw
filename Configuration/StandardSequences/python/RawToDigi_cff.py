@@ -1,4 +1,5 @@
 import FWCore.ParameterSet.Config as cms
+from Configuration.ProcessModifiers.gpu_cff import gpu
 
 # This object is used to selectively make changes for different running
 # scenarios. In this case it makes changes for Run 2.
@@ -9,8 +10,7 @@ from EventFilter.SiStripRawToDigi.SiStripDigis_cfi import *
 
 from SimCalorimetry.EcalTrigPrimProducers.ecalTriggerPrimitiveDigis_cff import *
 
-import EventFilter.EcalRawToDigi.EcalUnpackerData_cfi
-ecalDigis = EventFilter.EcalRawToDigi.EcalUnpackerData_cfi.ecalEBunpacker.clone()
+from EventFilter.EcalRawToDigi.ecalDigis_cff import *
 
 import EventFilter.ESRawToDigi.esRawToDigi_cfi
 ecalPreshowerDigis = EventFilter.ESRawToDigi.esRawToDigi_cfi.esRawToDigi.clone()
@@ -48,7 +48,7 @@ from EventFilter.CTPPSRawToDigi.ctppsRawToDigi_cff import *
 RawToDigiTask = cms.Task(L1TRawToDigiTask,
                          siPixelDigisTask,
                          siStripDigis,
-                         ecalDigis,
+                         ecalDigisTask,
                          ecalPreshowerDigis,
                          hcalDigis,
                          muonCSCDigis,
@@ -67,10 +67,13 @@ RawToDigi_noTk = cms.Sequence(RawToDigiTask_noTk)
 RawToDigiTask_pixelOnly = cms.Task(siPixelDigisTask, scalersRawToDigi)
 RawToDigi_pixelOnly = cms.Sequence(RawToDigiTask_pixelOnly)
 
+RawToDigiTask_ecalOnly = cms.Task(ecalDigisTask, ecalPreshowerDigis, scalersRawToDigi)
+RawToDigi_ecalOnly = cms.Sequence(RawToDigiTask_ecalOnly)
+
 scalersRawToDigi.scalersInputTag = 'rawDataCollector'
 siPixelDigis.cpu.InputLabel = 'rawDataCollector'
 #false by default anyways ecalDigis.DoRegional = False
-ecalDigis.InputLabel = 'rawDataCollector'
+(~gpu).toModify(ecalDigis, InputLabel='rawDataCollector')
 ecalPreshowerDigis.sourceTag = 'rawDataCollector'
 hcalDigis.InputLabel = 'rawDataCollector'
 muonCSCDigis.InputObjects = 'rawDataCollector'

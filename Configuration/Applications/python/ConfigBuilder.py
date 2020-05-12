@@ -106,14 +106,14 @@ def filesFromList(fileName,s=None):
         if line.count(".root")>=2:
             #two files solution...
             entries=line.replace("\n","").split()
-            if not entries[0] in prim:
-                prim.append(entries[0])
-            if not entries[1] in sec:
-                sec.append(entries[1])
+            prim.append(entries[0])
+            sec.append(entries[1])
         elif (line.find(".root")!=-1):
             entry=line.replace("\n","")
-            if not entry in prim:
-                prim.append(entry)
+            prim.append(entry)
+    # remove any duplicates
+    prim = sorted(list(set(prim)))
+    sec = sorted(list(set(sec)))
     if s:
         if not hasattr(s,"fileNames"):
             s.fileNames=cms.untracked.vstring(prim)
@@ -156,14 +156,14 @@ def filesFromDASQuery(query,option="",s=None):
         if line.count(".root")>=2:
             #two files solution...
             entries=line.replace("\n","").split()
-            if not entries[0] in prim:
-                prim.append(entries[0])
-            if not entries[1] in sec:
-                sec.append(entries[1])
+            prim.append(entries[0])
+            sec.append(entries[1])
         elif (line.find(".root")!=-1):
             entry=line.replace("\n","")
-            if not entry in prim:
-                prim.append(entry)
+            prim.append(entry)
+    # remove any duplicates
+    prim = sorted(list(set(prim)))
+    sec = sorted(list(set(sec)))
     if s:
         if not hasattr(s,"fileNames"):
             s.fileNames=cms.untracked.vstring(prim)
@@ -2000,6 +2000,8 @@ class ConfigBuilder(object):
         for name in harvestingList:
             if not name in harvestingConfig.__dict__:
                 print(name,"is not a possible harvesting type. Available are",harvestingConfig.__dict__.keys())
+                # trigger hard error, like for other sequence types
+                getattr(self.process, name)
                 continue
             harvestingstream = getattr(harvestingConfig,name)
             if isinstance(harvestingstream,cms.Path):
@@ -2295,6 +2297,14 @@ class ConfigBuilder(object):
         self.pythonCfgCode += "# End adding early deletion\n"
         from Configuration.StandardSequences.earlyDeleteSettings_cff import customiseEarlyDelete
         self.process = customiseEarlyDelete(self.process)
+
+        imports = cms.specialImportRegistry.getSpecialImports()
+        if len(imports) > 0:
+            #need to inject this at the top
+            index = self.pythonCfgCode.find("import FWCore.ParameterSet.Config")
+            #now find the end of line
+            index = self.pythonCfgCode.find("\n",index)
+            self.pythonCfgCode = self.pythonCfgCode[:index]+ "\n" + "\n".join(imports)+"\n" +self.pythonCfgCode[index:]
 
 
         # make the .io file

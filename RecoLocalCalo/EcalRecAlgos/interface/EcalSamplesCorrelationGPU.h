@@ -8,8 +8,6 @@
 #include "HeterogeneousCore/CUDACore/interface/ESProduct.h"
 #endif
 
-#include <cuda_runtime.h>
-
 class EcalSamplesCorrelationGPU {
 public:
   struct Product {

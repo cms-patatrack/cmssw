@@ -324,7 +324,7 @@ g4SimHits = cms.EDProducer("OscarMTProducer",
         UseBirkLaw                = cms.bool(True),
         BirkC3                    = cms.double(1.75),
         BirkC2                    = cms.double(0.142),
-        BirkC1                    = cms.double(0.0052),
+        BirkC1                    = cms.double(0.0060),
         UseShowerLibrary          = cms.bool(True),
         UseParametrize            = cms.bool(False),
         UsePMTHits                = cms.bool(False),
@@ -492,6 +492,14 @@ g4SimHits = cms.EDProducer("OscarMTProducer",
     ),
     TotemSD = cms.PSet(
         Verbosity = cms.untracked.int32(0)
+    ),
+    TotemT2ScintSD = cms.PSet(
+        UseBirkLaw    = cms.bool(True),
+        BirkC3        = cms.double(1.75),
+        BirkC2        = cms.double(0.142),
+        BirkC1        = cms.double(0.006),
+        TimeSliceUnit = cms.double(1),
+        IgnoreTrackID = cms.bool(False),
     ),
     PPSDiamondSD = cms.PSet(
         Verbosity = cms.int32(0)

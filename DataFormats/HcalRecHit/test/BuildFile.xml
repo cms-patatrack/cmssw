@@ -4,13 +4,14 @@
   <use name="FWCore/Framework"/>
   <use name="FWCore/ParameterSet"/>
 </library>
+
 <iftool name="cuda-gcc-support">
-<bin name="test_hcal_reco" file="test_hcal_reco.cu">
-  <use name="cuda"/>
-  <use name="DataFormats/CaloRecHit"/>
-  <use name="DataFormats/HcalRecHit"/>
-  <use name="DataFormats/HcalDetId"/>
-  <use name="DataFormats/HcalDigi"/>
-  <use name="HeterogeneousCore/CUDAUtilities"/>
-</bin>
+  <bin name="test_hcal_reco" file="test_hcal_reco.cu">
+    <use name="cuda"/>
+    <use name="DataFormats/CaloRecHit"/>
+    <use name="DataFormats/HcalRecHit"/>
+    <use name="DataFormats/HcalDetId"/>
+    <use name="DataFormats/HcalDigi"/>
+    <use name="HeterogeneousCore/CUDAUtilities"/>
+  </bin>
 </iftool>
