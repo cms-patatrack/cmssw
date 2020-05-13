@@ -66,10 +66,18 @@ def customise_cpu_pixel(process):
     )
 
     from RecoPixelVertexing.PixelTriplets.caHitNtupletCUDA_cfi import caHitNtupletCUDA as _caHitNtupletCUDA
-    process.hltPixelTracksSoA = _caHitNtupletCUDA.clone(
+    process.hltPixelTracksHitQuadruplets = _caHitNtupletCUDA.clone(
         idealConditions = False,
         pixelRecHitSrc = "hltSiPixelRecHitSoA",
         onGPU = False
+    )
+
+    process.hltPixelTracksSoA = cms.EDAlias(
+        hltPixelTracksHitQuadruplets = cms.VPSet(
+            cms.PSet(
+                type = cms.string("32768TrackSoATHeterogeneousSoA")
+            )
+        )
     )
 
     from RecoPixelVertexing.PixelTrackFitting.pixelTrackProducerFromSoA_cfi import pixelTrackProducerFromSoA as _pixelTrackProducerFromSoA
@@ -103,7 +111,8 @@ def customise_cpu_pixel(process):
         + process.hltPixelTracksFilter                      # not used here, kept for compatibility with legacy sequences
         + process.hltPixelTracksTrackingRegions             # from the original sequence
         + process.hltSiPixelRecHitSoA                       # pixel rechits on cpu, converted to SoA
-        + process.hltPixelTracksSoA                         # pixel ntuplets on cpu, in SoA format
+        + process.hltPixelTracksHitQuadruplets              # pixel ntuplets on cpu, in SoA format
+        # process.hltPixelTracksSoA                         # alias for hltPixelTracksHitQuadruplets
         + process.hltPixelTracks)                           # pixel tracks on cpu, with conversion to legacy
 
     process.HLTRecopixelvertexingSequence = cms.Sequence(
