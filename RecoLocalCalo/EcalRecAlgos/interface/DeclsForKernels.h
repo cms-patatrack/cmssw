@@ -283,9 +283,9 @@ struct conf_data {
 #include "CondFormats/EcalObjects/interface/EcalChannelStatus.h"
 #include "CondFormats/EcalObjects/interface/EcalChannelStatusCode.h"
 
-#include "RecoLocalCalo/EcalRecAlgos/interface/EcalADCToGeVConstantGPU.h"
+#include "RecoLocalCalo/EcalRecAlgos/interface/EcalRechitADCToGeVConstantGPU.h"
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalIntercalibConstantsGPU.h"
-#include "RecoLocalCalo/EcalRecAlgos/interface/EcalChannelStatusGPU.h"
+#include "RecoLocalCalo/EcalRecAlgos/interface/EcalRechitChannelStatusGPU.h"
 
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalLaserAPDPNRatiosGPU.h"
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalLaserAPDPNRatiosRefGPU.h"
@@ -378,9 +378,9 @@ namespace ecal {
     
     // const refs products to conditions
     struct ConditionsProducts {
-      EcalADCToGeVConstantGPU::Product    const& ADCToGeV      ;
-      EcalIntercalibConstantsGPU::Product const& Intercalib    ;
-      EcalChannelStatusGPU::Product       const& ChannelStatus ;
+      EcalRechitADCToGeVConstantGPU::Product const& ADCToGeV      ;
+      EcalIntercalibConstantsGPU::Product    const& Intercalib    ;
+      EcalRechitChannelStatusGPU::Product    const& ChannelStatus ;
       //     
       EcalLaserAPDPNRatiosGPU::Product     const& LaserAPDPNRatios    ;
       EcalLaserAPDPNRatiosRefGPU::Product  const& LaserAPDPNRatiosRef ;

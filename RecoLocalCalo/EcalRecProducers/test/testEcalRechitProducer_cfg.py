@@ -151,19 +151,23 @@ process.load('Configuration.StandardSequences.Reconstruction_cff')
 #process.ecalRecHit
 
     
-    
+process.load("RecoLocalCalo.EcalRecProducers.ecalRechitADCToGeVConstantGPUESProducer_cfi")
+process.load("RecoLocalCalo.EcalRecProducers.ecalRechitChannelStatusGPUESProducer_cfi")
 #process.load("RecoLocalCalo.EcalRecProducers.ecalADCToGeVConstantGPUESProducer_cfi")
+#process.load("RecoLocalCalo.EcalRecProducers.ecalChannelStatusGPUESProducer_cfi")
 process.load("RecoLocalCalo.EcalRecProducers.ecalIntercalibConstantsGPUESProducer_cfi")
-process.load("RecoLocalCalo.EcalRecProducers.ecalChannelStatusGPUESProducer_cfi")
     
 process.load("RecoLocalCalo.EcalRecProducers.ecalLaserAPDPNRatiosGPUESProducer_cfi")
 process.load("RecoLocalCalo.EcalRecProducers.ecalLaserAPDPNRatiosRefGPUESProducer_cfi")
 process.load("RecoLocalCalo.EcalRecProducers.ecalLaserAlphasGPUESProducer_cfi")
 process.load("RecoLocalCalo.EcalRecProducers.ecalLinearCorrectionsGPUESProducer_cfi")
     
-#process.load("RecoLocalCalo.EcalRecProducers.ecalRecHitGPU_cfi")
-#process.ecalRecHitProducerGPU = process.ecalRecHitGPU.clone()
+process.load("RecoLocalCalo.EcalRecProducers.ecalRecHitGPU_cfi")
+process.ecalRecHitProducerGPU = process.ecalRecHitGPU.clone()
  
+ 
+process.load("RecoLocalCalo.EcalRecProducers.ecalCPURecHitProducer_cfi")
+
  
 #
 # AM : TEST to see if the number of rechits matches
@@ -244,7 +248,7 @@ process.ecalDigis.InputLabel = cms.InputTag('rawDataCollector')
 
 process.out = cms.OutputModule(
     "PoolOutputModule",
-    fileName = cms.untracked.string("test.root")
+    fileName = cms.untracked.string("testRechit.root")
 )
 
 #process.out = cms.OutputModule("AsciiOutputModule",
@@ -273,8 +277,8 @@ process.recoPath = cms.Path(
 #   gpu
     *process.ecalUncalibRecHitProducerGPU
     *process.ecalCPUUncalibRecHitProducer
-    #*process.ecalRecHitProducerGPU
-    #*process.ecalCPURecHitProducer
+    *process.ecalRecHitProducerGPU
+    *process.ecalCPURecHitProducer
 )
 
 process.schedule = cms.Schedule(
@@ -294,5 +298,9 @@ process.options = cms.untracked.PSet(
 
 # report CUDAService messages
 process.MessageLogger.categories.append("CUDAService")
+
+
+#
+process.DependencyGraph = cms.Service("DependencyGraph")
 
 

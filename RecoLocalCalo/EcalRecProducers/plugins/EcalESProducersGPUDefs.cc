@@ -27,9 +27,9 @@
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalTimeBiasCorrectionsGPU.h"
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalTimeCalibConstantsGPU.h"
 // for rechit
-#include "RecoLocalCalo/EcalRecAlgos/interface/EcalADCToGeVConstantGPU.h"
+#include "RecoLocalCalo/EcalRecAlgos/interface/EcalRechitADCToGeVConstantGPU.h"
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalIntercalibConstantsGPU.h"
-#include "RecoLocalCalo/EcalRecAlgos/interface/EcalChannelStatusGPU.h"
+#include "RecoLocalCalo/EcalRecAlgos/interface/EcalRechitChannelStatusGPU.h"
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalLaserAPDPNRatiosGPU.h"
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalLaserAPDPNRatiosRefGPU.h"
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalLaserAlphasGPU.h"
@@ -75,8 +75,8 @@ using EcalTimeCalibConstantsGPUESProducer = EcalESProducerGPU<
                                                               EcalTimeCalibConstantsRcd
                                                               >;
                                                              
-using EcalADCToGeVConstantGPUESProducer = EcalESProducerGPU<
-                                                            EcalADCToGeVConstantGPU,
+using EcalRechitADCToGeVConstantGPUESProducer = EcalESProducerGPU<
+                                                            EcalRechitADCToGeVConstantGPU,
                                                             EcalADCToGeVConstant,
                                                             EcalADCToGeVConstantRcd
                                                             >;
@@ -87,8 +87,8 @@ using EcalIntercalibConstantsGPUESProducer = EcalESProducerGPU<
                                                                EcalIntercalibConstantsRcd
                                                                >;
 
-using EcalChannelStatusGPUESProducer = EcalESProducerGPU<
-                                                         EcalChannelStatusGPU,
+using EcalRechitChannelStatusGPUESProducer = EcalESProducerGPU<
+                                                         EcalRechitChannelStatusGPU,
                                                          EcalChannelStatus,
                                                          EcalChannelStatusRcd
                                                          >;
@@ -129,9 +129,9 @@ DEFINE_FWK_EVENTSETUP_MODULE(EcalSamplesCorrelationGPUESProducer);
 DEFINE_FWK_EVENTSETUP_MODULE(EcalTimeBiasCorrectionsGPUESProducer);
 DEFINE_FWK_EVENTSETUP_MODULE(EcalTimeCalibConstantsGPUESProducer);
 
-DEFINE_FWK_EVENTSETUP_MODULE(EcalADCToGeVConstantGPUESProducer);
+DEFINE_FWK_EVENTSETUP_MODULE(EcalRechitADCToGeVConstantGPUESProducer);
 DEFINE_FWK_EVENTSETUP_MODULE(EcalIntercalibConstantsGPUESProducer);
-DEFINE_FWK_EVENTSETUP_MODULE(EcalChannelStatusGPUESProducer);
+DEFINE_FWK_EVENTSETUP_MODULE(EcalRechitChannelStatusGPUESProducer);
 DEFINE_FWK_EVENTSETUP_MODULE(EcalLaserAPDPNRatiosGPUESProducer);
 DEFINE_FWK_EVENTSETUP_MODULE(EcalLaserAPDPNRatiosRefGPUESProducer);
 DEFINE_FWK_EVENTSETUP_MODULE(EcalLaserAlphasGPUESProducer);

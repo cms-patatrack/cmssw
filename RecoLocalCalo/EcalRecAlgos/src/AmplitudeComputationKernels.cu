@@ -392,7 +392,7 @@ namespace ecal {
             50,
             offsetForHashes,
             offsetForInputs);
-//         cudaCheck(cudaGetLastError());
+        cudaCheck(cudaGetLastError());
       }
 
     }  // namespace v1

@@ -5,6 +5,7 @@
  * Created: 14 Nov 2006
  **/
 
+
 #include "CondFormats/Serialization/interface/Serializable.h"
 
 #include <iostream>
@@ -16,7 +17,10 @@
  */
 
 class EcalChannelStatusCode {
+
+  
 public:
+  
   enum Code {
     kOk = 0,
     kDAC,
@@ -35,12 +39,22 @@ public:
     kNoDataNoTP
   };
 
-  enum Bits { kHV = 0, kLV, kDAQ, kTP, kTrigger, kTemperature, kNextToDead };
-
+  enum Bits {
+    kHV=0,
+    kLV,
+    kDAQ,
+    kTP,
+    kTrigger,
+    kTemperature,
+    kNextToDead
+  };
+  
 public:
+  
   EcalChannelStatusCode() : status_(0) {}
   EcalChannelStatusCode(const uint16_t& encodedStatus) : status_(encodedStatus){};
 
+  
   void print(std::ostream& s) const { s << "status is: " << status_; }
 
   /// return decoded status
@@ -55,6 +69,7 @@ public:
   static const int chStatusMask = 0x1F;
 
 private:
+  
   static const int kBitsOffset = 5;
   /* bits 1-5 store a status code:
        	0 	channel ok 

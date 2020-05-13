@@ -36,9 +36,9 @@
 
 
 // conditions gpu
-#include "RecoLocalCalo/EcalRecAlgos/interface/EcalADCToGeVConstantGPU.h"
+#include "RecoLocalCalo/EcalRecAlgos/interface/EcalRechitADCToGeVConstantGPU.h"
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalIntercalibConstantsGPU.h"
-#include "RecoLocalCalo/EcalRecAlgos/interface/EcalChannelStatusGPU.h"
+#include "RecoLocalCalo/EcalRecAlgos/interface/EcalRechitChannelStatusGPU.h"
 
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalLaserAPDPNRatiosGPU.h"
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalLaserAPDPNRatiosRefGPU.h"
@@ -95,9 +95,9 @@ private:
   
   
   // conditions handles
-  edm::ESHandle<EcalADCToGeVConstantGPU>    ADCToGeVConstantHandle_;
-  edm::ESHandle<EcalIntercalibConstantsGPU> IntercalibConstantsHandle_;
-  edm::ESHandle<EcalChannelStatusGPU>       ChannelStatusHandle_;
+  edm::ESHandle<EcalRechitADCToGeVConstantGPU> ADCToGeVConstantHandle_;
+  edm::ESHandle<EcalIntercalibConstantsGPU>    IntercalibConstantsHandle_;
+  edm::ESHandle<EcalRechitChannelStatusGPU>    ChannelStatusHandle_;
   
   edm::ESHandle<EcalLaserAPDPNRatiosGPU>    LaserAPDPNRatiosHandle_;
   edm::ESHandle<EcalLaserAPDPNRatiosRefGPU> LaserAPDPNRatiosRefHandle_;
@@ -401,7 +401,7 @@ void EcalRecHitProducerGPU::acquire(
     ctx.stream()
   );
   
-  cudaCheck(cudaGetLastError());
+//   cudaCheck(cudaGetLastError());
   
   
 }
