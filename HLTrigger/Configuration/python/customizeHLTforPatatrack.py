@@ -1,15 +1,29 @@
 import FWCore.ParameterSet.Config as cms
 
+# customisation for running on CPUs, common parts
+def customise_cpu_common(process):
+
+    # Services
+
+    process.CUDAService = cms.Service("CUDAService",
+        enabled = cms.untracked.bool(False)
+    )
+
+
+    # done
+    return process
+
+
 # customisation for offloading to GPUs, common parts
 def customise_gpu_common(process):
 
     # Services
 
     process.CUDAService = cms.Service("CUDAService",
+        enabled = cms.untracked.bool(True),
         allocator = cms.untracked.PSet(
             devicePreallocate = cms.untracked.vuint32(),
         ),
-        enabled = cms.untracked.bool(True),
         limits = cms.untracked.PSet(
             cudaLimitDevRuntimePendingLaunchCount = cms.untracked.int32(-1),
             cudaLimitDevRuntimeSyncDepth = cms.untracked.int32(-1),
@@ -362,6 +376,7 @@ def customise_gpu_ecal(process):
 
 # customisation for running on CPUs
 def customise_for_Patatrack_on_cpu(process):
+    process = customise_cpu_common(process)
     process = customise_cpu_pixel(process)
     return process
 
