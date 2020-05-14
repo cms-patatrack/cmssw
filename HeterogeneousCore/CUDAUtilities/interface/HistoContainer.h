@@ -9,10 +9,6 @@
 #include <cstdint>
 #include <type_traits>
 
-#ifdef __CUDACC__
-#include <cub/cub.cuh>
-#endif
-
 #include "HeterogeneousCore/CUDAUtilities/interface/AtomicPairCounter.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
@@ -73,7 +69,7 @@ namespace cms {
     inline __attribute__((always_inline)) void launchFinalize(Histo *__restrict__ h,
                                                               uint8_t *__restrict__ ws
 #ifndef __CUDACC__
-                                                              = cudaStreamDefault
+                                                              = nullptr
 #endif
                                                               ,
                                                               cudaStream_t stream
@@ -86,7 +82,12 @@ namespace cms {
       uint32_t *off = (uint32_t *)((char *)(h) + offsetof(Histo, off));
       size_t wss = Histo::wsSize();
       assert(wss > 0);
-      CubDebugExit(cub::DeviceScan::InclusiveSum(ws, wss, off, off, Histo::totbins(), stream));
+      auto nthreads = 512+256;
+      auto nblocks = (Histo::totbins() + nthreads - 1) / nthreads;
+      assert(nblocks<=1024);
+      cudaCheck(cudaMemsetAsync(ws, 0, 4, stream));
+      multiBlockPrefixScan<<<nblocks, nthreads, 4*nblocks, stream>>>( off, off, Histo::totbins(), (int32_t *)(ws));      
+      cudaCheck(cudaGetLastError());
 #else
       h->finalize();
 #endif
@@ -188,11 +189,7 @@ namespace cms {
 
       __host__ __forceinline__ static size_t wsSize() {
 #ifdef __CUDACC__
-        uint32_t *v = nullptr;
-        void *d_temp_storage = nullptr;
-        size_t temp_storage_bytes = 0;
-        cub::DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, v, v, totbins());
-        return temp_storage_bytes;
+        return 4;
 #else
         return 0;
 #endif
