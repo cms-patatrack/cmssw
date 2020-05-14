@@ -82,9 +82,8 @@ namespace cms {
       uint32_t *off = (uint32_t *)((char *)(h) + offsetof(Histo, off));
       size_t wss = Histo::wsSize();
       assert(wss > 0);
-      auto nthreads = 512+256;
+      auto nthreads = 1024;
       auto nblocks = (Histo::totbins() + nthreads - 1) / nthreads;
-      assert(nblocks<=1024);
       cudaCheck(cudaMemsetAsync(ws, 0, 4, stream));
       multiBlockPrefixScan<<<nblocks, nthreads, 4*nblocks, stream>>>( off, off, Histo::totbins(), (int32_t *)(ws));      
       cudaCheck(cudaGetLastError());

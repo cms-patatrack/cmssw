@@ -127,13 +127,25 @@ namespace cms {
 #endif
     }
 
-    // limited to 1024*1024 elements....
+#ifdef __CUDA_ARCH__
+    // see https://stackoverflow.com/questions/40021086/can-i-obtain-the-amount-of-allocated-dynamic-shared-memory-from-within-a-kernel/40021087#40021087
+    __device__ __forceinline__ unsigned dynamic_smem_size ()
+    {  
+      unsigned ret; 
+      asm volatile ("mov.u32 %0, %dynamic_smem_size;" : "=r"(ret));
+      return ret;
+    }
+#endif
+
+    // in principle not limited....
     template <typename T>
     __global__ void multiBlockPrefixScan(T const* ci, T* co, int32_t size, int32_t* pc) {
       __shared__ T ws[32];
-      // first each block does a scan of size 1024; (better be enough blocks....)
-      assert(gridDim.x <= 1024);
+#ifdef __CUDA_ARCH__
+      assert(sizeof(T)*gridDim.x <= dynamic_smem_size());  // size of psum below
+#endif
       assert(blockDim.x * gridDim.x >= size);
+      // first each block does a scan
       int off = blockDim.x * blockIdx.x;
       if (size - off > 0)
         blockPrefixScan(ci + off, co + off, std::min(int(blockDim.x), size - off), ws);
