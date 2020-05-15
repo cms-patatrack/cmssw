@@ -176,13 +176,11 @@ namespace cms {
       blockPrefixScan(psum, psum, gridDim.x, ws);
 
       // now it would have been handy to have the other blocks around...
-      int first = threadIdx.x;                                 // + blockDim.x * blockIdx.x
-      for (int i = first + blockDim.x; i < size; i += blockDim.x) {  //  *gridDim.x) {
-        auto k = i / blockDim.x;                                     // block
-        co[i] += psum[k - 1];
+      for (int i = threadIdx.x + blockDim.x, k=0; i < size; i += blockDim.x, ++k) {
+        co[i] += psum[k];
       }
-    }
 
+    }
   }  // namespace cuda
 }  // namespace cms
 
