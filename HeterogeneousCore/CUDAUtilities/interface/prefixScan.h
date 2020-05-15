@@ -129,10 +129,9 @@ namespace cms {
 
 #ifdef __CUDA_ARCH__
     // see https://stackoverflow.com/questions/40021086/can-i-obtain-the-amount-of-allocated-dynamic-shared-memory-from-within-a-kernel/40021087#40021087
-    __device__ __forceinline__ unsigned dynamic_smem_size ()
-    {  
-      unsigned ret; 
-      asm volatile ("mov.u32 %0, %dynamic_smem_size;" : "=r"(ret));
+    __device__ __forceinline__ unsigned dynamic_smem_size() {
+      unsigned ret;
+      asm volatile("mov.u32 %0, %dynamic_smem_size;" : "=r"(ret));
       return ret;
     }
 #endif
@@ -142,7 +141,7 @@ namespace cms {
     __global__ void multiBlockPrefixScan(T const* ci, T* co, int32_t size, int32_t* pc) {
       __shared__ T ws[32];
 #ifdef __CUDA_ARCH__
-      assert(sizeof(T)*gridDim.x <= dynamic_smem_size());  // size of psum below
+      assert(sizeof(T) * gridDim.x <= dynamic_smem_size());  // size of psum below
 #endif
       assert(blockDim.x * gridDim.x >= size);
       // first each block does a scan
@@ -162,24 +161,23 @@ namespace cms {
       if (!isLastBlockDone)
         return;
 
-      assert(int(gridDim.x)==*pc);
+      assert(int(gridDim.x) == *pc);
 
       // good each block has done its work and now we are left in last block
 
       // let's get the partial sums from each block
       extern __shared__ T psum[];
       for (int i = threadIdx.x, ni = gridDim.x; i < ni; i += blockDim.x) {
-        auto j = blockDim.x * i + blockDim.x -1;
+        auto j = blockDim.x * i + blockDim.x - 1;
         psum[i] = (j < size) ? co[j] : T(0);
       }
       __syncthreads();
       blockPrefixScan(psum, psum, gridDim.x, ws);
 
       // now it would have been handy to have the other blocks around...
-      for (int i = threadIdx.x + blockDim.x, k=0; i < size; i += blockDim.x, ++k) {
+      for (int i = threadIdx.x + blockDim.x, k = 0; i < size; i += blockDim.x, ++k) {
         co[i] += psum[k];
       }
-
     }
   }  // namespace cuda
 }  // namespace cms

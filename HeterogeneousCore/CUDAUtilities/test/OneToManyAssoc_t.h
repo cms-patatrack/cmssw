@@ -119,7 +119,8 @@ int main() {
 #endif
 
   std::cout << "OneToManyAssoc " << sizeof(Assoc) << ' ' << Assoc::nbins() << ' ' << Assoc::capacity() << std::endl;
-  std::cout << "OneToManyAssoc (small) " << sizeof(SmallAssoc) << ' ' << SmallAssoc::nbins() << ' ' << SmallAssoc::capacity() << std::endl;
+  std::cout << "OneToManyAssoc (small) " << sizeof(SmallAssoc) << ' ' << SmallAssoc::nbins() << ' '
+            << SmallAssoc::capacity() << std::endl;
 
   std::mt19937 eng;
 

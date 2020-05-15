@@ -57,9 +57,9 @@ namespace cms {
                                                           = cudaStreamDefault
 #endif
     ) {
-      uint32_t * poff = (uint32_t *)((char *)(h) + offsetof(Histo, off));
+      uint32_t *poff = (uint32_t *)((char *)(h) + offsetof(Histo, off));
       int32_t size = offsetof(Histo, bins) - offsetof(Histo, off);
-      assert(size>=int(sizeof(uint32_t) * Histo::totbins()));
+      assert(size >= int(sizeof(uint32_t) * Histo::totbins()));
 #ifdef __CUDACC__
       cudaCheck(cudaMemsetAsync(poff, 0, size, stream));
 #else
@@ -75,11 +75,12 @@ namespace cms {
 #endif
     ) {
 #ifdef __CUDACC__
-      uint32_t * poff = (uint32_t *)((char *)(h) + offsetof(Histo, off));
-      int32_t * ppsws = (int32_t *)((char *)(h) + offsetof(Histo, psws));
+      uint32_t *poff = (uint32_t *)((char *)(h) + offsetof(Histo, off));
+      int32_t *ppsws = (int32_t *)((char *)(h) + offsetof(Histo, psws));
       auto nthreads = 1024;
       auto nblocks = (Histo::totbins() + nthreads - 1) / nthreads;
-      multiBlockPrefixScan<<<nblocks, nthreads, sizeof(int32_t)*nblocks, stream>>>( poff, poff, Histo::totbins(), ppsws);      
+      multiBlockPrefixScan<<<nblocks, nthreads, sizeof(int32_t) * nblocks, stream>>>(
+          poff, poff, Histo::totbins(), ppsws);
       cudaCheck(cudaGetLastError());
 #else
       h->finalize();

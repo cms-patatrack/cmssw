@@ -136,8 +136,8 @@ int main() {
 
     nthreads = 1024;
     nblocks = (num_items + nthreads - 1) / nthreads;
-    std::cout << "launch multiBlockPrefixScan " << num_items <<' '<< nblocks << std::endl;
-    multiBlockPrefixScan<<<nblocks, nthreads, 4*nblocks>>>(d_in, d_out1, num_items, d_pc);
+    std::cout << "launch multiBlockPrefixScan " << num_items << ' ' << nblocks << std::endl;
+    multiBlockPrefixScan<<<nblocks, nthreads, 4 * nblocks>>>(d_in, d_out1, num_items, d_pc);
     cudaCheck(cudaGetLastError());
     verify<<<nblocks, nthreads, 0>>>(d_out1, num_items);
     cudaCheck(cudaGetLastError());
