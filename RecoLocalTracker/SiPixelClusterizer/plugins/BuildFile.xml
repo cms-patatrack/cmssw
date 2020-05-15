@@ -1,4 +1,4 @@
-<use name="cub"/>
+<use name="boost_serialization"/>
 <use name="cuda"/>
 <use name="DataFormats/Common"/>
 <use name="FWCore/ParameterSet"/>
