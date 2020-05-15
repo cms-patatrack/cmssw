@@ -18,6 +18,11 @@ process.load('Configuration.StandardSequences.MagneticField_AutoFromDBCurrent_cf
 #process.load('DQMOffline.Configuration.DQMOffline_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
+
+
+
+
+
 # Other statements
 from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, '102X_dataRun2_HLT_v2', '')
@@ -301,6 +306,6 @@ process.MessageLogger.categories.append("CUDAService")
 
 
 #
-process.DependencyGraph = cms.Service("DependencyGraph")
+#process.DependencyGraph = cms.Service("DependencyGraph")
 
 

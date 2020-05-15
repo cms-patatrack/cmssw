@@ -25,7 +25,7 @@ class EcalCPURecHitProducer
 {
 public:
   explicit EcalCPURecHitProducer(edm::ParameterSet const& ps);
-  ~EcalCPURecHitProducer() override;
+  ~EcalCPURecHitProducer() override = default;
   static void fillDescriptions(edm::ConfigurationDescriptions&);
   
 private:
@@ -65,7 +65,6 @@ void EcalCPURecHitProducer::fillDescriptions(
   , containsTimingInformation_{ps.getParameter<bool>("containsTimingInformation")}
   {}
   
-  EcalCPURecHitProducer::~EcalCPURecHitProducer() {}
   
   void EcalCPURecHitProducer::acquire(
     edm::Event const& event,

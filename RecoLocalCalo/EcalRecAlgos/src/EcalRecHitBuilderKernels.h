@@ -74,7 +74,7 @@ namespace ecal {
       uint32_t* flagBits,
       uint32_t* extra,
       int const nchannels,
-      uint32_t const offsetForInput,
+      uint32_t const nChannelsBarrel,
       uint32_t const offsetForHashes  
     );
     
@@ -87,7 +87,7 @@ namespace ecal {
       //     eventDataForScratchGPU_,
       ConditionsProducts const& conditions, 
       ConfigurationParameters const& configParameters,
-      uint32_t const offsetForInput, 
+      uint32_t const nChannelsBarrel, 
       edm::TimeValue_t const event_time,
       cudaStream_t cudaStream
     );

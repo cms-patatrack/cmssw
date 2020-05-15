@@ -143,7 +143,7 @@ namespace ecal {
       uint32_t* extra,
       // other
       int const nchannels,
-      uint32_t const offsetForInput,
+      uint32_t const nChannelsBarrel,
       uint32_t const offsetForHashes                     
     ) {
       
@@ -155,37 +155,39 @@ namespace ecal {
       int ch = threadIdx.x + blockDim.x*blockIdx.x;
       
       if (ch < nchannels) {
+      
+        bool isEndcap = (ch >= nChannelsBarrel);
         
-        int const inputCh = ch >= offsetForInput
-        ? ch - offsetForInput
+        int const inputCh = isEndcap
+        ? ch - nChannelsBarrel
         : ch;
         
-        uint32_t const * didCh = ch >= offsetForInput
+        uint32_t const * didCh = isEndcap
         ? did_ee
         : did_eb;
         
         // only two values, EB or EE
         // AM : FIXME : why not using "isBarrel" ?    isBarrel ? adc2gev[0] : adc2gev[1]
-        float adc2gev_to_use = ch >= offsetForInput
+        float adc2gev_to_use = isEndcap
         ? adc2gev[1]  // ee
         : adc2gev[0]; // eb
         
         
         // first EB and then EE
         
-        ::ecal::reco::StorageScalarType const* amplitude = ch >= offsetForInput
+        ::ecal::reco::StorageScalarType const* amplitude = isEndcap
         ? amplitude_ee
         : amplitude_eb;
         
-        ::ecal::reco::StorageScalarType const* time_in = ch >= offsetForInput
+        ::ecal::reco::StorageScalarType const* time_in = isEndcap
         ? time_ee
         : time_eb;
         
-        ::ecal::reco::StorageScalarType const* chi2_in = ch >= offsetForInput
+        ::ecal::reco::StorageScalarType const* chi2_in = isEndcap
         ? chi2_ee
         : chi2_eb;
         
-        uint32_t const* flags_in = ch >= offsetForInput
+        uint32_t const* flags_in = isEndcap
         ? flags_ee
         : flags_eb;
         
@@ -641,7 +643,7 @@ namespace ecal {
       //     eventDataForScratchGPU_,
       ConditionsProducts const& conditions, 
       ConfigurationParameters const& configParameters,
-      uint32_t const  offsetForInput,
+      uint32_t const  nChannelsBarrel,
       edm::TimeValue_t const event_time,
       cudaStream_t cudaStream
     ){
@@ -724,7 +726,7 @@ namespace ecal {
         eventOutputGPU.extra,
         // other
         nchannels,
-        offsetForInput,
+        nChannelsBarrel,
         conditions.offsetForHashes
       );
       

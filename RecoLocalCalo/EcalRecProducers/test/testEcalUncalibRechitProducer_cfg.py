@@ -1,4 +1,3 @@
-
 import FWCore.ParameterSet.Config as cms
 
 from Configuration.StandardSequences.Eras import eras
@@ -54,7 +53,6 @@ process.load("RecoLuminosity.LumiProducer.bunchSpacingProducer_cfi")
 # ../cfipython/slc7_amd64_gcc700/RecoLocalCalo/EcalRecProducers/ecalUncalibRecHitProducerGPU_cfi.py
 #
 process.load("RecoLocalCalo.EcalRecProducers.ecalUncalibRecHitProducerGPU_cfi")
-#
 process.load("RecoLocalCalo.EcalRecProducers.ecalMultiFitUncalibRecHit_cfi")
 
 # for validation of gpu multifit products

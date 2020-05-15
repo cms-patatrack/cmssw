@@ -1,4 +1,6 @@
 <use name="boost"/>
+<use name="cuda"/>
+<use name="CUDADataFormats/EcalDigi" />
 <use name="CalibCalorimetry/EcalLaserCorrection"/>
 <use name="CondFormats/DataRecord"/>
 <use name="CondFormats/EcalObjects"/>
@@ -14,15 +16,11 @@
 <use name="FWCore/PluginManager"/>
 <use name="Geometry/EcalMapping"/>
 <use name="Geometry/Records"/>
+<use name="HeterogeneousCore/CUDACore"/>
+<use name="HeterogeneousCore/CUDAUtilities"/>
 <use name="RecoLocalCalo/EcalRecAlgos"/>
 <use name="RecoLocalCalo/EcalRecProducers"/>
 <use name="Utilities/StorageFactory"/>
-
-<use   name="cuda"/>
-<use   name="HeterogeneousCore/CUDAUtilities"/>
-<use   name="HeterogeneousCore/CUDACore"/>
-<use   name="CUDADataFormats/EcalDigi" />
-
 <export>
   <lib name="1"/>
 </export>

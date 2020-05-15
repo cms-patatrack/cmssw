@@ -11,6 +11,10 @@
 #include "CUDADataFormats/EcalRecHitSoA/interface/EcalUncalibratedRecHit_soa.h"
 #include "CUDADataFormats/EcalRecHitSoA/interface/RecoTypes.h"
 
+// 
+// ECAL UncalibRechit producer
+// 
+
 #include "CondFormats/EcalObjects/interface/EcalWeightSet.h"
 #include "CondFormats/EcalObjects/interface/EcalPedestals.h"
 #include "CondFormats/EcalObjects/interface/EcalGainRatios.h"
@@ -26,6 +30,27 @@
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalTimeCalibConstantsGPU.h"
 
 #include "CUDADataFormats/EcalDigi/interface/DigisCollection.h"
+
+// 
+// ECAL Rechit producer
+// 
+
+#include "CUDADataFormats/EcalRecHitSoA/interface/EcalRecHit_soa.h"
+
+#include "CondFormats/EcalObjects/interface/EcalChannelStatus.h"
+#include "CondFormats/EcalObjects/interface/EcalChannelStatusCode.h"
+
+#include "RecoLocalCalo/EcalRecAlgos/interface/EcalRechitADCToGeVConstantGPU.h"
+#include "RecoLocalCalo/EcalRecAlgos/interface/EcalIntercalibConstantsGPU.h"
+#include "RecoLocalCalo/EcalRecAlgos/interface/EcalRechitChannelStatusGPU.h"
+
+#include "RecoLocalCalo/EcalRecAlgos/interface/EcalLaserAPDPNRatiosGPU.h"
+#include "RecoLocalCalo/EcalRecAlgos/interface/EcalLaserAPDPNRatiosRefGPU.h"
+#include "RecoLocalCalo/EcalRecAlgos/interface/EcalLaserAlphasGPU.h"
+#include "RecoLocalCalo/EcalRecAlgos/interface/EcalLinearCorrectionsGPU.h"
+
+
+
 
 struct EcalPulseShape;
 class EcalSampleMask;
@@ -277,22 +302,6 @@ struct conf_data {
 // 
 // ECAL Rechit producer
 // 
-
-#include "CUDADataFormats/EcalRecHitSoA/interface/EcalRecHit_soa.h"
-
-#include "CondFormats/EcalObjects/interface/EcalChannelStatus.h"
-#include "CondFormats/EcalObjects/interface/EcalChannelStatusCode.h"
-
-#include "RecoLocalCalo/EcalRecAlgos/interface/EcalRechitADCToGeVConstantGPU.h"
-#include "RecoLocalCalo/EcalRecAlgos/interface/EcalIntercalibConstantsGPU.h"
-#include "RecoLocalCalo/EcalRecAlgos/interface/EcalRechitChannelStatusGPU.h"
-
-#include "RecoLocalCalo/EcalRecAlgos/interface/EcalLaserAPDPNRatiosGPU.h"
-#include "RecoLocalCalo/EcalRecAlgos/interface/EcalLaserAPDPNRatiosRefGPU.h"
-#include "RecoLocalCalo/EcalRecAlgos/interface/EcalLaserAlphasGPU.h"
-#include "RecoLocalCalo/EcalRecAlgos/interface/EcalLinearCorrectionsGPU.h"
-
-
 
 namespace ecal { 
   namespace rechit {

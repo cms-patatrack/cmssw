@@ -5,10 +5,7 @@
 
 EcalRechitChannelStatusGPU::EcalRechitChannelStatusGPU(EcalChannelStatus const& values) 
 : status_(values.size())
-{
-  
-  std::cout << " I am running EcalRechitChannelStatusGPU ::>> debug ongoing ... " << std::endl;
-  
+{  
   // fill in eb
   auto const& barrelValues = values.barrelItems();
   for (unsigned int i=0; i<barrelValues.size(); i++) {

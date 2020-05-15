@@ -336,15 +336,12 @@ void EcalRecHitProducerGPU::acquire(
   nee_ = eeUncalibRecHits.size;
   //   std::cout << " [EcalRecHitProducerGPU::acquire]  neb_:nee_ = " << neb_ << " : " << nee_ << std::endl;
   
-  int nchannelsEB = ebUncalibRecHits.size;
-  
-  int offsetForInput = nchannelsEB;  // first EB and then EE
+  int nchannelsEB = ebUncalibRecHits.size; // --> offsetForInput, first EB and then EE
   
   // conditions
   // - laser correction 
   // - IC
   // - adt2gev
-  
   
   //   
   setup.get<EcalADCToGeVConstantRcd>()   .get(ADCToGeVConstantHandle_);
@@ -396,7 +393,7 @@ void EcalRecHitProducerGPU::acquire(
     //     eventDataForScratchGPU_,
     conditions,  
     configParameters_,
-    offsetForInput,
+    nchannelsEB,
     event_time,
     ctx.stream()
   );

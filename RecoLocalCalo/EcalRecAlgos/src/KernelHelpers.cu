@@ -73,9 +73,9 @@ namespace ecal {
             // 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16
           };
           
-          int iym, ixm, il, ic, ii;
-          iym = 4;
-          ixm = 17;
+          int il, ic, ii;
+          const int iym = 4;
+          const int ixm = 17;
           int iX_ = iX + 1;
           int iY_ = iY + 1;
           il = iym - iY_;
