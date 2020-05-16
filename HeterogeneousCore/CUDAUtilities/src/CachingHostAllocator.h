@@ -45,7 +45,6 @@
 
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 
-
 /// CUB namespace
 namespace notcub {
 
@@ -296,8 +295,8 @@ namespace notcub {
 
       if (debug)
         printf("Changing max_cached_bytes (%lld -> %lld)\n",
-                (long long)this->max_cached_bytes,
-                (long long)max_cached_bytes);
+               (long long)this->max_cached_bytes,
+               (long long)max_cached_bytes);
 
       this->max_cached_bytes = max_cached_bytes;
 
@@ -481,10 +480,10 @@ namespace notcub {
 
       if (debug)
         printf("\t\t%lld available blocks cached (%lld bytes), %lld live blocks outstanding(%lld bytes).\n",
-                (long long)cached_blocks.size(),
-                (long long)cached_bytes.free,
-                (long long)live_blocks.size(),
-                (long long)cached_bytes.live);
+               (long long)cached_blocks.size(),
+               (long long)cached_bytes.free,
+               (long long)live_blocks.size(),
+               (long long)cached_bytes.live);
 
       return error;
     }

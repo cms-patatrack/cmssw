@@ -302,8 +302,8 @@ namespace notcub {
 
       if (debug)
         printf("Changing max_cached_bytes (%lld -> %lld)\n",
-                (long long)this->max_cached_bytes,
-                (long long)max_cached_bytes);
+               (long long)this->max_cached_bytes,
+               (long long)max_cached_bytes);
 
       this->max_cached_bytes = max_cached_bytes;
 
@@ -480,13 +480,12 @@ namespace notcub {
 
         if (debug)
           // CMS: improved debug message
-          printf(
-              "\tDevice %d allocated new device block at %p (%lld bytes associated with stream %lld, event %lld).\n",
-              device,
-              search_key.d_ptr,
-              (long long)search_key.bytes,
-              (long long)search_key.associated_stream,
-              (long long)search_key.ready_event);
+          printf("\tDevice %d allocated new device block at %p (%lld bytes associated with stream %lld, event %lld).\n",
+                 device,
+                 search_key.d_ptr,
+                 (long long)search_key.bytes,
+                 (long long)search_key.associated_stream,
+                 (long long)search_key.ready_event);
 
         // Attempt to revert back to previous device if necessary
         if ((entrypoint_device != INVALID_DEVICE_ORDINAL) && (entrypoint_device != device)) {
@@ -499,10 +498,10 @@ namespace notcub {
 
       if (debug)
         printf("\t\t%lld available blocks cached (%lld bytes), %lld live blocks outstanding(%lld bytes).\n",
-                (long long)cached_blocks.size(),
-                (long long)cached_bytes[device].free,
-                (long long)live_blocks.size(),
-                (long long)cached_bytes[device].live);
+               (long long)cached_blocks.size(),
+               (long long)cached_bytes[device].free,
+               (long long)live_blocks.size(),
+               (long long)cached_bytes[device].live);
 
       return error;
     }
