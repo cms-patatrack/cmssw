@@ -219,6 +219,7 @@ namespace notcub {
     // Fields
     //---------------------------------------------------------------------
 
+    // CMS: use std::mutex instead of cub::Mutex
     std::mutex mutex;  /// Mutex for thread-safety
 
     unsigned int bin_growth;  /// Geometric growth factor for bin-sizes
@@ -301,6 +302,7 @@ namespace notcub {
       mutex.lock();
 
       if (debug)
+        // CMS: use raw printf instead of _CubLog
         printf("Changing max_cached_bytes (%lld -> %lld)\n",
                (long long)this->max_cached_bytes,
                (long long)max_cached_bytes);
@@ -378,6 +380,7 @@ namespace notcub {
 
             if (debug)
               // CMS: improved debug message
+              // CMS: use raw printf instead of _CubLog
               printf(
                   "\tDevice %d reused cached block at %p (%lld bytes) for stream %lld, event %lld (previously "
                   "associated with stream %lld, event %lld).\n",
@@ -409,9 +412,11 @@ namespace notcub {
         }
 
         // Attempt to allocate
+        // CMS: silently ignore errors and retry or pass them to the caller
         if ((error = cudaMalloc(&search_key.d_ptr, search_key.bytes)) == cudaErrorMemoryAllocation) {
           // The allocation attempt failed: free all cached blocks on device and retry
           if (debug)
+            // CMS: use raw printf instead of _CubLog
             printf(
                 "\tDevice %d failed to allocate %lld bytes for stream %lld, retrying after freeing cached allocations",
                 device,
@@ -434,6 +439,7 @@ namespace notcub {
             // on the current device
 
             // Free device memory and destroy stream event.
+            // CMS: silently ignore errors and pass them to the caller
             if ((error = cudaFree(block_itr->d_ptr)))
               break;
             if ((error = cudaEventDestroy(block_itr->ready_event)))
@@ -443,6 +449,7 @@ namespace notcub {
             cached_bytes[device].free -= block_itr->bytes;
 
             if (debug)
+              // CMS: use raw printf instead of _CubLog
               printf(
                   "\tDevice %d freed %lld bytes.\n\t\t  %lld available blocks cached (%lld bytes), %lld live blocks "
                   "(%lld bytes) outstanding.\n",
@@ -480,6 +487,7 @@ namespace notcub {
 
         if (debug)
           // CMS: improved debug message
+          // CMS: use raw printf instead of _CubLog
           printf("\tDevice %d allocated new device block at %p (%lld bytes associated with stream %lld, event %lld).\n",
                  device,
                  search_key.d_ptr,
@@ -497,6 +505,7 @@ namespace notcub {
       *d_ptr = search_key.d_ptr;
 
       if (debug)
+        // CMS: use raw printf instead of _CubLog
         printf("\t\t%lld available blocks cached (%lld bytes), %lld live blocks outstanding(%lld bytes).\n",
                (long long)cached_blocks.size(),
                (long long)cached_bytes[device].free,
@@ -559,6 +568,7 @@ namespace notcub {
 
           if (debug)
             // CMS: improved debug message
+            // CMS: use raw printf instead of _CubLog
             printf(
                 "\tDevice %d returned %lld bytes at %p from associated stream %lld, event %lld.\n\t\t %lld available "
                 "blocks cached (%lld bytes), %lld live blocks outstanding. (%lld bytes)\n",
@@ -576,12 +586,14 @@ namespace notcub {
 
       // First set to specified device (entrypoint may not be set)
       if (device != entrypoint_device) {
+        // CMS: throw exception on error
         cudaCheck(error = cudaGetDevice(&entrypoint_device));
         cudaCheck(error = cudaSetDevice(device));
       }
 
       if (recached) {
         // Insert the ready event in the associated stream (must have current device set properly)
+        // CMS: throw exception on error
         cudaCheck(error = cudaEventRecord(search_key.ready_event, search_key.associated_stream));
       }
 
@@ -590,6 +602,7 @@ namespace notcub {
 
       if (!recached) {
         // Free the allocation from the runtime and cleanup the event.
+        // CMS: throw exception on error
         cudaCheck(error = cudaFree(d_ptr));
         cudaCheck(error = cudaEventDestroy(search_key.ready_event));
 
@@ -611,6 +624,7 @@ namespace notcub {
 
       // Reset device
       if ((entrypoint_device != INVALID_DEVICE_ORDINAL) && (entrypoint_device != device)) {
+        // CMS: throw exception on error
         cudaCheck(error = cudaSetDevice(entrypoint_device));
       }
 
@@ -642,18 +656,21 @@ namespace notcub {
 
         // Get entry-point device ordinal if necessary
         if (entrypoint_device == INVALID_DEVICE_ORDINAL) {
+          // CMS: silently ignore errors and pass them to the caller
           if ((error = cudaGetDevice(&entrypoint_device)))
             break;
         }
 
         // Set current device ordinal if necessary
         if (begin->device != current_device) {
+          // CMS: silently ignore errors and pass them to the caller
           if ((error = cudaSetDevice(begin->device)))
             break;
           current_device = begin->device;
         }
 
         // Free device memory
+        // CMS: silently ignore errors and pass them to the caller
         if ((error = cudaFree(begin->d_ptr)))
           break;
         if ((error = cudaEventDestroy(begin->ready_event)))
@@ -680,6 +697,7 @@ namespace notcub {
 
       // Attempt to revert back to entry-point device if necessary
       if (entrypoint_device != INVALID_DEVICE_ORDINAL) {
+        // CMS: throw exception on error
         cudaCheck(error = cudaSetDevice(entrypoint_device));
       }
 
