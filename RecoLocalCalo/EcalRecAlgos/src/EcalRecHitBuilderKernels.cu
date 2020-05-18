@@ -151,10 +151,12 @@ namespace ecal {
       //       
       //    NB: energy   "type_wrapper<reco::StorageScalarType, L>::type" most likely std::vector<float>
       //       
+
+      for (int ch = threadIdx.x + blockDim.x*blockIdx.x; ch < nchannels; ch += blockDim.x*gridDim.x) {  
+        
+//       int ch = threadIdx.x + blockDim.x*blockIdx.x;
       
-      int ch = threadIdx.x + blockDim.x*blockIdx.x;
-      
-      if (ch < nchannels) {
+//       if (ch < nchannels) {
       
         bool isEndcap = (ch >= nChannelsBarrel);
         
