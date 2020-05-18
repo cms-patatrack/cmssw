@@ -713,7 +713,8 @@ namespace notcub {
     /**
      * \brief Destructor
      */
-    virtual ~CachingDeviceAllocator() {
+    // CMS: make the destructor not virtual
+    ~CachingDeviceAllocator() {
       if (!skip_cleanup)
         FreeAllCached();
     }
