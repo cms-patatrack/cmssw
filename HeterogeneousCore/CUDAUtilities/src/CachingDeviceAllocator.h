@@ -302,7 +302,7 @@ namespace notcub {
       mutex.lock();
 
       if (debug)
-        // CMS: use raw printf instead of _CubLog
+        // CMS: use raw printf
         printf("Changing max_cached_bytes (%lld -> %lld)\n",
                (long long)this->max_cached_bytes,
                (long long)max_cached_bytes);
@@ -333,6 +333,7 @@ namespace notcub {
       cudaError_t error = cudaSuccess;
 
       if (device == INVALID_DEVICE_ORDINAL) {
+        // CMS: throw exception on error
         cudaCheck(error = cudaGetDevice(&entrypoint_device));
         device = entrypoint_device;
       }
@@ -380,7 +381,7 @@ namespace notcub {
 
             if (debug)
               // CMS: improved debug message
-              // CMS: use raw printf instead of _CubLog
+              // CMS: use raw printf
               printf(
                   "\tDevice %d reused cached block at %p (%lld bytes) for stream %lld, event %lld (previously "
                   "associated with stream %lld, event %lld).\n",
@@ -407,6 +408,7 @@ namespace notcub {
       if (!found) {
         // Set runtime's current device to specified device (entrypoint may not be set)
         if (device != entrypoint_device) {
+          // CMS: throw exception on error
           cudaCheck(error = cudaGetDevice(&entrypoint_device));
           cudaCheck(error = cudaSetDevice(device));
         }
@@ -416,7 +418,7 @@ namespace notcub {
         if ((error = cudaMalloc(&search_key.d_ptr, search_key.bytes)) == cudaErrorMemoryAllocation) {
           // The allocation attempt failed: free all cached blocks on device and retry
           if (debug)
-            // CMS: use raw printf instead of _CubLog
+            // CMS: use raw printf
             printf(
                 "\tDevice %d failed to allocate %lld bytes for stream %lld, retrying after freeing cached allocations",
                 device,
@@ -449,7 +451,7 @@ namespace notcub {
             cached_bytes[device].free -= block_itr->bytes;
 
             if (debug)
-              // CMS: use raw printf instead of _CubLog
+              // CMS: use raw printf
               printf(
                   "\tDevice %d freed %lld bytes.\n\t\t  %lld available blocks cached (%lld bytes), %lld live blocks "
                   "(%lld bytes) outstanding.\n",
@@ -473,10 +475,12 @@ namespace notcub {
             return error;
 
           // Try to allocate again
+          // CMS: throw exception on error
           cudaCheck(error = cudaMalloc(&search_key.d_ptr, search_key.bytes));
         }
 
         // Create ready event
+        // CMS: throw exception on error
         cudaCheck(error = cudaEventCreateWithFlags(&search_key.ready_event, cudaEventDisableTiming));
 
         // Insert into live blocks
@@ -487,7 +491,7 @@ namespace notcub {
 
         if (debug)
           // CMS: improved debug message
-          // CMS: use raw printf instead of _CubLog
+          // CMS: use raw printf
           printf("\tDevice %d allocated new device block at %p (%lld bytes associated with stream %lld, event %lld).\n",
                  device,
                  search_key.d_ptr,
@@ -497,6 +501,7 @@ namespace notcub {
 
         // Attempt to revert back to previous device if necessary
         if ((entrypoint_device != INVALID_DEVICE_ORDINAL) && (entrypoint_device != device)) {
+          // CMS: throw exception on error
           cudaCheck(error = cudaSetDevice(entrypoint_device));
         }
       }
@@ -505,7 +510,7 @@ namespace notcub {
       *d_ptr = search_key.d_ptr;
 
       if (debug)
-        // CMS: use raw printf instead of _CubLog
+        // CMS: use raw printf
         printf("\t\t%lld available blocks cached (%lld bytes), %lld live blocks outstanding(%lld bytes).\n",
                (long long)cached_blocks.size(),
                (long long)cached_bytes[device].free,
@@ -542,6 +547,7 @@ namespace notcub {
       cudaError_t error = cudaSuccess;
 
       if (device == INVALID_DEVICE_ORDINAL) {
+        // CMS: throw exception on error
         cudaCheck(error = cudaGetDevice(&entrypoint_device));
         device = entrypoint_device;
       }
@@ -568,7 +574,7 @@ namespace notcub {
 
           if (debug)
             // CMS: improved debug message
-            // CMS: use raw printf instead of _CubLog
+            // CMS: use raw printf
             printf(
                 "\tDevice %d returned %lld bytes at %p from associated stream %lld, event %lld.\n\t\t %lld available "
                 "blocks cached (%lld bytes), %lld live blocks outstanding. (%lld bytes)\n",
