@@ -158,8 +158,9 @@ namespace ecal {
         auto const* dids = ch >= offsetForInputs ? dids_ee : dids_eb;
         auto const did = DetId{dids[inputCh]};
         auto const isBarrel = did.subdetId() == EcalBarrel;
-        auto const hashedId = isBarrel ? ecal::reconstruction::hashedIndexEB(did.rawId()) : offsetForHashes + ecal::reconstruction::hashedIndexEE(did.rawId());
-        
+        auto const hashedId = isBarrel ? ecal::reconstruction::hashedIndexEB(did.rawId())
+                                       : offsetForHashes + ecal::reconstruction::hashedIndexEE(did.rawId());
+
         // inits
         int iter = 0;
         int npassive = 0;

@@ -17,7 +17,6 @@
 #include "CondFormats/DataRecord/interface/EcalLaserAlphasRcd.h"
 #include "CondFormats/DataRecord/interface/EcalLinearCorrectionsRcd.h"
 
-
 // for uncalibrechit
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalPedestalsGPU.h"
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalGainRatiosGPU.h"
@@ -35,92 +34,49 @@
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalLaserAlphasGPU.h"
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalLinearCorrectionsGPU.h"
 
-
-
-
-
 #include <iostream>
 
+using EcalPedestalsGPUESProducer = EcalESProducerGPU<EcalPedestalsGPU, EcalPedestals, EcalPedestalsRcd>;
 
-using EcalPedestalsGPUESProducer = EcalESProducerGPU<EcalPedestalsGPU,
-                                                     EcalPedestals,
-                                                     EcalPedestalsRcd>;
-                                                     
-using EcalGainRatiosGPUESProducer = EcalESProducerGPU<EcalGainRatiosGPU,
-                                                      EcalGainRatios,
-                                                      EcalGainRatiosRcd>;
-                                                      
-using EcalPulseShapesGPUESProducer = EcalESProducerGPU<EcalPulseShapesGPU,
-                                                       EcalPulseShapes,
-                                                       EcalPulseShapesRcd>;
-                                                       
-using EcalPulseCovariancesGPUESProducer = EcalESProducerGPU<EcalPulseCovariancesGPU,
-                                                            EcalPulseCovariances,
-                                                            EcalPulseCovariancesRcd>;
-                                                            
-using EcalSamplesCorrelationGPUESProducer = EcalESProducerGPU<
-                                                              EcalSamplesCorrelationGPU,
-                                                              EcalSamplesCorrelation,
-                                                              EcalSamplesCorrelationRcd
-                                                              >;
+using EcalGainRatiosGPUESProducer = EcalESProducerGPU<EcalGainRatiosGPU, EcalGainRatios, EcalGainRatiosRcd>;
 
-using EcalTimeBiasCorrectionsGPUESProducer = EcalESProducerGPU<
-                                                               EcalTimeBiasCorrectionsGPU,
-                                                               EcalTimeBiasCorrections,
-                                                               EcalTimeBiasCorrectionsRcd
-                                                               >;
+using EcalPulseShapesGPUESProducer = EcalESProducerGPU<EcalPulseShapesGPU, EcalPulseShapes, EcalPulseShapesRcd>;
 
-using EcalTimeCalibConstantsGPUESProducer = EcalESProducerGPU<
-                                                              EcalTimeCalibConstantsGPU,
-                                                              EcalTimeCalibConstants,
-                                                              EcalTimeCalibConstantsRcd
-                                                              >;
-                                                             
-using EcalRechitADCToGeVConstantGPUESProducer = EcalESProducerGPU<
-                                                            EcalRechitADCToGeVConstantGPU,
-                                                            EcalADCToGeVConstant,
-                                                            EcalADCToGeVConstantRcd
-                                                            >;
+using EcalPulseCovariancesGPUESProducer =
+    EcalESProducerGPU<EcalPulseCovariancesGPU, EcalPulseCovariances, EcalPulseCovariancesRcd>;
 
-using EcalIntercalibConstantsGPUESProducer = EcalESProducerGPU<
-                                                               EcalIntercalibConstantsGPU,
-                                                               EcalIntercalibConstants,
-                                                               EcalIntercalibConstantsRcd
-                                                               >;
+using EcalSamplesCorrelationGPUESProducer =
+    EcalESProducerGPU<EcalSamplesCorrelationGPU, EcalSamplesCorrelation, EcalSamplesCorrelationRcd>;
 
-using EcalRechitChannelStatusGPUESProducer = EcalESProducerGPU<
-                                                         EcalRechitChannelStatusGPU,
-                                                         EcalChannelStatus,
-                                                         EcalChannelStatusRcd
-                                                         >;
+using EcalTimeBiasCorrectionsGPUESProducer =
+    EcalESProducerGPU<EcalTimeBiasCorrectionsGPU, EcalTimeBiasCorrections, EcalTimeBiasCorrectionsRcd>;
 
-using EcalLaserAPDPNRatiosGPUESProducer = EcalESProducerGPU<
-                                                            EcalLaserAPDPNRatiosGPU,
-                                                            EcalLaserAPDPNRatios,
-                                                            EcalLaserAPDPNRatiosRcd
-                                                            >;
+using EcalTimeCalibConstantsGPUESProducer =
+    EcalESProducerGPU<EcalTimeCalibConstantsGPU, EcalTimeCalibConstants, EcalTimeCalibConstantsRcd>;
 
-using EcalLaserAPDPNRatiosRefGPUESProducer = EcalESProducerGPU<
-                                                               EcalLaserAPDPNRatiosRefGPU,
-                                                               EcalLaserAPDPNRatiosRef,
-                                                               EcalLaserAPDPNRatiosRefRcd
-                                                               >;
+using EcalRechitADCToGeVConstantGPUESProducer =
+    EcalESProducerGPU<EcalRechitADCToGeVConstantGPU, EcalADCToGeVConstant, EcalADCToGeVConstantRcd>;
 
-using EcalLaserAlphasGPUESProducer = EcalESProducerGPU<
-                                                       EcalLaserAlphasGPU,
-                                                       EcalLaserAlphas,
-                                                       EcalLaserAlphasRcd
-                                                       >;
+using EcalIntercalibConstantsGPUESProducer =
+    EcalESProducerGPU<EcalIntercalibConstantsGPU, EcalIntercalibConstants, EcalIntercalibConstantsRcd>;
 
-using EcalLinearCorrectionsGPUESProducer = EcalESProducerGPU<
-                                                             EcalLinearCorrectionsGPU,
-                                                             EcalLinearCorrections,
-                                                             EcalLinearCorrectionsRcd
-                                                             >;
+using EcalRechitChannelStatusGPUESProducer =
+    EcalESProducerGPU<EcalRechitChannelStatusGPU, EcalChannelStatus, EcalChannelStatusRcd>;
 
-//    
+using EcalLaserAPDPNRatiosGPUESProducer =
+    EcalESProducerGPU<EcalLaserAPDPNRatiosGPU, EcalLaserAPDPNRatios, EcalLaserAPDPNRatiosRcd>;
+
+using EcalLaserAPDPNRatiosRefGPUESProducer =
+    EcalESProducerGPU<EcalLaserAPDPNRatiosRefGPU, EcalLaserAPDPNRatiosRef, EcalLaserAPDPNRatiosRefRcd>;
+
+using EcalLaserAlphasGPUESProducer = EcalESProducerGPU<EcalLaserAlphasGPU, EcalLaserAlphas, EcalLaserAlphasRcd>;
+
+using EcalLinearCorrectionsGPUESProducer =
+    EcalESProducerGPU<EcalLinearCorrectionsGPU, EcalLinearCorrections, EcalLinearCorrectionsRcd>;
+
+//
 // This below also creates the .py config files, as described in "EcalESProducerGPU.h"
-//     
+//
 
 DEFINE_FWK_EVENTSETUP_MODULE(EcalPedestalsGPUESProducer);
 DEFINE_FWK_EVENTSETUP_MODULE(EcalGainRatiosGPUESProducer);
@@ -137,4 +93,3 @@ DEFINE_FWK_EVENTSETUP_MODULE(EcalLaserAPDPNRatiosGPUESProducer);
 DEFINE_FWK_EVENTSETUP_MODULE(EcalLaserAPDPNRatiosRefGPUESProducer);
 DEFINE_FWK_EVENTSETUP_MODULE(EcalLaserAlphasGPUESProducer);
 DEFINE_FWK_EVENTSETUP_MODULE(EcalLinearCorrectionsGPUESProducer);
-
