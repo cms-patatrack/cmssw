@@ -5,7 +5,7 @@
 #include <array>
 
 #include "CUDADataFormats/EcalRecHitSoA/interface/RecoTypes.h"
-#include "HeterogeneousCore/CUDAUtilities/interface/CUDAHostAllocator.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/HostAllocator.h"
 
 // needed for "soa" definition
 #include "CUDADataFormats/EcalRecHitSoA/interface/EcalUncalibratedRecHit_soa.h"

@@ -4,7 +4,7 @@
 #include "CondFormats/EcalObjects/interface/EcalChannelStatus.h"
 
 #ifndef __CUDACC__
-#include "HeterogeneousCore/CUDAUtilities/interface/CUDAHostAllocator.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/HostAllocator.h"
 #include "HeterogeneousCore/CUDACore/interface/ESProduct.h"
 #endif
 
@@ -32,7 +32,7 @@ public:
 private:
   // in the future, we need to arrange so to avoid this copy on the host
   // store eb first then ee
-  std::vector<uint16_t, CUDAHostAllocator<uint16_t>> status_;
+  std::vector<uint16_t, cms::cuda::HostAllocator<uint16_t>> status_;
 
   cms::cuda::ESProduct<Product> product_;
 
