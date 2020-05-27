@@ -3,8 +3,10 @@
 <use name="CUDADataFormats/EcalRecHitSoA"/>
 <use name="CondFormats/EcalObjects"/>
 <use name="FWCore/Framework"/>
+<use name="FWCore/MessageLogger"/>
 <use name="HeterogeneousCore/CUDACore"/>
 <use name="HeterogeneousCore/CUDAUtilities"/>
+
 <export>
   <lib name="1"/>
 </export>
