@@ -4,7 +4,7 @@
 #include "CondFormats/HcalObjects/interface/HcalRespCorrs.h"
 
 #ifndef __CUDACC__
-#include "HeterogeneousCore/CUDAUtilities/interface/CUDAHostAllocator.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/HostAllocator.h"
 #include "HeterogeneousCore/CUDACore/interface/ESProduct.h"
 #endif
 
@@ -29,7 +29,7 @@ public:
     static std::string name() { return std::string{"hcalRespCorrsGPU"}; }
 
 private:
-    std::vector<float, CUDAHostAllocator<float>> values_;
+    std::vector<float, cms::cuda::HostAllocator<float>> values_;
 
     cms::cuda::ESProduct<Product> product_;
 #endif

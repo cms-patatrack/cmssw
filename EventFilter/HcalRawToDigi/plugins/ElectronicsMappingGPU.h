@@ -4,7 +4,7 @@
 #include "CondFormats/HcalObjects/interface/HcalElectronicsMap.h"
 
 #ifndef __CUDACC__
-#include "HeterogeneousCore/CUDAUtilities/interface/CUDAHostAllocator.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/HostAllocator.h"
 #include "HeterogeneousCore/CUDACore/interface/ESProduct.h"
 #endif
 
@@ -37,8 +37,8 @@ public:
 private:
     // in the future, we need to arrange so to avoid this copy on the host
     // if possible
-    std::vector<uint32_t, CUDAHostAllocator<uint32_t>> eid2tid_;
-    std::vector<uint32_t, CUDAHostAllocator<uint32_t>> eid2did_;
+    std::vector<uint32_t, cms::cuda::HostAllocator<uint32_t>> eid2tid_;
+    std::vector<uint32_t, cms::cuda::HostAllocator<uint32_t>> eid2did_;
 
     cms::cuda::ESProduct<Product> product_;
 #endif

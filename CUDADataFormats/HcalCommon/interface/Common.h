@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "HeterogeneousCore/CUDAUtilities/interface/CUDAHostAllocator.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/HostAllocator.h"
 
 namespace hcal { namespace common {
 
@@ -48,7 +48,7 @@ struct VecStoragePolicy {
 namespace hcal {
 
 template<typename T>
-using CUDAHostAllocatorAlias = CUDAHostAllocator<T>;
+using CUDAHostAllocatorAlias = cms::cuda::HostAllocator<T>;
 
 }
 

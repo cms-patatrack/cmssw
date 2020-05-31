@@ -2,7 +2,7 @@
 #define RecoLocalCalo_HcalRecAlgos_interface_HcalRecoParamsGPU_h
 
 #ifndef __CUDACC__
-#include "HeterogeneousCore/CUDAUtilities/interface/CUDAHostAllocator.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/HostAllocator.h"
 #include "HeterogeneousCore/CUDACore/interface/ESProduct.h"
 #endif
 
@@ -30,8 +30,8 @@ public:
 
 private:
     uint64_t totalChannels_; // hb + he
-    std::vector<uint32_t, CUDAHostAllocator<uint32_t>> param1_;
-    std::vector<uint32_t, CUDAHostAllocator<uint32_t>> param2_;
+    std::vector<uint32_t, cms::cuda::HostAllocator<uint32_t>> param1_;
+    std::vector<uint32_t, cms::cuda::HostAllocator<uint32_t>> param2_;
 
     cms::cuda::ESProduct<Product> product_;
 #endif

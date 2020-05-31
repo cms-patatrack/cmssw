@@ -4,7 +4,7 @@
 #include "CondFormats/HcalObjects/interface/HcalQIETypes.h"
 
 #ifndef __CUDACC__
-#include "HeterogeneousCore/CUDAUtilities/interface/CUDAHostAllocator.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/HostAllocator.h"
 #include "HeterogeneousCore/CUDACore/interface/ESProduct.h"
 #endif
 
@@ -29,7 +29,7 @@ public:
     static std::string name() { return std::string{"hcalQIETypesGPU"}; }
 
 private:
-    std::vector<int, CUDAHostAllocator<int>> values_;
+    std::vector<int, cms::cuda::HostAllocator<int>> values_;
 
     cms::cuda::ESProduct<Product> product_;
 #endif

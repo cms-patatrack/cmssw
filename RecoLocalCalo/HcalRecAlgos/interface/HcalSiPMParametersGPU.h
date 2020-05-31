@@ -4,7 +4,7 @@
 #include "CondFormats/HcalObjects/interface/HcalSiPMParameters.h"
 
 #ifndef __CUDACC__
-#include "HeterogeneousCore/CUDAUtilities/interface/CUDAHostAllocator.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/HostAllocator.h"
 #include "HeterogeneousCore/CUDACore/interface/ESProduct.h"
 #endif
 
@@ -31,10 +31,10 @@ public:
 
 private:
     uint64_t totalChannels_;
-    std::vector<int, CUDAHostAllocator<int>>  type_, auxi1_;
-    std::vector<float, CUDAHostAllocator<float>> fcByPE_, darkCurrent_, auxi2_;
+    std::vector<int, cms::cuda::HostAllocator<int>>  type_, auxi1_;
+    std::vector<float, cms::cuda::HostAllocator<float>> fcByPE_, darkCurrent_, auxi2_;
     /*
-    std::vector<float, CUDAHostAllocator<float>> value0_, value1_, value2_, value3_,
+    std::vector<float, cms::cuda::HostAllocator<float>> value0_, value1_, value2_, value3_,
                                                  width0_, width1_, width2_, width3_;
                                                  */
 

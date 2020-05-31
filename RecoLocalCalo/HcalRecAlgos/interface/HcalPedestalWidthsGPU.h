@@ -4,7 +4,7 @@
 #include "CondFormats/HcalObjects/interface/HcalPedestalWidths.h"
 
 #ifndef __CUDACC__
-#include "HeterogeneousCore/CUDAUtilities/interface/CUDAHostAllocator.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/HostAllocator.h"
 #include "HeterogeneousCore/CUDACore/interface/ESProduct.h"
 #endif
 
@@ -37,7 +37,7 @@ public:
 private:
     bool unitIsADC_;
     uint64_t totalChannels_;
-    std::vector<float, CUDAHostAllocator<float>> 
+    std::vector<float, cms::cuda::HostAllocator<float>> 
         sigma00_, sigma01_, sigma02_, sigma03_,
         sigma10_, sigma11_, sigma12_, sigma13_,
         sigma20_, sigma21_, sigma22_, sigma23_,

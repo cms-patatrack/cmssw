@@ -1,7 +1,7 @@
 #ifndef EventFilter_HcalRawToDigi_interface_DeclsForKernels_h
 #define EventFilter_HcalRawToDigi_interface_DeclsForKernels_h
 
-#include "HeterogeneousCore/CUDAUtilities/interface/CUDAHostAllocator.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/HostAllocator.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 
 #include "EventFilter/HcalRawToDigi/plugins/ElectronicsMappingGPU.h"
@@ -33,9 +33,9 @@ struct ConfigurationParameters {
 };
 
 struct InputDataCPU {
-    std::vector<unsigned char, CUDAHostAllocator<unsigned char>> data;
-    std::vector<uint32_t, CUDAHostAllocator<uint32_t>> offsets;
-    std::vector<int, CUDAHostAllocator<int>> feds;
+    std::vector<unsigned char, cms::cuda::HostAllocator<unsigned char>> data;
+    std::vector<uint32_t, cms::cuda::HostAllocator<uint32_t>> offsets;
+    std::vector<int, cms::cuda::HostAllocator<int>> feds;
 
     void allocate() {
         data.resize(utca_nfeds_max * sizeof(unsigned char) * nbytes_per_fed_max);
@@ -45,7 +45,7 @@ struct InputDataCPU {
 };
 
 struct OutputDataCPU {
-    std::vector<uint32_t, CUDAHostAllocator<uint32_t>> nchannels;
+    std::vector<uint32_t, cms::cuda::HostAllocator<uint32_t>> nchannels;
 
     void allocate() {
         nchannels.resize(numOutputCollections);

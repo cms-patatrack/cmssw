@@ -4,7 +4,7 @@
 #include "CondFormats/HcalObjects/interface/HcalSiPMCharacteristics.h"
 
 #ifndef __CUDACC__
-#include "HeterogeneousCore/CUDAUtilities/interface/CUDAHostAllocator.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/HostAllocator.h"
 #include "HeterogeneousCore/CUDACore/interface/ESProduct.h"
 #endif
 
@@ -33,8 +33,8 @@ public:
     static std::string name() { return std::string{"hcalSiPMCharacteristicsGPU"}; }
 
 private:
-    std::vector<int, CUDAHostAllocator<int>> pixels_, auxi1_;
-    std::vector<float, CUDAHostAllocator<float>> parLin1_, parLin2_, parLin3_,
+    std::vector<int, cms::cuda::HostAllocator<int>> pixels_, auxi1_;
+    std::vector<float, cms::cuda::HostAllocator<float>> parLin1_, parLin2_, parLin3_,
         crossTalk_, auxi2_;
 
     cms::cuda::ESProduct<Product> product_;

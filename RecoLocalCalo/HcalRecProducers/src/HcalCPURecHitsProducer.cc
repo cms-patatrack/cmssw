@@ -12,7 +12,7 @@
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/Framework/interface/MakerMacros.h" 
 
-#include "HeterogeneousCore/CUDAUtilities/interface/CUDAHostAllocator.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/HostAllocator.h"
 #include "CUDADataFormats/HcalRecHitSoA/interface/RecHitCollection.h"
 #include "DataFormats/HcalRecHit/interface/HcalRecHitCollections.h"
 

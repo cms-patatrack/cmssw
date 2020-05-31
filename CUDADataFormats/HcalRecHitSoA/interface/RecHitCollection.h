@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "CUDADataFormats/HcalCommon/interface/Common.h"
-#include "HeterogeneousCore/CUDAUtilities/interface/CUDAHostAllocator.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/HostAllocator.h"
 
 namespace hcal {
 

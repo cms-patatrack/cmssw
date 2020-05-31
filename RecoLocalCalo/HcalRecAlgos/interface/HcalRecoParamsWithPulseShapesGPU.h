@@ -2,7 +2,7 @@
 #define RecoLocalCalo_HcalRecAlgos_interface_HcalRecoParamsWithPulseShapesGPU_h
 
 #ifndef __CUDACC__
-#include "HeterogeneousCore/CUDAUtilities/interface/CUDAHostAllocator.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/HostAllocator.h"
 #include "HeterogeneousCore/CUDACore/interface/ESProduct.h"
 #endif
 
@@ -40,16 +40,16 @@ public:
 
 private:
     uint64_t totalChannels_; // hb + he
-    std::vector<uint32_t, CUDAHostAllocator<uint32_t>> param1_;
-    std::vector<uint32_t, CUDAHostAllocator<uint32_t>> param2_;
-    std::vector<uint32_t, CUDAHostAllocator<uint32_t>> ids_;
+    std::vector<uint32_t, cms::cuda::HostAllocator<uint32_t>> param1_;
+    std::vector<uint32_t, cms::cuda::HostAllocator<uint32_t>> param2_;
+    std::vector<uint32_t, cms::cuda::HostAllocator<uint32_t>> ids_;
 
-    std::vector<float, CUDAHostAllocator<float>> acc25nsVec_; // 256
-    std::vector<float, CUDAHostAllocator<float>> diff25nsItvlVec_; // 256
-    std::vector<float, CUDAHostAllocator<float>> accVarLenIdxMinusOneVec_; // 25
-    std::vector<float, CUDAHostAllocator<float>> diffVarItvlIdxMinusOneVec_; // 25
-    std::vector<float, CUDAHostAllocator<float>> accVarLenIdxZEROVec_; // 25
-    std::vector<float, CUDAHostAllocator<float>> diffVarItvlIdxZEROVec_; // 25
+    std::vector<float, cms::cuda::HostAllocator<float>> acc25nsVec_; // 256
+    std::vector<float, cms::cuda::HostAllocator<float>> diff25nsItvlVec_; // 256
+    std::vector<float, cms::cuda::HostAllocator<float>> accVarLenIdxMinusOneVec_; // 25
+    std::vector<float, cms::cuda::HostAllocator<float>> diffVarItvlIdxMinusOneVec_; // 25
+    std::vector<float, cms::cuda::HostAllocator<float>> accVarLenIdxZEROVec_; // 25
+    std::vector<float, cms::cuda::HostAllocator<float>> diffVarItvlIdxZEROVec_; // 25
 
     cms::cuda::ESProduct<Product> product_;
 #endif

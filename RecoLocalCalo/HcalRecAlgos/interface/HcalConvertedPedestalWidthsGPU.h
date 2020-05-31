@@ -7,7 +7,7 @@
 #include "CondFormats/HcalObjects/interface/HcalQIETypes.h"
 
 #ifndef __CUDACC__
-#include "HeterogeneousCore/CUDAUtilities/interface/CUDAHostAllocator.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/HostAllocator.h"
 #include "HeterogeneousCore/CUDACore/interface/ESProduct.h"
 #endif
 
@@ -37,7 +37,7 @@ public:
 
 private:
     uint64_t totalChannels_;
-    std::vector<float, CUDAHostAllocator<float>> values_;
+    std::vector<float, cms::cuda::HostAllocator<float>> values_;
 
     cms::cuda::ESProduct<Product> product_;
 #endif

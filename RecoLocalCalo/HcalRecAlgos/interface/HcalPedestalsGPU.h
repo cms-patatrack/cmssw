@@ -4,7 +4,7 @@
 #include "CondFormats/HcalObjects/interface/HcalPedestals.h"
 
 #ifndef __CUDACC__
-#include "HeterogeneousCore/CUDAUtilities/interface/CUDAHostAllocator.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/HostAllocator.h"
 #include "HeterogeneousCore/CUDACore/interface/ESProduct.h"
 #endif
 
@@ -48,9 +48,9 @@ private:
     bool unitIsADC_;
     uint64_t totalChannels_;
     uint32_t offsetForHashes_;
-    std::vector<float, CUDAHostAllocator<float>> values_, widths_;
+    std::vector<float, cms::cuda::HostAllocator<float>> values_, widths_;
     /*
-    std::vector<float, CUDAHostAllocator<float>> value0_, value1_, value2_, value3_,
+    std::vector<float, cms::cuda::HostAllocator<float>> value0_, value1_, value2_, value3_,
                                                  width0_, width1_, width2_, width3_;
                                                  */
 
