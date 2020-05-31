@@ -10,33 +10,33 @@
 
 class HcalQIECodersGPU {
 public:
-    static constexpr uint32_t numValuesPerChannel = 16;
+  static constexpr uint32_t numValuesPerChannel = 16;
 
-    struct Product {
-        ~Product();
-        float *offsets;
-        float *slopes;
-    };
+  struct Product {
+    ~Product();
+    float *offsets;
+    float *slopes;
+  };
 
 #ifndef __CUDACC__
-    // rearrange reco params
-    HcalQIECodersGPU(HcalQIEData const&);
+  // rearrange reco params
+  HcalQIECodersGPU(HcalQIEData const &);
 
-    // will trigger deallocation of Product thru ~Product
-    ~HcalQIECodersGPU() = default;
+  // will trigger deallocation of Product thru ~Product
+  ~HcalQIECodersGPU() = default;
 
-    // get device pointers
-    Product const& getProduct(cudaStream_t) const;
+  // get device pointers
+  Product const &getProduct(cudaStream_t) const;
 
-    // 
-    static std::string name() { return std::string{"hcalQIECodersGPU"}; }
+  //
+  static std::string name() { return std::string{"hcalQIECodersGPU"}; }
 
 private:
-    uint64_t totalChannels_;
-    std::vector<float, cms::cuda::HostAllocator<float>> offsets_;
-    std::vector<float, cms::cuda::HostAllocator<float>> slopes_;
+  uint64_t totalChannels_;
+  std::vector<float, cms::cuda::HostAllocator<float>> offsets_;
+  std::vector<float, cms::cuda::HostAllocator<float>> slopes_;
 
-    cms::cuda::ESProduct<Product> product_;
+  cms::cuda::ESProduct<Product> product_;
 #endif
 };
 

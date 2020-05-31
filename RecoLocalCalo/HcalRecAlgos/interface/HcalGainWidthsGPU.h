@@ -10,32 +10,32 @@
 
 class HcalGainWidthsGPU {
 public:
-    struct Product {
-        ~Product();
-        float *value0;
-        float *value1;
-        float *value2;
-        float *value3;
-    };
+  struct Product {
+    ~Product();
+    float *value0;
+    float *value1;
+    float *value2;
+    float *value3;
+  };
 
 #ifndef __CUDACC__
-    // rearrange reco params
-    HcalGainWidthsGPU(HcalGainWidths const&);
+  // rearrange reco params
+  HcalGainWidthsGPU(HcalGainWidths const &);
 
-    // will trigger deallocation of Product thru ~Product
-    ~HcalGainWidthsGPU() = default;
+  // will trigger deallocation of Product thru ~Product
+  ~HcalGainWidthsGPU() = default;
 
-    // get device pointers
-    Product const& getProduct(cudaStream_t) const;
+  // get device pointers
+  Product const &getProduct(cudaStream_t) const;
 
-    // 
-    static std::string name() { return std::string{"hcalGainWidthsGPU"}; }
+  //
+  static std::string name() { return std::string{"hcalGainWidthsGPU"}; }
 
 private:
-    uint64_t totalChannels_;
-    std::vector<float, cms::cuda::HostAllocator<float>> value0_, value1_, value2_, value3_;
+  uint64_t totalChannels_;
+  std::vector<float, cms::cuda::HostAllocator<float>> value0_, value1_, value2_, value3_;
 
-    cms::cuda::ESProduct<Product> product_;
+  cms::cuda::ESProduct<Product> product_;
 #endif
 };
 

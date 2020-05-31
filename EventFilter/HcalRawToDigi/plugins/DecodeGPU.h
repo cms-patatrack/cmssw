@@ -3,15 +3,21 @@
 
 #include "EventFilter/HcalRawToDigi/plugins/DeclsForKernels.h"
 
-namespace hcal { namespace raw {
+namespace hcal {
+  namespace raw {
 
-void entryPoint(
-        InputDataCPU const&, InputDataGPU&, OutputDataGPU&,
-        ScratchDataGPU&, OutputDataCPU&,
-        ConditionsProducts const&, ConfigurationParameters const&,
-        cudaStream_t cudaStream,
-        uint32_t const, uint32_t const);
+    void entryPoint(InputDataCPU const&,
+                    InputDataGPU&,
+                    OutputDataGPU&,
+                    ScratchDataGPU&,
+                    OutputDataCPU&,
+                    ConditionsProducts const&,
+                    ConfigurationParameters const&,
+                    cudaStream_t cudaStream,
+                    uint32_t const,
+                    uint32_t const);
 
-}}
+  }
+}  // namespace hcal
 
-#endif // EventFilter_HcalRawToDigi_interface_DecodeGPU_h
+#endif  // EventFilter_HcalRawToDigi_interface_DecodeGPU_h

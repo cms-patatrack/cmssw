@@ -10,11 +10,11 @@
 
 class HcalPedestalsGPU {
 public:
-    struct Product {
-        ~Product();
-        float *values;
-        float *widths;
-        /*
+  struct Product {
+    ~Product();
+    float *values;
+    float *widths;
+    /*
         float *value0;
         float *value1;
         float *value2;
@@ -24,37 +24,37 @@ public:
         float *width2;
         float *width3;
         */
-    };
+  };
 
 #ifndef __CUDACC__
-    // rearrange reco params
-    HcalPedestalsGPU(HcalPedestals const&);
+  // rearrange reco params
+  HcalPedestalsGPU(HcalPedestals const &);
 
-    // will trigger deallocation of Product thru ~Product
-    ~HcalPedestalsGPU() = default;
+  // will trigger deallocation of Product thru ~Product
+  ~HcalPedestalsGPU() = default;
 
-    // get device pointers
-    Product const& getProduct(cudaStream_t) const;
+  // get device pointers
+  Product const &getProduct(cudaStream_t) const;
 
-    // as in cpu version
-    bool unitIsADC() const { return unitIsADC_; }
+  // as in cpu version
+  bool unitIsADC() const { return unitIsADC_; }
 
-    // 
-    static std::string name() { return std::string{"hcalPedestalsGPU"}; }
+  //
+  static std::string name() { return std::string{"hcalPedestalsGPU"}; }
 
-    uint32_t offsetForHashes() const { return offsetForHashes_; }
+  uint32_t offsetForHashes() const { return offsetForHashes_; }
 
 private:
-    bool unitIsADC_;
-    uint64_t totalChannels_;
-    uint32_t offsetForHashes_;
-    std::vector<float, cms::cuda::HostAllocator<float>> values_, widths_;
-    /*
+  bool unitIsADC_;
+  uint64_t totalChannels_;
+  uint32_t offsetForHashes_;
+  std::vector<float, cms::cuda::HostAllocator<float>> values_, widths_;
+  /*
     std::vector<float, cms::cuda::HostAllocator<float>> value0_, value1_, value2_, value3_,
                                                  width0_, width1_, width2_, width3_;
                                                  */
 
-    cms::cuda::ESProduct<Product> product_;
+  cms::cuda::ESProduct<Product> product_;
 #endif
 };
 

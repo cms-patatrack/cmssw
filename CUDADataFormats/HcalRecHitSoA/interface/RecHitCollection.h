@@ -8,9 +8,8 @@
 
 namespace hcal {
 
-template<typename StoragePolicy>
-struct RecHitCollection 
-        : public common::AddSize<typename StoragePolicy::TagType> {
+  template <typename StoragePolicy>
+  struct RecHitCollection : public common::AddSize<typename StoragePolicy::TagType> {
     RecHitCollection() = default;
     RecHitCollection(const RecHitCollection&) = default;
     RecHitCollection& operator=(const RecHitCollection&) = default;
@@ -24,17 +23,16 @@ struct RecHitCollection
     typename StoragePolicy::template StorageSelector<float>::type timeM0;
     typename StoragePolicy::template StorageSelector<uint32_t>::type did;
 
-    template<typename U = typename StoragePolicy::TagType>
-    typename std::enable_if<std::is_same<U, common::tags::Vec>::value, void>::type 
-    resize(size_t size) {
-        energy.resize(size);
-        chi2.resize(size);
-        energyM0.resize(size);
-        timeM0.resize(size);
-        did.resize(size);
+    template <typename U = typename StoragePolicy::TagType>
+    typename std::enable_if<std::is_same<U, common::tags::Vec>::value, void>::type resize(size_t size) {
+      energy.resize(size);
+      chi2.resize(size);
+      energyM0.resize(size);
+      timeM0.resize(size);
+      did.resize(size);
     }
-};
+  };
 
-}
+}  // namespace hcal
 
-#endif // RecoLocalCalo_HcalRecAlgos_interface_RecHitCollection_h
+#endif  // RecoLocalCalo_HcalRecAlgos_interface_RecHitCollection_h

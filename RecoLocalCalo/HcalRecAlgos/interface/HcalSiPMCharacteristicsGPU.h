@@ -10,34 +10,33 @@
 
 class HcalSiPMCharacteristicsGPU {
 public:
-    struct Product {
-        ~Product();
-        int *pixels;
-        float *parLin1, *parLin2, *parLin3;
-        float *crossTalk;
-        int *auxi1;
-        float *auxi2;
-    };
+  struct Product {
+    ~Product();
+    int *pixels;
+    float *parLin1, *parLin2, *parLin3;
+    float *crossTalk;
+    int *auxi1;
+    float *auxi2;
+  };
 
 #ifndef __CUDACC__
-    // rearrange reco params
-    HcalSiPMCharacteristicsGPU(HcalSiPMCharacteristics const&);
+  // rearrange reco params
+  HcalSiPMCharacteristicsGPU(HcalSiPMCharacteristics const &);
 
-    // will trigger deallocation of Product thru ~Product
-    ~HcalSiPMCharacteristicsGPU() = default;
+  // will trigger deallocation of Product thru ~Product
+  ~HcalSiPMCharacteristicsGPU() = default;
 
-    // get device pointers
-    Product const& getProduct(cudaStream_t) const;
+  // get device pointers
+  Product const &getProduct(cudaStream_t) const;
 
-    // 
-    static std::string name() { return std::string{"hcalSiPMCharacteristicsGPU"}; }
+  //
+  static std::string name() { return std::string{"hcalSiPMCharacteristicsGPU"}; }
 
 private:
-    std::vector<int, cms::cuda::HostAllocator<int>> pixels_, auxi1_;
-    std::vector<float, cms::cuda::HostAllocator<float>> parLin1_, parLin2_, parLin3_,
-        crossTalk_, auxi2_;
+  std::vector<int, cms::cuda::HostAllocator<int>> pixels_, auxi1_;
+  std::vector<float, cms::cuda::HostAllocator<float>> parLin1_, parLin2_, parLin3_, crossTalk_, auxi2_;
 
-    cms::cuda::ESProduct<Product> product_;
+  cms::cuda::ESProduct<Product> product_;
 #endif
 };
 

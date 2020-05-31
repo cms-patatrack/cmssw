@@ -4,16 +4,13 @@
 #include "RecoLocalCalo/HcalRecAlgos/interface/HcalConvertedPedestalWidthsGPU.h"
 
 // similar to converted effective pedestals
-class HcalConvertedEffectivePedestalWidthsGPU final 
-        : public HcalConvertedPedestalWidthsGPU {
+class HcalConvertedEffectivePedestalWidthsGPU final : public HcalConvertedPedestalWidthsGPU {
 public:
-    using HcalConvertedPedestalWidthsGPU::HcalConvertedPedestalWidthsGPU;
+  using HcalConvertedPedestalWidthsGPU::HcalConvertedPedestalWidthsGPU;
 
 #ifndef __CUDACC__
-    static std::string name() {
-        return std::string{"hcalConvertedEffectivePedestalWidthsGPU"};
-    }
+  static std::string name() { return std::string{"hcalConvertedEffectivePedestalWidthsGPU"}; }
 #endif
 };
 
-#endif // RecoLocalCalo_HcalRecAlgos_interface_HcalConvertedEffectivePedestalWidthsGPU_h
+#endif  // RecoLocalCalo_HcalRecAlgos_interface_HcalConvertedEffectivePedestalWidthsGPU_h

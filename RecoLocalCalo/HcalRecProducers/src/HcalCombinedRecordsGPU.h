@@ -8,30 +8,14 @@
 
 #include "RecoLocalCalo/HcalRecProducers/src/HcalCombinedRecord.h"
 
-using HcalConvertedPedestalsRcd = HcalCombinedRecord<
-    HcalPedestalsRcd,
-    HcalQIEDataRcd,
-    HcalQIETypesRcd
->;
+using HcalConvertedPedestalsRcd = HcalCombinedRecord<HcalPedestalsRcd, HcalQIEDataRcd, HcalQIETypesRcd>;
 
-using HcalConvertedEffectivePedestalsRcd = HcalCombinedRecord<
-    HcalPedestalsRcd,
-    HcalQIEDataRcd,
-    HcalQIETypesRcd
->;
+using HcalConvertedEffectivePedestalsRcd = HcalCombinedRecord<HcalPedestalsRcd, HcalQIEDataRcd, HcalQIETypesRcd>;
 
-using HcalConvertedPedestalWidthsRcd = HcalCombinedRecord<
-    HcalPedestalsRcd,
-    HcalPedestalWidthsRcd,
-    HcalQIEDataRcd,
-    HcalQIETypesRcd
->;
+using HcalConvertedPedestalWidthsRcd =
+    HcalCombinedRecord<HcalPedestalsRcd, HcalPedestalWidthsRcd, HcalQIEDataRcd, HcalQIETypesRcd>;
 
-using HcalConvertedEffectivePedestalWidthsRcd = HcalCombinedRecord<
-    HcalPedestalsRcd,
-    HcalPedestalWidthsRcd,
-    HcalQIEDataRcd,
-    HcalQIETypesRcd
->;
+using HcalConvertedEffectivePedestalWidthsRcd =
+    HcalCombinedRecord<HcalPedestalsRcd, HcalPedestalWidthsRcd, HcalQIEDataRcd, HcalQIETypesRcd>;
 
-#endif // RecoLocalCalo_HcalRecProducers_src_HcalCombinedRecordsGPU_h
+#endif  // RecoLocalCalo_HcalRecProducers_src_HcalCombinedRecordsGPU_h

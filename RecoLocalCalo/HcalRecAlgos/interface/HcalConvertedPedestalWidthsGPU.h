@@ -13,33 +13,32 @@
 
 class HcalConvertedPedestalWidthsGPU {
 public:
-    struct Product {
-        ~Product();
-        float *values;
-    };
+  struct Product {
+    ~Product();
+    float* values;
+  };
 
 #ifndef __CUDACC__
-    // order matters!
-    HcalConvertedPedestalWidthsGPU(
-            HcalPedestals const&, 
-            HcalPedestalWidths const&,
-            HcalQIEData const&,
-            HcalQIETypes const&);
+  // order matters!
+  HcalConvertedPedestalWidthsGPU(HcalPedestals const&,
+                                 HcalPedestalWidths const&,
+                                 HcalQIEData const&,
+                                 HcalQIETypes const&);
 
-    // will trigger deallocation of Product thru ~Product
-    ~HcalConvertedPedestalWidthsGPU() = default;
+  // will trigger deallocation of Product thru ~Product
+  ~HcalConvertedPedestalWidthsGPU() = default;
 
-    // get device pointers
-    Product const& getProduct(cudaStream_t) const;
+  // get device pointers
+  Product const& getProduct(cudaStream_t) const;
 
-    // 
-    static std::string name() { return std::string{"hcalConvertedPedestalWidthsGPU"}; }
+  //
+  static std::string name() { return std::string{"hcalConvertedPedestalWidthsGPU"}; }
 
 private:
-    uint64_t totalChannels_;
-    std::vector<float, cms::cuda::HostAllocator<float>> values_;
+  uint64_t totalChannels_;
+  std::vector<float, cms::cuda::HostAllocator<float>> values_;
 
-    cms::cuda::ESProduct<Product> product_;
+  cms::cuda::ESProduct<Product> product_;
 #endif
 };
 

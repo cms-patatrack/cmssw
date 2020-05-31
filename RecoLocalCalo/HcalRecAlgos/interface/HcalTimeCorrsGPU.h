@@ -10,28 +10,28 @@
 
 class HcalTimeCorrsGPU {
 public:
-    struct Product {
-        ~Product();
-        float *value;
-    };
+  struct Product {
+    ~Product();
+    float* value;
+  };
 
 #ifndef __CUDACC__
-    // rearrange reco params
-    HcalTimeCorrsGPU(HcalTimeCorrs const&);
+  // rearrange reco params
+  HcalTimeCorrsGPU(HcalTimeCorrs const&);
 
-    // will trigger deallocation of Product thru ~Product
-    ~HcalTimeCorrsGPU() = default;
+  // will trigger deallocation of Product thru ~Product
+  ~HcalTimeCorrsGPU() = default;
 
-    // get device pointers
-    Product const& getProduct(cudaStream_t) const;
+  // get device pointers
+  Product const& getProduct(cudaStream_t) const;
 
-    // 
-    static std::string name() { return std::string{"hcalTimeCorrsGPU"}; }
+  //
+  static std::string name() { return std::string{"hcalTimeCorrsGPU"}; }
 
 private:
-    std::vector<float, cms::cuda::HostAllocator<float>> value_;
+  std::vector<float, cms::cuda::HostAllocator<float>> value_;
 
-    cms::cuda::ESProduct<Product> product_;
+  cms::cuda::ESProduct<Product> product_;
 #endif
 };
 

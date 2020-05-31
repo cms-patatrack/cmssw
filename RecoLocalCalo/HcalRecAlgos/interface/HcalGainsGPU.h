@@ -10,29 +10,29 @@
 
 class HcalGainsGPU {
 public:
-    struct Product {
-        ~Product();
-        float *values;
-    };
+  struct Product {
+    ~Product();
+    float* values;
+  };
 
 #ifndef __CUDACC__
-    // rearrange reco params
-    HcalGainsGPU(HcalGains const&);
+  // rearrange reco params
+  HcalGainsGPU(HcalGains const&);
 
-    // will trigger deallocation of Product thru ~Product
-    ~HcalGainsGPU() = default;
+  // will trigger deallocation of Product thru ~Product
+  ~HcalGainsGPU() = default;
 
-    // get device pointers
-    Product const& getProduct(cudaStream_t) const;
+  // get device pointers
+  Product const& getProduct(cudaStream_t) const;
 
-    // 
-    static std::string name() { return std::string{"hcalGainsGPU"}; }
+  //
+  static std::string name() { return std::string{"hcalGainsGPU"}; }
 
 private:
-    uint64_t totalChannels_;
-    std::vector<float, cms::cuda::HostAllocator<float>> values_;
+  uint64_t totalChannels_;
+  std::vector<float, cms::cuda::HostAllocator<float>> values_;
 
-    cms::cuda::ESProduct<Product> product_;
+  cms::cuda::ESProduct<Product> product_;
 #endif
 };
 

@@ -4,17 +4,15 @@
 #include "RecoLocalCalo/HcalRecAlgos/interface/HcalConvertedPedestalsGPU.h"
 
 // Separate access to effective and regular pedestals
-// No need to transfer/rearrange effective or vice versa if they are not going 
+// No need to transfer/rearrange effective or vice versa if they are not going
 // to be used
 class HcalConvertedEffectivePedestalsGPU final : public HcalConvertedPedestalsGPU {
 public:
-    using HcalConvertedPedestalsGPU::HcalConvertedPedestalsGPU;
+  using HcalConvertedPedestalsGPU::HcalConvertedPedestalsGPU;
 
 #ifndef __CUDACC__
-    static std::string name() { return 
-        std::string{"hcalConvertedEffectivePedestalsGPU"};
-    }
+  static std::string name() { return std::string{"hcalConvertedEffectivePedestalsGPU"}; }
 #endif
 };
 
-#endif // RecoLocalCalo_HcalRecAlgos_interface_HcalConvertedEffectivePedestalsGPU_h
+#endif  // RecoLocalCalo_HcalRecAlgos_interface_HcalConvertedEffectivePedestalsGPU_h

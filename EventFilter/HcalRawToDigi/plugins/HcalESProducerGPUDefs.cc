@@ -6,9 +6,7 @@
 
 #include <iostream>
 
-using HcalElectronicsMappingGPUESProducer = HcalRawESProducerGPU<
-    hcal::raw::ElectronicsMappingGPU, 
-    HcalElectronicsMap, 
-    HcalElectronicsMapRcd>;
+using HcalElectronicsMappingGPUESProducer =
+    HcalRawESProducerGPU<hcal::raw::ElectronicsMappingGPU, HcalElectronicsMap, HcalElectronicsMapRcd>;
 
 DEFINE_FWK_EVENTSETUP_MODULE(HcalElectronicsMappingGPUESProducer);

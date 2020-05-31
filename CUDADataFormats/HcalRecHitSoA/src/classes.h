@@ -4,14 +4,11 @@
 
 namespace hcal {
 
-// explicit template instantiations
-template
-struct RecHitCollection<common::ViewStoragePolicy>;
+  // explicit template instantiations
+  template struct RecHitCollection<common::ViewStoragePolicy>;
 
-template
-struct RecHitCollection<common::VecStoragePolicy<std::allocator>>;
+  template struct RecHitCollection<common::VecStoragePolicy<std::allocator>>;
 
-template
-struct RecHitCollection<common::VecStoragePolicy<CUDAHostAllocatorAlias>>;
+  template struct RecHitCollection<common::VecStoragePolicy<CUDAHostAllocatorAlias>>;
 
-}
+}  // namespace hcal

@@ -14,44 +14,43 @@ class HcalRecoParams;
 //
 class HcalRecoParamsWithPulseShapesGPU {
 public:
-    struct Product {
-        ~Product();
-        uint32_t *param1=nullptr, *param2=nullptr;
-        uint32_t *ids=nullptr;
+  struct Product {
+    ~Product();
+    uint32_t *param1 = nullptr, *param2 = nullptr;
+    uint32_t *ids = nullptr;
 
-        // These guys come directly from PulseShapeFunctor class
-        float *acc25nsVec=nullptr, *diff25nsItvlVec=nullptr,
-              *accVarLenIdxMinusOneVec=nullptr, *diffVarItvlIdxMinusOneVec=nullptr,
-              *accVarLenIdxZEROVec=nullptr, *diffVarItvlIdxZEROVec=nullptr;
-    };
+    // These guys come directly from PulseShapeFunctor class
+    float *acc25nsVec = nullptr, *diff25nsItvlVec = nullptr, *accVarLenIdxMinusOneVec = nullptr,
+          *diffVarItvlIdxMinusOneVec = nullptr, *accVarLenIdxZEROVec = nullptr, *diffVarItvlIdxZEROVec = nullptr;
+  };
 
 #ifndef __CUDACC__
-    // rearrange reco params
-    HcalRecoParamsWithPulseShapesGPU(HcalRecoParams const&);
+  // rearrange reco params
+  HcalRecoParamsWithPulseShapesGPU(HcalRecoParams const &);
 
-    // will trigger deallocation of Product thru ~Product
-    ~HcalRecoParamsWithPulseShapesGPU() = default;
+  // will trigger deallocation of Product thru ~Product
+  ~HcalRecoParamsWithPulseShapesGPU() = default;
 
-    // get device pointers
-    Product const& getProduct(cudaStream_t) const;
+  // get device pointers
+  Product const &getProduct(cudaStream_t) const;
 
-    // 
-    static std::string name() { return std::string{"hcalRecoParamsWithPulseShapesGPU"}; }
+  //
+  static std::string name() { return std::string{"hcalRecoParamsWithPulseShapesGPU"}; }
 
 private:
-    uint64_t totalChannels_; // hb + he
-    std::vector<uint32_t, cms::cuda::HostAllocator<uint32_t>> param1_;
-    std::vector<uint32_t, cms::cuda::HostAllocator<uint32_t>> param2_;
-    std::vector<uint32_t, cms::cuda::HostAllocator<uint32_t>> ids_;
+  uint64_t totalChannels_;  // hb + he
+  std::vector<uint32_t, cms::cuda::HostAllocator<uint32_t>> param1_;
+  std::vector<uint32_t, cms::cuda::HostAllocator<uint32_t>> param2_;
+  std::vector<uint32_t, cms::cuda::HostAllocator<uint32_t>> ids_;
 
-    std::vector<float, cms::cuda::HostAllocator<float>> acc25nsVec_; // 256
-    std::vector<float, cms::cuda::HostAllocator<float>> diff25nsItvlVec_; // 256
-    std::vector<float, cms::cuda::HostAllocator<float>> accVarLenIdxMinusOneVec_; // 25
-    std::vector<float, cms::cuda::HostAllocator<float>> diffVarItvlIdxMinusOneVec_; // 25
-    std::vector<float, cms::cuda::HostAllocator<float>> accVarLenIdxZEROVec_; // 25
-    std::vector<float, cms::cuda::HostAllocator<float>> diffVarItvlIdxZEROVec_; // 25
+  std::vector<float, cms::cuda::HostAllocator<float>> acc25nsVec_;                 // 256
+  std::vector<float, cms::cuda::HostAllocator<float>> diff25nsItvlVec_;            // 256
+  std::vector<float, cms::cuda::HostAllocator<float>> accVarLenIdxMinusOneVec_;    // 25
+  std::vector<float, cms::cuda::HostAllocator<float>> diffVarItvlIdxMinusOneVec_;  // 25
+  std::vector<float, cms::cuda::HostAllocator<float>> accVarLenIdxZEROVec_;        // 25
+  std::vector<float, cms::cuda::HostAllocator<float>> diffVarItvlIdxZEROVec_;      // 25
 
-    cms::cuda::ESProduct<Product> product_;
+  cms::cuda::ESProduct<Product> product_;
 #endif
 };
 

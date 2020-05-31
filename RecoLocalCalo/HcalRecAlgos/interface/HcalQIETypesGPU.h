@@ -10,28 +10,28 @@
 
 class HcalQIETypesGPU {
 public:
-    struct Product {
-        ~Product();
-        int *values;
-    };
+  struct Product {
+    ~Product();
+    int* values;
+  };
 
 #ifndef __CUDACC__
-    // rearrange reco params
-    HcalQIETypesGPU(HcalQIETypes const&);
+  // rearrange reco params
+  HcalQIETypesGPU(HcalQIETypes const&);
 
-    // will trigger deallocation of Product thru ~Product
-    ~HcalQIETypesGPU() = default;
+  // will trigger deallocation of Product thru ~Product
+  ~HcalQIETypesGPU() = default;
 
-    // get device pointers
-    Product const& getProduct(cudaStream_t) const;
+  // get device pointers
+  Product const& getProduct(cudaStream_t) const;
 
-    // 
-    static std::string name() { return std::string{"hcalQIETypesGPU"}; }
+  //
+  static std::string name() { return std::string{"hcalQIETypesGPU"}; }
 
 private:
-    std::vector<int, cms::cuda::HostAllocator<int>> values_;
+  std::vector<int, cms::cuda::HostAllocator<int>> values_;
 
-    cms::cuda::ESProduct<Product> product_;
+  cms::cuda::ESProduct<Product> product_;
 #endif
 };
 
