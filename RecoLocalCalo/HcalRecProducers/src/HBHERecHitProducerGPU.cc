@@ -20,6 +20,7 @@
 #include "HeterogeneousCore/CUDAServices/interface/CUDAService.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 #include "RecoLocalCalo/HcalRecAlgos/interface/DeclsForKernels.h"
+#include "RecoLocalCalo/HcalRecAlgos/interface/HcalCombinedRecordsGPU.h"
 #include "RecoLocalCalo/HcalRecAlgos/interface/HcalConvertedEffectivePedestalWidthsGPU.h"
 #include "RecoLocalCalo/HcalRecAlgos/interface/HcalConvertedEffectivePedestalsGPU.h"
 #include "RecoLocalCalo/HcalRecAlgos/interface/HcalConvertedPedestalWidthsGPU.h"
@@ -37,7 +38,6 @@
 #include "RecoLocalCalo/HcalRecAlgos/interface/HcalSiPMParametersGPU.h"
 #include "RecoLocalCalo/HcalRecAlgos/interface/HcalTimeCorrsGPU.h"
 #include "RecoLocalCalo/HcalRecAlgos/interface/MahiGPU.h"
-#include "RecoLocalCalo/HcalRecProducers/src/HcalCombinedRecordsGPU.h"
 
 class HBHERecHitProducerGPU : public edm::stream::EDProducer<edm::ExternalWork> {
 public:
