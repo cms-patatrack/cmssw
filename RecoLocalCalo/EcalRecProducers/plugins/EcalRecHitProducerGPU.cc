@@ -44,6 +44,9 @@
 
 #include "HeterogeneousCore/CUDACore/interface/ScopedContext.h"
 
+#include "FWCore/ServiceRegistry/interface/Service.h"
+#include "HeterogeneousCore/CUDAServices/interface/CUDAService.h"
+
 // configuration
 #include "CommonTools/Utils/interface/StringToEnumValue.h"
 
@@ -176,12 +179,18 @@ EcalRecHitProducerGPU::EcalRecHitProducerGPU(const edm::ParameterSet& ps) {
 
   configParameters_.ChannelStatusToBeExcludedSize = v_chstatus_.size();
 
-  cudaCheck(cudaMalloc((void**)&configParameters_.ChannelStatusToBeExcluded, sizeof(int) * v_chstatus_.size()));
-  cudaCheck(cudaMemcpy(configParameters_.ChannelStatusToBeExcluded,
-                       v_chstatus_.data(),
-                       v_chstatus_.size() * sizeof(int),
-                       cudaMemcpyHostToDevice));
-
+  
+  // call CUDA API functions only if CUDA is available
+  edm::Service<CUDAService> cs;
+  if (cs and cs->enabled()) {
+    
+    cudaCheck(cudaMalloc((void**)&configParameters_.ChannelStatusToBeExcluded, sizeof(int) * v_chstatus_.size()));
+    cudaCheck(cudaMemcpy(configParameters_.ChannelStatusToBeExcluded,
+                         v_chstatus_.data(),
+                         v_chstatus_.size() * sizeof(int),
+                         cudaMemcpyHostToDevice));
+  }
+  
   //
   //     https://github.com/cms-sw/cmssw/blob/266e21cfc9eb409b093e4cf064f4c0a24c6ac293/RecoLocalCalo/EcalRecProducers/plugins/EcalRecHitWorkerSimple.cc
   //
@@ -208,33 +217,36 @@ EcalRecHitProducerGPU::EcalRecHitProducerGPU(const edm::ParameterSet& ps) {
     //     v_DB_reco_flags_[recoflagbit] = dbstatuses;
   }
 
-  // actual values
-  cudaCheck(
-      cudaMalloc((void**)&configParameters_.expanded_v_DB_reco_flags, sizeof(int) * expanded_v_DB_reco_flags_.size()));
-
-  cudaCheck(cudaMemcpy(configParameters_.expanded_v_DB_reco_flags,
-                       expanded_v_DB_reco_flags_.data(),
-                       expanded_v_DB_reco_flags_.size() * sizeof(int),
-                       cudaMemcpyHostToDevice));
-
-  // sizes
-  cudaCheck(cudaMalloc((void**)&configParameters_.expanded_Sizes_v_DB_reco_flags,
-                       sizeof(uint32_t) * expanded_Sizes_v_DB_reco_flags_.size()));
-
-  cudaCheck(cudaMemcpy(configParameters_.expanded_Sizes_v_DB_reco_flags,
-                       expanded_Sizes_v_DB_reco_flags_.data(),
-                       expanded_Sizes_v_DB_reco_flags_.size() * sizeof(uint32_t),
-                       cudaMemcpyHostToDevice));
-
-  // keys
-  cudaCheck(cudaMalloc((void**)&configParameters_.expanded_flagbit_v_DB_reco_flags,
-                       sizeof(uint32_t) * expanded_flagbit_v_DB_reco_flags_.size()));
-
-  cudaCheck(cudaMemcpy(configParameters_.expanded_flagbit_v_DB_reco_flags,
-                       expanded_flagbit_v_DB_reco_flags_.data(),
-                       expanded_flagbit_v_DB_reco_flags_.size() * sizeof(uint32_t),
-                       cudaMemcpyHostToDevice));
-
+  // call CUDA API functions only if CUDA is available
+  if (cs and cs->enabled()) {
+    // actual values
+    cudaCheck(
+        cudaMalloc((void**)&configParameters_.expanded_v_DB_reco_flags, sizeof(int) * expanded_v_DB_reco_flags_.size()));
+    
+    cudaCheck(cudaMemcpy(configParameters_.expanded_v_DB_reco_flags,
+                         expanded_v_DB_reco_flags_.data(),
+                         expanded_v_DB_reco_flags_.size() * sizeof(int),
+                         cudaMemcpyHostToDevice));
+    
+    // sizes
+    cudaCheck(cudaMalloc((void**)&configParameters_.expanded_Sizes_v_DB_reco_flags,
+                         sizeof(uint32_t) * expanded_Sizes_v_DB_reco_flags_.size()));
+    
+    cudaCheck(cudaMemcpy(configParameters_.expanded_Sizes_v_DB_reco_flags,
+                         expanded_Sizes_v_DB_reco_flags_.data(),
+                         expanded_Sizes_v_DB_reco_flags_.size() * sizeof(uint32_t),
+                         cudaMemcpyHostToDevice));
+    
+    // keys
+    cudaCheck(cudaMalloc((void**)&configParameters_.expanded_flagbit_v_DB_reco_flags,
+                         sizeof(uint32_t) * expanded_flagbit_v_DB_reco_flags_.size()));
+    
+    cudaCheck(cudaMemcpy(configParameters_.expanded_flagbit_v_DB_reco_flags,
+                         expanded_flagbit_v_DB_reco_flags_.data(),
+                         expanded_flagbit_v_DB_reco_flags_.size() * sizeof(uint32_t),
+                         cudaMemcpyHostToDevice));
+  }
+  
   configParameters_.expanded_v_DB_reco_flagsSize = expanded_flagbit_v_DB_reco_flags_.size();
 
   flagmask_ = 0;
@@ -258,16 +270,20 @@ EcalRecHitProducerGPU::EcalRecHitProducerGPU(const edm::ParameterSet& ps) {
 }
 
 EcalRecHitProducerGPU::~EcalRecHitProducerGPU() {
-  // free event ouput data
-  eventOutputDataGPU_.deallocate(configParameters_);
+  
+  edm::Service<CUDAService> cs;
+  if (cs and cs->enabled()) {
+    // free event ouput data
+    eventOutputDataGPU_.deallocate(configParameters_);
 
-  // FIXME AM: do I need to do this?
-  //           Or can I do it as part of "deallocate" ?
-  cudaCheck(cudaFree(configParameters_.ChannelStatusToBeExcluded));
+    // FIXME AM: do I need to do this?
+    //           Or can I do it as part of "deallocate" ?
+    cudaCheck(cudaFree(configParameters_.ChannelStatusToBeExcluded));
 
-  cudaCheck(cudaFree(configParameters_.expanded_v_DB_reco_flags));
-  cudaCheck(cudaFree(configParameters_.expanded_Sizes_v_DB_reco_flags));
-  cudaCheck(cudaFree(configParameters_.expanded_flagbit_v_DB_reco_flags));
+    cudaCheck(cudaFree(configParameters_.expanded_v_DB_reco_flags));
+    cudaCheck(cudaFree(configParameters_.expanded_Sizes_v_DB_reco_flags));
+    cudaCheck(cudaFree(configParameters_.expanded_flagbit_v_DB_reco_flags));
+  }
 }
 
 void EcalRecHitProducerGPU::acquire(edm::Event const& event,
@@ -343,7 +359,7 @@ void EcalRecHitProducerGPU::acquire(edm::Event const& event,
                                   event_time,
                                   ctx.stream());
 
-  //   cudaCheck(cudaGetLastError());
+  cudaCheck(cudaGetLastError());
 }
 
 void EcalRecHitProducerGPU::produce(edm::Event& event, edm::EventSetup const& setup) {
