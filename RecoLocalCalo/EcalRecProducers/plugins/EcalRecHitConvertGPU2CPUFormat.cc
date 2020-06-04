@@ -40,8 +40,7 @@ void EcalRecHitConvertGPU2CPUFormat::fillDescriptions(edm::ConfigurationDescript
   desc.add<std::string>("recHitsLabelCPUEB", "EcalRecHitsEB");
   desc.add<std::string>("recHitsLabelCPUEE", "EcalRecHitsEE");
 
-  std::string label = "ecalRecHitConvertGPU2CPUFormat";
-  confDesc.add(label, desc);
+  confDesc.addWithDefaultLabel(desc);
 }
 
 EcalRecHitConvertGPU2CPUFormat::EcalRecHitConvertGPU2CPUFormat(const edm::ParameterSet& ps)
@@ -56,65 +55,64 @@ EcalRecHitConvertGPU2CPUFormat::EcalRecHitConvertGPU2CPUFormat(const edm::Parame
 EcalRecHitConvertGPU2CPUFormat::~EcalRecHitConvertGPU2CPUFormat() {}
 
 void EcalRecHitConvertGPU2CPUFormat::produce(edm::Event& event, edm::EventSetup const& setup) {
-  edm::Handle<ecal::SoARecHitCollection> hRecHitsGPUEB, hRecHitsGPUEE;
-  event.getByToken(recHitsGPUEB_, hRecHitsGPUEB);
-  event.getByToken(recHitsGPUEE_, hRecHitsGPUEE);
-
+  auto const& hRecHitsGPUEB = event.get(recHitsGPUEB_);
+  auto const& hRecHitsGPUEE = event.get(recHitsGPUEE_);
+  
   auto recHitsCPUEB = std::make_unique<EBRecHitCollection>();
   auto recHitsCPUEE = std::make_unique<EERecHitCollection>();
-  recHitsCPUEB->reserve(hRecHitsGPUEB->energy.size());
-  recHitsCPUEE->reserve(hRecHitsGPUEE->energy.size());
+  recHitsCPUEB->reserve(hRecHitsGPUEB.energy.size());
+  recHitsCPUEE->reserve(hRecHitsGPUEE.energy.size());
 
   //
   //     explicit EcalRecHit(const DetId& id, float energy, float time, uint32_t extra = 0, uint32_t flagBits = 0):
   //
 
-  for (uint32_t i = 0; i < hRecHitsGPUEB->energy.size(); ++i) {
+  for (uint32_t i = 0; i < hRecHitsGPUEB.energy.size(); ++i) {
     //
     // Save only if energy is >= 0 !
     // This is extremely important because the channels that were supposed
     // to be excluded get "-1" as energy
     //
 
-    if (hRecHitsGPUEB->energy[i] >= 0) {
-      recHitsCPUEB->emplace_back(DetId{hRecHitsGPUEB->did[i]},
-                                 hRecHitsGPUEB->energy[i],
-                                 hRecHitsGPUEB->time[i],
-                                 hRecHitsGPUEB->extra[i],
-                                 hRecHitsGPUEB->flagBits[i]);
+    if (hRecHitsGPUEB.energy[i] >= 0) {
+      recHitsCPUEB->emplace_back(DetId{hRecHitsGPUEB.did[i]},
+                                 hRecHitsGPUEB.energy[i],
+                                 hRecHitsGPUEB.time[i],
+                                 hRecHitsGPUEB.extra[i],
+                                 hRecHitsGPUEB.flagBits[i]);
     }
 
-    //       std::cout << " EB :: extra [" << i << "::" << hRecHitsGPUEB->energy.size() << "] = " << hRecHitsGPUEB->extra[i] << std::endl;
+    //       std::cout << " EB :: extra [" << i << "::" << hRecHitsGPUEB.energy.size() << "] = " << hRecHitsGPUEB.extra[i] << std::endl;
 
-    //         (*recHitsCPUEB)[i].setJitterError(hRecHitsGPUEB->timeError[i]);
+    //         (*recHitsCPUEB)[i].setJitterError(hRecHitsGPUEB.timeError[i]);
     //         auto const offset = i * EcalDataFrame::MAXSAMPLES;
     //         for (uint32_t sample=0; sample<EcalDataFrame::MAXSAMPLES; ++sample)
     //             (*recHitsCPUEB)[i].setOutOfTimeAmplitude(
-    //                 sample, hRecHitsGPUEB->energysAll[offset + sample]);
+    //                 sample, hRecHitsGPUEB.energysAll[offset + sample]);
   }
 
-  for (uint32_t i = 0; i < hRecHitsGPUEE->energy.size(); ++i) {
+  for (uint32_t i = 0; i < hRecHitsGPUEE.energy.size(); ++i) {
     //
     // Save only if energy is >= 0 !
     // This is extremely important because the channels that were supposed
     // to be excluded get "-1" as energy
     //
 
-    if (hRecHitsGPUEE->energy[i] >= 0) {
-      recHitsCPUEE->emplace_back(DetId{hRecHitsGPUEE->did[i]},
-                                 hRecHitsGPUEE->energy[i],
-                                 hRecHitsGPUEE->time[i],
-                                 hRecHitsGPUEE->extra[i],
-                                 hRecHitsGPUEE->flagBits[i]);
+    if (hRecHitsGPUEE.energy[i] >= 0) {
+      recHitsCPUEE->emplace_back(DetId{hRecHitsGPUEE.did[i]},
+                                 hRecHitsGPUEE.energy[i],
+                                 hRecHitsGPUEE.time[i],
+                                 hRecHitsGPUEE.extra[i],
+                                 hRecHitsGPUEE.flagBits[i]);
     }
 
-    //       std::cout << " EE :: extra [" << i << "::" << hRecHitsGPUEE->energy.size() << "] = " << hRecHitsGPUEE->extra[i] << std::endl;
+    //       std::cout << " EE :: extra [" << i << "::" << hRecHitsGPUEE.energy.size() << "] = " << hRecHitsGPUEE.extra[i] << std::endl;
 
-    //         (*recHitsCPUEE)[i].setJitterError(hRecHitsGPUEE->timeError[i]);
+    //         (*recHitsCPUEE)[i].setJitterError(hRecHitsGPUEE.timeError[i]);
     //         auto const offset = i * EcalDataFrame::MAXSAMPLES;
     //         for (uint32_t sample=0; sample<EcalDataFrame::MAXSAMPLES; ++sample)
     //             (*recHitsCPUEE)[i].setOutOfTimeAmplitude(
-    //                 sample, hRecHitsGPUEE->energysAll[offset + sample]);
+    //                 sample, hRecHitsGPUEE.energysAll[offset + sample]);
   }
 
   event.put(std::move(recHitsCPUEB), recHitsLabelCPUEB_);

@@ -232,7 +232,7 @@ int main(int argc, char *argv[]) {
       if (chi2_cpu > 0)
         hChi2EBGPUCPUratio->Fill((float)chi2_gpu / chi2_cpu);
 
-      if (fabs(chi2_gpu / chi2_cpu - 1) > 0.05 || fabs(soi_amp_gpu / soi_amp_cpu - 1) > 0.05) {
+      if (std::abs(chi2_gpu / chi2_cpu - 1) > 0.05 || std::abs(soi_amp_gpu / soi_amp_cpu - 1) > 0.05) {
         std::cout << " ---- EB  " << std::endl;
         std::cout << " eventid = " << ie << " xtal = " << i << std::endl;
         std::cout << " chi2_gpu    = " << chi2_gpu << " chi2_cpu =    " << chi2_cpu << std::endl;
@@ -296,7 +296,7 @@ int main(int argc, char *argv[]) {
       if (chi2_cpu > 0)
         hChi2EEGPUCPUratio->Fill((float)chi2_gpu / chi2_cpu);
 
-      if (fabs(chi2_gpu / chi2_cpu - 1) > 0.05 || fabs(soi_amp_gpu / soi_amp_cpu - 1) > 0.05) {
+      if (std::abs(chi2_gpu / chi2_cpu - 1) > 0.05 || std::abs(soi_amp_gpu / soi_amp_cpu - 1) > 0.05) {
         std::cout << " ---- EE  " << std::endl;
         std::cout << " eventid = " << ie << " xtal = " << i << std::endl;
         std::cout << " chi2_gpu    = " << chi2_gpu << " chi2_cpu =    " << chi2_cpu << std::endl;
@@ -332,12 +332,9 @@ int main(int argc, char *argv[]) {
   }
 
   {
-    //       TCanvas c("plots", "plots", 4200, 6200);
     TCanvas c("plots", "plots", 1750, 860);
-    //       c.Divide(2, 3);
     c.Divide(3, 2);
 
-    //       c.cd(1);
     c.cd(1);
     {
       gPad->SetLogy();
@@ -354,7 +351,7 @@ int main(int argc, char *argv[]) {
       stats->SetY2NDC(y1);
       stats->SetY1NDC(y1 - (y2 - y1));
     }
-    //       c.cd(2);
+
     c.cd(4);
     {
       gPad->SetLogy();
@@ -371,21 +368,21 @@ int main(int argc, char *argv[]) {
       stats->SetY2NDC(y1);
       stats->SetY1NDC(y1 - (y2 - y1));
     }
-    //       c.cd(3);
+    
     c.cd(2);
     gPad->SetGrid();
     hSOIAmplitudesEBGPUvsCPU->Draw("COLZ");
-    //       c.cd(4);
+    
     c.cd(5);
     gPad->SetGrid();
     hSOIAmplitudesEEGPUvsCPU->Draw("COLZ");
-    //       c.cd(5);
+    
     c.cd(3);
-    //       hSOIAmplitudesEBdeltavsCPU->Draw("COLZ");
+    
     hSOIAmplitudesEBGPUCPUratio->Draw("");
-    //       c.cd(6);
+    
     c.cd(6);
-    //       hSOIAmplitudesEEdeltavsCPU->Draw("COLZ");
+    
     hSOIAmplitudesEEGPUCPUratio->Draw("");
 
     c.SaveAs("ecal-amplitudes.root");
@@ -393,7 +390,6 @@ int main(int argc, char *argv[]) {
 
     // chi2
 
-    //       c.cd(1);
     c.cd(1);
     {
       gPad->SetLogy();
@@ -410,7 +406,7 @@ int main(int argc, char *argv[]) {
       stats->SetY2NDC(y1);
       stats->SetY1NDC(y1 - (y2 - y1));
     }
-    //       c.cd(2);
+    
     c.cd(4);
     {
       gPad->SetLogy();
@@ -427,21 +423,21 @@ int main(int argc, char *argv[]) {
       stats->SetY2NDC(y1);
       stats->SetY1NDC(y1 - (y2 - y1));
     }
-    //       c.cd(3);
+    
     c.cd(2);
     gPad->SetGrid();
     hChi2EBGPUvsCPU->Draw("COLZ");
-    //       c.cd(4);
+    
     c.cd(5);
     gPad->SetGrid();
     hChi2EEGPUvsCPU->Draw("COLZ");
-    //       c.cd(5);
+    
     c.cd(3);
-    //       hChi2EBdeltavsCPU->Draw("COLZ");
+    
     hChi2EBGPUCPUratio->Draw("");
-    //       c.cd(6);
+    
     c.cd(6);
-    //       hChi2EEdeltavsCPU->Draw("COLZ");
+    
     hChi2EEGPUCPUratio->Draw("");
 
     c.SaveAs("ecal-chi2.root");
@@ -449,7 +445,7 @@ int main(int argc, char *argv[]) {
 
     // flags
 
-    //       c.cd(1);
+    
     c.cd(1);
     {
       gPad->SetLogy();
@@ -466,7 +462,7 @@ int main(int argc, char *argv[]) {
       stats->SetY2NDC(y1);
       stats->SetY1NDC(y1 - (y2 - y1));
     }
-    //       c.cd(2);
+    
     c.cd(4);
     {
       gPad->SetLogy();
@@ -483,22 +479,20 @@ int main(int argc, char *argv[]) {
       stats->SetY2NDC(y1);
       stats->SetY1NDC(y1 - (y2 - y1));
     }
-    //       c.cd(3);
+    
     c.cd(2);
     gPad->SetGrid();
     hFlagsEBGPUvsCPU->Draw("COLZ");
-    //       c.cd(4);
+    
     c.cd(5);
     gPad->SetGrid();
     hFlagsEEGPUvsCPU->Draw("COLZ");
-    //       c.cd(5);
+    
     c.cd(3);
-    //       hFlagsEBdeltavsCPU->Draw("COLZ");
     hFlagsEBGPUCPUratio->Draw("");
 
-    //       c.cd(6);
+    
     c.cd(6);
-    //       hFlagsEEdeltavsCPU->Draw("COLZ");
     hFlagsEEGPUCPUratio->Draw("");
 
     c.SaveAs("ecal-flags.root");
@@ -547,13 +541,11 @@ int main(int argc, char *argv[]) {
     cRechits.cd(3);
     {
       gPad->SetLogy();
-      //hRechitsEBdeltavsCPU->Draw("COLZ");
       hRechitsEBGPUCPUratio->Draw("");
     }
     cRechits.cd(6);
     {
       gPad->SetLogy();
-      //hRechitsEEdeltavsCPU->Draw("COLZ");
       hRechitsEEGPUCPUratio->Draw("");
     }
     cRechits.SaveAs("ecal-rechits.root");

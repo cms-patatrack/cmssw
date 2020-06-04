@@ -46,8 +46,7 @@ void EcalCPURecHitProducer::fillDescriptions(edm::ConfigurationDescriptions& con
   desc.add<std::string>("recHitsOutLabelEE", "EcalRecHitsEE");
   desc.add<bool>("containsTimingInformation", false);
 
-  std::string label = "ecalCPURecHitProducer";
-  confDesc.add(label, desc);
+  confDesc.addWithDefaultLabel(desc);
 }
 
 EcalCPURecHitProducer::EcalCPURecHitProducer(const edm::ParameterSet& ps)
@@ -151,13 +150,9 @@ void EcalCPURecHitProducer::acquire(edm::Event const& event,
 }
 
 void EcalCPURecHitProducer::produce(edm::Event& event, edm::EventSetup const& setup) {
-  // tmp vectors
-  auto recHitsOutEB = std::make_unique<ecal::RecHit<ecal::Tag::soa>>(std::move(recHitsEB_));
-  auto recHitsOutEE = std::make_unique<ecal::RecHit<ecal::Tag::soa>>(std::move(recHitsEE_));
-
   // put into event
-  event.put(recHitsOutEBToken_, std::move(recHitsOutEB));
-  event.put(recHitsOutEEToken_, std::move(recHitsOutEE));
+  event.emplace(recHitsOutEBToken_, std::move(recHitsEB_));
+  event.emplace(recHitsOutEEToken_, std::move(recHitsEE_));
 }
 
 DEFINE_FWK_MODULE(EcalCPURecHitProducer);
