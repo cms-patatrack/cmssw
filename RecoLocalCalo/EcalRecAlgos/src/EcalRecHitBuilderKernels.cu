@@ -286,10 +286,17 @@ namespace ecal {
         // Exploited later by the module "EcalRecHitConvertGPU2CPUFormat"
         //
         energy[ch] = -1;  //---- AM: default, un-physical, ok
-        chi2[ch] = chi2_in[inputCh];
+
+        // truncate the chi2
+        if (chi2_in[inputCh] > 64)
+          chi2[ch] = 64;
+        else
+          chi2[ch] = chi2_in[inputCh];
+
+        // default value for the "extra flags"
         extra[ch] = 0;
-        
-        static const int chStatusMask = 0x1F;
+
+        static const int chStatusMask = 0x1f;
         // ChannelStatusToBeExcluded is a "int" then I put "dbstatus" to be the same
         int dbstatus = EcalChannelStatusCode_Code((status[hashedId]) & chStatusMask);
         if (ChannelStatusToBeExcludedSize != 0) {
@@ -300,9 +307,12 @@ namespace ecal {
               break;
             }
           }
-          if (skip_this_channel) continue;
+          if (skip_this_channel) {
+            // skip this channel
+            continue;
+          }
         }
-        
+
         // Take our association map of dbstatuses-> recHit flagbits and return the apporpriate flagbit word
 
         //
@@ -340,8 +350,8 @@ namespace ecal {
         }
 
         if ((flagmask & temporary_flagBits) && killDeadChannels) {
-          continue;
           // skip this channel
+          continue;
         }
 
         //
@@ -357,13 +367,7 @@ namespace ecal {
         // Time is not saved so far, FIXME
         //         time[ch] = time_in[inputCh];
 
-        if (chi2_in[inputCh] > 64)
-          chi2[ch] = 64;
-        else
-          chi2[ch] = chi2_in[inputCh];
-
         // NB: calculate the "flagBits extra"  --> not really "flags", but actually an encoded version of energy uncertainty, time unc., ...
-        extra[ch] = 0;
 
         //
         // extra packing ...
