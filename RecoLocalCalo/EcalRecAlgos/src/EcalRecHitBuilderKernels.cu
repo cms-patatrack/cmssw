@@ -289,21 +289,20 @@ namespace ecal {
         chi2[ch] = chi2_in[inputCh];
         extra[ch] = 0;
         
-        bool skip_this_channel = false;
-        //
         static const int chStatusMask = 0x1F;
         // ChannelStatusToBeExcluded is a "int" then I put "dbstatus" to be the same
         int dbstatus = EcalChannelStatusCode_Code((status[hashedId]) & chStatusMask);
         if (ChannelStatusToBeExcludedSize != 0) {
+          bool skip_this_channel = false;
           for (int ich_to_check = 0; ich_to_check < ChannelStatusToBeExcludedSize; ich_to_check++) {
             if (ChannelStatusToBeExcluded[ich_to_check] == dbstatus) {
               skip_this_channel = true;
+              break;
             }
           }
+          if (skip_this_channel) continue;
         }
         
-        if (skip_this_channel) continue;
-
         // Take our association map of dbstatuses-> recHit flagbits and return the apporpriate flagbit word
 
         //
