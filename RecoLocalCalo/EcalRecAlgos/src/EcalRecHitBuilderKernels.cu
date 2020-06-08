@@ -286,7 +286,10 @@ namespace ecal {
         // Exploited later by the module "EcalRecHitConvertGPU2CPUFormat"
         //
         energy[ch] = -1;  //---- AM: default, un-physical, ok
-
+        chi2[ch] = chi2_in[inputCh];
+        extra[ch] = 0;
+        
+        bool skip_this_channel = false;
         //
         static const int chStatusMask = 0x1F;
         // ChannelStatusToBeExcluded is a "int" then I put "dbstatus" to be the same
@@ -294,10 +297,12 @@ namespace ecal {
         if (ChannelStatusToBeExcludedSize != 0) {
           for (int ich_to_check = 0; ich_to_check < ChannelStatusToBeExcludedSize; ich_to_check++) {
             if (ChannelStatusToBeExcluded[ich_to_check] == dbstatus) {
-              return;
+              skip_this_channel = true;
             }
           }
         }
+        
+        if (skip_this_channel) continue;
 
         // Take our association map of dbstatuses-> recHit flagbits and return the apporpriate flagbit word
 
@@ -336,7 +341,8 @@ namespace ecal {
         }
 
         if ((flagmask & temporary_flagBits) && killDeadChannels) {
-          return;
+          continue;
+          // skip this channel
         }
 
         //
