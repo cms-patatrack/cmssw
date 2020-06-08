@@ -7,10 +7,6 @@
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 
-//
-//
-//
-
 // format
 #include "CUDADataFormats/EcalRecHitSoA/interface/EcalUncalibratedRecHit_soa.h"
 #include "CUDADataFormats/EcalRecHitSoA/interface/EcalRecHit_soa.h"
@@ -283,7 +279,7 @@ EcalRecHitProducerGPU::~EcalRecHitProducerGPU() {
     cudaCheck(cudaFree(configParameters_.expanded_v_DB_reco_flags));
     cudaCheck(cudaFree(configParameters_.expanded_Sizes_v_DB_reco_flags));
     cudaCheck(cudaFree(configParameters_.expanded_flagbit_v_DB_reco_flags));
-  } 
+  }
 }
 
 void EcalRecHitProducerGPU::acquire(edm::Event const& event,
@@ -320,8 +316,6 @@ void EcalRecHitProducerGPU::acquire(edm::Event const& event,
   setup.get<EcalLaserAPDPNRatiosRefRcd>().get(LaserAPDPNRatiosRefHandle_);
   setup.get<EcalLaserAlphasRcd>().get(LaserAlphasHandle_);
   setup.get<EcalLinearCorrectionsRcd>().get(LinearCorrectionsHandle_);
-
-  //
 
   auto const& ADCToGeVConstantProduct = ADCToGeVConstantHandle_->getProduct(ctx.stream());
   auto const& IntercalibConstantsProduct = IntercalibConstantsHandle_->getProduct(ctx.stream());
