@@ -293,7 +293,8 @@ namespace ecal {
         else
           chi2[ch] = chi2_in[inputCh];
 
-        // default value for the "extra flags"
+        // default values for the flags
+        flagBits[ch] = 0;
         extra[ch] = 0;
 
         static const int chStatusMask = 0x1f;
@@ -349,13 +350,12 @@ namespace ecal {
           flagbit_counter += 1;
         }
 
+        flagBits[ch] = temporary_flagBits;
+
         if ((flagmask & temporary_flagBits) && killDeadChannels) {
           // skip this channel
           continue;
         }
-
-        //
-        flagBits[ch] = temporary_flagBits;
 
         //
         // multiply the adc counts with factors to get GeV
