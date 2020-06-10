@@ -554,6 +554,11 @@ def customise_gpu_hcal(process):
         + process.hltHbhereco)                              # copy to host and convert to legacy format
 
 
+    # 
+    # hltEcalUncalibRecHitSoA + hltEcalUncalibRecHit
+    # Needed by phi-symmetry filter for calibration stream -> ECAL will follow up
+    #
+
     # done
     return process
 
