@@ -473,9 +473,11 @@ def customise_gpu_ecal(process):
       + process.hltEcalDigis
       + process.hltEcalPreshowerDigis
       + process.hltEcalUncalibRecHitGPU
-      + process.hltEcalUncalibRecHitSoA
-      + process.hltEcalUncalibRecHit
+      #+ process.hltEcalUncalibRecHitSoA
+      #+ process.hltEcalUncalibRecHit
       + process.hltEcalDetIdToBeRecovered
+      + process.hltEcalRecHitGPU
+      + process.hltEcalRecHitSoA
       + process.hltEcalRecHit
       + process.hltEcalPreshowerRecHit)
 
@@ -483,9 +485,11 @@ def customise_gpu_ecal(process):
         process.hltEcalDigisGPU
       + process.hltEcalDigis
       + process.hltEcalUncalibRecHitGPU
-      + process.hltEcalUncalibRecHitSoA
-      + process.hltEcalUncalibRecHit
+      #+ process.hltEcalUncalibRecHitSoA
+      #+ process.hltEcalUncalibRecHit
       + process.hltEcalDetIdToBeRecovered
+      + process.hltEcalRecHitGPU
+      + process.hltEcalRecHitSoA
       + process.hltEcalRecHit)
 
     process.HLTDoFullUnpackingEgammaEcalSequence = cms.Sequence(
@@ -493,9 +497,11 @@ def customise_gpu_ecal(process):
       + process.hltEcalDigis
       + process.hltEcalPreshowerDigis
       + process.hltEcalUncalibRecHitGPU
-      + process.hltEcalUncalibRecHitSoA
-      + process.hltEcalUncalibRecHit
+      #+ process.hltEcalUncalibRecHitSoA
+      #+ process.hltEcalUncalibRecHit
       + process.hltEcalDetIdToBeRecovered
+      + process.hltEcalRecHitGPU
+      + process.hltEcalRecHitSoA
       + process.hltEcalRecHit
       + process.hltEcalPreshowerRecHit)
 
