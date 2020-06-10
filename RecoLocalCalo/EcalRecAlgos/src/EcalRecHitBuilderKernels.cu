@@ -157,7 +157,7 @@ namespace ecal {
 
         ::ecal::reco::StorageScalarType const* amplitude = isEndcap ? amplitude_ee : amplitude_eb;
 
-        ::ecal::reco::StorageScalarType const* time_in = isEndcap ? time_ee : time_eb;
+        //::ecal::reco::StorageScalarType const* time_in = isEndcap ? time_ee : time_eb;
 
         ::ecal::reco::StorageScalarType const* chi2_in = isEndcap ? chi2_ee : chi2_eb;
 
