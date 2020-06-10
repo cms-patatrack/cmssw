@@ -473,8 +473,8 @@ def customise_gpu_ecal(process):
       + process.hltEcalDigis
       + process.hltEcalPreshowerDigis
       + process.hltEcalUncalibRecHitGPU
-      #+ process.hltEcalUncalibRecHitSoA
-      #+ process.hltEcalUncalibRecHit
+      + process.hltEcalUncalibRecHitSoA
+      + process.hltEcalUncalibRecHit
       + process.hltEcalDetIdToBeRecovered
       + process.hltEcalRecHitGPU
       + process.hltEcalRecHitSoA
@@ -485,8 +485,8 @@ def customise_gpu_ecal(process):
         process.hltEcalDigisGPU
       + process.hltEcalDigis
       + process.hltEcalUncalibRecHitGPU
-      #+ process.hltEcalUncalibRecHitSoA
-      #+ process.hltEcalUncalibRecHit
+      + process.hltEcalUncalibRecHitSoA
+      + process.hltEcalUncalibRecHit
       + process.hltEcalDetIdToBeRecovered
       + process.hltEcalRecHitGPU
       + process.hltEcalRecHitSoA
@@ -497,14 +497,18 @@ def customise_gpu_ecal(process):
       + process.hltEcalDigis
       + process.hltEcalPreshowerDigis
       + process.hltEcalUncalibRecHitGPU
-      #+ process.hltEcalUncalibRecHitSoA
-      #+ process.hltEcalUncalibRecHit
+      + process.hltEcalUncalibRecHitSoA
+      + process.hltEcalUncalibRecHit
       + process.hltEcalDetIdToBeRecovered
       + process.hltEcalRecHitGPU
       + process.hltEcalRecHitSoA
       + process.hltEcalRecHit
       + process.hltEcalPreshowerRecHit)
 
+    # 
+    # hltEcalUncalibRecHitSoA + hltEcalUncalibRecHit
+    # Needed by phi-symmetry filter for calibration stream -> ECAL will follow up
+    #
 
     # done
     return process
