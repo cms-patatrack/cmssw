@@ -316,7 +316,6 @@ def customise_gpu_ecal(process):
     process.load("RecoLocalCalo.EcalRecProducers.ecalLaserAlphasGPUESProducer_cfi")
     process.load("RecoLocalCalo.EcalRecProducers.ecalLinearCorrectionsGPUESProducer_cfi")
 
-
     # Modules and EDAliases
 
     process.hltEcalDigisGPU = cms.EDProducer("EcalRawToDigiGPU",
