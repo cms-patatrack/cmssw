@@ -405,7 +405,7 @@ def customise_gpu_ecal(process):
         recHitsLabelEB = cms.string("EcalRecHitsEB"),
         recHitsLabelEE = cms.string("EcalRecHitsEE"),
         
-        maxNumberHits = cms.uint32(20000),  # FIXME AM
+        maxNumberHits = cms.uint32(75000),  # max number
         
         ## db statuses to be exluded from reconstruction (some will be recovered)
         ChannelStatusToBeExcluded = cms.vstring(   'kDAC',
