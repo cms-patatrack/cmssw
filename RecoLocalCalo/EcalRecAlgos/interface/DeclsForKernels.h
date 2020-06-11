@@ -239,6 +239,7 @@ namespace ecal {
       EcalSampleMask const& sampleMask;
       EcalTimeOffsetConstant const& timeOffsetConstant;
       uint32_t offsetForHashes;
+      uint32_t nchannels;
     };
 
     //*/
@@ -339,6 +340,7 @@ namespace ecal {
       //
       //
       uint32_t offsetForHashes;
+      uint32_t nchannels;
     };
 
   }  // namespace rechit

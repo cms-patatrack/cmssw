@@ -589,10 +589,14 @@ namespace ecal {
                            ConditionsProducts const& conditions,
                            ConfigurationParameters const& configParameters,
                            uint32_t const nChannelsBarrel,
+//                            uint32_t const nchannels,
                            edm::TimeValue_t const event_time,
                            cudaStream_t cudaStream) {
-      int nchannels = eventInputGPU.ebUncalibRecHits.size + eventInputGPU.eeUncalibRecHits.size;
-
+//       int nchannels = eventInputGPU.ebUncalibRecHits.size + eventInputGPU.eeUncalibRecHits.size;
+      int nchannels = conditions.nchannels;
+      //
+      // nChannelsBarrel and offsetForHashes should be the same? TEST
+      //
       //       unsigned int nchannels_per_block = 32;
       unsigned int nchannels_per_block = 16;
       unsigned int threads_min = nchannels_per_block;

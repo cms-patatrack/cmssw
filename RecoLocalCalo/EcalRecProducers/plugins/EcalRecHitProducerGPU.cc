@@ -302,9 +302,16 @@ void EcalRecHitProducerGPU::acquire(edm::Event const& event,
 
   if ((neb_ + nee_) > maxNumberHits_) {
     edm::LogError("EcalRecHitProducerGPU") << "max number of channels exceeded. See options 'maxNumberHits' ";
+    if (neb_ > maxNumberHits_) {
+      neb_ = maxNumberHits_;
+      nee_ = 0;
+    } else if ((neb_ + nee_) > maxNumberHits_) {
+      nee_ = maxNumberHits_ - neb_;
+    }
   }
   
-  int nchannelsEB = ebUncalibRecHits.size;  // --> offsetForInput, first EB and then EE
+  uint32_t nchannels = neb_ + nee_; 
+//   int nchannelsEB = neb_;  // --> offsetForInput, first EB and then EE
 
   // conditions
   // - laser correction
@@ -340,7 +347,9 @@ void EcalRecHitProducerGPU::acquire(edm::Event const& event,
                                               LaserAlphasProduct,
                                               LinearCorrectionsProduct,
                                               //
-                                              IntercalibConstantsHandle_->getOffset()};
+                                              //IntercalibConstantsHandle_->getOffset(), 
+                                              neb_,
+                                              nchannels};
 
   //
   // schedule algorithms
@@ -353,7 +362,7 @@ void EcalRecHitProducerGPU::acquire(edm::Event const& event,
                                   //     eventDataForScratchGPU_,
                                   conditions,
                                   configParameters_,
-                                  nchannelsEB,
+                                  neb_,
                                   event_time,
                                   ctx.stream());
 

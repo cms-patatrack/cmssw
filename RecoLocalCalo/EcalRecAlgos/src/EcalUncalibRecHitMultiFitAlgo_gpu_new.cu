@@ -43,8 +43,9 @@ namespace ecal {
 
       uint32_t const offsetForHashes = conditions.offsetForHashes;
       uint32_t const offsetForInputs = eventInputGPU.ebDigis.ndigis;
-      unsigned int totalChannels = eventInputGPU.ebDigis.ndigis + eventInputGPU.eeDigis.ndigis;
-
+      // unsigned int totalChannels = eventInputGPU.ebDigis.ndigis + eventInputGPU.eeDigis.ndigis;
+      unsigned int totalChannels = conditions.nchannels;
+      
       //
       // 1d preparation kernel
       //
