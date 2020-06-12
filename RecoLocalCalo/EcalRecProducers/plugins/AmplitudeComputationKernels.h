@@ -26,4 +26,4 @@ namespace ecal {
   }  // namespace multifit
 }  // namespace ecal
 
-#endif // AmplitudeComputationKernels_h
+#endif  // AmplitudeComputationKernels_h

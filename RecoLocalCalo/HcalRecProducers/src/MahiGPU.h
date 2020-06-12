@@ -16,4 +16,4 @@ namespace hcal {
   }
 }  // namespace hcal
 
-#endif // MahiGPU_h
+#endif  // MahiGPU_h

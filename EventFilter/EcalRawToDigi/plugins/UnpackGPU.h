@@ -1,7 +1,7 @@
 #ifndef EventFilter_EcalRawToDigi_plugins_UnpackGPU_h
 #define EventFilter_EcalRawToDigi_plugins_UnpackGPU_h
 
-#include "EventFilter/EcalRawToDigi/plugins/DeclsForKernels.h"
+#include "DeclsForKernels.h"
 
 namespace ecal {
   namespace raw {
