@@ -1,5 +1,5 @@
 #include "EventFilter/EcalRawToDigi/interface/ElectronicsIdGPU.h"
-#include "EventFilter/EcalRawToDigi/interface/UnpackGPU.h"
+#include "EventFilter/EcalRawToDigi/plugins/UnpackGPU.h"
 
 namespace ecal {
   namespace raw {
