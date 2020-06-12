@@ -3,7 +3,7 @@
 // nvcc not able to parse this guy (whatever is inlcuded from it)....
 //#include "RecoLocalCalo/HcalRecAlgos/interface/PulseShapeFunctor.h"
 
-#include "RecoLocalCalo/HcalRecAlgos/interface/MahiGPU.h"
+#include "MahiGPU.h"
 
 #include <Eigen/Dense>
 

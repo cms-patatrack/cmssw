@@ -1,5 +1,5 @@
-#ifndef RecoLocalCalo_HcalRecAlgos_interface_DeclsForKernels_h
-#define RecoLocalCalo_HcalRecAlgos_interface_DeclsForKernels_h
+#ifndef DeclsForKernels_h
+#define DeclsForKernels_h
 
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 
@@ -138,4 +138,4 @@ namespace hcal {
   }  // namespace mahi
 }  // namespace hcal
 
-#endif  // RecoLocalCalo_HcalRecAlgos_interface_DeclsForKernels_h
+#endif // DeclsForKernels_h
