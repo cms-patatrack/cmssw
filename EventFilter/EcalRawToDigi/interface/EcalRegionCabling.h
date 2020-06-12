@@ -4,7 +4,6 @@
 #include "Geometry/EcalMapping/interface/EcalElectronicsMapping.h"
 #include "Geometry/EcalMapping/interface/ESElectronicsMapper.h"
 
-#include "DataFormats/EcalRecHit/interface/EcalRecHit.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "DataFormats/FEDRawData/interface/FEDNumbering.h"
 

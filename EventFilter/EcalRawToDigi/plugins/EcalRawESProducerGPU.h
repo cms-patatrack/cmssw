@@ -1,5 +1,5 @@
-#ifndef RecoLocalCalo_EcalRecProducers_src_EcalRawESProducerGPU_h
-#define RecoLocalCalo_EcalRecProducers_src_EcalRawESProducerGPU_h
+#ifndef EcalRawESProducerGPU_h
+#define EcalRawESProducerGPU_h
 
 #include "FWCore/Framework/interface/ESProducer.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
@@ -41,4 +41,4 @@ private:
   edm::ESGetToken<Source, Record> token_;
 };
 
-#endif
+#endif // EcalRawESProducerGPU_h
