@@ -37,8 +37,8 @@
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalTimeBiasCorrectionsGPU.h"
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalTimeCalibConstantsGPU.h"
 
-#include "RecoLocalCalo/EcalRecAlgos/interface/DeclsForKernels.h"
-#include "RecoLocalCalo/EcalRecAlgos/interface/EcalUncalibRecHitMultiFitAlgo_gpu_new.h"
+#include "DeclsForKernels.h"
+#include "EcalUncalibRecHitMultiFitAlgo_gpu_new.h"
 
 class EcalUncalibRecHitProducerGPU : public edm::stream::EDProducer<edm::ExternalWork> {
 public:

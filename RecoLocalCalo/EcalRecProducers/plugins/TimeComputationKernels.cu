@@ -4,12 +4,12 @@
 #include "cuda.h"
 
 #include "DataFormats/EcalDigi/interface/EcalDataFrame.h"
-#include "RecoLocalCalo/EcalRecAlgos/interface/Common.h"
 #include "DataFormats/EcalRecHit/interface/EcalUncalibratedRecHit.h"
 
 #include "DataFormats/Math/interface/approx_exp.h"
 #include "DataFormats/Math/interface/approx_log.h"
 
+#include "Common.h"
 #include "TimeComputationKernels.h"
 #include "KernelHelpers.h"
 

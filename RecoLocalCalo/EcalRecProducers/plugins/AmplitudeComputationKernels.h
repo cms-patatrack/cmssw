@@ -1,9 +1,9 @@
-#ifndef RecoLocalCalo_EcalRecAlgos_src_AmplitudeComputationKernels
-#define RecoLocalCalo_EcalRecAlgos_src_AmplitudeComputationKernels
+#ifndef AmplitudeComputationKernels_h
+#define AmplitudeComputationKernels_h
 
-#include "RecoLocalCalo/EcalRecAlgos/interface/EigenMatrixTypes_gpu.h"
-#include "RecoLocalCalo/EcalRecAlgos/interface/DeclsForKernels.h"
-#include "RecoLocalCalo/EcalRecAlgos/interface/Common.h"
+#include "EigenMatrixTypes_gpu.h"
+#include "DeclsForKernels.h"
+#include "Common.h"
 
 class EcalPulseShape;
 class EcalPulseCovariance;
@@ -26,4 +26,4 @@ namespace ecal {
   }  // namespace multifit
 }  // namespace ecal
 
-#endif  // RecoLocalCalo_EcalRecAlgos_src_AmplitudeComputationKernelsV1
+#endif // AmplitudeComputationKernels_h

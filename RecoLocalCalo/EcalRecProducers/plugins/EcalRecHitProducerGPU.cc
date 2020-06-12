@@ -16,7 +16,7 @@
 #include "DataFormats/EcalRecHit/interface/EcalRecHit.h"
 
 // the kernels
-#include "RecoLocalCalo/EcalRecAlgos/src/EcalRecHitBuilderKernels.h"
+#include "EcalRecHitBuilderKernels.h"
 
 // conditions cpu
 #include "CondFormats/DataRecord/interface/EcalADCToGeVConstantRcd.h"

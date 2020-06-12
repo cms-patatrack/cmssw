@@ -11,7 +11,6 @@
 #include "CondFormats/EcalObjects/interface/EcalPulseCovariances.h"
 #include "DataFormats/EcalDigi/interface/EcalDigiCollections.h"
 
-#include "inplace_fnnls.h"
 #include "KernelHelpers.h"
 #include "AmplitudeComputationKernels.h"
 #include "AmplitudeComputationCommonKernels.h"

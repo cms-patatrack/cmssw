@@ -1,5 +1,5 @@
-#ifndef RecoLocalCalo_EcalRecAlgos_interface_DeclsForKernels_h
-#define RecoLocalCalo_EcalRecAlgos_interface_DeclsForKernels_h
+#ifndef RecoLocalCalo_EcalRecProducers_plugins_DeclsForKernels_h
+#define RecoLocalCalo_EcalRecProducers_plugins_DeclsForKernels_h
 
 #include <vector>
 
@@ -7,7 +7,7 @@
 #include <cuda_runtime.h>
 
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
-#include "RecoLocalCalo/EcalRecAlgos/interface/EigenMatrixTypes_gpu.h"
+#include "EigenMatrixTypes_gpu.h"
 #include "CUDADataFormats/EcalRecHitSoA/interface/EcalUncalibratedRecHit_soa.h"
 #include "CUDADataFormats/EcalRecHitSoA/interface/RecoTypes.h"
 
@@ -344,4 +344,4 @@ namespace ecal {
   }  // namespace rechit
 }  // namespace ecal
 
-#endif
+#endif // RecoLocalCalo_EcalRecProducers_plugins_DeclsForKernels_h

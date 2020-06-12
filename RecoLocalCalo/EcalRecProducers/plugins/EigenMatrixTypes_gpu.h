@@ -1,5 +1,5 @@
-#ifndef RecoLocalCalo_EcalRecAlgos_EigenMatrixTypes_gpu_h
-#define RecoLocalCalo_EcalRecAlgos_EigenMatrixTypes_gpu_h
+#ifndef EigenMatrixTypes_gpu_h
+#define EigenMatrixTypes_gpu_h
 
 #include <Eigen/Dense>
 #include <array>
@@ -45,4 +45,4 @@ namespace ecal {
   }  // namespace multifit
 }  // namespace ecal
 
-#endif
+#endif // EigenMatrixTypes_gpu_h

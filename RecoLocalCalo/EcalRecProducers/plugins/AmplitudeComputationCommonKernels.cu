@@ -13,7 +13,6 @@
 #include "CondFormats/EcalObjects/interface/EcalSamplesCorrelation.h"
 
 #include "AmplitudeComputationCommonKernels.h"
-#include "inplace_fnnls.h"
 #include "KernelHelpers.h"
 
 namespace ecal {

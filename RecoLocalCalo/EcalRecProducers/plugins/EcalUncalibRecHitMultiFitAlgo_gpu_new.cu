@@ -1,4 +1,4 @@
-#include "RecoLocalCalo/EcalRecAlgos/interface/EcalUncalibRecHitMultiFitAlgo_gpu_new.h"
+#include "EcalUncalibRecHitMultiFitAlgo_gpu_new.h"
 
 #include "DataFormats/EcalDigi/interface/EcalDigiCollections.h"
 #include "CondFormats/EcalObjects/interface/EcalPedestals.h"
@@ -13,7 +13,7 @@
 #include <limits>
 
 #include "DataFormats/EcalDigi/interface/EcalDataFrame.h"
-#include "RecoLocalCalo/EcalRecAlgos/interface/Common.h"
+#include "Common.h"
 
 #include "cuda.h"
 

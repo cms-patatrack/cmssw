@@ -1,5 +1,5 @@
-#ifndef RecoLocalCalo_EcalRecAlgos_src_KernelHelpers_h
-#define RecoLocalCalo_EcalRecAlgos_src_KernelHelpers_h
+#ifndef KernelHelpers_h
+#define KernelHelpers_h
 
 #include <cmath>
 #include <limits>
@@ -449,4 +449,4 @@ namespace ecal {
   }  // namespace reconstruction
 }  // namespace ecal
 
-#endif  // RecoLocalCalo_EcalRecAlgos_src_KernelHelpers_h
+#endif // KernelHelpers_h

@@ -1,11 +1,11 @@
-#ifndef RecoLocalCalo_EcalRecAlgos_EcalUncalibRecHitMultiFitAlgo_gpu_new_HH
-#define RecoLocalCalo_EcalRecAlgos_EcalUncalibRecHitMultiFitAlgo_gpu_new_HH
+#ifndef EcalUncalibRecHitMultiFitAlgo_gpu_new_h
+#define EcalUncalibRecHitMultiFitAlgo_gpu_new_h
 
 #include <vector>
 
 #include <cuda.h>
 
-#include "RecoLocalCalo/EcalRecAlgos/interface/DeclsForKernels.h"
+#include "DeclsForKernels.h"
 
 namespace ecal {
   namespace multifit {
@@ -20,4 +20,4 @@ namespace ecal {
   }
 }  // namespace ecal
 
-#endif
+#endif // EcalUncalibRecHitMultiFitAlgo_gpu_new_h
