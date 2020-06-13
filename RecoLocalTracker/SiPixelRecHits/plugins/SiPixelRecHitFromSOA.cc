@@ -110,7 +110,7 @@ void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es
   auto ye = xe + m_nHits;
 
   auto hlp = std::make_unique<HLPstorage>(std::move(m_store32)); // m_store32 is gone!
-
+  iEvent.put(std::move(hlp)); // hlp is gone
 
   edm::ESHandle<TrackerGeometry> hgeom;
   es.get<TrackerDigiGeometryRecord>().get(hgeom);
@@ -279,7 +279,6 @@ void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es
 
   }
   iEvent.put(std::move(output));
-  iEvent.put(std::move(hlp));
 }
 
 DEFINE_FWK_MODULE(SiPixelRecHitFromSOA);
