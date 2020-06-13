@@ -43,4 +43,4 @@ private:
   std::chrono::high_resolution_clock::time_point start_;
 };
 
-#endif // RecoLocalCalo_EcalRecProducers_plugins_Common_h
+#endif  // RecoLocalCalo_EcalRecProducers_plugins_Common_h

@@ -1,5 +1,5 @@
-#ifndef EcalUncalibRecHitMultiFitAlgo_gpu_new_h
-#define EcalUncalibRecHitMultiFitAlgo_gpu_new_h
+#ifndef RecoLocalCalo_EcalRecProducers_plugins_EcalUncalibRecHitMultiFitAlgo_gpu_new_h
+#define RecoLocalCalo_EcalRecProducers_plugins_EcalUncalibRecHitMultiFitAlgo_gpu_new_h
 
 #include <vector>
 
@@ -17,7 +17,7 @@ namespace ecal {
                     ConfigurationParameters const&,
                     cudaStream_t);
 
-  }
+  }  // namespace multifit
 }  // namespace ecal
 
-#endif // EcalUncalibRecHitMultiFitAlgo_gpu_new_h
+#endif  // RecoLocalCalo_EcalRecProducers_plugins_EcalUncalibRecHitMultiFitAlgo_gpu_new_h

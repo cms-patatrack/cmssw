@@ -1,17 +1,17 @@
-#ifndef TimeComputationKernels_h
-#define TimeComputationKernels_h
+#ifndef RecoLocalCalo_EcalRecProducers_plugins_TimeComputationKernels_h
+#define RecoLocalCalo_EcalRecProducers_plugins_TimeComputationKernels_h
 
 #include <iostream>
 #include <limits>
 
-#include "Common.h"
-#include "DeclsForKernels.h"
-#include "EigenMatrixTypes_gpu.h"
+#include <cuda.h>
 
 #include "DataFormats/Math/interface/approx_exp.h"
 #include "DataFormats/Math/interface/approx_log.h"
 
-#include "cuda.h"
+#include "Common.h"
+#include "DeclsForKernels.h"
+#include "EigenMatrixTypes_gpu.h"
 
 //#define DEBUG
 
@@ -179,4 +179,4 @@ namespace ecal {
   }  // namespace multifit
 }  // namespace ecal
 
-#endif // TimeComputationKernels_h
+#endif  // RecoLocalCalo_EcalRecProducers_plugins_TimeComputationKernels_h

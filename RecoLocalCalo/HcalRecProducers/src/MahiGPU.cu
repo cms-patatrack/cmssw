@@ -1,3 +1,5 @@
+#include <Eigen/Dense>
+
 #include "DataFormats/HcalRecHit/interface/HcalSpecialTimes.h"
 
 // nvcc not able to parse this guy (whatever is inlcuded from it)....
@@ -5,7 +7,6 @@
 
 #include "MahiGPU.h"
 
-#include <Eigen/Dense>
 
 #ifdef HCAL_MAHI_GPUDEBUG
 #define DETID_TO_DEBUG 1125647428

@@ -3,12 +3,10 @@
 
 #include <vector>
 
+#include "EventFilter/EcalRawToDigi/interface/DCCRawDataDefinitions.h"
+#include "EventFilter/EcalRawToDigi/interface/ElectronicsMappingGPU.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/HostAllocator.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
-
-#include "EventFilter/EcalRawToDigi/interface/DCCRawDataDefinitions.h"
-
-#include "EventFilter/EcalRawToDigi/interface/ElectronicsMappingGPU.h"
 
 namespace ecal {
   namespace raw {

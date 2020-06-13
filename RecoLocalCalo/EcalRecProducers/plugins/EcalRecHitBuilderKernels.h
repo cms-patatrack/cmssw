@@ -1,17 +1,16 @@
-#ifndef EcalRecHitBuilderKernels_h
-#define EcalRecHitBuilderKernels_h
+#ifndef RecoLocalCalo_EcalRecProducers_plugins_EcalRecHitBuilderKernels_h
+#define RecoLocalCalo_EcalRecProducers_plugins_EcalRecHitBuilderKernels_h
 
 //
 // Builder of ECAL RecHits on GPU
 //
 
-#include "CUDADataFormats/EcalRecHitSoA/interface/EcalUncalibratedRecHit_soa.h"
 #include "CUDADataFormats/EcalRecHitSoA/interface/EcalRecHit_soa.h"
-
-#include "DeclsForKernels.h"
-#include "Common.h"
-
+#include "CUDADataFormats/EcalRecHitSoA/interface/EcalUncalibratedRecHit_soa.h"
 #include "DataFormats/Provenance/interface/Timestamp.h"
+
+#include "Common.h"
+#include "DeclsForKernels.h"
 
 namespace ecal {
   namespace rechit {
@@ -92,4 +91,4 @@ namespace ecal {
 
 }  // namespace ecal
 
-#endif // EcalRecHitBuilderKernels_h
+#endif  // RecoLocalCalo_EcalRecProducers_plugins_EcalRecHitBuilderKernels_h
