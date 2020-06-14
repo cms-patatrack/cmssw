@@ -52,7 +52,7 @@ private:
 SiPixelRecHitFromSOA::SiPixelRecHitFromSOA(const edm::ParameterSet& iConfig)
     : tokenHit_(
           consumes<cms::cuda::Product<TrackingRecHit2DCUDA>>(iConfig.getParameter<edm::InputTag>("pixelRecHitSrc"))),
-      m_clusterLess(iConfig.getParameter<bool>("cluserLess")) {
+      m_clusterLess(iConfig.getParameter<bool>("clusterLess")) {
   if (!m_clusterLess)
     clusterToken_ = consumes<SiPixelClusterCollectionNew>(iConfig.getParameter<edm::InputTag>("src"));
   produces<SiPixelRecHitCollectionNew>();
@@ -64,7 +64,7 @@ void SiPixelRecHitFromSOA::fillDescriptions(edm::ConfigurationDescriptions& desc
   edm::ParameterSetDescription desc;
   desc.add<edm::InputTag>("pixelRecHitSrc", edm::InputTag("siPixelRecHitsCUDAPreSplitting"));
   desc.add<edm::InputTag>("src", edm::InputTag("siPixelClustersPreSplitting"));
-  desc.add<bool>("cluserLess", false);
+  desc.add<bool>("clusterLess", false);
   descriptions.add("siPixelRecHitFromSOA", desc);
 }
 
