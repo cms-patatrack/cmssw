@@ -99,6 +99,7 @@ int soa() {
 
   SoA soa;
   edm::TestHandle<SoA> collH(&soa, edm::ProductID(1, 1));
+  assert(collH.isValid());
   edm::RefProd<SoA> sref(collH);
   assert(sref.isNonnull());
   OmniClusterRef oref(sref,4);
@@ -106,7 +107,7 @@ int soa() {
   assert(oref.index() == 4);
   assert(!oref.isStrip());
   assert(oref.isSoA());
-  assert(oref.isPixel());  // oops yes
+  assert(oref.isPixel());  // oops yes  (intended side effects, will see later)
   assert(oref.subCluster() == 0);
   
 
