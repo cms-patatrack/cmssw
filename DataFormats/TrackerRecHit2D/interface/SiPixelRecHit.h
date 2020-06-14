@@ -37,7 +37,6 @@ public:
     qualWord_ = qual;
   }
 
-
   SiPixelRecHit(const LocalPoint& pos,
                 const LocalError& err,
                 SiPixelRecHitQuality::QualWordType qual,
@@ -46,7 +45,6 @@ public:
       : TrackerSingleRecHit(pos, err, idet, clus) {
     qualWord_ = qual;
   }
-
 
   bool isPixel() const override { return true; }
 

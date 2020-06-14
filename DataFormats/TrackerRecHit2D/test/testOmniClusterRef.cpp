@@ -92,29 +92,24 @@ int pixel() {
 }
 
 namespace {
-  struct SoA{};  
-}
+  struct SoA {};
+}  // namespace
 
 int soa() {
-
   SoA soa;
   edm::TestHandle<SoA> collH(&soa, edm::ProductID(1, 1));
   assert(collH.isValid());
   edm::RefProd<SoA> sref{collH};
   assert(sref.isNonnull());
-  OmniClusterRef oref(sref,4);
+  OmniClusterRef oref(sref, 4);
   assert(oref.isValid());
   assert(oref.index() == 4);
   assert(!oref.isStrip());
   assert(oref.isSoA());
   assert(oref.isPixel());  // oops yes  (intended side effects, will see later)
   assert(oref.subCluster() == 0);
-  
 
   return 0;
 }
 
-
-
-
-int main() { return strip() + pixel()+soa(); }
+int main() { return strip() + pixel() + soa(); }
