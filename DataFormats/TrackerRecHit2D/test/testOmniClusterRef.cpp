@@ -100,7 +100,7 @@ int soa() {
   SoA soa;
   edm::TestHandle<SoA> collH(&soa, edm::ProductID(1, 1));
   assert(collH.isValid());
-  edm::RefProd<SoA> sref(collH);
+  edm::RefProd<SoA> sref{collH};
   assert(sref.isNonnull());
   OmniClusterRef oref(sref,4);
   assert(oref.isValid());

@@ -74,8 +74,8 @@ public:
 
 public:
   // edm Ref interface
-  auto const& refCore() const { return me.toRefCore();}
-
+  edm::RefCore const& refCore() const { return me.toRefCore();}
+  edm::ProductID id() const { return me.id(); }
   unsigned int key() const { return index(); }
 
   unsigned int rawIndex() const { return me.index(); }

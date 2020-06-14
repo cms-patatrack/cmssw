@@ -54,7 +54,7 @@ SiPixelRecHitFromSOA::SiPixelRecHitFromSOA(const edm::ParameterSet& iConfig)
     : tokenHit_(
           consumes<cms::cuda::Product<TrackingRecHit2DCUDA>>(iConfig.getParameter<edm::InputTag>("pixelRecHitSrc"))),
       m_clusterLess(iConfig.getParameter<bool>("cluserLess")) {
-  if (m_clusterLess)
+  if (!m_clusterLess)
      clusterToken_ = consumes<SiPixelClusterCollectionNew>(iConfig.getParameter<edm::InputTag>("src"));
   produces<SiPixelRecHitCollectionNew>();
   produces<HMSstorage>();
@@ -88,8 +88,8 @@ void SiPixelRecHitFromSOA::acquire(edm::Event const& iEvent,
 }
 
 void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es) {
-  // yes a unique ptr of a unique ptr so edm is happy
 
+  // yes a unique ptr of a unique ptr so edm is happy
   constexpr uint32_t MaxHitsInModule = gpuClustering::MaxHitsInModule;
   auto sizeOfHitModuleStart = gpuClustering::MaxNumModules + 1;
   auto hmsp = std::make_unique<uint32_t[]>(sizeOfHitModuleStart);
@@ -110,7 +110,9 @@ void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es
   auto ye = xe + m_nHits;
 
   auto hlp = std::make_unique<HLPstorage>(std::move(m_store32)); // m_store32 is gone!
-  iEvent.put(std::move(hlp)); // hlp is gone
+  auto orphanHandle = iEvent.put(std::move(hlp)); // hlp is gone
+  edm::RefProd<HLPstorage> refProd{orphanHandle};
+  assert(refProd.isNonnull());
 
   edm::ESHandle<TrackerGeometry> hgeom;
   es.get<TrackerDigiGeometryRecord>().get(hgeom);
@@ -169,9 +171,9 @@ void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es
       SiPixelRecHitQuality::QualWordType rqw = 0;
 
       // Create a persistent edm::Ref to the cluster
-      edm::Ref<edmNew::DetSetVector<SiPixelCluster>, SiPixelCluster> cluster; //  = edmNew::makeRefTo(hclusters, &clust);
+      OmniClusterRef notCluster(refProd,ij);
       // Make a RecHit and add it to the DetSet
-      SiPixelRecHit hit(lp, le, rqw, *pixDet, cluster);
+      SiPixelRecHit hit(lp, le, rqw, *pixDet, notCluster);
       //
       // Now save it =================
       recHitsOnDetUnit.push_back(hit);

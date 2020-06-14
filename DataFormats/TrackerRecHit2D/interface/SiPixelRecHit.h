@@ -37,6 +37,17 @@ public:
     qualWord_ = qual;
   }
 
+
+  SiPixelRecHit(const LocalPoint& pos,
+                const LocalError& err,
+                SiPixelRecHitQuality::QualWordType qual,
+                GeomDet const& idet,
+                OmniClusterRef const& clus)
+      : TrackerSingleRecHit(pos, err, idet, clus) {
+    qualWord_ = qual;
+  }
+
+
   bool isPixel() const override { return true; }
 
   SiPixelRecHit* clone() const override { return new SiPixelRecHit(*this); }
