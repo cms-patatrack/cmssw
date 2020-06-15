@@ -86,8 +86,8 @@ void SiPixelRecHitProducer<Producer,Base>::fillDescriptions(edm::ConfigurationDe
 
 
 
-using FromSoA = SiPixelRecHitProducer<edm::stream::EDProducer<edm::ExternalWork>,FromSoABase>;
-using Legacy = SiPixelRecHitProducer<edm::stream::EDProducer<>,LegacyBase>;
-DEFINE_FWK_MODULE(FromSoA);
-DEFINE_FWK_MODULE(Legacy);
+using NotyetSiPixelRecHitFromSOA = SiPixelRecHitProducer<edm::stream::EDProducer<edm::ExternalWork>,FromSoABase>;
+using NotyeSiPixelRecHitConverter = SiPixelRecHitProducer<edm::stream::EDProducer<>,LegacyBase>;
+DEFINE_FWK_MODULE(NotyetSiPixelRecHitFromSOA);
+DEFINE_FWK_MODULE(NotyeSiPixelRecHitConverter);
 
