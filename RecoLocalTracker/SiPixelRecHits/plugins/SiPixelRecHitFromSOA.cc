@@ -87,12 +87,12 @@ void SiPixelRecHitFromSOA::acquire(edm::Event const& iEvent,
 }
 
 void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es) {
-  // yes a unique ptr of a unique ptr so edm is happy
+
   constexpr uint32_t MaxHitsInModule = gpuClustering::MaxHitsInModule;
-  auto sizeOfHitModuleStart = gpuClustering::MaxNumModules + 1;
-  auto hmsp = std::make_unique<uint32_t[]>(sizeOfHitModuleStart);
-  std::copy(m_hitsModuleStart.get(), m_hitsModuleStart.get() + sizeOfHitModuleStart, hmsp.get());
-  auto hms = std::make_unique<HMSstorage>(std::move(hmsp));  // hmsp is gone
+
+  // yes a unique ptr of a unique ptr so edm is happy
+  auto hitsModuleStart = m_hitsModuleStart.get();
+  auto hms = std::make_unique<HMSstorage>(std::move(m_hitsModuleStart));  // m_hitsModuleStart is gone
   iEvent.put(std::move(hms));                                // hms is gone!
 
   auto output = std::make_unique<SiPixelRecHitCollectionNew>();
@@ -142,8 +142,8 @@ void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es
       assert(pixDet->index() == gind);
       auto detid = pixDet->geographicalId();
       SiPixelRecHitCollectionNew::FastFiller recHitsOnDetUnit(*output, detid);
-      int fc = m_hitsModuleStart[gind];
-      int lc = m_hitsModuleStart[gind + 1];
+      int fc = hitsModuleStart[gind];
+      int lc = hitsModuleStart[gind + 1];
       int nhits = lc - fc;
       if (0 == nhits)
         continue;
@@ -198,8 +198,8 @@ void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es
       const PixelGeomDetUnit* pixDet = dynamic_cast<const PixelGeomDetUnit*>(genericDet);
       assert(pixDet);
       SiPixelRecHitCollectionNew::FastFiller recHitsOnDetUnit(*output, detid);
-      auto fc = m_hitsModuleStart[gind];
-      auto lc = m_hitsModuleStart[gind + 1];
+      auto fc = hitsModuleStart[gind];
+      auto lc = hitsModuleStart[gind + 1];
       auto nhits = lc - fc;
 
       assert(lc > fc);
