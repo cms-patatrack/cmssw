@@ -49,10 +49,10 @@ MeasurementTrackerEventProducer::MeasurementTrackerEventProducer(const edm::Para
           iConfig.getParameter<edm::InputTag>("skipClusters"));
   }
   if (!iConfig.getParameter<std::string>("pixelClusterProducer").empty()) {
-    thePixelClusterLabel = consumes<edmNew::DetSetVector<SiPixelCluster>>(
+    thePixelClusterLabel = consumes<SiPixelRecHitCollection>(
         edm::InputTag(iConfig.getParameter<std::string>("pixelClusterProducer")));
     if (selfUpdateSkipClusters_)
-      thePixelClusterMask = consumes<edm::ContainerMask<edmNew::DetSetVector<SiPixelCluster>>>(
+      thePixelClusterMask = consumes<edm::ContainerMask<SiPixelRecHitCollection>>(
           iConfig.getParameter<edm::InputTag>("skipClusters"));
   }
   if (!iConfig.getParameter<std::string>("Phase2TrackerCluster1DProducer").empty()) {
@@ -219,9 +219,9 @@ void MeasurementTrackerEventProducer::updatePixels(const edm::Event& event,
       thePxDets.setActiveThisEvent(false);
     }
   } else {
-    edm::Handle<edmNew::DetSetVector<SiPixelCluster>>& pixelClusters = thePxDets.handle();
+    edm::Handle<SiPixelRecHitCollection>& pixelClusters = thePxDets.handle();
     if (event.getByToken(thePixelClusterLabel, pixelClusters)) {
-      const edmNew::DetSetVector<SiPixelCluster>* pixelCollection = pixelClusters.product();
+      auto const * pixelCollection = pixelClusters.product();
 
       if (switchOffPixelsIfEmpty_ && pixelCollection->empty()) {
         thePxDets.setActiveThisEvent(false);
@@ -231,7 +231,7 @@ void MeasurementTrackerEventProducer::updatePixels(const edm::Event& event,
         std::fill(pixelClustersToSkip.begin(), pixelClustersToSkip.end(), false);
 
         if (selfUpdateSkipClusters_) {
-          edm::Handle<edm::ContainerMask<edmNew::DetSetVector<SiPixelCluster>>> pixelClusterMask;
+          edm::Handle<edm::ContainerMask<SiPixelRecHitCollection>> pixelClusterMask;
           //and get the collection of pixel ref to skip
           event.getByToken(thePixelClusterMask, pixelClusterMask);
           LogDebug("MeasurementTracker") << "getting pxl refs to skip";
@@ -247,11 +247,11 @@ void MeasurementTrackerEventProducer::updatePixels(const edm::Event& event,
 
         // FIXME: should check if lower_bound is better
         int i = 0, endDet = thePxDets.size();
-        for (edmNew::DetSetVector<SiPixelCluster>::const_iterator it = pixelCollection->begin(),
+        for (auto it = pixelCollection->begin(),
                                                                   ed = pixelCollection->end();
              it != ed;
              ++it) {
-          edmNew::DetSet<SiPixelCluster> set(*it);
+          edmNew::DetSet<SiPixelRecHit> set(*it);
           unsigned int id = set.id();
           while (id != thePxDets.id(i)) {
             ++i;
