@@ -42,6 +42,9 @@ public:
   cms::cuda::host::unique_ptr<uint16_t[]> detIndexToHostAsync(cudaStream_t stream) const;
   cms::cuda::host::unique_ptr<uint32_t[]> hitsModuleStartToHostAsync(cudaStream_t stream) const;
 
+  // needs specialization for Host
+  void copyFromGPU(TrackingRecHit2DHeterogeneous<cms::cudacompat::GPUTraits> const * input, cudaStream_t stream);
+
 private:
   static constexpr uint32_t n16 = 4;
   static constexpr uint32_t n32 = 9;
@@ -65,8 +68,16 @@ private:
   int16_t* m_iphi;
 };
 
+
+using TrackingRecHit2DGPU = TrackingRecHit2DHeterogeneous<cms::cudacompat::GPUTraits>;
+using TrackingRecHit2DCUDA = TrackingRecHit2DHeterogeneous<cms::cudacompat::GPUTraits>;
+using TrackingRecHit2DCPU = TrackingRecHit2DHeterogeneous<cms::cudacompat::CPUTraits>;
+using TrackingRecHit2DHost = TrackingRecHit2DHeterogeneous<cms::cudacompat::HostTraits>;
+
+
 #include "HeterogeneousCore/CUDAUtilities/interface/copyAsync.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
+
 
 template <typename Traits>
 TrackingRecHit2DHeterogeneous<Traits>::TrackingRecHit2DHeterogeneous(uint32_t nHits,
@@ -111,8 +122,8 @@ TrackingRecHit2DHeterogeneous<Traits>::TrackingRecHit2DHeterogeneous(uint32_t nH
         constexpr
 #endif
           (std::is_same<Traits, cms::cudacompat::HostTraits>::value) {
-      assert(input);
-      m_store32 = input->localCoordToHostAsync(stream);
+// it has to compile for ALL cases
+    copyFromGPU(input, stream);
   } else {
     assert(input == nullptr);
     m_store16 = Traits::template make_unique<uint16_t[]>(nHits * n16, stream);
@@ -165,10 +176,5 @@ TrackingRecHit2DHeterogeneous<Traits>::TrackingRecHit2DHeterogeneous(uint32_t nH
     m_view.reset(view.release());  // NOLINT: std::move() breaks CUDA version
   }
 }
-
-using TrackingRecHit2DGPU = TrackingRecHit2DHeterogeneous<cms::cudacompat::GPUTraits>;
-using TrackingRecHit2DCUDA = TrackingRecHit2DHeterogeneous<cms::cudacompat::GPUTraits>;
-using TrackingRecHit2DCPU = TrackingRecHit2DHeterogeneous<cms::cudacompat::CPUTraits>;
-using TrackingRecHit2DHost = TrackingRecHit2DHeterogeneous<cms::cudacompat::HostTraits>;
 
 #endif  // CUDADataFormats_TrackingRecHit_interface_TrackingRecHit2DHeterogeneous_h

@@ -249,10 +249,16 @@ namespace cms {
         //
         // Now save it =================
         recHitsOnDetUnit.push_back(hit);
+        std::push_heap(recHitsOnDetUnit.begin(), recHitsOnDetUnit.end(), [](auto const& h1, auto const& h2) {
+          return h1.localPosition().x() < h2.localPosition().x();
+        });
         // =============================
 
         // std::cout << "SiPixelRecHitConverterVI " << numberOfClusters << ' '<< lp << " " << le << std::endl;
       }  //  <-- End loop on Clusters
+      std::sort_heap(recHitsOnDetUnit.begin(), recHitsOnDetUnit.end(), [](auto const& h1, auto const& h2) {
+        return h1.localPosition().x() < h2.localPosition().x();
+      });
 
       //  LogDebug("SiPixelRecHitConverter")
       //std::cout << "SiPixelRecHitConverterVI "
