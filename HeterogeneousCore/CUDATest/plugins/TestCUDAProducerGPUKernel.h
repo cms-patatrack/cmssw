@@ -5,6 +5,7 @@
 
 #include <cuda_runtime.h>
 
+#include "HeterogeneousCore/CUDACore/interface/ScopedContextBase.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/device_unique_ptr.h"
 
 /**
@@ -24,14 +25,14 @@ public:
   ~TestCUDAProducerGPUKernel() = default;
 
   // returns (owning) pointer to device memory
-  cms::cuda::device::unique_ptr<float[]> runAlgo(const std::string& label, cudaStream_t stream) const {
-    return runAlgo(label, nullptr, stream);
+  cms::cuda::device::unique_ptr<float[]> runAlgo(const std::string& label, cms::cuda::ScopedContextBase& ctx) const {
+    return runAlgo(label, nullptr, ctx);
   }
   cms::cuda::device::unique_ptr<float[]> runAlgo(const std::string& label,
                                                  const float* d_input,
-                                                 cudaStream_t stream) const;
+                                                 cms::cuda::ScopedContextBase& ctx) const;
 
-  void runSimpleAlgo(float* d_data, cudaStream_t stream) const;
+  void runSimpleAlgo(float* d_data, cms::cuda::ScopedContextBase& ctx) const;
 };
 
 #endif

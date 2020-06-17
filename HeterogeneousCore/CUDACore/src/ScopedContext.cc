@@ -3,10 +3,7 @@
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "FWCore/Utilities/interface/Exception.h"
-#include "HeterogeneousCore/CUDAUtilities/interface/StreamCache.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
-
-#include "chooseDevice.h"
 
 namespace {
   struct CallbackData {
@@ -38,27 +35,6 @@ namespace {
 
 namespace cms::cuda {
   namespace impl {
-    ScopedContextBase::ScopedContextBase(edm::StreamID streamID) : currentDevice_(chooseDevice(streamID)) {
-      cudaCheck(cudaSetDevice(currentDevice_));
-      stream_ = getStreamCache().get();
-    }
-
-    ScopedContextBase::ScopedContextBase(const ProductBase& data) : currentDevice_(data.device()) {
-      cudaCheck(cudaSetDevice(currentDevice_));
-      if (data.mayReuseStream()) {
-        stream_ = data.streamPtr();
-      } else {
-        stream_ = getStreamCache().get();
-      }
-    }
-
-    ScopedContextBase::ScopedContextBase(int device, SharedStreamPtr stream)
-        : currentDevice_(device), stream_(std::move(stream)) {
-      cudaCheck(cudaSetDevice(currentDevice_));
-    }
-
-    ////////////////////
-
     void ScopedContextGetterBase::synchronizeStreams(int dataDevice,
                                                      cudaStream_t dataStream,
                                                      bool available,

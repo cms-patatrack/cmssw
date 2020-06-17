@@ -79,7 +79,7 @@ void TestCUDAProducerGPUEWTask::acquire(edm::Event const& iEvent,
 
   cms::cudatest::Thing const& input = ctx.get(in);
 
-  devicePtr_ = gpuAlgo_.runAlgo(label_, input.get(), ctx.stream());
+  devicePtr_ = gpuAlgo_.runAlgo(label_, input.get(), ctx);
   // Mimick the need to transfer some of the GPU data back to CPU to
   // be used for something within this module, or to be put in the
   // event.
@@ -107,7 +107,7 @@ void TestCUDAProducerGPUEWTask::addSimpleWork(edm::EventNumber_t eventID,
 
     ctx.pushNextTask(
         [eventID, streamID, this](cms::cuda::ScopedContextTask ctx) { addSimpleWork(eventID, streamID, ctx); });
-    gpuAlgo_.runSimpleAlgo(devicePtr_.get(), ctx.stream());
+    gpuAlgo_.runSimpleAlgo(devicePtr_.get(), ctx);
     edm::LogVerbatim("TestCUDAProducerGPUEWTask")
         << label_ << " TestCUDAProducerGPUEWTask::addSimpleWork end event " << eventID << " stream " << streamID;
   } else {

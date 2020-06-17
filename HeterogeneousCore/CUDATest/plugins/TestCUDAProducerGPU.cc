@@ -49,7 +49,7 @@ void TestCUDAProducerGPU::produce(edm::StreamID streamID, edm::Event& iEvent, ed
   cms::cuda::ScopedContextProduce ctx{in};
   cms::cudatest::Thing const& input = ctx.get(in);
 
-  ctx.emplace(iEvent, dstToken_, cms::cudatest::Thing{gpuAlgo_.runAlgo(label_, input.get(), ctx.stream())});
+  ctx.emplace(iEvent, dstToken_, cms::cudatest::Thing{gpuAlgo_.runAlgo(label_, input.get(), ctx)});
 
   edm::LogVerbatim("TestCUDAProducerGPU")
       << label_ << " TestCUDAProducerGPU::produce end event " << iEvent.id().event() << " stream " << iEvent.streamID();

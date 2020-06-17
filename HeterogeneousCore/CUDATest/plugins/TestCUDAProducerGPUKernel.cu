@@ -64,7 +64,8 @@ namespace {
 
 cms::cuda::device::unique_ptr<float[]> TestCUDAProducerGPUKernel::runAlgo(const std::string &label,
                                                                           const float *d_input,
-                                                                          cudaStream_t stream) const {
+                                                                          cms::cuda::ScopedContextBase &ctx) const {
+  auto stream = ctx.stream();
   // First make the sanity check
   if (d_input != nullptr) {
     auto h_check = std::make_unique<float[]>(NUM_VALUES);
@@ -86,8 +87,8 @@ cms::cuda::device::unique_ptr<float[]> TestCUDAProducerGPUKernel::runAlgo(const 
     h_b[i] = i * i;
   }
 
-  auto d_a = cms::cuda::make_device_unique<float[]>(NUM_VALUES, stream);
-  auto d_b = cms::cuda::make_device_unique<float[]>(NUM_VALUES, stream);
+  auto d_a = ctx.make_device_unique<float[]>(NUM_VALUES);
+  auto d_b = ctx.make_device_unique<float[]>(NUM_VALUES);
 
   cudaCheck(cudaMemcpyAsync(d_a.get(), h_a.get(), NUM_VALUES * sizeof(float), cudaMemcpyHostToDevice, stream));
   cudaCheck(cudaMemcpyAsync(d_b.get(), h_b.get(), NUM_VALUES * sizeof(float), cudaMemcpyHostToDevice, stream));
@@ -95,15 +96,15 @@ cms::cuda::device::unique_ptr<float[]> TestCUDAProducerGPUKernel::runAlgo(const 
   int threadsPerBlock{32};
   int blocksPerGrid = (NUM_VALUES + threadsPerBlock - 1) / threadsPerBlock;
 
-  auto d_c = cms::cuda::make_device_unique<float[]>(NUM_VALUES, stream);
+  auto d_c = ctx.make_device_unique<float[]>(NUM_VALUES);
   auto current_device = cms::cuda::currentDevice();
   cms::cuda::LogVerbatim("TestHeterogeneousEDProducerGPU")
       << "  " << label << " GPU launching kernels device " << current_device << " CUDA stream " << stream;
   vectorAdd<<<blocksPerGrid, threadsPerBlock, 0, stream>>>(d_a.get(), d_b.get(), d_c.get(), NUM_VALUES);
 
-  auto d_ma = cms::cuda::make_device_unique<float[]>(NUM_VALUES * NUM_VALUES, stream);
-  auto d_mb = cms::cuda::make_device_unique<float[]>(NUM_VALUES * NUM_VALUES, stream);
-  auto d_mc = cms::cuda::make_device_unique<float[]>(NUM_VALUES * NUM_VALUES, stream);
+  auto d_ma = ctx.make_device_unique<float[]>(NUM_VALUES * NUM_VALUES);
+  auto d_mb = ctx.make_device_unique<float[]>(NUM_VALUES * NUM_VALUES);
+  auto d_mc = ctx.make_device_unique<float[]>(NUM_VALUES * NUM_VALUES);
   dim3 threadsPerBlock3{NUM_VALUES, NUM_VALUES};
   dim3 blocksPerGrid3{1, 1};
   if (NUM_VALUES * NUM_VALUES > 32) {
@@ -124,8 +125,8 @@ cms::cuda::device::unique_ptr<float[]> TestCUDAProducerGPUKernel::runAlgo(const 
   return d_a;
 }
 
-void TestCUDAProducerGPUKernel::runSimpleAlgo(float *d_data, cudaStream_t stream) const {
+void TestCUDAProducerGPUKernel::runSimpleAlgo(float *d_data, cms::cuda::ScopedContextBase &ctx) const {
   int threadsPerBlock{32};
   int blocksPerGrid = (NUM_VALUES + threadsPerBlock - 1) / threadsPerBlock;
-  vectorAddConstant<<<blocksPerGrid, threadsPerBlock, 0, stream>>>(d_data, 1.0f, NUM_VALUES);
+  vectorAddConstant<<<blocksPerGrid, threadsPerBlock, 0, ctx.stream()>>>(d_data, 1.0f, NUM_VALUES);
 }

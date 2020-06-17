@@ -10,6 +10,7 @@
 #include "FWCore/Utilities/interface/EDPutToken.h"
 #include "FWCore/Utilities/interface/StreamID.h"
 #include "HeterogeneousCore/CUDACore/interface/ContextState.h"
+#include "HeterogeneousCore/CUDACore/interface/ScopedContextBase.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/EventCache.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/SharedEventPtr.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/SharedStreamPtr.h"
@@ -20,39 +21,8 @@ namespace cms {
   }
 
   namespace cuda {
-
     namespace impl {
-      // This class is intended to be derived by other ScopedContext*, not for general use
-      class ScopedContextBase {
-      public:
-        int device() const { return currentDevice_; }
-
-        // cudaStream_t is a pointer to a thread-safe object, for which a
-        // mutable access is needed even if the ScopedContext itself
-        // would be const. Therefore it is ok to return a non-const
-        // pointer from a const method here.
-        cudaStream_t stream() const { return stream_.get(); }
-        const SharedStreamPtr& streamPtr() const { return stream_; }
-
-      protected:
-        // The constructors set the current device, but the device
-        // is not set back to the previous value at the destructor. This
-        // should be sufficient (and tiny bit faster) as all CUDA API
-        // functions relying on the current device should be called from
-        // the scope where this context is. The current device doesn't
-        // really matter between modules (or across TBB tasks).
-        explicit ScopedContextBase(edm::StreamID streamID);
-
-        explicit ScopedContextBase(const ProductBase& data);
-
-        explicit ScopedContextBase(int device, SharedStreamPtr stream);
-
-      private:
-        int currentDevice_;
-        SharedStreamPtr stream_;
-      };
-
-      class ScopedContextGetterBase : public ScopedContextBase {
+      class ScopedContextGetterBase : public cms::cuda::ScopedContextBase {
       public:
         template <typename T>
         const T& get(const Product<T>& data) {
@@ -189,7 +159,7 @@ namespace cms {
      * - calling edm::WaitingTaskWithArenaHolder::doneWaiting() when necessary
      * and enforce that those get done in a proper way in RAII fashion.
      */
-    class ScopedContextTask : public impl::ScopedContextBase {
+    class ScopedContextTask : public ScopedContextBase {
     public:
       /// Constructor to re-use the CUDA stream of acquire() (ExternalWork module)
       explicit ScopedContextTask(ContextState const* state, edm::WaitingTaskWithArenaHolder waitingTaskHolder)

@@ -69,7 +69,7 @@ void TestCUDAProducerGPUEW::acquire(edm::Event const& iEvent,
   cms::cuda::ScopedContextAcquire ctx{in, std::move(waitingTaskHolder), ctxState_};
   cms::cudatest::Thing const& input = ctx.get(in);
 
-  devicePtr_ = gpuAlgo_.runAlgo(label_, input.get(), ctx.stream());
+  devicePtr_ = gpuAlgo_.runAlgo(label_, input.get(), ctx);
   // Mimick the need to transfer some of the GPU data back to CPU to
   // be used for something within this module, or to be put in the
   // event.

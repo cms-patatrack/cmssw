@@ -9,9 +9,7 @@
 
 namespace cms {
   namespace cuda {
-    namespace impl {
-      class ScopedContextBase;
-    }
+    class ScopedContextBase;
 
     /**
      * Base class for all instantiations of CUDA<T> to hold the
@@ -59,7 +57,7 @@ namespace cms {
           : stream_{std::move(stream)}, event_{std::move(event)}, device_{device} {}
 
     private:
-      friend class impl::ScopedContextBase;
+      friend class ScopedContextBase;
       friend class ScopedContextProduce;
 
       // The following function is intended to be used only from ScopedContext
