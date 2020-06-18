@@ -64,7 +64,7 @@ namespace {
     edm::ParameterSetDescription desc;
     desc.add<edm::InputTag>("trajectories", edm::InputTag());
     desc.add<edm::InputTag>("trackClassifier", edm::InputTag("", "QualityMasks"));
-    desc.add<edm::InputTag>("pixelClusters", edm::InputTag("siPixelClusters"));
+    desc.add<edm::InputTag>("pixelClusters", edm::InputTag("siPixelRecHits"));
     desc.add<edm::InputTag>("stripClusters", edm::InputTag("siStripClusters"));
     desc.add<edm::InputTag>("oldClusterRemovalInfo", edm::InputTag());
 
@@ -94,7 +94,7 @@ namespace {
           << "Configuration Error: TrackClusterRemover used without input cluster collections";
     if (!pixelClusters.label().empty()) {
       pixelClusters_ = consumes<SiPixelRecHitCollection>(pixelClusters);
-      produces<edm::ContainerMask<edmNew::DetSetVector<SiPixelCluster>>>();
+      produces<edm::ContainerMask<edmNew::DetSetVector<SiPixelRecHit>>>();
     }
     if (!stripClusters.label().empty()) {
       stripClusters_ = consumes<edmNew::DetSetVector<SiStripCluster>>(stripClusters);

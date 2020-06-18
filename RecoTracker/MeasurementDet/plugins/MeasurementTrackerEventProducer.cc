@@ -69,7 +69,7 @@ void MeasurementTrackerEventProducer::fillDescriptions(edm::ConfigurationDescrip
 
   desc.add<std::string>("measurementTracker", "");
   desc.add<edm::InputTag>("skipClusters", edm::InputTag());
-  desc.add<std::string>("pixelClusterProducer", "siPixelClusters");
+  desc.add<std::string>("pixelClusterProducer", "siPixelRecHits");
   desc.add<std::string>("stripClusterProducer", "siStripClusters");
   desc.add<std::string>("Phase2TrackerCluster1DProducer", "");
 
