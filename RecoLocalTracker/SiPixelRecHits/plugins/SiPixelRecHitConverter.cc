@@ -241,11 +241,17 @@ namespace cms {
         LocalError le(std::get<1>(tuple));
         SiPixelRecHitQuality::QualWordType rqw(std::get<2>(tuple));
         // Create a persistent edm::Ref to the cluster
-        edm::Ref<edmNew::DetSetVector<SiPixelCluster>, SiPixelCluster> cluster =
-            edmNew::makeRefTo(inputhandle, clustIt);
+        // edm::Ref<edmNew::DetSetVector<SiPixelCluster>, SiPixelCluster> cluster =
+        //     edmNew::makeRefTo(inputhandle, clustIt);
         // Make a RecHit and add it to the DetSet
-        // old : recHitsOnDetUnit.push_back( new SiPixelRecHit( lp, le, detIdObject, &*clustIt) );
-        SiPixelRecHit hit(lp, le, rqw, *genericDet, cluster);
+        //SiPixelRecHit hit(lp, le, rqw, *genericDet, cluster);
+
+        // for test 
+        edm::RefProd<edmNew::DetSetVector<SiPixelCluster>> refProd{inputhandle};
+        assert(refProd.isNonnull());
+        OmniClusterRef notCluster(refProd, numberOfClusters-1);
+        SiPixelRecHit hit(lp, le, rqw, *genericDet, notCluster);
+
         //
         // Now save it =================
         recHitsOnDetUnit.push_back(hit);

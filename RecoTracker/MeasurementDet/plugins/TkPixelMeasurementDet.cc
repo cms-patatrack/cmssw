@@ -136,9 +136,12 @@ TkPixelMeasurementDet::RecHitContainer TkPixelMeasurementDet::compHits(const Tra
       continue;
 
     if (data.pixelClustersToSkip().empty() or (not data.pixelClustersToSkip()[index])) {
-      //FixME add check and clone for clusterless
-      SiPixelClusterRef cluster = ci->cluster();
-      result.push_back(buildRecHit(cluster, ts.localParameters()));
+      if (ci-> canImproveWithTrack()) {
+        SiPixelClusterRef cluster = ci->cluster();
+        result.push_back( buildRecHit(cluster, ts.localParameters()));
+      } else {
+        result.push_back(std::make_shared<SiPixelRecHit>(*ci));
+      }
     } else {
       LogDebug("TkPixelMeasurementDet") << "skipping this cluster from last iteration on "
                                         << fastGeomDet().geographicalId().rawId() << " key: " << index;
