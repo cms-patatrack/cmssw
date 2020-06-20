@@ -62,11 +62,15 @@ public:
   FTLCluster const& mtdCluster() const { return *ClusterMTDRef(me.toRefCore(), index()); }
 
   bool operator==(OmniClusterRef const& lh) const {
-    return rawIndex() == lh.rawIndex();  // in principle this is enough!
+    return (rawIndex()| kIsSoA)  == (lh.rawIndex()| kIsSoA);  // in principle this is enough!
   }
 
   bool operator<(OmniClusterRef const& lh) const {
-    return rawIndex() < lh.rawIndex();  // in principle this is enough!
+    return (rawIndex()| kIsSoA) < (lh.rawIndex()| kIsSoA);  // in principle this is enough!
+  }
+
+  bool operator>(OmniClusterRef const& lh) const {
+    return (rawIndex()| kIsSoA) > (lh.rawIndex()| kIsSoA);  // in principle this is enough!
   }
 
 public:

@@ -77,12 +77,12 @@ public:
   void checkMappedProductID(const edm::ProductID& id) const;
 
 private:
-  static bool compare(const value_type& i, const value_type& j) { return i.first.rawIndex() > j.first.rawIndex(); }
+  static bool compare(const value_type& i, const value_type& j) { return i.first > j.first; }
 
   static bool compareSort(const value_type& i, const value_type& j) {
     // For sorting compare also TrackingParticle keys in order to
     // remove duplicate matches
-    return compare(i, j) || (i.first.rawIndex() == j.first.rawIndex() && i.second.key() > j.second.key());
+    return compare(i, j) || (i.first == j.first && i.second.key() > j.second.key());
   }
 
   map_type map_;
