@@ -38,9 +38,12 @@ public:
       : me(ref.refCore(), (ref.isNonnull() ? (ref.key() | kIsPhase2) | (subClus << subClusShift) : kInvalid)) {}
   explicit OmniClusterRef(ClusterMTDRef const& ref)
       : me(ref.refCore(), (ref.isNonnull() ? (ref.key() | kIsTiming) : kInvalid)) {}
+
+  explicit OmniClusterRef(edm::RefCore const& ref, int index)
+      : me(ref, (ref.isNonnull() ? (index | kIsSoA) : kInvalid)) {}
   template <typename Prod>
   explicit OmniClusterRef(edm::RefProd<Prod> const& ref, int index)
-      : me(ref.refCore(), (ref.isNonnull() ? (index | kIsSoA) : kInvalid)) {}
+      : OmniClusterRef(ref.refCore(), index){}
 
   ClusterPixelRef cluster_pixel() const {
     return (isPixel() && isValid()) ? ClusterPixelRef(me.toRefCore(), index()) : ClusterPixelRef();

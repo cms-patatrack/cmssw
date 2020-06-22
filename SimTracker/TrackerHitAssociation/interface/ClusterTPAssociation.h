@@ -28,8 +28,8 @@ public:
   using range = std::pair<const_iterator, const_iterator>;
 
   ClusterTPAssociation() {}
-  explicit ClusterTPAssociation(const edm::HandleBase& mappedHandle) : ClusterTPAssociation(mappedHandle.id()) {}
-  explicit ClusterTPAssociation(const edm::ProductID& mappedProductId) : mappedProductId_(mappedProductId) {}
+  explicit ClusterTPAssociation(const edm::HandleBase& mappedHandle,checkProductId=false) : ClusterTPAssociation(mappedHandle.id()),checkProductId_)checkProductId) {}
+  explicit ClusterTPAssociation(const edm::ProductID& mappedProductId,checkProductId=false) : mappedProductId_(mappedProductId),checkProductId_(checkProductId) {}
 
   void addKeyID(edm::ProductID id) {
     auto foundKeyID = std::find(std::begin(keyProductIDs_), std::end(keyProductIDs_), id);
@@ -39,8 +39,10 @@ public:
   }
 
   void emplace_back(const OmniClusterRef& cluster, const TrackingParticleRef& tp) {
-    checkMappedProductID(tp);
-    checkKeyProductID(cluster.id());
+    if(checkProductId_) {
+      checkMappedProductID(tp);
+      checkKeyProductID(cluster.id());
+    }
     map_.emplace_back(cluster, tp);
   }
   void sortAndUnique() {
@@ -63,7 +65,7 @@ public:
   const_iterator cend() const { return map_.end(); }
 
   range equal_range(const OmniClusterRef& key) const {
-    checkKeyProductID(key);
+    if(checkProductId_) checkKeyProductID(key);
     return std::equal_range(map_.begin(), map_.end(), value_type(key, TrackingParticleRef()), compare);
   }
 
@@ -88,6 +90,9 @@ private:
   map_type map_;
   edm::VecArray<edm::ProductID, 2> keyProductIDs_;
   edm::ProductID mappedProductId_;
+
+  bool checkProductId_;
+
 };
 
 #endif
