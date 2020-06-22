@@ -250,13 +250,15 @@ namespace cms {
         // Make a RecHit and add it to the DetSet
         //SiPixelRecHit hit(lp, le, rqw, *genericDet, cluster);
 
+/*
         // for test 
         edm::RefProd<edmNew::DetSetVector<SiPixelCluster>> refProd{inputhandle};
         assert(refProd.isNonnull());
         OmniClusterRef notCluster(refProd, cluster.key());
 
-        // OmniClusterRef notCluster(refProdHLP,numberOfClusters-1);
+        // OmniClusterRef notCluster(refProdHLP,hitsModuleStart[genericDet->index()]+cluster->originalId());
         SiPixelRecHit hit(lp, le, rqw, *genericDet, notCluster);
+*/
 
         //
         // Now save it =================

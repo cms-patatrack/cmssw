@@ -99,7 +99,7 @@ void ClusterTPAssociationProducer::fillDescriptions(edm::ConfigurationDescriptio
   desc.add<edm::InputTag>("phase2OTClusterSrc", edm::InputTag("siPhase2Clusters"));
   desc.add<edm::InputTag>("trackingParticleSrc", edm::InputTag("mix", "MergedTrackTruth"));
   desc.add<edm::InputTag>("pixelRecHitLegacySrc", edm::InputTag("siPixelRecHitsLegacyPreSplitting"));
-  desc.add<bool>("hitsInSoA",true); // false);
+  desc.add<bool>("hitsInSoA",false);
   descriptions.add("tpClusterProducerDefault", desc);
 }
 

@@ -28,8 +28,8 @@ public:
   using range = std::pair<const_iterator, const_iterator>;
 
   ClusterTPAssociation() {}
-  explicit ClusterTPAssociation(const edm::HandleBase& mappedHandle,checkProductId=false) : ClusterTPAssociation(mappedHandle.id()),checkProductId_)checkProductId) {}
-  explicit ClusterTPAssociation(const edm::ProductID& mappedProductId,checkProductId=false) : mappedProductId_(mappedProductId),checkProductId_(checkProductId) {}
+  explicit ClusterTPAssociation(const edm::HandleBase& mappedHandle,bool checkProductId=false) : ClusterTPAssociation(mappedHandle.id(),checkProductId) {}
+  explicit ClusterTPAssociation(const edm::ProductID& mappedProductId,bool checkProductId=false) : mappedProductId_(mappedProductId),checkProductId_(checkProductId) {}
 
   void addKeyID(edm::ProductID id) {
     auto foundKeyID = std::find(std::begin(keyProductIDs_), std::end(keyProductIDs_), id);
