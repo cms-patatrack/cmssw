@@ -27,13 +27,13 @@ namespace {
     void produce(edm::Event& iEvent, const edm::EventSetup& iSetup) override;
 
   private:
-    using PixelMaskContainer = edm::ContainerMask<edmNew::DetSetVector<SiPixelCluster>>;
+    using PixelMaskContainer = edm::ContainerMask<edmNew::DetSetVector<SiPixelRecHit>>;
     using StripMaskContainer = edm::ContainerMask<edmNew::DetSetVector<SiStripCluster>>;
 
     bool mergeOld_;
     float minGoodStripCharge_;
 
-    edm::EDGetTokenT<edmNew::DetSetVector<SiPixelCluster>> pixelClusters_;
+    edm::EDGetTokenT<edmNew::DetSetVector<SiPixelRecHit>> pixelClusters_;
     edm::EDGetTokenT<edmNew::DetSetVector<SiStripCluster>> stripClusters_;
 
     edm::EDGetTokenT<PixelMaskContainer> oldPxlMaskToken_;
@@ -42,11 +42,11 @@ namespace {
 
   ClusterChargeMasker::ClusterChargeMasker(const edm::ParameterSet& iConfig)
       : mergeOld_(iConfig.exists("oldClusterRemovalInfo")), minGoodStripCharge_(clusterChargeCut(iConfig)) {
-    produces<edm::ContainerMask<edmNew::DetSetVector<SiPixelCluster>>>();
+    produces<edm::ContainerMask<edmNew::DetSetVector<SiPixelRecHit>>>();
     produces<edm::ContainerMask<edmNew::DetSetVector<SiStripCluster>>>();
 
     pixelClusters_ =
-        consumes<edmNew::DetSetVector<SiPixelCluster>>(iConfig.getParameter<edm::InputTag>("pixelClusters"));
+        consumes<edmNew::DetSetVector<SiPixelRecHit>>(iConfig.getParameter<edm::InputTag>("pixelClusters"));
     stripClusters_ =
         consumes<edmNew::DetSetVector<SiStripCluster>>(iConfig.getParameter<edm::InputTag>("stripClusters"));
 
@@ -57,7 +57,7 @@ namespace {
   }
 
   void ClusterChargeMasker::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
-    edm::Handle<edmNew::DetSetVector<SiPixelCluster>> pixelClusters;
+    edm::Handle<edmNew::DetSetVector<SiPixelRecHit>> pixelClusters;
     iEvent.getByToken(pixelClusters_, pixelClusters);
     edm::Handle<edmNew::DetSetVector<SiStripCluster>> stripClusters;
     iEvent.getByToken(stripClusters_, stripClusters);
@@ -104,7 +104,7 @@ namespace {
 
     LogDebug("ClusterChargeMasker") << "total pxl to skip: "
                                     << std::count(collectedPixels.begin(), collectedPixels.end(), true);
-    iEvent.put(std::make_unique<PixelMaskContainer>(edm::RefProd<edmNew::DetSetVector<SiPixelCluster>>(pixelClusters),
+    iEvent.put(std::make_unique<PixelMaskContainer>(edm::RefProd<edmNew::DetSetVector<SiPixelRecHit>>(pixelClusters),
                                                     collectedPixels));
   }
 

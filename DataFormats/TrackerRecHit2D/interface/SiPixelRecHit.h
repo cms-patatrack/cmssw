@@ -37,6 +37,15 @@ public:
     qualWord_ = qual;
   }
 
+  SiPixelRecHit(const LocalPoint& pos,
+                const LocalError& err,
+                SiPixelRecHitQuality::QualWordType qual,
+                GeomDet const& idet,
+                OmniClusterRef const& clus)
+      : TrackerSingleRecHit(pos, err, idet, clus) {
+    qualWord_ = qual;
+  }
+
   bool isPixel() const override { return true; }
 
   SiPixelRecHit* clone() const override { return new SiPixelRecHit(*this); }
@@ -51,7 +60,7 @@ public:
   int dimension() const override { return 2; }
   void getKfComponents(KfComponentsHolder& holder) const override { getKfComponents2D(holder); }
 
-  bool canImproveWithTrack() const override { return true; }
+  bool canImproveWithTrack() const override { return !omniCluster().isSoA(); }
 
 private:
   // double dispatch

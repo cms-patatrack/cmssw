@@ -17,8 +17,9 @@ class LocalTrajectoryParameters;
 class dso_hidden TkPixelMeasurementDet final : public MeasurementDet {
 public:
   typedef edm::Ref<edmNew::DetSetVector<SiPixelCluster>, SiPixelCluster> SiPixelClusterRef;
+  typedef edm::Ref<edmNew::DetSetVector<SiPixelRecHit>, SiPixelRecHit> RecHitRef;
 
-  typedef edmNew::DetSet<SiPixelCluster> detset;
+  typedef edmNew::DetSet<SiPixelRecHit> detset;
   typedef detset::const_iterator const_iterator;
   typedef PixelClusterParameterEstimator::LocalValues LocalValues;
 
@@ -96,7 +97,7 @@ private:
   const PixelClusterParameterEstimator* cpe() const { return conditionSet().pixelCPE(); }
 
 public:
-  inline bool accept(SiPixelClusterRefNew& r, const std::vector<bool> skipClusters) const {
+  inline bool accept(OmniClusterRef& r, const std::vector<bool> skipClusters) const {
     if (skipClusters.empty())
       return true;
     if (r.key() >= skipClusters.size()) {

@@ -37,10 +37,10 @@ protected:
   void getInactiveStrips(const edm::Event& event, std::vector<uint32_t>& rawInactiveDetIds) const;
 
   std::string measurementTrackerLabel_;
-  edm::EDGetTokenT<edmNew::DetSetVector<SiPixelCluster>> thePixelClusterLabel;
+  edm::EDGetTokenT<SiPixelRecHitCollection> thePixelClusterLabel;
   edm::EDGetTokenT<edmNew::DetSetVector<SiStripCluster>> theStripClusterLabel;
   edm::EDGetTokenT<edmNew::DetSetVector<Phase2TrackerCluster1D>> thePh2OTClusterLabel;
-  edm::EDGetTokenT<edm::ContainerMask<edmNew::DetSetVector<SiPixelCluster>>> thePixelClusterMask;
+  edm::EDGetTokenT<edm::ContainerMask<SiPixelRecHitCollection>> thePixelClusterMask;
   edm::EDGetTokenT<edm::ContainerMask<edmNew::DetSetVector<SiStripCluster>>> theStripClusterMask;
 
   std::vector<edm::EDGetTokenT<DetIdCollection>> theInactivePixelDetectorLabels;
