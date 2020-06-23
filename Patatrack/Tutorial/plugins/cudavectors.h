@@ -15,7 +15,7 @@ namespace cudavectors {
     float z;
   };
 
-  void convertWrapper(CylindricalVector const* cylindrical, CartesianVector* cartesian, size_t size, cudaStream_t stream);
+  void convertWrapper(CylindricalVector const* cylindrical, CartesianVector* cartesian, size_t size,cudaStream_t stream);
 
 }  // namespace cudavectors
 
