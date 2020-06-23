@@ -91,7 +91,7 @@ _oldStyleHasSelector = set([
 from RecoLocalTracker.SubCollectionProducers.trackClusterRemover_cfi import trackClusterRemover as _trackClusterRemover
 _trackClusterRemoverBase = _trackClusterRemover.clone(
     maxChi2                                  = 9.0,
-    pixelClusters                            = "siPixelClusters",
+    pixelClusters                            = "siPixelRecHits",
     stripClusters                            = "siStripClusters",
     TrackQuality                             = 'highPurity',
     minNumberOfLayersWithMeasBeforeFiltering = 0,

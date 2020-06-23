@@ -9,7 +9,7 @@ from RecoLocalTracker.SubCollectionProducers.trackClusterRemover_cfi import trac
 _convClustersBase = _trackClusterRemover.clone(
   maxChi2               = cms.double(30.0),
   trajectories          = cms.InputTag("tobTecStepTracks"),
-  pixelClusters         = cms.InputTag("siPixelClusters"),
+  pixelClusters         = cms.InputTag("siPixelRecHits"),
   stripClusters         = cms.InputTag("siStripClusters"),
   oldClusterRemovalInfo = cms.InputTag("tobTecStepClusters"),
   TrackQuality          = cms.string('highPurity'),
@@ -24,7 +24,7 @@ from RecoLocalTracker.SubCollectionProducers.phase2trackClusterRemover_cfi impor
 from Configuration.Eras.Modifier_trackingPhase2PU140_cff import trackingPhase2PU140
 trackingPhase2PU140.toReplaceWith(convClusters, _phase2trackClusterRemover.clone(
     maxChi2                                  = 30.0,
-    phase2pixelClusters                      = "siPixelClusters",
+    phase2pixelClusters                      = "siPixelRecHits",
     phase2OTClusters                         = "siPhase2Clusters",
     TrackQuality                             = 'highPurity',
     minNumberOfLayersWithMeasBeforeFiltering = 0,

@@ -27,6 +27,7 @@
 #include "DataFormats/TrackerRecHit2D/interface/Phase2TrackerRecHit1D.h"
 #include "DataFormats/TrackerRecHit2D/interface/BaseTrackerRecHit.h"
 #include "DataFormats/TrackerRecHit2D/interface/MTDTrackingRecHit.h"
+#include "DataFormats/Common/interface/ContainerMask.h"
 #include <vector>
 
 #endif  // SISTRIPRECHIT_CLASSES_H

@@ -38,7 +38,7 @@ MeasurementTrackerEvent &MeasurementTrackerEvent::operator=(MeasurementTrackerEv
 MeasurementTrackerEvent::MeasurementTrackerEvent(
     const MeasurementTrackerEvent &trackerEvent,
     const edm::ContainerMask<edmNew::DetSetVector<SiStripCluster> > &stripClustersToSkip,
-    const edm::ContainerMask<edmNew::DetSetVector<SiPixelCluster> > &pixelClustersToSkip)
+    const edm::ContainerMask<SiPixelRecHitCollection> &pixelClustersToSkip)
     : theTracker(trackerEvent.theTracker),
       theStripData(trackerEvent.theStripData),
       thePixelData(trackerEvent.thePixelData),
@@ -71,7 +71,7 @@ MeasurementTrackerEvent::MeasurementTrackerEvent(
 //FIXME:just temporary solution for phase2!
 MeasurementTrackerEvent::MeasurementTrackerEvent(
     const MeasurementTrackerEvent &trackerEvent,
-    const edm::ContainerMask<edmNew::DetSetVector<SiPixelCluster> > &pixelClustersToSkip,
+    const edm::ContainerMask<SiPixelRecHitCollection> &pixelClustersToSkip,
     const edm::ContainerMask<edmNew::DetSetVector<Phase2TrackerCluster1D> > &phase2OTClustersToSkip)
     : theTracker(trackerEvent.theTracker),
       theStripData(nullptr),

@@ -6,7 +6,7 @@ from RecoLocalTracker.SubCollectionProducers.trackClusterRemover_cfi import *
 conv2Clusters = trackClusterRemover.clone(
   maxChi2               = cms.double(30.0),
   trajectories          = cms.InputTag("convStepTracks"),
-  pixelClusters         = cms.InputTag("siPixelClusters"),
+  pixelClusters         = cms.InputTag("siPixelRecHits"),
   stripClusters         = cms.InputTag("siStripClusters"),
   oldClusterRemovalInfo = cms.InputTag("convClusters"),
   overrideTrkQuals      = cms.InputTag('convStepSelector','convStep'),

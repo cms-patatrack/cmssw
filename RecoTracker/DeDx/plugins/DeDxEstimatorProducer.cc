@@ -156,7 +156,7 @@ void DeDxEstimatorProducer::processHit(const TrackingRecHit* recHit,
     return;
 
   auto const& clus = thit.firstClusterRef();
-  if (!clus.isValid())
+  if (!clus.isValid() || clus.isSoA())
     return;
 
   if (clus.isPixel()) {
