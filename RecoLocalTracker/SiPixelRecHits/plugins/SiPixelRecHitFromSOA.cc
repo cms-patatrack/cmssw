@@ -87,13 +87,12 @@ void SiPixelRecHitFromSOA::acquire(edm::Event const& iEvent,
 }
 
 void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es) {
-
   constexpr uint32_t MaxHitsInModule = gpuClustering::MaxHitsInModule;
 
   // yes a unique ptr of a unique ptr so edm is happy
   auto hitsModuleStart = m_hitsModuleStart.get();
   auto hms = std::make_unique<HMSstorage>(std::move(m_hitsModuleStart));  // m_hitsModuleStart is gone
-  iEvent.put(std::move(hms));                                // hms is gone!
+  iEvent.put(std::move(hms));                                             // hms is gone!
 
   auto output = std::make_unique<SiPixelRecHitCollectionNew>();
   if (0 == m_nHits) {
@@ -250,7 +249,7 @@ void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es
         recHitsOnDetUnit.push_back(hit);
         std::push_heap(recHitsOnDetUnit.begin(), recHitsOnDetUnit.end(), [](auto const& h1, auto const& h2) {
           return h1.localPosition().x() < h2.localPosition().x();
-        });        // =============================
+        });  // =============================
 
         // std::cout << "SiPixelRecHitGPUVI " << numberOfClusters << ' '<< lp << " " << le << std::endl;
 

@@ -15,7 +15,6 @@ int main() {
   cudaStream_t stream;
   cudaCheck(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking));
 
-
   uint32_t nHits = 200;
   // inner scope to deallocate memory before destroying the stream
   {
@@ -23,10 +22,10 @@ int main() {
 
     testTrackingRecHit2D::runKernels(tkhit.view());
 
-    TrackingRecHit2DHost tkhitH(nHits, nullptr, nullptr, stream,&tkhit);
+    TrackingRecHit2DHost tkhitH(nHits, nullptr, nullptr, stream, &tkhit);
     cudaStreamSynchronize(stream);
     assert(tkhitH.view());
-    assert(tkhitH.view()->nHits()==nHits);
+    assert(tkhitH.view()->nHits() == nHits);
   }
   cudaCheck(cudaStreamDestroy(stream));
 

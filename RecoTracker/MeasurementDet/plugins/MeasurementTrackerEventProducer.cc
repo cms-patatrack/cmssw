@@ -49,11 +49,11 @@ MeasurementTrackerEventProducer::MeasurementTrackerEventProducer(const edm::Para
           iConfig.getParameter<edm::InputTag>("skipClusters"));
   }
   if (!iConfig.getParameter<std::string>("pixelClusterProducer").empty()) {
-    thePixelClusterLabel = consumes<SiPixelRecHitCollection>(
-        edm::InputTag(iConfig.getParameter<std::string>("pixelClusterProducer")));
+    thePixelClusterLabel =
+        consumes<SiPixelRecHitCollection>(edm::InputTag(iConfig.getParameter<std::string>("pixelClusterProducer")));
     if (selfUpdateSkipClusters_)
-      thePixelClusterMask = consumes<edm::ContainerMask<SiPixelRecHitCollection>>(
-          iConfig.getParameter<edm::InputTag>("skipClusters"));
+      thePixelClusterMask =
+          consumes<edm::ContainerMask<SiPixelRecHitCollection>>(iConfig.getParameter<edm::InputTag>("skipClusters"));
   }
   if (!iConfig.getParameter<std::string>("Phase2TrackerCluster1DProducer").empty()) {
     thePh2OTClusterLabel = consumes<edmNew::DetSetVector<Phase2TrackerCluster1D>>(
@@ -221,7 +221,7 @@ void MeasurementTrackerEventProducer::updatePixels(const edm::Event& event,
   } else {
     edm::Handle<SiPixelRecHitCollection>& pixelClusters = thePxDets.handle();
     if (event.getByToken(thePixelClusterLabel, pixelClusters)) {
-      auto const * pixelCollection = pixelClusters.product();
+      auto const* pixelCollection = pixelClusters.product();
 
       if (switchOffPixelsIfEmpty_ && pixelCollection->empty()) {
         thePxDets.setActiveThisEvent(false);
@@ -247,10 +247,7 @@ void MeasurementTrackerEventProducer::updatePixels(const edm::Event& event,
 
         // FIXME: should check if lower_bound is better
         int i = 0, endDet = thePxDets.size();
-        for (auto it = pixelCollection->begin(),
-                                                                  ed = pixelCollection->end();
-             it != ed;
-             ++it) {
+        for (auto it = pixelCollection->begin(), ed = pixelCollection->end(); it != ed; ++it) {
           edmNew::DetSet<SiPixelRecHit> set(*it);
           unsigned int id = set.id();
           while (id != thePxDets.id(i)) {

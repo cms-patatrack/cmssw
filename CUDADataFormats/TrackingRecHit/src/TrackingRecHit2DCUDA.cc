@@ -18,10 +18,9 @@ cms::cuda::host::unique_ptr<uint32_t[]> TrackingRecHit2DGPU::hitsModuleStartToHo
   return ret;
 }
 
-
 // the only specialization needed
 template <>
-void TrackingRecHit2DHost::copyFromGPU(TrackingRecHit2DGPU const * input, cudaStream_t stream){
-   assert(input);
-   m_store32 = input->localCoordToHostAsync(stream);
+void TrackingRecHit2DHost::copyFromGPU(TrackingRecHit2DGPU const* input, cudaStream_t stream) {
+  assert(input);
+  m_store32 = input->localCoordToHostAsync(stream);
 }

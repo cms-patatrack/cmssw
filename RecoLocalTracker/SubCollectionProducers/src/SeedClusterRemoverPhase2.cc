@@ -93,7 +93,7 @@ void SeedClusterRemoverPhase2::process(const TrackingRecHit *hit, float chi2, co
     auto cluster = pixelHit->omniCluster();
     LogDebug("SeedClusterRemoverPhase2") << "Plain Pixel RecHit in det " << detid.rawId();
 
-/*  not anymore clusters....
+    /*  not anymore clusters....
     if (cluster.id() != pixelSourceProdID)
       throw cms::Exception("Inconsistent Data")
           << "SeedClusterRemoverPhase2: pixel cluster ref from Product ID = " << cluster.id()

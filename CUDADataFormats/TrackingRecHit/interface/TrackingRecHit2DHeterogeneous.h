@@ -14,11 +14,12 @@ public:
 
   TrackingRecHit2DHeterogeneous() = default;
 
-  explicit TrackingRecHit2DHeterogeneous(uint32_t nHits,
-                                         pixelCPEforGPU::ParamsOnGPU const* cpeParams,
-                                         uint32_t const* hitsModuleStart,
-                                         cudaStream_t stream,
-                                         TrackingRecHit2DHeterogeneous<cms::cudacompat::GPUTraits> const * input = nullptr);
+  explicit TrackingRecHit2DHeterogeneous(
+      uint32_t nHits,
+      pixelCPEforGPU::ParamsOnGPU const* cpeParams,
+      uint32_t const* hitsModuleStart,
+      cudaStream_t stream,
+      TrackingRecHit2DHeterogeneous<cms::cudacompat::GPUTraits> const* input = nullptr);
 
   ~TrackingRecHit2DHeterogeneous() = default;
 
@@ -43,7 +44,7 @@ public:
   cms::cuda::host::unique_ptr<uint32_t[]> hitsModuleStartToHostAsync(cudaStream_t stream) const;
 
   // needs specialization for Host
-  void copyFromGPU(TrackingRecHit2DHeterogeneous<cms::cudacompat::GPUTraits> const * input, cudaStream_t stream);
+  void copyFromGPU(TrackingRecHit2DHeterogeneous<cms::cudacompat::GPUTraits> const* input, cudaStream_t stream);
 
 private:
   static constexpr uint32_t n16 = 4;
@@ -68,23 +69,21 @@ private:
   int16_t* m_iphi;
 };
 
-
 using TrackingRecHit2DGPU = TrackingRecHit2DHeterogeneous<cms::cudacompat::GPUTraits>;
 using TrackingRecHit2DCUDA = TrackingRecHit2DHeterogeneous<cms::cudacompat::GPUTraits>;
 using TrackingRecHit2DCPU = TrackingRecHit2DHeterogeneous<cms::cudacompat::CPUTraits>;
 using TrackingRecHit2DHost = TrackingRecHit2DHeterogeneous<cms::cudacompat::HostTraits>;
 
-
 #include "HeterogeneousCore/CUDAUtilities/interface/copyAsync.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 
-
 template <typename Traits>
-TrackingRecHit2DHeterogeneous<Traits>::TrackingRecHit2DHeterogeneous(uint32_t nHits,
-                                                                     pixelCPEforGPU::ParamsOnGPU const* cpeParams,
-                                                                     uint32_t const* hitsModuleStart,
-                                                                     cudaStream_t stream,
-                                                                     TrackingRecHit2DHeterogeneous<cms::cudacompat::GPUTraits> const * input)
+TrackingRecHit2DHeterogeneous<Traits>::TrackingRecHit2DHeterogeneous(
+    uint32_t nHits,
+    pixelCPEforGPU::ParamsOnGPU const* cpeParams,
+    uint32_t const* hitsModuleStart,
+    cudaStream_t stream,
+    TrackingRecHit2DHeterogeneous<cms::cudacompat::GPUTraits> const* input)
     : m_nHits(nHits), m_hitsModuleStart(hitsModuleStart) {
   auto view = Traits::template make_host_unique<TrackingRecHit2DSOAView>(stream);
 
@@ -115,21 +114,19 @@ TrackingRecHit2DHeterogeneous<Traits>::TrackingRecHit2DHeterogeneous(uint32_t nH
   // this will break 1to1 correspondence with cluster and module locality
   // so unless proven VERY inefficient we keep it ordered as generated
 
-
-// host copy is "reduced"  (to be reviewed at some point)
-    if
+  // host copy is "reduced"  (to be reviewed at some point)
+  if
 #ifndef __CUDACC__
-        constexpr
+      constexpr
 #endif
-          (std::is_same<Traits, cms::cudacompat::HostTraits>::value) {
-// it has to compile for ALL cases
+      (std::is_same<Traits, cms::cudacompat::HostTraits>::value) {
+    // it has to compile for ALL cases
     copyFromGPU(input, stream);
   } else {
     assert(input == nullptr);
     m_store16 = Traits::template make_unique<uint16_t[]>(nHits * n16, stream);
     m_store32 = Traits::template make_unique<float[]>(nHits * n32 + 11, stream);
     m_HistStore = Traits::template make_unique<TrackingRecHit2DSOAView::Hist>(stream);
-
   }
 
   auto get32 = [&](int i) { return m_store32.get() + i * nHits; };
@@ -142,17 +139,16 @@ TrackingRecHit2DHeterogeneous<Traits>::TrackingRecHit2DHeterogeneous(uint32_t nH
   view->m_yerr = get32(3);
   view->m_charge = reinterpret_cast<int32_t*>(get32(4));
 
-    if
+  if
 #ifndef __CUDACC__
-        constexpr
+      constexpr
 #endif
-          (!std::is_same<Traits, cms::cudacompat::HostTraits>::value) {
+      (!std::is_same<Traits, cms::cudacompat::HostTraits>::value) {
     assert(input == nullptr);
     view->m_xg = get32(5);
     view->m_yg = get32(6);
     view->m_zg = get32(7);
     view->m_rg = get32(8);
-
 
     auto get16 = [&](int i) { return m_store16.get() + i * nHits; };
     m_iphi = view->m_iphi = reinterpret_cast<int16_t*>(get16(0));

@@ -28,8 +28,10 @@ public:
   using range = std::pair<const_iterator, const_iterator>;
 
   ClusterTPAssociation() {}
-  explicit ClusterTPAssociation(const edm::HandleBase& mappedHandle,bool checkProductId=false) : ClusterTPAssociation(mappedHandle.id(),checkProductId) {}
-  explicit ClusterTPAssociation(const edm::ProductID& mappedProductId,bool checkProductId=false) : mappedProductId_(mappedProductId),checkProductId_(checkProductId) {}
+  explicit ClusterTPAssociation(const edm::HandleBase& mappedHandle, bool checkProductId = false)
+      : ClusterTPAssociation(mappedHandle.id(), checkProductId) {}
+  explicit ClusterTPAssociation(const edm::ProductID& mappedProductId, bool checkProductId = false)
+      : mappedProductId_(mappedProductId), checkProductId_(checkProductId) {}
 
   void addKeyID(edm::ProductID id) {
     auto foundKeyID = std::find(std::begin(keyProductIDs_), std::end(keyProductIDs_), id);
@@ -39,7 +41,7 @@ public:
   }
 
   void emplace_back(const OmniClusterRef& cluster, const TrackingParticleRef& tp) {
-    if(checkProductId_) {
+    if (checkProductId_) {
       checkMappedProductID(tp);
       checkKeyProductID(cluster.id());
     }
@@ -65,7 +67,8 @@ public:
   const_iterator cend() const { return map_.end(); }
 
   range equal_range(const OmniClusterRef& key) const {
-    if(checkProductId_) checkKeyProductID(key);
+    if (checkProductId_)
+      checkKeyProductID(key);
     return std::equal_range(map_.begin(), map_.end(), value_type(key, TrackingParticleRef()), compare);
   }
 
@@ -92,7 +95,6 @@ private:
   edm::ProductID mappedProductId_;
 
   bool checkProductId_;
-
 };
 
 #endif

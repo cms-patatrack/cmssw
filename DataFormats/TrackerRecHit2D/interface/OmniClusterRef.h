@@ -42,8 +42,7 @@ public:
   explicit OmniClusterRef(edm::RefCore const& ref, int index)
       : me(ref, (ref.isNonnull() ? (index | kIsSoA) : kInvalid)) {}
   template <typename Prod>
-  explicit OmniClusterRef(edm::RefProd<Prod> const& ref, int index)
-      : OmniClusterRef(ref.refCore(), index){}
+  explicit OmniClusterRef(edm::RefProd<Prod> const& ref, int index) : OmniClusterRef(ref.refCore(), index) {}
 
   ClusterPixelRef cluster_pixel() const {
     return (isPixel() && isValid()) ? ClusterPixelRef(me.toRefCore(), index()) : ClusterPixelRef();
@@ -65,15 +64,15 @@ public:
   FTLCluster const& mtdCluster() const { return *ClusterMTDRef(me.toRefCore(), index()); }
 
   bool operator==(OmniClusterRef const& lh) const {
-    return (rawIndex()| kIsSoA)  == (lh.rawIndex()| kIsSoA);  // in principle this is enough!
+    return (rawIndex() | kIsSoA) == (lh.rawIndex() | kIsSoA);  // in principle this is enough!
   }
 
   bool operator<(OmniClusterRef const& lh) const {
-    return (rawIndex()| kIsSoA) < (lh.rawIndex()| kIsSoA);  // in principle this is enough!
+    return (rawIndex() | kIsSoA) < (lh.rawIndex() | kIsSoA);  // in principle this is enough!
   }
 
   bool operator>(OmniClusterRef const& lh) const {
-    return (rawIndex()| kIsSoA) > (lh.rawIndex()| kIsSoA);  // in principle this is enough!
+    return (rawIndex() | kIsSoA) > (lh.rawIndex() | kIsSoA);  // in principle this is enough!
   }
 
 public:

@@ -220,10 +220,9 @@ namespace cms {
 
     /// this is needed to make switch-producer happy
     auto hlp = std::make_unique<HLPstorage>();
-    auto orphanHandle = iEvent.put(std::move(hlp));                 // hlp is gone
+    auto orphanHandle = iEvent.put(std::move(hlp));  // hlp is gone
     edm::RefProd<HLPstorage> refProdHLP{orphanHandle};
     assert(refProdHLP.isNonnull());
-
 
     numberOfClusters = 0;
     for (auto DSViter = input.begin(); DSViter != input.end(); DSViter++) {
@@ -246,11 +245,11 @@ namespace cms {
         SiPixelRecHitQuality::QualWordType rqw(std::get<2>(tuple));
         // Create a persistent edm::Ref to the cluster
         edm::Ref<edmNew::DetSetVector<SiPixelCluster>, SiPixelCluster> cluster =
-             edmNew::makeRefTo(inputhandle, clustIt);
+            edmNew::makeRefTo(inputhandle, clustIt);
         // Make a RecHit and add it to the DetSet
         SiPixelRecHit hit(lp, le, rqw, *genericDet, cluster);
 
-/*
+        /*
         // for test 
         edm::RefProd<edmNew::DetSetVector<SiPixelCluster>> refProd{inputhandle};
         assert(refProd.isNonnull());

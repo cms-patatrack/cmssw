@@ -196,7 +196,8 @@ void SeedFromConsecutiveHitsCreator::buildSeed(TrajectorySeedCollection& seedCol
 
 SeedingHitSet::RecHitPointer SeedFromConsecutiveHitsCreator::refitHit(SeedingHitSet::ConstRecHitPointer hit,
                                                                       const TrajectoryStateOnSurface& state) const {
-  return hit-> canImproveWithTrack() ?  (SeedingHitSet::RecHitPointer)(cloner(*hit, state)) : (SeedingHitSet::RecHitPointer)(hit->clone());
+  return hit->canImproveWithTrack() ? (SeedingHitSet::RecHitPointer)(cloner(*hit, state))
+                                    : (SeedingHitSet::RecHitPointer)(hit->clone());
 }
 
 bool SeedFromConsecutiveHitsCreator::checkHit(const TrajectoryStateOnSurface& tsos,

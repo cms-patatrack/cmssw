@@ -89,8 +89,7 @@ namespace {
         trackQuality_(reco::TrackBase::qualityByName(iConfig.getParameter<std::string>("TrackQuality"))),
 
         tracks_(iConfig.getParameter<edm::InputTag>("trajectories"), consumesCollector()),
-        pixelClusters_(
-            consumes<SiPixelRecHitCollection>(iConfig.getParameter<edm::InputTag>("phase2pixelClusters"))),
+        pixelClusters_(consumes<SiPixelRecHitCollection>(iConfig.getParameter<edm::InputTag>("phase2pixelClusters"))),
         phase2OTClusters_(consumes<edmNew::DetSetVector<Phase2TrackerCluster1D>>(
             iConfig.getParameter<edm::InputTag>("phase2OTClusters"))) {
     produces<edm::ContainerMask<edmNew::DetSetVector<SiPixelRecHit>>>();
@@ -194,8 +193,8 @@ namespace {
       }
     }
 
-    auto removedPixelClusterMask = std::make_unique<PixelMaskContainer>(
-        edm::RefProd<SiPixelRecHitCollection>(pixelClusters), collectedPixels);
+    auto removedPixelClusterMask =
+        std::make_unique<PixelMaskContainer>(edm::RefProd<SiPixelRecHitCollection>(pixelClusters), collectedPixels);
     LogDebug("TrackClusterRemoverPhase2")
         << "total pxl to skip: " << std::count(collectedPixels.begin(), collectedPixels.end(), true);
     iEvent.put(std::move(removedPixelClusterMask));

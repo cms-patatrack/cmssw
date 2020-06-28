@@ -2,7 +2,8 @@
 #include "FWCore/Utilities/interface/Exception.h"
 
 void ClusterTPAssociation::checkKeyProductID(const edm::ProductID& id) const {
-  if(!checkProductId_) return;
+  if (!checkProductId_)
+    return;
   if (std::find(std::begin(keyProductIDs_), std::end(keyProductIDs_), id) == std::end(keyProductIDs_)) {
     auto e = cms::Exception("InvalidReference");
     e << "ClusterTPAssociation has OmniClusterRefs with ProductIDs ";
@@ -18,7 +19,8 @@ void ClusterTPAssociation::checkKeyProductID(const edm::ProductID& id) const {
 }
 
 void ClusterTPAssociation::checkMappedProductID(const edm::ProductID& id) const {
-  if(!checkProductId_) return;
+  if (!checkProductId_)
+    return;
   if (id != mappedProductId_) {
     throw cms::Exception("InvalidReference")
         << "ClusterTPAssociation has TrackingParticles with ProductID " << mappedProductId_

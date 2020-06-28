@@ -198,7 +198,7 @@ void SeedClusterRemover::process(const TrackingRecHit *hit, float chi2, const Tr
 
     assert(cluster.id() == pixelSourceProdID);
     */
-     
+
     //DBG// cout << "HIT NEW PIXEL DETID = " << detid.rawId() << ", Cluster [ " << cluster.key().first << " / " <<  cluster.key().second << " ] " << endl;
 
     /* not supported anymore

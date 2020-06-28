@@ -101,7 +101,7 @@ TkPixelMeasurementDet::RecHitContainer TkPixelMeasurementDet::compHits(const Tra
   // pixel topology is rectangular, all positions are independent
   LocalVector maxD(xl, yl, 0);
   auto PMinus = ts.localPosition() - maxD;
-  auto PPlus =  ts.localPosition() + maxD;
+  auto PPlus = ts.localPosition() + maxD;
 
   auto xminus = PMinus.x();
   auto yminus = PMinus.y();
@@ -136,9 +136,9 @@ TkPixelMeasurementDet::RecHitContainer TkPixelMeasurementDet::compHits(const Tra
       continue;
 
     if (data.pixelClustersToSkip().empty() or (not data.pixelClustersToSkip()[index])) {
-      if (ci-> canImproveWithTrack()) {
+      if (ci->canImproveWithTrack()) {
         SiPixelClusterRef cluster = ci->cluster();
-        result.push_back( buildRecHit(cluster, ts.localParameters()));
+        result.push_back(buildRecHit(cluster, ts.localParameters()));
       } else {
         result.push_back(std::make_shared<SiPixelRecHit>(*ci));
       }

@@ -222,8 +222,8 @@ namespace {
       iEvent.put(std::move(removedStripClusterMask));
     }
     if (!pixelClusters_.isUninitialized()) {
-      auto removedPixelClusterMask = std::make_unique<PixelMaskContainer>(
-          edm::RefProd<SiPixelRecHitCollection>(pixelClusters), collectedPixels);
+      auto removedPixelClusterMask =
+          std::make_unique<PixelMaskContainer>(edm::RefProd<SiPixelRecHitCollection>(pixelClusters), collectedPixels);
       LogDebug("TrackClusterRemover") << "total pxl to skip: "
                                       << std::count(collectedPixels.begin(), collectedPixels.end(), true);
       iEvent.put(std::move(removedPixelClusterMask));

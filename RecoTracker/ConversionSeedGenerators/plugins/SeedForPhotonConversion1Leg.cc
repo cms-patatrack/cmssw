@@ -192,6 +192,6 @@ const TrajectorySeed* SeedForPhotonConversion1Leg::buildSeed(TrajectorySeedColle
 SeedingHitSet::RecHitPointer SeedForPhotonConversion1Leg::refitHit(SeedingHitSet::ConstRecHitPointer hit,
                                                                    const TrajectoryStateOnSurface& state,
                                                                    const TkClonerImpl& cloner) const {
-
-  return hit-> canImproveWithTrack() ?  (SeedingHitSet::RecHitPointer)(cloner(*hit, state)) : (SeedingHitSet::RecHitPointer)(hit->clone());
+  return hit->canImproveWithTrack() ? (SeedingHitSet::RecHitPointer)(cloner(*hit, state))
+                                    : (SeedingHitSet::RecHitPointer)(hit->clone());
 }

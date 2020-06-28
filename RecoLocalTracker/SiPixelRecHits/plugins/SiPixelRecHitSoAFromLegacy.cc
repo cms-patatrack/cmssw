@@ -244,11 +244,12 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
         std::push_heap(recHitsOnDetUnit.begin(), recHitsOnDetUnit.end(), [](auto const& h1, auto const& h2) {
           return h1.localPosition().x() < h2.localPosition().x();
         });
-      } // hits
+      }  // hits
       std::sort_heap(recHitsOnDetUnit.begin(), recHitsOnDetUnit.end(), [](auto const& h1, auto const& h2) {
-        return h1.localPosition().x() < h2.localPosition().x();}); 
-    }  // convert2legacy  
-  }  // detset
+        return h1.localPosition().x() < h2.localPosition().x();
+      });
+    }  // convert2legacy
+  }    // detset
   assert(numberOfHits == numberOfClusters);
 
   // fill data structure to support CA
