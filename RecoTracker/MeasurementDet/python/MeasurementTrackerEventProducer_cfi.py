@@ -26,5 +26,5 @@ fastSim.toModify(MeasurementTrackerEvent,
 
 
 MeasurementTrackerEventPreSplitting = MeasurementTrackerEvent.clone(
-    pixelClusterProducer = 'siPixelClustersPreSplitting'
+    pixelClusterProducer = 'siPixelRecHitsPreSplitting'
     )

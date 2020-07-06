@@ -241,9 +241,15 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
         SiPixelRecHitQuality::QualWordType rqw = 0;
         SiPixelRecHit hit(lp, le, rqw, *genericDet, clusterRef[ih]);
         recHitsOnDetUnit.push_back(hit);
-      }
-    }
-  }
+        std::push_heap(recHitsOnDetUnit.begin(), recHitsOnDetUnit.end(), [](auto const& h1, auto const& h2) {
+          return h1.localPosition().x() < h2.localPosition().x();
+        });
+      }  // hits
+      std::sort_heap(recHitsOnDetUnit.begin(), recHitsOnDetUnit.end(), [](auto const& h1, auto const& h2) {
+        return h1.localPosition().x() < h2.localPosition().x();
+      });
+    }  // convert2legacy
+  }    // detset
   assert(numberOfHits == numberOfClusters);
 
   // fill data structure to support CA
