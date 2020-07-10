@@ -74,7 +74,7 @@ private:
   edm::ESHandle<EcalRecHitParametersGPU> recHitParametersHandle_;
 
   // configuration
-  std::vector<int> v_chstatus_;
+//   std::vector<int> v_chstatus_;
 
   //
   // https://github.com/cms-sw/cmssw/blob/266e21cfc9eb409b093e4cf064f4c0a24c6ac293/RecoLocalCalo/EcalRecProducers/plugins/EcalRecHitWorkerSimple.h
@@ -125,8 +125,8 @@ EcalRecHitProducerGPU::EcalRecHitProducerGPU(const edm::ParameterSet& ps) {
       produces<OutputProduct>(ps.getParameter<std::string>("recHitsLabelEE"));
 
   //---- db statuses to be exluded from reconstruction
-  v_chstatus_ = StringToEnumValue<EcalChannelStatusCode::Code>(
-      ps.getParameter<std::vector<std::string>>("ChannelStatusToBeExcluded"));
+//   v_chstatus_ = StringToEnumValue<EcalChannelStatusCode::Code>(
+//       ps.getParameter<std::vector<std::string>>("ChannelStatusToBeExcluded"));
 
   bool killDeadChannels = ps.getParameter<bool>("killDeadChannels");
   configParameters_.killDeadChannels = killDeadChannels;

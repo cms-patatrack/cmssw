@@ -54,24 +54,40 @@ void EcalRecHitParametersGPUESProducer::setIntervalFor(
 
 void EcalRecHitParametersGPUESProducer::fillDescriptions(
         edm::ConfigurationDescriptions& desc) {
-    edm::ParameterSetDescription d;
 
-    // ## db statuses to be exluded from reconstruction (some will be recovered)
-    edm::ParameterSetDescription desc_ChannelStatusToBeExcluded;
-    desc_ChannelStatusToBeExcluded.add<std::string>("kDAC");
-    desc_ChannelStatusToBeExcluded.add<std::string>("kNoisy");
-    desc_ChannelStatusToBeExcluded.add<std::string>("kNNoisy");
-    desc_ChannelStatusToBeExcluded.add<std::string>("kFixedG6");
-    desc_ChannelStatusToBeExcluded.add<std::string>("kFixedG1");
-    desc_ChannelStatusToBeExcluded.add<std::string>("kFixedG0");
-    desc_ChannelStatusToBeExcluded.add<std::string>("kNonRespondingIsolated");
-    desc_ChannelStatusToBeExcluded.add<std::string>("kDeadVFE");
-    desc_ChannelStatusToBeExcluded.add<std::string>("kDeadFE");
-    desc_ChannelStatusToBeExcluded.add<std::string>("kNoDataNoTP");
-    std::vector<edm::ParameterSet> default_ChannelStatusToBeExcluded(1);
-    d.addVPSet("ChannelStatusToBeExcluded", desc_ChannelStatusToBeExcluded, default_ChannelStatusToBeExcluded);
+    edm::ParameterSetDescription desc_total;
 
-    desc.addWithDefaultLabel(d);
+    desc_total.add<std::vector<std::string>>("ChannelStatusToBeExcluded", 
+                                               {
+                                                 "kDAC",
+                                               "kNoisy",
+                                               "kNNoisy",
+                                               "kFixedG6",
+                                               "kFixedG1",
+                                               "kFixedG0",
+                                               "kNonRespondingIsolated",
+                                               "kDeadVFE",
+                                               "kDeadFE",
+                                               "kNoDataNoTP",
+                                               }
+    );
+    
+    
+    
+    
+    // reco flags association to DB flag
+    
+    edm::ParameterSetDescription desc_list_flagsMapDBReco;
+    desc_list_flagsMapDBReco.add <std::vector<std::string> > ("kGood",                {"kOk","kDAC","kNoLaser","kNoisy"});
+    desc_list_flagsMapDBReco.add <std::vector<std::string> > ("kNoisy",               {"kNNoisy","kFixedG6","kFixedG1"});
+    desc_list_flagsMapDBReco.add <std::vector<std::string> > ("kNeighboursRecovered", {"kFixedG0", "kNonRespondingIsolated", "kDeadVFE"});
+    desc_list_flagsMapDBReco.add <std::vector<std::string> > ("kTowerRecovered",      {"kDeadFE"});
+    desc_list_flagsMapDBReco.add <std::vector<std::string> > ("kDead",                {"kNoDataNoTP"});
+    
+    desc_total.add<edm::ParameterSetDescription>("flagsMapDBReco", desc_list_flagsMapDBReco);
+
+    desc.addWithDefaultLabel(desc_total);
+    
 }
 
 std::unique_ptr<EcalRecHitParametersGPU> EcalRecHitParametersGPUESProducer::produce(
