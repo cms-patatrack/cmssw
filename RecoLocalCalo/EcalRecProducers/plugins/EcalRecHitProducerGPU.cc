@@ -124,10 +124,6 @@ EcalRecHitProducerGPU::EcalRecHitProducerGPU(const edm::ParameterSet& ps) {
   recHitsTokenEE_ =
       produces<OutputProduct>(ps.getParameter<std::string>("recHitsLabelEE"));
 
-  //---- db statuses to be exluded from reconstruction
-//   v_chstatus_ = StringToEnumValue<EcalChannelStatusCode::Code>(
-//       ps.getParameter<std::vector<std::string>>("ChannelStatusToBeExcluded"));
-
   bool killDeadChannels = ps.getParameter<bool>("killDeadChannels");
   configParameters_.killDeadChannels = killDeadChannels;
 

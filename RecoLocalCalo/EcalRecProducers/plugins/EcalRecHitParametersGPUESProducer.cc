@@ -57,6 +57,7 @@ void EcalRecHitParametersGPUESProducer::fillDescriptions(
 
     edm::ParameterSetDescription desc_total;
 
+    //---- db statuses to be exluded from reconstruction
     desc_total.add<std::vector<std::string>>("ChannelStatusToBeExcluded", 
                                                {
                                                  "kDAC",
