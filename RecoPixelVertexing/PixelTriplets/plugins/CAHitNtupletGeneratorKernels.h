@@ -179,9 +179,9 @@ public:
 
 private:
   // workspace
-  CAConstants::CellNeighborsVector* device_theCellNeighbors_ = nullptr;
+  unique_ptr<CAConstants::CellNeighborsVector> device_theCellNeighbors_;
   unique_ptr<CAConstants::CellNeighbors[]> device_theCellNeighborsContainer_;
-  CAConstants::CellTracksVector* device_theCellTracks_ = nullptr;
+  unique_ptr<CAConstants::CellTracksVector> device_theCellTracks_;
   unique_ptr<CAConstants::CellTracks[]> device_theCellTracksContainer_;
 
   unique_ptr<GPUCACell[]> device_theCells_;
