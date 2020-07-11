@@ -162,10 +162,16 @@ void CAHitNtupletGeneratorKernelsGPU::buildDoublets(HitsOnCPU const &hh, cudaStr
   // in principle we can use "nhits" to heuristically dimension the workspace...
   device_isOuterHitOfCell_ = cms::cuda::make_device_unique<GPUCACell::OuterHitOfCell[]>(std::max(1U, nhits), stream);
   assert(device_isOuterHitOfCell_.get());
-  device_theCellNeighborsContainer_ =
-      cms::cuda::make_device_unique<GPUCACell::CellNeighbors[]>(CAConstants::maxNumOfActiveDoublets(), stream);
+
+  cellStorage_ = cms::cuda::make_device_unique<unsigned char[]>(
+      CAConstants::maxNumOfActiveDoublets() * sizeof(GPUCACell::CellNeighbors) +
+          CAConstants::maxNumOfActiveDoublets() * sizeof(GPUCACell::CellTracks),
+      stream);
+  device_theCellNeighborsContainer_ = (GPUCACell::CellNeighbors *)cellStorage_.get();
   device_theCellTracksContainer_ =
-      cms::cuda::make_device_unique<GPUCACell::CellTracks[]>(CAConstants::maxNumOfActiveDoublets(), stream);
+      (GPUCACell::CellTracks *)(cellStorage_.get() +
+                                CAConstants::maxNumOfActiveDoublets() * sizeof(GPUCACell::CellNeighbors));
+
   {
     int threadsPerBlock = 128;
     // at least one block!
@@ -173,9 +179,9 @@ void CAHitNtupletGeneratorKernelsGPU::buildDoublets(HitsOnCPU const &hh, cudaStr
     gpuPixelDoublets::initDoublets<<<blocks, threadsPerBlock, 0, stream>>>(device_isOuterHitOfCell_.get(),
                                                                            nhits,
                                                                            device_theCellNeighbors_.get(),
-                                                                           device_theCellNeighborsContainer_.get(),
+                                                                           device_theCellNeighborsContainer_,
                                                                            device_theCellTracks_.get(),
-                                                                           device_theCellTracksContainer_.get());
+                                                                           device_theCellTracksContainer_);
     cudaCheck(cudaGetLastError());
   }
 
