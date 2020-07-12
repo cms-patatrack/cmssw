@@ -144,6 +144,10 @@ void CAHitNtupletGeneratorKernelsGPU::launchKernels(HitsOnCPU const &hh, TkSoA *
   cudaDeviceSynchronize();
   cudaCheck(cudaGetLastError());
 #endif
+
+  // free space asap
+  // device_isOuterHitOfCell_.reset();
+
 }
 
 template <>
@@ -228,6 +232,7 @@ void CAHitNtupletGeneratorKernelsGPU::buildDoublets(HitsOnCPU const &hh, cudaStr
   cudaCheck(cudaGetLastError());
 #endif
 }
+
 
 template <>
 void CAHitNtupletGeneratorKernelsGPU::classifyTuples(HitsOnCPU const &hh, TkSoA *tracks_d, cudaStream_t cudaStream) {
