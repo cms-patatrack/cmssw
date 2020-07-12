@@ -54,7 +54,6 @@ void EcalRecHitParametersGPUESProducer::setIntervalFor(
 
 void EcalRecHitParametersGPUESProducer::fillDescriptions(
         edm::ConfigurationDescriptions& desc) {
-
     edm::ParameterSetDescription desc_total;
 
     //---- db statuses to be exluded from reconstruction
@@ -73,11 +72,7 @@ void EcalRecHitParametersGPUESProducer::fillDescriptions(
                                                }
     );
     
-    
-    
-    
     // reco flags association to DB flag
-    
     edm::ParameterSetDescription desc_list_flagsMapDBReco;
     desc_list_flagsMapDBReco.add <std::vector<std::string> > ("kGood",                {"kOk","kDAC","kNoLaser","kNoisy"});
     desc_list_flagsMapDBReco.add <std::vector<std::string> > ("kNoisy",               {"kNNoisy","kFixedG6","kFixedG1"});
@@ -88,7 +83,6 @@ void EcalRecHitParametersGPUESProducer::fillDescriptions(
     desc_total.add<edm::ParameterSetDescription>("flagsMapDBReco", desc_list_flagsMapDBReco);
 
     desc.addWithDefaultLabel(desc_total);
-    
 }
 
 std::unique_ptr<EcalRecHitParametersGPU> EcalRecHitParametersGPUESProducer::produce(

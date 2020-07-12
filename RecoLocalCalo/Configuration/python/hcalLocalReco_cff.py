@@ -22,6 +22,9 @@ from RecoLocalCalo.HcalRecProducers.hfprereco_cfi import hfprereco
 from RecoLocalCalo.HcalRecProducers.HFPhase1Reconstructor_cfi import hfreco as _phase1_hfreco
 from RecoLocalCalo.HcalRecProducers.hbheplan1_cfi import hbheplan1
 
+#--- for HCALonly wf
+hcalOnlyLocalRecoTask = cms.Task(hbheprereco,hfprereco,hfreco,horeco)
+
 # copy for cosmics
 _default_hfreco = hfreco.clone()
 
@@ -44,6 +47,26 @@ _collapse_hcalLocalRecoTask = _phase1_hcalLocalRecoTask.copy()
 _collapse_hcalLocalRecoTask.add(hbhecollapse)
 from Configuration.ProcessModifiers.run2_HECollapse_2018_cff import run2_HECollapse_2018
 run2_HECollapse_2018.toReplaceWith(hcalLocalRecoTask, _collapse_hcalLocalRecoTask)
+
+# Run 3 HCAL workflow on GPU
+from Configuration.ProcessModifiers.gpu_cff import gpu
+
+from RecoLocalCalo.HcalRecProducers.hbheRecHitProducerGPUTask_cff import *
+_hcalLocalRecoTaskGPU = hcalLocalRecoTask.copy()
+_hcalLocalRecoTaskGPU.add(hbheRecHitProducerGPUTask)
+gpu.toReplaceWith(hcalLocalRecoTask, _hcalLocalRecoTaskGPU)
+
+_hcalOnlyLocalRecoTaskGPU = hcalOnlyLocalRecoTask.copy()
+_hcalOnlyLocalRecoTaskGPU.add(hbheRecHitProducerGPUTask)
+gpu.toReplaceWith(hcalOnlyLocalRecoTask, _hcalOnlyLocalRecoTaskGPU)
+
+from RecoLocalCalo.HcalRecProducers.hcalCPURecHitsProducer_cfi import hcalCPURecHitsProducer as _hcalCPURecHitsProducer
+gpu.toReplaceWith(hbheprereco, _hcalCPURecHitsProducer.clone(
+    recHitsM0LabelIn = "hbheRecHitProducerGPU",
+    recHitsM0LabelOut = "",
+    recHitsLegacyLabelOut = ""
+))
+#---
 
 _phase2_hcalLocalRecoTask = hcalLocalRecoTask.copy()
 _phase2_hcalLocalRecoTask.remove(hbheprereco)
