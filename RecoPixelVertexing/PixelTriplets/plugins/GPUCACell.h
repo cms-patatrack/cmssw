@@ -69,10 +69,14 @@ public:
       auto i = cellNeighbors.extend();  // maybe waisted....
       if (i > 0) {
         cellNeighbors[i].reset();
+#ifdef __CUDACC__
         auto zero = (ptrAsInt)(&cellNeighbors[0]);
         atomicCAS((ptrAsInt*)(&theOuterNeighbors),
                   zero,
                   (ptrAsInt)(&cellNeighbors[i]));  // if fails we cannot give "i" back...
+#else
+        theOuterNeighbors = &cellNeighbors[i];
+#endif
       } else
         return -1;
     }
@@ -85,8 +89,12 @@ public:
       auto i = cellTracks.extend();  // maybe waisted....
       if (i > 0) {
         cellTracks[i].reset();
+#ifdef __CUDACC__
         auto zero = (ptrAsInt)(&cellTracks[0]);
         atomicCAS((ptrAsInt*)(&theTracks), zero, (ptrAsInt)(&cellTracks[i]));  // if fails we cannot give "i" back...
+#else
+        theTracks = &cellTracks[i];
+#endif
       } else
         return -1;
     }
