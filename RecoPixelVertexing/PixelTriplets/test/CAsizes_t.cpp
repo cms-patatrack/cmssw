@@ -3,18 +3,12 @@
 #include <typeinfo>
 #include <iostream>
 
-template<typename T>
+template <typename T>
 void print() {
-
   std::cout << "size of " << typeid(T).name() << ' ' << sizeof(T) << std::endl;
-
-
 }
 
-
-
 int main() {
-
   using namespace CAConstants;
 
   print<GPUCACell>();
@@ -28,5 +22,4 @@ int main() {
   print<CellNeighborsVector>();
 
   return 0;
-
 }

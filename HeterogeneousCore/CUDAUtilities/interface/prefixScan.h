@@ -139,9 +139,9 @@ namespace cms {
     // in principle not limited....
     template <typename T>
     __global__ void multiBlockPrefixScan(T const* ici, T* ico, int32_t size, int32_t* pc) {
-      volatile T const * ci = ici;
-      volatile T * co = ico;
-      __shared__  T ws[32];
+      volatile T const* ci = ici;
+      volatile T* co = ico;
+      __shared__ T ws[32];
 #ifdef __CUDA_ARCH__
       assert(sizeof(T) * gridDim.x <= dynamic_smem_size());  // size of psum below
 #endif

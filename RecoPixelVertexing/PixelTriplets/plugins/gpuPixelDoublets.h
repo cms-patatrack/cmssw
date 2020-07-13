@@ -74,7 +74,7 @@ namespace gpuPixelDoublets {
     for (int i = first; i < nHits; i += gridDim.x * blockDim.x)
       isOuterHitOfCell[i].reset();
 
-    if (0==first) {
+    if (0 == first) {
       cellNeighbors->construct(CAConstants::maxNumOfActiveDoublets(), cellNeighborsContainer);
       cellTracks->construct(CAConstants::maxNumOfActiveDoublets(), cellTracksContainer);
       auto i = cellNeighbors->extend();
