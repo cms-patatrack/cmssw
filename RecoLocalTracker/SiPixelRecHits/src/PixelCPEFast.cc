@@ -112,7 +112,7 @@ void PixelCPEFast::fillParamsForGpu() {
   m_commonParamsGPU.thePitchX = m_DetParams[0].thePitchX;
   m_commonParamsGPU.thePitchY = m_DetParams[0].thePitchY;
 
-  // std::cout << "pitch & thickness " <<  m_commonParamsGPU.thePitchX << ' ' << m_commonParamsGPU.thePitchY << "  " << m_commonParamsGPU.theThicknessB << ' ' << m_commonParamsGPU.theThicknessE << std::endl;
+  std::cout << "pitch & thickness " <<  m_commonParamsGPU.thePitchX << ' ' << m_commonParamsGPU.thePitchY << "  " << m_commonParamsGPU.theThicknessB << ' ' << m_commonParamsGPU.theThicknessE << std::endl;
 
   // zero average geometry
   memset(&m_averageGeometry, 0, sizeof(pixelCPEforGPU::AverageGeometry));
@@ -212,7 +212,11 @@ void PixelCPEFast::fillParamsForGpu() {
 #endif
 
     errorFromTemplates(p, cp, 20000.f);
+<<<<<<< HEAD
     g.pixmx = std::max(0, cp.pixmx);
+=======
+    g.pixmx = std::max(0,cp.pixmx);
+>>>>>>> VinInn/ClusterLess
     g.sx[0] = cp.sigmax;
     g.sx[1] = cp.sx1;
     g.sx[2] = cp.sx2;
@@ -381,9 +385,9 @@ LocalPoint PixelCPEFast::localPosition(DetParam const& theDetParam, ClusterParam
   assert(!theClusterParam.with_track_angle);
 
   if (UseErrorsFromTemplates_) {
-    errorFromTemplates(theDetParam, theClusterParam, theClusterParam.theCluster->charge());
-  } else {
-    theClusterParam.qBin_ = 0;
+     errorFromTemplates(theDetParam, theClusterParam, theClusterParam.theCluster->charge());
+  }  else {
+     theClusterParam.qBin_ = 0;
   }
 
   int Q_f_X;  //!< Q of the first  pixel  in X
@@ -410,8 +414,29 @@ LocalPoint PixelCPEFast::localPosition(DetParam const& theDetParam, ClusterParam
   auto xPos = cp.xpos[0];
   auto yPos = cp.ypos[0];
 
+<<<<<<< HEAD
   //  std::cout<<" in PixelCPEFast:localPosition - pos = "<<xPos<<" "<<yPos
   //           << " size "<< cp.maxRow[0]-cp.minRow[0] << ' ' << cp.maxCol[0]-cp.minCol[0] << std::endl; //dk
+=======
+
+  // estimate track-angle from clus size
+  if (cp.ysize[0]>8) {
+       theClusterParam.cotbeta = (cp.ysize[0]-4)*150.f/(8.f*285.f);
+  }
+
+
+  if (UseErrorsFromTemplates_) {
+     errorFromTemplates(theDetParam, theClusterParam, theClusterParam.theCluster->charge());
+  }  else {
+     theClusterParam.qBin_ = 0;
+  }
+
+
+
+//  std::cout<<" in PixelCPEFast:localPosition - pos = "<<xPos<<" "<<yPos 
+//           << " size "<< cp.maxRow[0]-cp.minRow[0] << ' ' << cp.maxCol[0]-cp.minCol[0] << std::endl; //dk
+
+>>>>>>> VinInn/ClusterLess
 
   //--- Now put the two together
   LocalPoint pos_in_local(xPos, yPos);
@@ -582,7 +607,11 @@ LocalError PixelCPEFast::localError(DetParam const& theDetParam, ClusterParam& t
 
   }  // end
 
+<<<<<<< HEAD
   //   std::cout<<" errors  "<<xerr<<" "<<yerr<<std::endl;  //dk
+=======
+//   std::cout<<" errors  "<<xerr<<" "<<yerr<<std::endl;  //dk
+>>>>>>> VinInn/ClusterLess
 
   auto xerr_sq = xerr * xerr;
   auto yerr_sq = yerr * yerr;

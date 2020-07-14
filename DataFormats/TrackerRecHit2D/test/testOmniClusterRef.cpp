@@ -24,12 +24,14 @@ int strip() {
   }
 
   ClusterStripRef sref = edmNew::makeRefTo(collH, &coll.data()[2]);
+  assert(sref.isNonnull());
 
   OmniClusterRef oref(sref);
   assert(oref.isValid());
   assert(oref.index() == 2);
   assert(oref.isStrip());
   assert(!oref.isPixel());
+  assert(!oref.isSoA());
   assert(oref.subCluster() == 0);
 
   OmniClusterRef oref2(sref, 3);
@@ -65,11 +67,13 @@ int pixel() {
   }
 
   ClusterPixelRef sref = edmNew::makeRefTo(collH, &coll.data()[2]);
+  assert(sref.isNonnull());
 
   OmniClusterRef oref(sref);
   assert(oref.isValid());
   assert(oref.index() == 2);
   assert(!oref.isStrip());
+  assert(!oref.isSoA());
   assert(oref.isPixel());
   assert(oref.subCluster() == 0);
 
@@ -79,6 +83,7 @@ int pixel() {
   assert(oref2.index() == 2);
   assert(!oref2.isStrip());
   assert(oref2.isPixel());
+  assert(!oref2.isSoA());
   assert(oref2.subCluster() == 3);
   assert(!(oref2 == oref));
   assert((oref2 == oref3));
@@ -86,4 +91,25 @@ int pixel() {
   return 0;
 }
 
-int main() { return strip() + pixel(); }
+namespace {
+  struct SoA {};
+}  // namespace
+
+int soa() {
+  SoA soa;
+  edm::TestHandle<SoA> collH(&soa, edm::ProductID(1, 1));
+  assert(collH.isValid());
+  edm::RefProd<SoA> sref{collH};
+  assert(sref.isNonnull());
+  OmniClusterRef oref(sref, 4);
+  assert(oref.isValid());
+  assert(oref.index() == 4);
+  assert(!oref.isStrip());
+  assert(oref.isSoA());
+  assert(oref.isPixel());  // oops yes  (intended side effects, will see later)
+  assert(oref.subCluster() == 0);
+
+  return 0;
+}
+
+int main() { return strip() + pixel() + soa(); }

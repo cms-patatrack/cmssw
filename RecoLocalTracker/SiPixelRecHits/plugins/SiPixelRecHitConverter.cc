@@ -86,6 +86,7 @@
 #include "CUDADataFormats/SiPixelCluster/interface/gpuClusteringConstants.h"
 #include "CUDADataFormats/Common/interface/HostProduct.h"
 using HMSstorage = HostProduct<unsigned int[]>;
+using HLPstorage = HostProduct<float[]>;
 
 using namespace std;
 
@@ -137,7 +138,9 @@ namespace cms {
         tHost_(produces<HMSstorage>()),
         tTrackerGeom_(esConsumes<TrackerGeometry, TrackerDigiGeometryRecord>()),
         tCPE_(esConsumes<PixelClusterParameterEstimator, TkPixelCPERecord>(
-            edm::ESInputTag("", conf.getParameter<std::string>("CPE")))) {}
+            edm::ESInputTag("", conf.getParameter<std::string>("CPE")))) {
+    produces<HLPstorage>();
+  }
 
   // Destructor
   SiPixelRecHitConverter::~SiPixelRecHitConverter() {}
@@ -215,6 +218,12 @@ namespace cms {
     // yes a unique ptr of a unique ptr so edm is happy and the pointer stay still...
     iEvent.emplace(tHost_, std::move(hmsp));  // hmsp is gone, hitsModuleStart still alive and kicking...
 
+    /// this is needed to make switch-producer happy
+    auto hlp = std::make_unique<HLPstorage>();
+    auto orphanHandle = iEvent.put(std::move(hlp));  // hlp is gone
+    edm::RefProd<HLPstorage> refProdHLP{orphanHandle};
+    assert(refProdHLP.isNonnull());
+
     numberOfClusters = 0;
     for (auto DSViter = input.begin(); DSViter != input.end(); DSViter++) {
       numberOfDetUnits++;
@@ -238,15 +247,32 @@ namespace cms {
         edm::Ref<edmNew::DetSetVector<SiPixelCluster>, SiPixelCluster> cluster =
             edmNew::makeRefTo(inputhandle, clustIt);
         // Make a RecHit and add it to the DetSet
-        // old : recHitsOnDetUnit.push_back( new SiPixelRecHit( lp, le, detIdObject, &*clustIt) );
+#ifndef FROZEN_PIX_HITS
         SiPixelRecHit hit(lp, le, rqw, *genericDet, cluster);
+
+#else
+        // for test 
+        edm::RefProd<edmNew::DetSetVector<SiPixelCluster>> refProd{inputhandle};
+        assert(refProd.isNonnull());
+        OmniClusterRef notCluster(refProd, cluster.key());
+
+        // OmniClusterRef notCluster(refProdHLP,hitsModuleStart[genericDet->index()]+cluster->originalId());
+        SiPixelRecHit hit(lp, le, rqw, *genericDet, notCluster);
+#endif
+
         //
         // Now save it =================
         recHitsOnDetUnit.push_back(hit);
+        std::push_heap(recHitsOnDetUnit.begin(), recHitsOnDetUnit.end(), [](auto const& h1, auto const& h2) {
+          return h1.localPosition().x() < h2.localPosition().x();
+        });
         // =============================
 
         // std::cout << "SiPixelRecHitConverterVI " << numberOfClusters << ' '<< lp << " " << le << std::endl;
       }  //  <-- End loop on Clusters
+      std::sort_heap(recHitsOnDetUnit.begin(), recHitsOnDetUnit.end(), [](auto const& h1, auto const& h2) {
+        return h1.localPosition().x() < h2.localPosition().x();
+      });
 
       //  LogDebug("SiPixelRecHitConverter")
       //std::cout << "SiPixelRecHitConverterVI "
