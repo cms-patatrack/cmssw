@@ -7,6 +7,7 @@ class PxMeasurementDetSet;
 class Phase2OTMeasurementDetSet;
 #include "DataFormats/SiStripCluster/interface/SiStripCluster.h"
 #include "DataFormats/SiPixelCluster/interface/SiPixelCluster.h"
+#include "DataFormats/TrackerRecHit2D/interface/SiPixelRecHitCollection.h"
 #include "DataFormats/Phase2TrackerCluster/interface/Phase2TrackerCluster1D.h"
 #include "DataFormats/Common/interface/ContainerMask.h"
 
@@ -40,12 +41,12 @@ public:
   /// Real constructor 2: with new cluster skips (checked)
   MeasurementTrackerEvent(const MeasurementTrackerEvent &trackerEvent,
                           const edm::ContainerMask<edmNew::DetSetVector<SiStripCluster> > &stripClustersToSkip,
-                          const edm::ContainerMask<edmNew::DetSetVector<SiPixelCluster> > &pixelClustersToSkip);
+                          const edm::ContainerMask<SiPixelRecHitCollection> &pixelClustersToSkip);
 
   //FIXME:just temporary solution for phase2!
   MeasurementTrackerEvent(
       const MeasurementTrackerEvent &trackerEvent,
-      const edm::ContainerMask<edmNew::DetSetVector<SiPixelCluster> > &phase2pixelClustersToSkip,
+      const edm::ContainerMask<SiPixelRecHitCollection> &phase2pixelClustersToSkip,
       const edm::ContainerMask<edmNew::DetSetVector<Phase2TrackerCluster1D> > &phase2OTClustersToSkip);
 
   MeasurementTrackerEvent(const MeasurementTrackerEvent &other) = delete;

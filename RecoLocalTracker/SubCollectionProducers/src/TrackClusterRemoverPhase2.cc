@@ -8,6 +8,7 @@
 
 #include "DataFormats/SiPixelCluster/interface/SiPixelCluster.h"
 #include "DataFormats/Phase2TrackerCluster/interface/Phase2TrackerCluster1D.h"
+#include "DataFormats/TrackerRecHit2D/interface/SiPixelRecHitCollection.h"
 
 #include "DataFormats/Common/interface/ValueMap.h"
 #include "DataFormats/Common/interface/DetSetVectorNew.h"
@@ -42,7 +43,7 @@ namespace {
   private:
     void produce(edm::StreamID, edm::Event& evt, const edm::EventSetup&) const override;
 
-    using PixelMaskContainer = edm::ContainerMask<edmNew::DetSetVector<SiPixelCluster>>;
+    using PixelMaskContainer = edm::ContainerMask<SiPixelRecHitCollection>;
     using Phase2OTMaskContainer = edm::ContainerMask<edmNew::DetSetVector<Phase2TrackerCluster1D>>;
 
     using QualityMaskCollection = std::vector<unsigned char>;
@@ -54,7 +55,7 @@ namespace {
     const TrackCollectionTokens tracks_;
     edm::EDGetTokenT<QualityMaskCollection> srcQuals;
 
-    const edm::EDGetTokenT<edmNew::DetSetVector<SiPixelCluster>> pixelClusters_;
+    const edm::EDGetTokenT<SiPixelRecHitCollection> pixelClusters_;
     const edm::EDGetTokenT<edmNew::DetSetVector<Phase2TrackerCluster1D>> phase2OTClusters_;
 
     edm::EDGetTokenT<PixelMaskContainer> oldPxlMaskToken_;
@@ -68,7 +69,7 @@ namespace {
     edm::ParameterSetDescription desc;
     desc.add<edm::InputTag>("trajectories", edm::InputTag());
     desc.add<edm::InputTag>("trackClassifier", edm::InputTag("", "QualityMasks"));
-    desc.add<edm::InputTag>("phase2pixelClusters", edm::InputTag("siPixelClusters"));
+    desc.add<edm::InputTag>("phase2pixelClusters", edm::InputTag("siPixelRecHits"));
     desc.add<edm::InputTag>("phase2OTClusters", edm::InputTag("siPhase2Clusters"));
     desc.add<edm::InputTag>("oldClusterRemovalInfo", edm::InputTag());
 
@@ -88,11 +89,10 @@ namespace {
         trackQuality_(reco::TrackBase::qualityByName(iConfig.getParameter<std::string>("TrackQuality"))),
 
         tracks_(iConfig.getParameter<edm::InputTag>("trajectories"), consumesCollector()),
-        pixelClusters_(
-            consumes<edmNew::DetSetVector<SiPixelCluster>>(iConfig.getParameter<edm::InputTag>("phase2pixelClusters"))),
+        pixelClusters_(consumes<SiPixelRecHitCollection>(iConfig.getParameter<edm::InputTag>("phase2pixelClusters"))),
         phase2OTClusters_(consumes<edmNew::DetSetVector<Phase2TrackerCluster1D>>(
             iConfig.getParameter<edm::InputTag>("phase2OTClusters"))) {
-    produces<edm::ContainerMask<edmNew::DetSetVector<SiPixelCluster>>>();
+    produces<edm::ContainerMask<edmNew::DetSetVector<SiPixelRecHit>>>();
     produces<edm::ContainerMask<edmNew::DetSetVector<Phase2TrackerCluster1D>>>();
 
     // old mode
@@ -112,7 +112,7 @@ namespace {
   }
 
   void TrackClusterRemoverPhase2::produce(edm::StreamID, edm::Event& iEvent, const edm::EventSetup&) const {
-    edm::Handle<edmNew::DetSetVector<SiPixelCluster>> pixelClusters;
+    edm::Handle<SiPixelRecHitCollection> pixelClusters;
     iEvent.getByToken(pixelClusters_, pixelClusters);
     edm::Handle<edmNew::DetSetVector<Phase2TrackerCluster1D>> phase2OTClusters;
     iEvent.getByToken(phase2OTClusters_, phase2OTClusters);
@@ -193,8 +193,8 @@ namespace {
       }
     }
 
-    auto removedPixelClusterMask = std::make_unique<PixelMaskContainer>(
-        edm::RefProd<edmNew::DetSetVector<SiPixelCluster>>(pixelClusters), collectedPixels);
+    auto removedPixelClusterMask =
+        std::make_unique<PixelMaskContainer>(edm::RefProd<SiPixelRecHitCollection>(pixelClusters), collectedPixels);
     LogDebug("TrackClusterRemoverPhase2")
         << "total pxl to skip: " << std::count(collectedPixels.begin(), collectedPixels.end(), true);
     iEvent.put(std::move(removedPixelClusterMask));

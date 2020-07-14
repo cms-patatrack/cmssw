@@ -10,15 +10,17 @@
 #include "DataFormats/FTLRecHit/interface/FTLClusterCollections.h"
 
 class OmniClusterRef {
+  // OK this need to be fixed: the mask shall represent an integer, not just a bit patter as the omniref can be just ONE thing not all of them at the same time
   static const unsigned int kInvalid = 0x80000000;  // bit 31 on
   static const unsigned int kIsStrip = 0x20000000;  // bit 29 on
   // FIXME:: need to check when introducing phase2 pixel
   static const unsigned int kIsPhase2 = 0x40000000;    // bit 30 on
   static const unsigned int kIsTiming = 0x10000000;    // bit 28 on
   static const unsigned int kIsRegional = 0x60000000;  // bit 30 and 29 on  (will become fastsim???)
+  static const unsigned int kIsSoA = 0x8000000;        // bit 27 on (to be fixed)
 
   static const unsigned int indexMask = 0xFFFFFF;
-  static const unsigned int subClusMask = 0xF000000;
+  static const unsigned int subClusMask = 0x7000000;  // 8 subcluster are enough
   static const unsigned int subClusShift = 24;
 
 public:
@@ -36,6 +38,11 @@ public:
       : me(ref.refCore(), (ref.isNonnull() ? (ref.key() | kIsPhase2) | (subClus << subClusShift) : kInvalid)) {}
   explicit OmniClusterRef(ClusterMTDRef const& ref)
       : me(ref.refCore(), (ref.isNonnull() ? (ref.key() | kIsTiming) : kInvalid)) {}
+
+  explicit OmniClusterRef(edm::RefCore const& ref, int index)
+      : me(ref, (ref.isNonnull() ? (index | kIsSoA) : kInvalid)) {}
+  template <typename Prod>
+  explicit OmniClusterRef(edm::RefProd<Prod> const& ref, int index) : OmniClusterRef(ref.refCore(), index) {}
 
   ClusterPixelRef cluster_pixel() const {
     return (isPixel() && isValid()) ? ClusterPixelRef(me.toRefCore(), index()) : ClusterPixelRef();
@@ -57,16 +64,21 @@ public:
   FTLCluster const& mtdCluster() const { return *ClusterMTDRef(me.toRefCore(), index()); }
 
   bool operator==(OmniClusterRef const& lh) const {
-    return rawIndex() == lh.rawIndex();  // in principle this is enough!
+    return (rawIndex() | kIsSoA) == (lh.rawIndex() | kIsSoA);  // in principle this is enough!
   }
 
   bool operator<(OmniClusterRef const& lh) const {
-    return rawIndex() < lh.rawIndex();  // in principle this is enough!
+    return (rawIndex() | kIsSoA) < (lh.rawIndex() | kIsSoA);  // in principle this is enough!
+  }
+
+  bool operator>(OmniClusterRef const& lh) const {
+    return (rawIndex() | kIsSoA) > (lh.rawIndex() | kIsSoA);  // in principle this is enough!
   }
 
 public:
   // edm Ref interface
-  /* auto */ edm::ProductID id() const { return me.id(); }
+  edm::RefCore const& refCore() const { return me.toRefCore(); }
+  edm::ProductID id() const { return me.id(); }
   unsigned int key() const { return index(); }
 
   unsigned int rawIndex() const { return me.index(); }
@@ -80,6 +92,8 @@ public:
   bool isStrip() const { return rawIndex() & kIsStrip; }
   bool isPhase2() const { return rawIndex() & kIsPhase2; }
   bool isTiming() const { return rawIndex() & kIsTiming; }
+  bool isSoA() const { return rawIndex() & kIsSoA; }
+
   // bool isRegional() const { return (rawIndex() & kIsRegional)==kIsRegional; }
   // bool isNonRegionalStrip() const {return (rawIndex() & kIsRegional)==kIsStrip;}
 

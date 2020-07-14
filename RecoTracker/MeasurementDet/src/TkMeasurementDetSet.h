@@ -13,6 +13,7 @@ class Phase2StripCPE;
 #include "DataFormats/Common/interface/DetSetVectorNew.h"
 #include "DataFormats/SiStripCluster/interface/SiStripCluster.h"
 #include "DataFormats/SiPixelCluster/interface/SiPixelCluster.h"
+#include "DataFormats/TrackerRecHit2D/interface/SiPixelRecHitCollection.h"
 #include "DataFormats/Phase2TrackerCluster/interface/Phase2TrackerCluster1D.h"
 #include "RecoLocalTracker/Phase2TrackerRecHits/interface/Phase2StripCPE.h"
 #include "DataFormats/Common/interface/Handle.h"
@@ -322,8 +323,9 @@ private:
 
 class PxMeasurementDetSet {
 public:
+  using RecHitRef = edm::Ref<SiPixelRecHitCollection, SiPixelRecHit>;
   typedef edm::Ref<edmNew::DetSetVector<SiPixelCluster>, SiPixelCluster> SiPixelClusterRef;
-  typedef edmNew::DetSet<SiPixelCluster> PixelDetSet;
+  typedef edmNew::DetSet<SiPixelRecHit> PixelDetSet;
   typedef std::vector<std::pair<LocalPoint, LocalPoint>> BadFEDChannelPositions;
 
   PxMeasurementDetSet(const PxMeasurementConditionSet& cond)
@@ -382,8 +384,8 @@ public:
     if (!active)
       empty_[i] = true;
   }
-  const edm::Handle<edmNew::DetSetVector<SiPixelCluster>>& handle() const { return handle_; }
-  edm::Handle<edmNew::DetSetVector<SiPixelCluster>>& handle() { return handle_; }
+  const edm::Handle<SiPixelRecHitCollection>& handle() const { return handle_; }
+  edm::Handle<SiPixelRecHitCollection>& handle() { return handle_; }
   const PixelDetSet& detSet(int i) const { return detSet_[i]; }
 
 private:
@@ -392,7 +394,7 @@ private:
   const PxMeasurementConditionSet* conditionSet_;
 
   // Globals, per-event
-  edm::Handle<edmNew::DetSetVector<SiPixelCluster>> handle_;
+  edm::Handle<SiPixelRecHitCollection> handle_;
 
   // Locals, per-event
   std::vector<PixelDetSet> detSet_;
