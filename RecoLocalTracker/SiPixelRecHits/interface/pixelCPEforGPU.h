@@ -350,7 +350,7 @@ namespace pixelCPEforGPU {
     ey *= detParams.sigmax[bin]/detParams.sigmax[0];
 
     if (not isEdgeY)
-      cp.yerr[ic] = (0==ix) ? ey : detParams.sy[iy];
+      cp.yerr[ic] = (0==iy) ? ey : detParams.sy[iy];
   }
 
 }  // namespace pixelCPEforGPU

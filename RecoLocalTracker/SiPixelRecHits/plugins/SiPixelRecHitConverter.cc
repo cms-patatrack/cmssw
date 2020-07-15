@@ -247,6 +247,7 @@ namespace cms {
         edm::Ref<edmNew::DetSetVector<SiPixelCluster>, SiPixelCluster> cluster =
             edmNew::makeRefTo(inputhandle, clustIt);
         // Make a RecHit and add it to the DetSet
+#define FROZEN_PIX_HITS
 #ifndef FROZEN_PIX_HITS
         SiPixelRecHit hit(lp, le, rqw, *genericDet, cluster);
 

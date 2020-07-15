@@ -215,7 +215,7 @@ void PixelCPEFast::fillParamsForGpu() {
 
     // average angle
     auto gvx = p.theOrigin.x() + 40.f * m_commonParamsGPU.thePitchX;
-    auto gvy = gvx; // p.theOrigin.y();
+    auto gvy = p.theOrigin.y();
     auto gvz = 1.f / p.theOrigin.z();
     //--- Note that the normalization is not required as only the ratio used
 
@@ -254,8 +254,8 @@ void PixelCPEFast::fillParamsForGpu() {
       errorFromTemplates(p, cp, 20000.f);
       g.sigmay[iy]=cp.sigmay;
  // #ifdef DUMP_ERRORS
-     if (i<5 || 0==i%41) std::cout << "sigmax/sigmay " << i << ' ' << (ys+4.f)/8.f << ' '
-                                    << cp.cotalpha<<'/'<<cp.cotbeta << ' ' << 10000.f*cp.sigmax<<'/'<<10000.f*g.sigmay[iy] <<std::endl;
+      std::cout << "sigmax/sigmay " << i << ' ' << (ys+4.f)/8.f << ' '
+                << cp.cotalpha<<'/'<<cp.cotbeta << ' ' << 10000.f*cp.sigmax<<'/'<<10000.f*g.sigmay[iy] <<std::endl;
 // #endif
     }
 
@@ -444,28 +444,20 @@ LocalPoint PixelCPEFast::localPosition(DetParam const& theDetParam, ClusterParam
   cp.Q_f_Y[0] = Q_f_Y;
   cp.Q_l_Y[0] = Q_l_Y;
 
+  cp.charge[0] =  theClusterParam.theCluster->charge();
+
   auto ind = theDetParam.theDet->index();
   pixelCPEforGPU::position(m_commonParamsGPU, m_detParamsGPU[ind], cp, 0);
   auto xPos = cp.xpos[0];
   auto yPos = cp.ypos[0];
 
+  // set the error
+  pixelCPEforGPU::errorFromDB(m_commonParamsGPU, m_detParamsGPU[ind], cp, 0);
+  theClusterParam.sigmax = cp.xerr[0];
+  theClusterParam.sigmay = cp.yerr[0];
 
-  // estimate track-angle from clus size
-  if (cp.ysize[0]>8) {
-       theClusterParam.cotbeta = (cp.ysize[0]-4)*150.f/(8.f*285.f);
-  }
-
-
-  if (UseErrorsFromTemplates_) {
-     errorFromTemplates(theDetParam, theClusterParam, theClusterParam.theCluster->charge());
-  }  else {
-     theClusterParam.qBin_ = 0;
-  }
-
-
-
-//  std::cout<<" in PixelCPEFast:localPosition - pos = "<<xPos<<" "<<yPos 
-//           << " size "<< cp.maxRow[0]-cp.minRow[0] << ' ' << cp.maxCol[0]-cp.minCol[0] << std::endl; //dk
+  // std::cout<<" in PixelCPEFast:localPosition - pos = "<<xPos<<" "<<yPos 
+  //         << " size "<< cp.maxRow[0]-cp.minRow[0] << ' ' << cp.maxCol[0]-cp.minCol[0] << std::endl; //dk
 
 
   //--- Now put the two together
@@ -528,114 +520,8 @@ void PixelCPEFast::collect_edge_charges(ClusterParam& theClusterParamBase,  //!<
 LocalError PixelCPEFast::localError(DetParam const& theDetParam, ClusterParam& theClusterParamBase) const {
   ClusterParamGeneric& theClusterParam = static_cast<ClusterParamGeneric&>(theClusterParamBase);
 
-  // Default errors are the maximum error used for edge clusters.
-  // These are determined by looking at residuals for edge clusters
-  float xerr = EdgeClusterErrorX_ * micronsToCm;
-  float yerr = EdgeClusterErrorY_ * micronsToCm;
-
-  // Find if cluster is at the module edge.
-  int maxPixelCol = theClusterParam.theCluster->maxPixelCol();
-  int maxPixelRow = theClusterParam.theCluster->maxPixelRow();
-  int minPixelCol = theClusterParam.theCluster->minPixelCol();
-  int minPixelRow = theClusterParam.theCluster->minPixelRow();
-
-  bool edgex = phase1PixelTopology::isEdgeX(minPixelRow) | phase1PixelTopology::isEdgeX(maxPixelRow);
-  bool edgey = phase1PixelTopology::isEdgeY(minPixelCol) | phase1PixelTopology::isEdgeY(maxPixelCol);
-
-  unsigned int sizex = theClusterParam.theCluster->sizeX();
-  unsigned int sizey = theClusterParam.theCluster->sizeY();
-
-  // Find if cluster contains double (big) pixels.
-  bool bigInX = theDetParam.theRecTopol->containsBigPixelInX(minPixelRow, maxPixelRow);
-  bool bigInY = theDetParam.theRecTopol->containsBigPixelInY(minPixelCol, maxPixelCol);
-
-  if (UseErrorsFromTemplates_) {
-    //
-    // Use template errors
-
-    if (!edgex) {  // Only use this for non-edge clusters
-      if (sizex == 1) {
-        if (!bigInX) {
-          xerr = theClusterParam.sx1;
-        } else {
-          xerr = theClusterParam.sx2;
-        }
-      } else {
-        xerr = theClusterParam.sigmax;
-      }
-    }
-
-    if (!edgey) {  // Only use for non-edge clusters
-      if (sizey == 1) {
-        if (!bigInY) {
-          yerr = theClusterParam.sy1;
-        } else {
-          yerr = theClusterParam.sy2;
-        }
-      } else {
-        yerr = theClusterParam.sigmay;
-      }
-    }
-
-  } else {  // simple errors
-
-    // This are the simple errors, hardcoded in the code
-    //cout << "Track angles are not known " << endl;
-    //cout << "Default angle estimation which assumes track from PV (0,0,0) does not work." << endl;
-
-    if (GeomDetEnumerators::isTrackerPixel(theDetParam.thePart)) {
-      if (GeomDetEnumerators::isBarrel(theDetParam.thePart)) {
-        DetId id = (theDetParam.theDet->geographicalId());
-        int layer = ttopo_.layer(id);
-        if (layer == 1) {
-          if (!edgex) {
-            if (sizex <= xerr_barrel_l1_.size())
-              xerr = xerr_barrel_l1_[sizex - 1];
-            else
-              xerr = xerr_barrel_l1_def_;
-          }
-
-          if (!edgey) {
-            if (sizey <= yerr_barrel_l1_.size())
-              yerr = yerr_barrel_l1_[sizey - 1];
-            else
-              yerr = yerr_barrel_l1_def_;
-          }
-        } else {  // layer 2,3
-          if (!edgex) {
-            if (sizex <= xerr_barrel_ln_.size())
-              xerr = xerr_barrel_ln_[sizex - 1];
-            else
-              xerr = xerr_barrel_ln_def_;
-          }
-
-          if (!edgey) {
-            if (sizey <= yerr_barrel_ln_.size())
-              yerr = yerr_barrel_ln_[sizey - 1];
-            else
-              yerr = yerr_barrel_ln_def_;
-          }
-        }
-
-      } else {  // EndCap
-
-        if (!edgex) {
-          if (sizex <= xerr_endcap_.size())
-            xerr = xerr_endcap_[sizex - 1];
-          else
-            xerr = xerr_endcap_def_;
-        }
-
-        if (!edgey) {
-          if (sizey <= yerr_endcap_.size())
-            yerr = yerr_endcap_[sizey - 1];
-          else
-            yerr = yerr_endcap_def_;
-        }
-      }  // end endcap
-    }
-
-  }  // end
+        auto xerr = theClusterParam.sigmax;
+        auto yerr = theClusterParam.sigmay;
 
   //   std::cout<<" errors  "<<xerr<<" "<<yerr<<std::endl;  //dk
 
