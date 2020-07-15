@@ -338,7 +338,7 @@ def customise_gpu_ecal(process):
         ),
         digisLabelEB = cms.string("ebDigis"),
         digisLabelEE = cms.string("eeDigis"),
-        maxChannels = cms.uint32(20000)
+        maxChannels = cms.uint32(40000)
     )
 
     process.hltEcalDigis = cms.EDProducer("EcalCPUDigisProducer",
@@ -352,7 +352,8 @@ def customise_gpu_ecal(process):
     from RecoLocalCalo.EcalRecProducers.ecalUncalibRecHitProducerGPU_cfi import ecalUncalibRecHitProducerGPU as _ecalUncalibRecHitProducerGPU
     process.hltEcalUncalibRecHitGPU = _ecalUncalibRecHitProducerGPU.clone(
         digisLabelEB = cms.InputTag("hltEcalDigisGPU", "ebDigis"),
-        digisLabelEE = cms.InputTag("hltEcalDigisGPU", "eeDigis")
+        digisLabelEE = cms.InputTag("hltEcalDigisGPU", "eeDigis"),
+        maxNumberHits = 40000
     )
 
     process.hltEcalUncalibRecHitSoA = cms.EDProducer("EcalCPUUncalibRecHitProducer",
@@ -378,7 +379,7 @@ def customise_gpu_ecal(process):
         uncalibrecHitsInLabelEE = cms.InputTag("hltEcalUncalibRecHitGPU","EcalUncalibRecHitsEE"),
         recHitsLabelEB = cms.string("EcalRecHitsEB"),
         recHitsLabelEE = cms.string("EcalRecHitsEE"),
-        maxNumberHits = cms.uint32(20000),
+        maxNumberHits = cms.uint32(40000),
         ChannelStatusToBeExcluded = cms.vstring(
             "kDAC",
             "kNoisy",

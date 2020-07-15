@@ -99,7 +99,7 @@ void EcalUncalibRecHitProducerGPU::fillDescriptions(edm::ConfigurationDescriptio
   desc.add<double>("outOfTimeThresholdGain61mEE", 1000);
   desc.add<double>("amplitudeThresholdEB", 10);
   desc.add<double>("amplitudeThresholdEE", 10);
-  desc.add<uint32_t>("maxNumberHits", 20000);  //---- AM TEST
+  desc.add<uint32_t>("maxNumberHits", 40000);
   desc.add<std::vector<uint32_t>>("kernelMinimizeThreads", {32, 1, 1});
   // ---- default false or true? It was set to true, but at HLT it is false
   desc.add<bool>("shouldRunTimingComputation", false);

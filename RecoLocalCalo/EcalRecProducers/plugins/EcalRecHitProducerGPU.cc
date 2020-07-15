@@ -100,7 +100,7 @@ void EcalRecHitProducerGPU::fillDescriptions(edm::ConfigurationDescriptions& con
   desc.add<double>("EBLaserMAX", 30.0);
   desc.add<double>("EELaserMAX", 30.0);
 
-  desc.add<uint32_t>("maxNumberHits", 20000);
+  desc.add<uint32_t>("maxNumberHits", 40000);
 }
 
 EcalRecHitProducerGPU::EcalRecHitProducerGPU(const edm::ParameterSet& ps) {
