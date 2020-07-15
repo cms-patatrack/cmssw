@@ -231,6 +231,7 @@ void PixelCPEFast::fillParamsForGpu() {
       if (cp.qBin_==qbin) continue;
       qbin = cp.qBin_;
       g.sigmax[k] = cp.sigmax;
+      g.yfact[k] = cp.sigmay;
       g.minCh[k++]=qclus;
 // #ifdef DUMP_ERRORS
       std::cout << i << ' ' << g.rawId << ' ' << cp.cotalpha << ' ' << qclus << ' ' << cp.qBin_ << ' ' << cp.pixmx 
@@ -238,10 +239,16 @@ void PixelCPEFast::fillParamsForGpu() {
                 << ' ' << m * cp.sigmay << ' ' << m * cp.sy1 << ' ' << m * cp.sy2 << std::endl;
 // #endif
     }
+    assert(k<=5);
     // fill the rest  (sometimes bin 4 is missing)
     for (int kk=k; kk<5; ++kk) {
       g.sigmax[kk] = g.sigmax[k-1];
+      g.yfact[kk] = g.yfact[k-1];
       g.minCh[kk]= g.minCh[k-1];
+    }
+    auto det = g.yfact[0];
+    for (int kk=0; kk<5; ++kk) {
+       g.yfact[kk] /= det;
     }
 
     // sample y in angle
@@ -249,7 +256,7 @@ void PixelCPEFast::fillParamsForGpu() {
     // sample yerr as function of "size"
     for (int iy=0; iy<16; ++iy) {
       ys +=1.f;  // first bin 0 is for size 9  (and size is in fixed point 2^3)
-      cp.cotalpha = ys*100.f/(8.f*285.f);
+      // cp.cotalpha = ys*100.f/(8.f*285.f);
       cp.cotbeta = ys*150.f/(8.f*285.f);
       errorFromTemplates(p, cp, 20000.f);
       g.sigmay[iy]=cp.sigmay;
@@ -259,41 +266,13 @@ void PixelCPEFast::fillParamsForGpu() {
 // #endif
     }
 
-
-    /*
-    // from run1??
-    if (i<96) {
-      g.sx[0] = 0.00120;
-      g.sx[1] = 0.00115;
-      g.sx[2] = 0.0050;
-
-      g.sy[0] = 0.00210;
-      g.sy[1] = 0.00375;
-      g.sy[2] = 0.0085;
-    } else if (g.isBarrel) {
-      g.sx[0] = 0.00120;
-      g.sx[1] = 0.00115;
-      g.sx[2] = 0.0050;
-
-      g.sy[0] = 0.00210;
-      g.sy[1] = 0.00375;
-      g.sy[2] = 0.0085;
-   } else {
-      g.sx[0] = 0.0020;
-      g.sx[1] = 0.0020;
-      g.sx[2] = 0.0050;
-
-      g.sy[0] = 0.0021;
-      g.sy[1] = 0.0021;
-      g.sy[2] = 0.0085;
-   }
-   */
-
+    // add ape
     for (int i = 0; i < 3; ++i) {
       g.sx[i] = std::sqrt(g.sx[i] * g.sx[i] + lape.xx());
       g.sy[i] = std::sqrt(g.sy[i] * g.sy[i] + lape.yy());
     }
   }
+
 
   // compute ladder baricenter (only in global z) for the barrel
   auto& aveGeom = m_averageGeometry;

@@ -41,7 +41,7 @@ namespace pixelCPEforGPU {
     float x0, y0, z0;  // the vertex in the local coord of the detector
 
     float sx[3], sy[3];  // the errors...
-    float sigmax[5], sigmay[16];
+    float sigmax[5], yfact[5], sigmay[16];
     int minCh[5];
 
     Frame frame;
@@ -347,7 +347,7 @@ namespace pixelCPEforGPU {
     auto ey = cp.ysize[ic]>8 ? detParams.sigmay[std::min(cp.ysize[ic]-9,15)] :  detParams.sy[0];
 
     // inflate if charge is large
-    ey *= detParams.sigmax[bin]/detParams.sigmax[0];
+    ey *= detParams.yfact[bin];
 
     if (not isEdgeY)
       cp.yerr[ic] = (0==iy) ? ey : detParams.sy[iy];
