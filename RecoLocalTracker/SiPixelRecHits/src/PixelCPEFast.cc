@@ -185,14 +185,6 @@ void PixelCPEFast::fillParamsForGpu() {
 
     // errors .....
     ClusterParamGeneric cp;
-    auto gvx = p.theOrigin.x() + 40.f * m_commonParamsGPU.thePitchX;
-    auto gvy = p.theOrigin.y();
-    auto gvz = 1.f / p.theOrigin.z();
-    //--- Note that the normalization is not required as only the ratio used
-
-    // calculate angles
-    cp.cotalpha = gvx * gvz;
-    cp.cotbeta = gvy * gvz;
 
     cp.with_track_angle = false;
 
@@ -200,30 +192,73 @@ void PixelCPEFast::fillParamsForGpu() {
     if (lape.invalid())
       lape = LocalError();  // zero....
 
-#ifdef DUMP_ERRORS
+    // start to get errors for size1: use small angle
+    cp.cotalpha = 0.1;
+    cp.cotbeta = 0.15;
+    errorFromTemplates(p, cp, 20000.);
+// #ifdef DUMP_ERRORS
     auto m = 10000.f;
-    for (float qclus = 15000; qclus < 35000; qclus += 15000) {
-      errorFromTemplates(p, cp, qclus);
+    std::cout << i << "ape "  << m * std::sqrt(lape.xx()) << ' ' << m * std::sqrt(lape.yy()) << std::endl;
+    std::cout << i << ' ' << g.rawId << ' ' << cp.cotalpha << ' ' << 20000 << ' ' << cp.qBin_ << ' ' << cp.pixmx
+                << ' ' << m * cp.sigmax << ' ' << m * cp.sx1 << ' ' << m * cp.sx2
+                << ' ' << m * cp.sigmay << ' ' << m * cp.sy1 << ' ' << m * cp.sy2 << std::endl;
+// #endif
 
-      std::cout << i << ' ' << qclus << ' ' << cp.pixmx << ' ' << m * cp.sigmax << ' ' << m * cp.sx1 << ' '
-                << m * cp.sx2 << ' ' << m * cp.sigmay << ' ' << m * cp.sy1 << ' ' << m * cp.sy2 << std::endl;
-    }
-    std::cout << i << ' ' << m * std::sqrt(lape.xx()) << ' ' << m * std::sqrt(lape.yy()) << std::endl;
-#endif
-
-    errorFromTemplates(p, cp, 20000.f);
-<<<<<<< HEAD
     g.pixmx = std::max(0, cp.pixmx);
-=======
-    g.pixmx = std::max(0,cp.pixmx);
->>>>>>> VinInn/ClusterLess
     g.sx[0] = cp.sigmax;
     g.sx[1] = cp.sx1;
     g.sx[2] = cp.sx2;
-
     g.sy[0] = cp.sigmay;
     g.sy[1] = cp.sy1;
     g.sy[2] = cp.sy2;
+
+
+    // average angle
+    auto gvx = p.theOrigin.x() + 40.f * m_commonParamsGPU.thePitchX;
+    auto gvy = gvx; // p.theOrigin.y();
+    auto gvz = 1.f / p.theOrigin.z();
+    //--- Note that the normalization is not required as only the ratio used
+
+    // calculate angles
+    cp.cotalpha = gvx * gvz;
+    cp.cotbeta = gvy * gvz;
+
+    // sample x by charge
+    int qbin = 5;  // low charge
+    int k=0;
+    for (int qclus = 1000; qclus < 200000; qclus += 1000) {
+      errorFromTemplates(p, cp, qclus);
+      if (cp.qBin_==qbin) continue;
+      qbin = cp.qBin_;
+      g.sigmax[k] = cp.sigmax;
+      g.minCh[k++]=qclus;
+// #ifdef DUMP_ERRORS
+      std::cout << i << ' ' << g.rawId << ' ' << cp.cotalpha << ' ' << qclus << ' ' << cp.qBin_ << ' ' << cp.pixmx 
+                << ' ' << m * cp.sigmax << ' ' << m * cp.sx1 << ' ' << m * cp.sx2
+                << ' ' << m * cp.sigmay << ' ' << m * cp.sy1 << ' ' << m * cp.sy2 << std::endl;
+// #endif
+    }
+    // fill the rest  (sometimes bin 4 is missing)
+    for (int kk=k; kk<5; ++kk) {
+      g.sigmax[kk] = g.sigmax[k-1];
+      g.minCh[kk]= g.minCh[k-1];
+    }
+
+    // sample y in angle
+    float ys=8.f-4.f;
+    // sample yerr as function of "size"
+    for (int iy=0; iy<16; ++iy) {
+      ys +=1.f;  // first bin 0 is for size 9  (and size is in fixed point 2^3)
+      cp.cotalpha = ys*100.f/(8.f*285.f);
+      cp.cotbeta = ys*150.f/(8.f*285.f);
+      errorFromTemplates(p, cp, 20000.f);
+      g.sigmay[iy]=cp.sigmay;
+ // #ifdef DUMP_ERRORS
+     if (i<5 || 0==i%41) std::cout << "sigmax/sigmay " << i << ' ' << (ys+4.f)/8.f << ' '
+                                    << cp.cotalpha<<'/'<<cp.cotbeta << ' ' << 10000.f*cp.sigmax<<'/'<<10000.f*g.sigmay[iy] <<std::endl;
+// #endif
+    }
+
 
     /*
     // from run1??
@@ -414,10 +449,6 @@ LocalPoint PixelCPEFast::localPosition(DetParam const& theDetParam, ClusterParam
   auto xPos = cp.xpos[0];
   auto yPos = cp.ypos[0];
 
-<<<<<<< HEAD
-  //  std::cout<<" in PixelCPEFast:localPosition - pos = "<<xPos<<" "<<yPos
-  //           << " size "<< cp.maxRow[0]-cp.minRow[0] << ' ' << cp.maxCol[0]-cp.minCol[0] << std::endl; //dk
-=======
 
   // estimate track-angle from clus size
   if (cp.ysize[0]>8) {
@@ -436,7 +467,6 @@ LocalPoint PixelCPEFast::localPosition(DetParam const& theDetParam, ClusterParam
 //  std::cout<<" in PixelCPEFast:localPosition - pos = "<<xPos<<" "<<yPos 
 //           << " size "<< cp.maxRow[0]-cp.minRow[0] << ' ' << cp.maxCol[0]-cp.minCol[0] << std::endl; //dk
 
->>>>>>> VinInn/ClusterLess
 
   //--- Now put the two together
   LocalPoint pos_in_local(xPos, yPos);
@@ -607,11 +637,7 @@ LocalError PixelCPEFast::localError(DetParam const& theDetParam, ClusterParam& t
 
   }  // end
 
-<<<<<<< HEAD
   //   std::cout<<" errors  "<<xerr<<" "<<yerr<<std::endl;  //dk
-=======
-//   std::cout<<" errors  "<<xerr<<" "<<yerr<<std::endl;  //dk
->>>>>>> VinInn/ClusterLess
 
   auto xerr_sq = xerr * xerr;
   auto yerr_sq = yerr * yerr;

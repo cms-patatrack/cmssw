@@ -41,6 +41,8 @@ namespace pixelCPEforGPU {
     float x0, y0, z0;  // the vertex in the local coord of the detector
 
     float sx[3], sy[3];  // the errors...
+    float sigmax[5], sigmay[16];
+    int minCh[5];
 
     Frame frame;
   };
@@ -332,10 +334,23 @@ namespace pixelCPEforGPU {
     ix += (0 == sx) && phase1PixelTopology::isBigPixX(cp.minRow[ic]);
     iy += (0 == sy) && phase1PixelTopology::isBigPixY(cp.minCol[ic]);
 
+    auto ch = cp.charge[ic];
+
+    auto bin = 0;
+    for (; bin<4; ++bin) 
+       if (ch < detParams.minCh[bin+1]) break;
+    assert(bin<5);
+
     if (not isEdgeX)
-      cp.xerr[ic] = detParams.sx[ix];
+      cp.xerr[ic] = (0==ix) ? detParams.sigmax[bin] : detParams.sx[ix];
+
+    auto ey = cp.ysize[ic]>8 ? detParams.sigmay[std::min(cp.ysize[ic]-9,15)] :  detParams.sy[0];
+
+    // inflate if charge is large
+    ey *= detParams.sigmax[bin]/detParams.sigmax[0];
+
     if (not isEdgeY)
-      cp.yerr[ic] = detParams.sy[iy];
+      cp.yerr[ic] = (0==ix) ? ey : detParams.sy[iy];
   }
 
 }  // namespace pixelCPEforGPU
