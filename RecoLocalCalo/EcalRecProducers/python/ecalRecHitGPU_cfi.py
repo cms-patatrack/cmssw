@@ -13,7 +13,8 @@ ecalRecHitGPU = cms.EDProducer("EcalRecHitProducerGPU",
     recHitsLabelEB = cms.string("EcalRecHitsEB"),
     recHitsLabelEE = cms.string("EcalRecHitsEE"),
  
-    maxNumberHits = cms.uint32(20000),  # FIXME AM
+    maxNumberHitsEB = cms.uint32(61200),
+    maxNumberHitsEE = cms.uint32(14648),
   
   
     #EErechitCollection = cms.string('EcalRecHitsEE'),
