@@ -198,7 +198,7 @@ void PixelCPEFast::fillParamsForGpu() {
     errorFromTemplates(p, cp, 20000.);
 // #ifdef DUMP_ERRORS
     auto m = 10000.f;
-    std::cout << i << "ape "  << m * std::sqrt(lape.xx()) << ' ' << m * std::sqrt(lape.yy()) << std::endl;
+    std::cout << i << ' ' << (g.isBarrel ? 'B' : 'E') << " ape "  << m * std::sqrt(lape.xx()) << ' ' << m * std::sqrt(lape.yy()) << std::endl;
     std::cout << i << ' ' << g.rawId << ' ' << cp.cotalpha << ' ' << 20000 << ' ' << cp.qBin_ << ' ' << cp.pixmx
                 << ' ' << m * cp.sigmax << ' ' << m * cp.sx1 << ' ' << m * cp.sx2
                 << ' ' << m * cp.sigmay << ' ' << m * cp.sy1 << ' ' << m * cp.sy2 << std::endl;
@@ -211,6 +211,35 @@ void PixelCPEFast::fillParamsForGpu() {
     g.sy[0] = cp.sigmay;
     g.sy[1] = cp.sy1;
     g.sy[2] = cp.sy2;
+
+
+    
+    // sample xerr as function of position
+    auto xoff = -81.f * m_commonParamsGPU.thePitchX;;
+    for (int ix=0; ix<16; ++ix) {
+      auto x = xoff + (0.5f+float(ix))*162.f * m_commonParamsGPU.thePitchX/16.f;
+      auto gvx = p.theOrigin.x() + x;
+      auto gvy = p.theOrigin.y();
+      auto gvz = 1.f / p.theOrigin.z();
+      cp.cotbeta = gvy * gvz;
+      cp.cotalpha = gvx * gvz;
+      errorFromTemplates(p, cp, 20000.f);
+      g.sigmax[ix] = cp.sigmax;
+      std::cout << "sigmax " << i << ' ' << x << ' ' << cp.cotalpha << ' ' << 10000.f*cp.sigmax <<std::endl;
+    }
+
+    // sample yerr as function of position
+    auto yoff =    -54*4.f * m_commonParamsGPU.thePitchY;
+    for (int ix=0; ix<16; ++ix) {
+      auto y = yoff + (0.5f+float(ix))*432.f * m_commonParamsGPU.thePitchY/16.f;
+      auto gvx = p.theOrigin.x() + 40.f* m_commonParamsGPU.thePitchY;
+      auto gvy = p.theOrigin.y() +y;
+      auto gvz = 1.f / p.theOrigin.z();
+      cp.cotbeta = gvy * gvz;
+      cp.cotalpha = gvx * gvz;
+      errorFromTemplates(p, cp, 20000.f);
+      std::cout << "sigmay " << i << ' ' << y << ' ' << cp.cotbeta << ' ' << 10000.f*cp.sigmay <<std::endl;
+    }
 
 
     // average angle
@@ -230,7 +259,7 @@ void PixelCPEFast::fillParamsForGpu() {
       errorFromTemplates(p, cp, qclus);
       if (cp.qBin_==qbin) continue;
       qbin = cp.qBin_;
-      g.sigmax[k] = cp.sigmax;
+      g.xfact[k] = cp.sigmax;
       g.yfact[k] = cp.sigmay;
       g.minCh[k++]=qclus;
 // #ifdef DUMP_ERRORS
@@ -242,13 +271,15 @@ void PixelCPEFast::fillParamsForGpu() {
     assert(k<=5);
     // fill the rest  (sometimes bin 4 is missing)
     for (int kk=k; kk<5; ++kk) {
-      g.sigmax[kk] = g.sigmax[k-1];
+      g.xfact[kk] = g.xfact[k-1];
       g.yfact[kk] = g.yfact[k-1];
       g.minCh[kk]= g.minCh[k-1];
     }
-    auto det = g.yfact[0];
+    auto detx = 1.f/g.xfact[0];
+    auto dety = 1.f/g.yfact[0];
     for (int kk=0; kk<5; ++kk) {
-       g.yfact[kk] /= det;
+       g.xfact[kk] *= detx;
+       g.yfact[kk] *= dety;
     }
 
     // sample y in angle
