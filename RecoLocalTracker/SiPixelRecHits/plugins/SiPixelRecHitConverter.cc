@@ -252,7 +252,7 @@ namespace cms {
         SiPixelRecHit hit(lp, le, rqw, *genericDet, cluster);
 
 #else
-        // for test 
+        // for test
         edm::RefProd<edmNew::DetSetVector<SiPixelCluster>> refProd{inputhandle};
         assert(refProd.isNonnull());
         OmniClusterRef notCluster(refProd, cluster.key());

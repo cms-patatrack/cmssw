@@ -1,3 +1,4 @@
+
 #ifndef RecoLocalTracker_SiPixelRecHits_pixelCPEforGPU_h
 #define RecoLocalTracker_SiPixelRecHits_pixelCPEforGPU_h
 
@@ -41,7 +42,7 @@ namespace pixelCPEforGPU {
     float x0, y0, z0;  // the vertex in the local coord of the detector
 
     float sx[3], sy[3];  // the errors...
-    float sigmax[16], sigmay[16];
+    float sigmax[16], sigmay[16], sigmax1[16];
     float xfact[5], yfact[5];
     int minCh[5];
 
@@ -288,8 +289,8 @@ namespace pixelCPEforGPU {
     auto sy = cp.maxCol[ic] - cp.minCol[ic];
 
     // is edgy ?
-    bool isEdgeX = cp.minRow[ic] == 0 or cp.maxRow[ic] == phase1PixelTopology::lastRowInModule;
-    bool isEdgeY = cp.minCol[ic] == 0 or cp.maxCol[ic] == phase1PixelTopology::lastColInModule;
+    bool isEdgeX = cp.xsize[ic] < 1;
+    bool isEdgeY = cp.ysize[ic] < 1;
     // is one and big?
     bool isBig1X = (0 == sx) && phase1PixelTopology::isBigPixX(cp.minRow[ic]);
     bool isBig1Y = (0 == sy) && phase1PixelTopology::isBigPixY(cp.minCol[ic]);
@@ -327,33 +328,35 @@ namespace pixelCPEforGPU {
     auto sy = cp.maxCol[ic] - cp.minCol[ic];
 
     // is edgy ?
-    bool isEdgeX = cp.minRow[ic] == 0 or cp.maxRow[ic] == phase1PixelTopology::lastRowInModule;
-    bool isEdgeY = cp.minCol[ic] == 0 or cp.maxCol[ic] == phase1PixelTopology::lastColInModule;
+    bool isEdgeX = cp.xsize[ic] < 1;
+    bool isEdgeY = cp.ysize[ic] < 1;
+
     // is one and big?
     uint32_t ix = (0 == sx);
     uint32_t iy = (0 == sy);
     ix += (0 == sx) && phase1PixelTopology::isBigPixX(cp.minRow[ic]);
     iy += (0 == sy) && phase1PixelTopology::isBigPixY(cp.minCol[ic]);
 
-
     auto ch = cp.charge[ic];
     auto bin = 0;
-    for (; bin<4; ++bin) 
-       if (ch < detParams.minCh[bin+1]) break;
-    assert(bin<5);
+    for (; bin < 4; ++bin)
+      if (ch < detParams.minCh[bin + 1])
+        break;
+    assert(bin < 5);
 
     auto xoff = 81.f * comParams.thePitchX;
-    int jx = std::min(15,std::max(0, int(16.f*(cp.xpos[ic] + xoff)/(162.f * comParams.thePitchX))));
+    int jx = std::min(15, std::max(0, int(16.f * (cp.xpos[ic] + xoff) / (162.f * comParams.thePitchX))));
 
     if (not isEdgeX)
-      cp.xerr[ic] = (0==ix) ? detParams.xfact[bin]*detParams.sigmax[jx] : detParams.sx[ix];
+      cp.xerr[ic] = (0 == ix) ? detParams.xfact[bin] * detParams.sigmax[jx]
+                              : ((1 == ix) ? detParams.sigmax1[jx] : detParams.sx[2]);
 
-    auto ey = cp.ysize[ic]>8 ? detParams.sigmay[std::min(cp.ysize[ic]-9,15)] :  detParams.sy[0];
+    auto ey = cp.ysize[ic] > 8 ? detParams.sigmay[std::min(cp.ysize[ic] - 9, 15)] : detParams.sy[0];
     // inflate if charge is large
     ey *= detParams.yfact[bin];
 
     if (not isEdgeY)
-      cp.yerr[ic] = (0==iy) ? ey : detParams.sy[iy];
+      cp.yerr[ic] = (0 == iy) ? ey : detParams.sy[iy];
   }
 
 }  // namespace pixelCPEforGPU

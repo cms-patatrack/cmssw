@@ -362,7 +362,7 @@ LocalPoint PixelCPEGeneric::localPosition(DetParam const& theDetParam, ClusterPa
         xPos -= theClusterParam.dx2;
       //cout<<" to "<<xPos<<" "<<(tmp1+theClusterParam.dx1)<<endl;
     } else {  // size>1
-      cout << "Apply correction correction_deltax = " << theClusterParam.deltax << " to xPos = " << xPos <<endl;
+      cout << "Apply correction correction_deltax = " << theClusterParam.deltax << " to xPos = " << xPos << endl;
       xPos -= theClusterParam.deltax;
     }
 
@@ -620,7 +620,7 @@ LocalError PixelCPEGeneric::localError(DetParam const& theDetParam, ClusterParam
   //if(theClusterParam.qBin_ == 0) cout<<" qbin 0 "<<xerr<<" "<<yerr<<endl;
   //}
 
-//   std::cout<<" errors  "<<xerr<<" "<<yerr<<std::endl;  //dk
+  // std::cout<<" errors  "<<xerr<<" "<<yerr<<std::endl;  //dk
 
   auto xerr_sq = xerr * xerr;
   auto yerr_sq = yerr * yerr;

@@ -112,7 +112,8 @@ void PixelCPEFast::fillParamsForGpu() {
   m_commonParamsGPU.thePitchX = m_DetParams[0].thePitchX;
   m_commonParamsGPU.thePitchY = m_DetParams[0].thePitchY;
 
-  std::cout << "pitch & thickness " <<  m_commonParamsGPU.thePitchX << ' ' << m_commonParamsGPU.thePitchY << "  " << m_commonParamsGPU.theThicknessB << ' ' << m_commonParamsGPU.theThicknessE << std::endl;
+  std::cout << "pitch & thickness " << m_commonParamsGPU.thePitchX << ' ' << m_commonParamsGPU.thePitchY << "  "
+            << m_commonParamsGPU.theThicknessB << ' ' << m_commonParamsGPU.theThicknessE << std::endl;
 
   // zero average geometry
   memset(&m_averageGeometry, 0, sizeof(pixelCPEforGPU::AverageGeometry));
@@ -192,17 +193,23 @@ void PixelCPEFast::fillParamsForGpu() {
     if (lape.invalid())
       lape = LocalError();  // zero....
 
-    // start to get errors for size1: use small angle
-    cp.cotalpha = 0.1;
-    cp.cotbeta = 0.15;
-    errorFromTemplates(p, cp, 20000.);
-// #ifdef DUMP_ERRORS
+    {
+      // average angle
+      auto gvx = p.theOrigin.x() + 40.f * m_commonParamsGPU.thePitchX;
+      auto gvy = p.theOrigin.y();
+      auto gvz = 1.f / p.theOrigin.z();
+      cp.cotalpha = gvx * gvz;
+      cp.cotbeta = gvy * gvz;
+      errorFromTemplates(p, cp, 20000.);
+    }
+    // #ifdef DUMP_ERRORS
     auto m = 10000.f;
-    std::cout << i << ' ' << (g.isBarrel ? 'B' : 'E') << " ape "  << m * std::sqrt(lape.xx()) << ' ' << m * std::sqrt(lape.yy()) << std::endl;
-    std::cout << i << ' ' << g.rawId << ' ' << cp.cotalpha << ' ' << 20000 << ' ' << cp.qBin_ << ' ' << cp.pixmx
-                << ' ' << m * cp.sigmax << ' ' << m * cp.sx1 << ' ' << m * cp.sx2
-                << ' ' << m * cp.sigmay << ' ' << m * cp.sy1 << ' ' << m * cp.sy2 << std::endl;
-// #endif
+    std::cout << i << ' ' << (g.isBarrel ? 'B' : 'E') << " ape " << m * std::sqrt(lape.xx()) << ' '
+              << m * std::sqrt(lape.yy()) << std::endl;
+    std::cout << i << ' ' << g.rawId << ' ' << cp.cotalpha << ' ' << 20000 << ' ' << cp.qBin_ << ' ' << cp.pixmx << ' '
+              << m * cp.sigmax << ' ' << m * cp.sx1 << ' ' << m * cp.sx2 << ' ' << m * cp.sigmay << ' ' << m * cp.sy1
+              << ' ' << m * cp.sy2 << std::endl;
+    // #endif
 
     g.pixmx = std::max(0, cp.pixmx);
     g.sx[0] = cp.sigmax;
@@ -212,35 +219,35 @@ void PixelCPEFast::fillParamsForGpu() {
     g.sy[1] = cp.sy1;
     g.sy[2] = cp.sy2;
 
-
-    
     // sample xerr as function of position
-    auto xoff = -81.f * m_commonParamsGPU.thePitchX;;
-    for (int ix=0; ix<16; ++ix) {
-      auto x = xoff + (0.5f+float(ix))*162.f * m_commonParamsGPU.thePitchX/16.f;
-      auto gvx = p.theOrigin.x() + x;
+    auto xoff = -81.f * m_commonParamsGPU.thePitchX;
+    ;
+    for (int ix = 0; ix < 16; ++ix) {
+      auto x = xoff + (0.5f + float(ix)) * 162.f * m_commonParamsGPU.thePitchX / 16.f;
+      auto gvx = p.theOrigin.x() - x;
       auto gvy = p.theOrigin.y();
       auto gvz = 1.f / p.theOrigin.z();
       cp.cotbeta = gvy * gvz;
       cp.cotalpha = gvx * gvz;
       errorFromTemplates(p, cp, 20000.f);
       g.sigmax[ix] = cp.sigmax;
-      std::cout << "sigmax " << i << ' ' << x << ' ' << cp.cotalpha << ' ' << 10000.f*cp.sigmax <<std::endl;
+      g.sigmax1[ix] = cp.sx1;
+      std::cout << "sigmax " << i << ' ' << x << ' ' << cp.cotalpha << ' ' << 10000.f * cp.sigmax << ' '
+                << 10000.f * cp.sx1 << ' ' << 10000.f * cp.sigmay << std::endl;
     }
 
     // sample yerr as function of position
-    auto yoff =    -54*4.f * m_commonParamsGPU.thePitchY;
-    for (int ix=0; ix<16; ++ix) {
-      auto y = yoff + (0.5f+float(ix))*432.f * m_commonParamsGPU.thePitchY/16.f;
-      auto gvx = p.theOrigin.x() + 40.f* m_commonParamsGPU.thePitchY;
-      auto gvy = p.theOrigin.y() +y;
+    auto yoff = -54 * 4.f * m_commonParamsGPU.thePitchY;
+    for (int ix = 0; ix < 16; ++ix) {
+      auto y = yoff + (0.5f + float(ix)) * 432.f * m_commonParamsGPU.thePitchY / 16.f;
+      auto gvx = p.theOrigin.x() + 40.f * m_commonParamsGPU.thePitchY;
+      auto gvy = p.theOrigin.y() - y;
       auto gvz = 1.f / p.theOrigin.z();
       cp.cotbeta = gvy * gvz;
       cp.cotalpha = gvx * gvz;
       errorFromTemplates(p, cp, 20000.f);
-      std::cout << "sigmay " << i << ' ' << y << ' ' << cp.cotbeta << ' ' << 10000.f*cp.sigmay <<std::endl;
+      std::cout << "sigmay " << i << ' ' << y << ' ' << cp.cotbeta << ' ' << 10000.f * cp.sigmay << std::endl;
     }
-
 
     // average angle
     auto gvx = p.theOrigin.x() + 40.f * m_commonParamsGPU.thePitchX;
@@ -254,47 +261,48 @@ void PixelCPEFast::fillParamsForGpu() {
 
     // sample x by charge
     int qbin = 5;  // low charge
-    int k=0;
+    int k = 0;
     for (int qclus = 1000; qclus < 200000; qclus += 1000) {
       errorFromTemplates(p, cp, qclus);
-      if (cp.qBin_==qbin) continue;
+      if (cp.qBin_ == qbin)
+        continue;
       qbin = cp.qBin_;
       g.xfact[k] = cp.sigmax;
       g.yfact[k] = cp.sigmay;
-      g.minCh[k++]=qclus;
-// #ifdef DUMP_ERRORS
-      std::cout << i << ' ' << g.rawId << ' ' << cp.cotalpha << ' ' << qclus << ' ' << cp.qBin_ << ' ' << cp.pixmx 
-                << ' ' << m * cp.sigmax << ' ' << m * cp.sx1 << ' ' << m * cp.sx2
-                << ' ' << m * cp.sigmay << ' ' << m * cp.sy1 << ' ' << m * cp.sy2 << std::endl;
-// #endif
+      g.minCh[k++] = qclus;
+      // #ifdef DUMP_ERRORS
+      std::cout << i << ' ' << g.rawId << ' ' << cp.cotalpha << ' ' << qclus << ' ' << cp.qBin_ << ' ' << cp.pixmx
+                << ' ' << m * cp.sigmax << ' ' << m * cp.sx1 << ' ' << m * cp.sx2 << ' ' << m * cp.sigmay << ' '
+                << m * cp.sy1 << ' ' << m * cp.sy2 << std::endl;
+      // #endif
     }
-    assert(k<=5);
+    assert(k <= 5);
     // fill the rest  (sometimes bin 4 is missing)
-    for (int kk=k; kk<5; ++kk) {
-      g.xfact[kk] = g.xfact[k-1];
-      g.yfact[kk] = g.yfact[k-1];
-      g.minCh[kk]= g.minCh[k-1];
+    for (int kk = k; kk < 5; ++kk) {
+      g.xfact[kk] = g.xfact[k - 1];
+      g.yfact[kk] = g.yfact[k - 1];
+      g.minCh[kk] = g.minCh[k - 1];
     }
-    auto detx = 1.f/g.xfact[0];
-    auto dety = 1.f/g.yfact[0];
-    for (int kk=0; kk<5; ++kk) {
-       g.xfact[kk] *= detx;
-       g.yfact[kk] *= dety;
+    auto detx = 1.f / g.xfact[0];
+    auto dety = 1.f / g.yfact[0];
+    for (int kk = 0; kk < 5; ++kk) {
+      g.xfact[kk] *= detx;
+      g.yfact[kk] *= dety;
     }
 
     // sample y in angle
-    float ys=8.f-4.f;
+    float ys = 8.f - 4.f;
     // sample yerr as function of "size"
-    for (int iy=0; iy<16; ++iy) {
-      ys +=1.f;  // first bin 0 is for size 9  (and size is in fixed point 2^3)
+    for (int iy = 0; iy < 16; ++iy) {
+      ys += 1.f;  // first bin 0 is for size 9  (and size is in fixed point 2^3)
       // cp.cotalpha = ys*100.f/(8.f*285.f);
-      cp.cotbeta = ys*150.f/(8.f*285.f);
+      cp.cotbeta = ys * 150.f / (8.f * 285.f);
       errorFromTemplates(p, cp, 20000.f);
-      g.sigmay[iy]=cp.sigmay;
- // #ifdef DUMP_ERRORS
-      std::cout << "sigmax/sigmay " << i << ' ' << (ys+4.f)/8.f << ' '
-                << cp.cotalpha<<'/'<<cp.cotbeta << ' ' << 10000.f*cp.sigmax<<'/'<<10000.f*g.sigmay[iy] <<std::endl;
-// #endif
+      g.sigmay[iy] = cp.sigmay;
+      // #ifdef DUMP_ERRORS
+      std::cout << "sigmax/sigmay " << i << ' ' << (ys + 4.f) / 8.f << ' ' << cp.cotalpha << '/' << cp.cotbeta << ' '
+                << 10000.f * cp.sigmax << '/' << 10000.f * g.sigmay[iy] << std::endl;
+      // #endif
     }
 
     // add ape
@@ -303,7 +311,6 @@ void PixelCPEFast::fillParamsForGpu() {
       g.sy[i] = std::sqrt(g.sy[i] * g.sy[i] + lape.yy());
     }
   }
-
 
   // compute ladder baricenter (only in global z) for the barrel
   auto& aveGeom = m_averageGeometry;
@@ -430,9 +437,9 @@ LocalPoint PixelCPEFast::localPosition(DetParam const& theDetParam, ClusterParam
   assert(!theClusterParam.with_track_angle);
 
   if (UseErrorsFromTemplates_) {
-     errorFromTemplates(theDetParam, theClusterParam, theClusterParam.theCluster->charge());
-  }  else {
-     theClusterParam.qBin_ = 0;
+    errorFromTemplates(theDetParam, theClusterParam, theClusterParam.theCluster->charge());
+  } else {
+    theClusterParam.qBin_ = 0;
   }
 
   int Q_f_X;  //!< Q of the first  pixel  in X
@@ -454,21 +461,20 @@ LocalPoint PixelCPEFast::localPosition(DetParam const& theDetParam, ClusterParam
   cp.Q_f_Y[0] = Q_f_Y;
   cp.Q_l_Y[0] = Q_l_Y;
 
-  cp.charge[0] =  theClusterParam.theCluster->charge();
+  cp.charge[0] = theClusterParam.theCluster->charge();
 
   auto ind = theDetParam.theDet->index();
   pixelCPEforGPU::position(m_commonParamsGPU, m_detParamsGPU[ind], cp, 0);
   auto xPos = cp.xpos[0];
   auto yPos = cp.ypos[0];
 
-  // set the error
+  // set the error  (mind ape....)
   pixelCPEforGPU::errorFromDB(m_commonParamsGPU, m_detParamsGPU[ind], cp, 0);
   theClusterParam.sigmax = cp.xerr[0];
   theClusterParam.sigmay = cp.yerr[0];
 
-  // std::cout<<" in PixelCPEFast:localPosition - pos = "<<xPos<<" "<<yPos 
-  //         << " size "<< cp.maxRow[0]-cp.minRow[0] << ' ' << cp.maxCol[0]-cp.minCol[0] << std::endl; //dk
-
+  // std::cout<<" in PixelCPEFast:localPosition - pos = "<<xPos<<" "<<yPos
+  //         << " size "<< cp.maxRow[0]-cp.minRow[0] << ' ' << cp.maxCol[0]-cp.minCol[0] << ' ' << cp.charge[0] << std::endl; //dk
 
   //--- Now put the two together
   LocalPoint pos_in_local(xPos, yPos);
@@ -530,10 +536,10 @@ void PixelCPEFast::collect_edge_charges(ClusterParam& theClusterParamBase,  //!<
 LocalError PixelCPEFast::localError(DetParam const& theDetParam, ClusterParam& theClusterParamBase) const {
   ClusterParamGeneric& theClusterParam = static_cast<ClusterParamGeneric&>(theClusterParamBase);
 
-        auto xerr = theClusterParam.sigmax;
-        auto yerr = theClusterParam.sigmay;
+  auto xerr = theClusterParam.sigmax;
+  auto yerr = theClusterParam.sigmay;
 
-  //   std::cout<<" errors  "<<xerr<<" "<<yerr<<std::endl;  //dk
+  // std::cout<<" errors  "<<xerr<<" "<<yerr<<std::endl;  //dk
 
   auto xerr_sq = xerr * xerr;
   auto yerr_sq = yerr * yerr;
