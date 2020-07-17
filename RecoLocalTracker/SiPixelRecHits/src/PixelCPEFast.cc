@@ -185,6 +185,7 @@ void PixelCPEFast::fillParamsForGpu() {
     pl += vv.phi();  // (not obvious)
 
     // errors .....
+
     ClusterParamGeneric cp;
 
     cp.with_track_angle = false;
@@ -192,6 +193,17 @@ void PixelCPEFast::fillParamsForGpu() {
     auto lape = p.theDet->localAlignmentError();
     if (lape.invalid())
       lape = LocalError();  // zero....
+    auto apeX = lape.xx();
+    auto apeY = lape.yy();
+
+    auto toMicronX = [&](float x) {
+      x = std::sqrt(x * x + apeX);
+      return std::min(511, int(x * 1.e4f + 0.5f));
+    };
+    auto toMicronY = [&](float x) {
+      x = std::sqrt(x * x + apeY);
+      return std::min(511, int(x * 1.e4f + 0.5f));
+    };
 
     {
       // average angle
@@ -212,16 +224,13 @@ void PixelCPEFast::fillParamsForGpu() {
     // #endif
 
     g.pixmx = std::max(0, cp.pixmx);
-    g.sx[0] = cp.sigmax;
-    g.sx[1] = cp.sx1;
-    g.sx[2] = cp.sx2;
-    g.sy[0] = cp.sigmay;
-    g.sy[1] = cp.sy1;
-    g.sy[2] = cp.sy2;
+    g.sx2 = toMicronX(cp.sx2);
+    g.sy1 = toMicronY(cp.sy1);
+    g.sy2 = toMicronY(cp.sy2);
 
     // sample xerr as function of position
     auto xoff = -81.f * m_commonParamsGPU.thePitchX;
-    ;
+
     for (int ix = 0; ix < 16; ++ix) {
       auto x = xoff + (0.5f + float(ix)) * 162.f * m_commonParamsGPU.thePitchX / 16.f;
       auto gvx = p.theOrigin.x() - x;
@@ -230,10 +239,10 @@ void PixelCPEFast::fillParamsForGpu() {
       cp.cotbeta = gvy * gvz;
       cp.cotalpha = gvx * gvz;
       errorFromTemplates(p, cp, 20000.f);
-      g.sigmax[ix] = cp.sigmax;
-      g.sigmax1[ix] = cp.sx1;
-      std::cout << "sigmax " << i << ' ' << x << ' ' << cp.cotalpha << ' ' << 10000.f * cp.sigmax << ' '
-                << 10000.f * cp.sx1 << ' ' << 10000.f * cp.sigmay << std::endl;
+      g.sigmax[ix] = toMicronX(cp.sigmax);
+      g.sigmax1[ix] = toMicronX(cp.sx1);
+      std::cout << "sigmax " << i << ' ' << x << ' ' << cp.cotalpha << ' ' << g.sigmax[ix] << ' '
+                << g.sigmax1[ix] << ' ' << 10000.f * cp.sigmay << std::endl;
     }
 
     // sample yerr as function of position
@@ -298,19 +307,14 @@ void PixelCPEFast::fillParamsForGpu() {
       // cp.cotalpha = ys*100.f/(8.f*285.f);
       cp.cotbeta = ys * 150.f / (8.f * 285.f);
       errorFromTemplates(p, cp, 20000.f);
-      g.sigmay[iy] = cp.sigmay;
+      g.sigmay[iy] = toMicronY(cp.sigmay);
       // #ifdef DUMP_ERRORS
       std::cout << "sigmax/sigmay " << i << ' ' << (ys + 4.f) / 8.f << ' ' << cp.cotalpha << '/' << cp.cotbeta << ' '
-                << 10000.f * cp.sigmax << '/' << 10000.f * g.sigmay[iy] << std::endl;
+                << 10000.f * cp.sigmax << '/' << g.sigmay[iy] << std::endl;
       // #endif
     }
 
-    // add ape
-    for (int i = 0; i < 3; ++i) {
-      g.sx[i] = std::sqrt(g.sx[i] * g.sx[i] + lape.xx());
-      g.sy[i] = std::sqrt(g.sy[i] * g.sy[i] + lape.yy());
-    }
-  }
+  }  // loop over det
 
   // compute ladder baricenter (only in global z) for the barrel
   auto& aveGeom = m_averageGeometry;

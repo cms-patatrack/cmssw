@@ -41,8 +41,9 @@ namespace pixelCPEforGPU {
 
     float x0, y0, z0;  // the vertex in the local coord of the detector
 
-    float sx[3], sy[3];  // the errors...
-    float sigmax[16], sigmay[16], sigmax1[16];
+    // float apeX, apexY;  // ape^2
+    uint8_t sx2, sy1, sy2;
+    uint8_t sigmax[16], sigmay[16], sigmax1[16];  // in micron
     float xfact[5], yfact[5];
     int minCh[5];
 
@@ -332,10 +333,10 @@ namespace pixelCPEforGPU {
     bool isEdgeY = cp.ysize[ic] < 1;
 
     // is one and big?
-    uint32_t ix = (0 == sx);
-    uint32_t iy = (0 == sy);
-    ix += (0 == sx) && phase1PixelTopology::isBigPixX(cp.minRow[ic]);
-    iy += (0 == sy) && phase1PixelTopology::isBigPixY(cp.minCol[ic]);
+    bool isOneX = (0 == sx);
+    bool isOneY = (0 == sy);
+    bool isBigX = phase1PixelTopology::isBigPixX(cp.minRow[ic]);
+    bool isBigY = phase1PixelTopology::isBigPixY(cp.minCol[ic]);
 
     auto ch = cp.charge[ic];
     auto bin = 0;
@@ -347,16 +348,16 @@ namespace pixelCPEforGPU {
     auto xoff = 81.f * comParams.thePitchX;
     int jx = std::min(15, std::max(0, int(16.f * (cp.xpos[ic] + xoff) / (162.f * comParams.thePitchX))));
 
-    if (not isEdgeX)
-      cp.xerr[ic] = (0 == ix) ? detParams.xfact[bin] * detParams.sigmax[jx]
-                              : ((1 == ix) ? detParams.sigmax1[jx] : detParams.sx[2]);
+    auto toCM = [](uint8_t x) { return float(x) * 1.e-4; };
 
-    auto ey = cp.ysize[ic] > 8 ? detParams.sigmay[std::min(cp.ysize[ic] - 9, 15)] : detParams.sy[0];
-    // inflate if charge is large
-    ey *= detParams.yfact[bin];
+    if (not isEdgeX)
+      cp.xerr[ic] = isOneX ? toCM(isBigX ? detParams.sx2 : detParams.sigmax1[jx])
+                           : detParams.xfact[bin] * toCM(detParams.sigmax[jx]);
+
+    auto ey = cp.ysize[ic] > 8 ? detParams.sigmay[std::min(cp.ysize[ic] - 9, 15)] : detParams.sy1;
 
     if (not isEdgeY)
-      cp.yerr[ic] = (0 == iy) ? ey : detParams.sy[iy];
+      cp.yerr[ic] = isOneY ? toCM(isBigY ? detParams.sy2 : detParams.sy1) : detParams.yfact[bin] * toCM(ey);
   }
 
 }  // namespace pixelCPEforGPU
