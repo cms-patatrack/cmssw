@@ -173,38 +173,41 @@ namespace ecal {
         constexpr auto bxvlength = getLength<BXVectorType>();
         auto const size = configParameters.maxNumberHitsEB + configParameters.maxNumberHitsEE;
 
-#define MYMALLOC(var, size) var = cms::cuda::make_device_unique<decltype(var)::element_type[]>(size, cudaStream)
+        auto alloc = [cudaStream](auto& var, uint32_t size) {
+          using element_type = typename std::remove_reference_t<decltype(var)>::element_type;
+          var = cms::cuda::make_device_unique<element_type[]>(size, cudaStream);
+        };
 
-        MYMALLOC(samples, size * svlength);
-        MYMALLOC(gainsNoise, size * sgvlength);
+        alloc(samples, size * svlength);
+        alloc(gainsNoise, size * sgvlength);
 
-        MYMALLOC(noisecov, size * smlength);
-        MYMALLOC(pulse_matrix, size * pmlength);
-        MYMALLOC(activeBXs, size * bxvlength);
-        MYMALLOC(acState, size);
+        alloc(noisecov, size * smlength);
+        alloc(pulse_matrix, size * pmlength);
+        alloc(activeBXs, size * bxvlength);
+        alloc(acState, size);
 
-        MYMALLOC(hasSwitchToGain6, size);
-        MYMALLOC(hasSwitchToGain1, size);
-        MYMALLOC(isSaturated, size);
+        alloc(hasSwitchToGain6, size);
+        alloc(hasSwitchToGain1, size);
+        alloc(isSaturated, size);
 
         if (configParameters.shouldRunTimingComputation) {
-          MYMALLOC(sample_values, size * svlength);
-          MYMALLOC(sample_value_errors, size * svlength);
-          MYMALLOC(useless_sample_values, size * EcalDataFrame::MAXSAMPLES);
-          MYMALLOC(chi2sNullHypot, size);
-          MYMALLOC(sum0sNullHypot, size);
-          MYMALLOC(sumAAsNullHypot, size);
-          MYMALLOC(pedestal_nums, size);
+          alloc(sample_values, size * svlength);
+          alloc(sample_value_errors, size * svlength);
+          alloc(useless_sample_values, size * EcalDataFrame::MAXSAMPLES);
+          alloc(chi2sNullHypot, size);
+          alloc(sum0sNullHypot, size);
+          alloc(sumAAsNullHypot, size);
+          alloc(pedestal_nums, size);
 
-          MYMALLOC(tMaxAlphaBetas, size);
-          MYMALLOC(tMaxErrorAlphaBetas, size);
-          MYMALLOC(accTimeMax, size);
-          MYMALLOC(accTimeWgt, size);
-          MYMALLOC(ampMaxAlphaBeta, size);
-          MYMALLOC(ampMaxError, size);
-          MYMALLOC(timeMax, size);
-          MYMALLOC(timeError, size);
-          MYMALLOC(tcState, size);
+          alloc(tMaxAlphaBetas, size);
+          alloc(tMaxErrorAlphaBetas, size);
+          alloc(accTimeMax, size);
+          alloc(accTimeWgt, size);
+          alloc(ampMaxAlphaBeta, size);
+          alloc(ampMaxError, size);
+          alloc(timeMax, size);
+          alloc(timeError, size);
+          alloc(tcState, size);
         }
       }
     };
