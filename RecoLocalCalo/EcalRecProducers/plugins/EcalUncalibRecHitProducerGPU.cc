@@ -202,7 +202,7 @@ void EcalUncalibRecHitProducerGPU::acquire(edm::Event const& event,
   neb_ = ebDigis.size;
   nee_ = eeDigis.size;
 
-  if ( (neb_ > configParameters_.maxNumberHitsEB) || (nee_ > configParameters_.maxNumberHitsEE)) {
+  if ((neb_ > configParameters_.maxNumberHitsEB) || (nee_ > configParameters_.maxNumberHitsEE)) {
     edm::LogError("EcalUncalibRecHitProducerGPU") << "max number of channels exceeded. See options 'maxNumberHitsEB and maxNumberHitsEE' ";
   }
 
