@@ -267,6 +267,7 @@ void PixelCPEFast::fillParamsForGpu() {
     // calculate angles
     cp.cotalpha = gvx * gvz;
     cp.cotbeta = gvy * gvz;
+    auto aveCB = cp.cotbeta;
 
     // sample x by charge
     int qbin = 5;  // low charge
@@ -300,12 +301,12 @@ void PixelCPEFast::fillParamsForGpu() {
     }
 
     // sample y in angle
-    float ys = 8.f - 4.f;
+    float ys = 8.f - 4.f;  // apperent bias of half pixel (see plot)
     // sample yerr as function of "size"
     for (int iy = 0; iy < 16; ++iy) {
       ys += 1.f;  // first bin 0 is for size 9  (and size is in fixed point 2^3)
       // cp.cotalpha = ys*100.f/(8.f*285.f);
-      cp.cotbeta = ys * 150.f / (8.f * 285.f);
+      cp.cotbeta = std::copysign(ys * 150.f / (8.f * 285.f),aveCB);
       errorFromTemplates(p, cp, 20000.f);
       g.sigmay[iy] = toMicronY(cp.sigmay);
       // #ifdef DUMP_ERRORS
