@@ -241,8 +241,8 @@ void PixelCPEFast::fillParamsForGpu() {
       errorFromTemplates(p, cp, 20000.f);
       g.sigmax[ix] = toMicronX(cp.sigmax);
       g.sigmax1[ix] = toMicronX(cp.sx1);
-      std::cout << "sigmax " << i << ' ' << x << ' ' << cp.cotalpha << ' ' << g.sigmax[ix] << ' '
-                << g.sigmax1[ix] << ' ' << 10000.f * cp.sigmay << std::endl;
+      std::cout << "sigmax vs x " << i << ' ' << x << ' ' << cp.cotalpha << ' ' << int(g.sigmax[ix]) << ' '
+                << int(g.sigmax1[ix]) << ' ' << 10000.f * cp.sigmay << std::endl;
     }
 
     // sample yerr as function of position
@@ -255,7 +255,7 @@ void PixelCPEFast::fillParamsForGpu() {
       cp.cotbeta = gvy * gvz;
       cp.cotalpha = gvx * gvz;
       errorFromTemplates(p, cp, 20000.f);
-      std::cout << "sigmay " << i << ' ' << y << ' ' << cp.cotbeta << ' ' << 10000.f * cp.sigmay << std::endl;
+      std::cout << "sigmay vs y " << i << ' ' << y << ' ' << cp.cotbeta << ' ' << 10000.f * cp.sigmay << std::endl;
     }
 
     // average angle
@@ -305,13 +305,14 @@ void PixelCPEFast::fillParamsForGpu() {
     // sample yerr as function of "size"
     for (int iy = 0; iy < 16; ++iy) {
       ys += 1.f;  // first bin 0 is for size 9  (and size is in fixed point 2^3)
+      if (15==iy) ys+=8.f; // last bin for "overflow"
       // cp.cotalpha = ys*100.f/(8.f*285.f);
       cp.cotbeta = std::copysign(ys * 150.f / (8.f * 285.f),aveCB);
       errorFromTemplates(p, cp, 20000.f);
       g.sigmay[iy] = toMicronY(cp.sigmay);
       // #ifdef DUMP_ERRORS
       std::cout << "sigmax/sigmay " << i << ' ' << (ys + 4.f) / 8.f << ' ' << cp.cotalpha << '/' << cp.cotbeta << ' '
-                << 10000.f * cp.sigmax << '/' << g.sigmay[iy] << std::endl;
+                << 10000.f * cp.sigmax << '/' << int(g.sigmay[iy]) << std::endl;
       // #endif
     }
 

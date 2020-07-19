@@ -43,7 +43,7 @@ namespace pixelCPEforGPU {
 
     // float apeX, apexY;  // ape^2
     uint8_t sx2, sy1, sy2;
-    uint8_t sigmax[16], sigmay[16], sigmax1[16];  // in micron
+    uint8_t sigmax[16], sigmax1[16], sigmay[16];  // in micron
     float xfact[5], yfact[5];
     int minCh[5];
 
@@ -328,7 +328,7 @@ namespace pixelCPEforGPU {
     auto sx = cp.maxRow[ic] - cp.minRow[ic];
     auto sy = cp.maxCol[ic] - cp.minCol[ic];
 
-    // is edgy ?
+    // is edgy ?  (size is set negative: see above)
     bool isEdgeX = cp.xsize[ic] < 1;
     bool isEdgeY = cp.ysize[ic] < 1;
 
