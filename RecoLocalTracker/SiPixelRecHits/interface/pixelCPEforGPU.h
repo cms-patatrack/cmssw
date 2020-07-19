@@ -211,8 +211,8 @@ namespace pixelCPEforGPU {
     if (phase1PixelTopology::isBigPixY(cp.maxCol[ic]))
       ++ysize;
 
-    int unbalanceX = 8. * std::abs(float(cp.Q_f_X[ic] - cp.Q_l_X[ic])) / float(cp.Q_f_X[ic] + cp.Q_l_X[ic]);
-    int unbalanceY = 8. * std::abs(float(cp.Q_f_Y[ic] - cp.Q_l_Y[ic])) / float(cp.Q_f_Y[ic] + cp.Q_l_Y[ic]);
+    int unbalanceX = 8.f * std::abs(float(cp.Q_f_X[ic] - cp.Q_l_X[ic])) / float(cp.Q_f_X[ic] + cp.Q_l_X[ic]);
+    int unbalanceY = 8.f * std::abs(float(cp.Q_f_Y[ic] - cp.Q_l_Y[ic])) / float(cp.Q_f_Y[ic] + cp.Q_l_Y[ic]);
     xsize = 8 * xsize - unbalanceX;
     ysize = 8 * ysize - unbalanceY;
 

@@ -112,8 +112,8 @@ void PixelCPEFast::fillParamsForGpu() {
   m_commonParamsGPU.thePitchX = m_DetParams[0].thePitchX;
   m_commonParamsGPU.thePitchY = m_DetParams[0].thePitchY;
 
-  std::cout << "pitch & thickness " << m_commonParamsGPU.thePitchX << ' ' << m_commonParamsGPU.thePitchY << "  "
-            << m_commonParamsGPU.theThicknessB << ' ' << m_commonParamsGPU.theThicknessE << std::endl;
+  // std::cout << "pitch & thickness " << m_commonParamsGPU.thePitchX << ' ' << m_commonParamsGPU.thePitchY << "  "
+  //          << m_commonParamsGPU.theThicknessB << ' ' << m_commonParamsGPU.theThicknessE << std::endl;
 
   // zero average geometry
   memset(&m_averageGeometry, 0, sizeof(pixelCPEforGPU::AverageGeometry));
@@ -214,19 +214,19 @@ void PixelCPEFast::fillParamsForGpu() {
       cp.cotbeta = gvy * gvz;
       errorFromTemplates(p, cp, 20000.);
     }
-    // #ifdef DUMP_ERRORS
+#ifdef DUMP_ERRORS
     auto m = 10000.f;
     std::cout << i << ' ' << (g.isBarrel ? 'B' : 'E') << " ape " << m * std::sqrt(lape.xx()) << ' '
               << m * std::sqrt(lape.yy()) << std::endl;
     std::cout << i << ' ' << g.rawId << ' ' << cp.cotalpha << ' ' << 20000 << ' ' << cp.qBin_ << ' ' << cp.pixmx << ' '
               << m * cp.sigmax << ' ' << m * cp.sx1 << ' ' << m * cp.sx2 << ' ' << m * cp.sigmay << ' ' << m * cp.sy1
               << ' ' << m * cp.sy2 << std::endl;
-    // #endif
+#endif
 
     g.pixmx = std::max(0, cp.pixmx);
     g.sx2 = toMicronX(cp.sx2);
     g.sy1 = toMicronY(cp.sy1);
-    g.sy2 = toMicronY(cp.sy2);
+    g.sy2 = std::max(55,toMicronY(cp.sy2));
 
     // sample xerr as function of position
     auto xoff = -81.f * m_commonParamsGPU.thePitchX;
@@ -241,10 +241,13 @@ void PixelCPEFast::fillParamsForGpu() {
       errorFromTemplates(p, cp, 20000.f);
       g.sigmax[ix] = toMicronX(cp.sigmax);
       g.sigmax1[ix] = toMicronX(cp.sx1);
+#ifdef DUMP_ERRORS
       std::cout << "sigmax vs x " << i << ' ' << x << ' ' << cp.cotalpha << ' ' << int(g.sigmax[ix]) << ' '
                 << int(g.sigmax1[ix]) << ' ' << 10000.f * cp.sigmay << std::endl;
+#endif
     }
 
+#ifdef DUMP_ERRORS
     // sample yerr as function of position
     auto yoff = -54 * 4.f * m_commonParamsGPU.thePitchY;
     for (int ix = 0; ix < 16; ++ix) {
@@ -257,6 +260,7 @@ void PixelCPEFast::fillParamsForGpu() {
       errorFromTemplates(p, cp, 20000.f);
       std::cout << "sigmay vs y " << i << ' ' << y << ' ' << cp.cotbeta << ' ' << 10000.f * cp.sigmay << std::endl;
     }
+#endif
 
     // average angle
     auto gvx = p.theOrigin.x() + 40.f * m_commonParamsGPU.thePitchX;
@@ -280,11 +284,11 @@ void PixelCPEFast::fillParamsForGpu() {
       g.xfact[k] = cp.sigmax;
       g.yfact[k] = cp.sigmay;
       g.minCh[k++] = qclus;
-      // #ifdef DUMP_ERRORS
+#ifdef DUMP_ERRORS
       std::cout << i << ' ' << g.rawId << ' ' << cp.cotalpha << ' ' << qclus << ' ' << cp.qBin_ << ' ' << cp.pixmx
                 << ' ' << m * cp.sigmax << ' ' << m * cp.sx1 << ' ' << m * cp.sx2 << ' ' << m * cp.sigmay << ' '
                 << m * cp.sy1 << ' ' << m * cp.sy2 << std::endl;
-      // #endif
+#endif
     }
     assert(k <= 5);
     // fill the rest  (sometimes bin 4 is missing)
@@ -305,15 +309,16 @@ void PixelCPEFast::fillParamsForGpu() {
     // sample yerr as function of "size"
     for (int iy = 0; iy < 16; ++iy) {
       ys += 1.f;  // first bin 0 is for size 9  (and size is in fixed point 2^3)
-      if (15==iy) ys+=8.f; // last bin for "overflow"
+      if (15 == iy)
+        ys += 8.f;  // last bin for "overflow"
       // cp.cotalpha = ys*100.f/(8.f*285.f);
-      cp.cotbeta = std::copysign(ys * 150.f / (8.f * 285.f),aveCB);
+      cp.cotbeta = std::copysign(ys * 150.f / (8.f * 285.f), aveCB);
       errorFromTemplates(p, cp, 20000.f);
       g.sigmay[iy] = toMicronY(cp.sigmay);
-      // #ifdef DUMP_ERRORS
+#ifdef DUMP_ERRORS
       std::cout << "sigmax/sigmay " << i << ' ' << (ys + 4.f) / 8.f << ' ' << cp.cotalpha << '/' << cp.cotbeta << ' '
                 << 10000.f * cp.sigmax << '/' << int(g.sigmay[iy]) << std::endl;
-      // #endif
+#endif
     }
 
   }  // loop over det
