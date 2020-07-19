@@ -13,8 +13,11 @@
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCompat.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cuda_cxx17.h"
 
+#include "CUDADataFormats/TrackingRecHit/interface/SiPixelStatus.h"
+
 namespace pixelCPEforGPU {
 
+  using Status = SiPixelStatus;
   using Frame = SOAFrame<float>;
   using Rotation = SOARotation<float>;
 
@@ -100,8 +103,11 @@ namespace pixelCPEforGPU {
     float xerr[N];
     float yerr[N];
 
-    int16_t xsize[N];  // clipped at 127 if negative is edge....
+    int16_t xsize[N];  // (*8) clipped at 127 if negative is edge....
     int16_t ysize[N];
+
+    Status status;
+
   };
 
   constexpr int32_t MaxHitsInIter = gpuClustering::maxHitsInIter();
@@ -344,6 +350,13 @@ namespace pixelCPEforGPU {
       if (ch < detParams.minCh[bin + 1])
         break;
     assert(bin < 5);
+
+    cp.status.qBin = 4-bin;
+    cp.status.isOneX = isOneX;
+    cp.status.isBigX = (isOneX&isBigX) | isEdgeX;
+    cp.status.isOneY = isOneY;
+    cp.status.isBigY = (isOneY&isBigY) | isEdgeY;
+
 
     auto xoff = 81.f * comParams.thePitchX;
     int jx = std::min(15, std::max(0, int(16.f * (cp.xpos[ic] + xoff) / (162.f * comParams.thePitchX))));
