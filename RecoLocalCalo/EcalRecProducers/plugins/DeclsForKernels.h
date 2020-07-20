@@ -172,63 +172,42 @@ namespace ecal {
         constexpr auto pmlength = getLength<PulseMatrixType>();
         constexpr auto bxvlength = getLength<BXVectorType>();
         auto const size = configParameters.maxNumberHitsEB + configParameters.maxNumberHitsEE;
-        
-#define MYMALLOC(var, size) var = cms::cuda::make_device_unique<decltype(var)::element_type[]>(size, cudaStream)
-        MYMALLOC(samples, size * svlength);
-        //cudaCheck(cudaMalloc((void**)&samples, size * sizeof(SampleVector)));
-        MYMALLOC(gainsNoise, size * sgvlength);
-        //cudaCheck(cudaMalloc((void**)&gainsNoise, size * sizeof(SampleGainVector)));
 
-        MYMALLOC(noisecov, size * smlength);
-        //cudaCheck(cudaMalloc((void**)&noisecov, size * sizeof(SampleMatrix)));
-        MYMALLOC(pulse_matrix, size * pmlength);
-        //cudaCheck(cudaMalloc((void**)&pulse_matrix, size * sizeof(PulseMatrixType)));
-        MYMALLOC(activeBXs, size * bxvlength);
-        //cudaCheck(cudaMalloc((void**)&activeBXs, size * sizeof(BXVectorType)));
-        MYMALLOC(acState, size);
-        //cudaCheck(cudaMalloc((void**)&acState, size * sizeof(char)));
+        auto alloc = [cudaStream](auto& var, uint32_t size) {
+          using element_type = typename std::remove_reference_t<decltype(var)>::element_type;
+          var = cms::cuda::make_device_unique<element_type[]>(size, cudaStream);
+        };
 
-        MYMALLOC(hasSwitchToGain6, size);
-        //cudaCheck(cudaMalloc((void**)&hasSwitchToGain6, size * sizeof(bool)));
-        MYMALLOC(hasSwitchToGain1, size);
-        //cudaCheck(cudaMalloc((void**)&hasSwitchToGain1, size * sizeof(bool)));
-        MYMALLOC(isSaturated, size);
-        //cudaCheck(cudaMalloc((void**)&isSaturated, size * sizeof(bool)));
+        alloc(samples, size * svlength);
+        alloc(gainsNoise, size * sgvlength);
+
+        alloc(noisecov, size * smlength);
+        alloc(pulse_matrix, size * pmlength);
+        alloc(activeBXs, size * bxvlength);
+        alloc(acState, size);
+
+        alloc(hasSwitchToGain6, size);
+        alloc(hasSwitchToGain1, size);
+        alloc(isSaturated, size);
 
         if (configParameters.shouldRunTimingComputation) {
-          MYMALLOC(sample_values, size * svlength);
-          //cudaCheck(cudaMalloc((void**)&sample_values, size * sizeof(SampleVector)));
-          MYMALLOC(sample_value_errors, size * svlength);
-          //cudaCheck(cudaMalloc((void**)&sample_value_errors, size * sizeof(SampleVector)));
-          MYMALLOC(useless_sample_values, size * EcalDataFrame::MAXSAMPLES);
-          //cudaCheck(cudaMalloc((void**)&useless_sample_values, size * sizeof(bool) * EcalDataFrame::MAXSAMPLES));
-          MYMALLOC(chi2sNullHypot, size);
-          //cudaCheck(cudaMalloc((void**)&chi2sNullHypot, size * sizeof(SampleVector::Scalar)));
-          MYMALLOC(sum0sNullHypot, size);
-          //cudaCheck(cudaMalloc((void**)&sum0sNullHypot, size * sizeof(SampleVector::Scalar)));
-          MYMALLOC(sumAAsNullHypot, size);
-          //cudaCheck(cudaMalloc((void**)&sumAAsNullHypot, size * sizeof(SampleVector::Scalar)));
-          MYMALLOC(pedestal_nums, size);
-          //cudaCheck(cudaMalloc((void**)&pedestal_nums, size * sizeof(char)));
+          alloc(sample_values, size * svlength);
+          alloc(sample_value_errors, size * svlength);
+          alloc(useless_sample_values, size * EcalDataFrame::MAXSAMPLES);
+          alloc(chi2sNullHypot, size);
+          alloc(sum0sNullHypot, size);
+          alloc(sumAAsNullHypot, size);
+          alloc(pedestal_nums, size);
 
-          MYMALLOC(tMaxAlphaBetas, size);
-          //cudaCheck(cudaMalloc((void**)&tMaxAlphaBetas, size * sizeof(SampleVector::Scalar)));
-          MYMALLOC(tMaxErrorAlphaBetas, size);
-          //cudaCheck(cudaMalloc((void**)&tMaxErrorAlphaBetas, size * sizeof(SampleVector::Scalar)));
-          MYMALLOC(accTimeMax, size);
-          //cudaCheck(cudaMalloc((void**)&accTimeMax, size * sizeof(SampleVector::Scalar)));
-          MYMALLOC(accTimeWgt, size);
-          //cudaCheck(cudaMalloc((void**)&accTimeWgt, size * sizeof(SampleVector::Scalar)));
-          MYMALLOC(ampMaxAlphaBeta, size);
-          //cudaCheck(cudaMalloc((void**)&ampMaxAlphaBeta, size * sizeof(SampleVector::Scalar)));
-          MYMALLOC(ampMaxError, size);
-          //cudaCheck(cudaMalloc((void**)&ampMaxError, size * sizeof(SampleVector::Scalar)));
-          MYMALLOC(timeMax, size);
-          //cudaCheck(cudaMalloc((void**)&timeMax, size * sizeof(SampleVector::Scalar)));
-          MYMALLOC(timeError, size);
-          //cudaCheck(cudaMalloc((void**)&timeError, size * sizeof(SampleVector::Scalar)));
-          MYMALLOC(tcState, size);
-          //cudaCheck(cudaMalloc((void**)&tcState, size * sizeof(TimeComputationState)));
+          alloc(tMaxAlphaBetas, size);
+          alloc(tMaxErrorAlphaBetas, size);
+          alloc(accTimeMax, size);
+          alloc(accTimeWgt, size);
+          alloc(ampMaxAlphaBeta, size);
+          alloc(ampMaxError, size);
+          alloc(timeMax, size);
+          alloc(timeError, size);
+          alloc(tcState, size);
         }
       }
     };
