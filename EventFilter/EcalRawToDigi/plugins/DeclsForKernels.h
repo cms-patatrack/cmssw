@@ -41,8 +41,8 @@ namespace ecal {
       // FIXME: we should separate max channels parameter for eb and ee
       // FIXME: replace hardcoded values
       void allocate(ConfigurationParameters const &config, cudaStream_t cudaStream) {
-        digisEB.data = cms::cuda::make_device_unique<uint16_t[]>(config.maxChannelsEB, cudaStream);
-        digisEE.data = cms::cuda::make_device_unique<uint16_t[]>(config.maxChannelsEE, cudaStream);
+        digisEB.data = cms::cuda::make_device_unique<uint16_t[]>(config.maxChannelsEB*10, cudaStream);
+        digisEE.data = cms::cuda::make_device_unique<uint16_t[]>(config.maxChannelsEE*10, cudaStream);
         
         digisEB.ids = cms::cuda::make_device_unique<uint32_t[]>(config.maxChannelsEB, cudaStream);
         digisEE.ids = cms::cuda::make_device_unique<uint32_t[]>(config.maxChannelsEE, cudaStream);
