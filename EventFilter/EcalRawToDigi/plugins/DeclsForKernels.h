@@ -38,7 +38,6 @@ namespace ecal {
     struct OutputDataGPU {
       DigisCollection<::calo::common::DevStoragePolicy> digisEB, digisEE;
 
-      // FIXME: we should separate max channels parameter for eb and ee
       // FIXME: replace hardcoded values
       void allocate(ConfigurationParameters const &config, cudaStream_t cudaStream) {
         digisEB.data = cms::cuda::make_device_unique<uint16_t[]>(config.maxChannelsEB*10, cudaStream);
