@@ -182,7 +182,8 @@ namespace gpuPixelRecHits {
 
         // store it
 
-        hits.charge(h) = clusParams.charge[ic];
+        hits.setCharge(h,clusParams.charge[ic]);
+        hits.setStatus(h,clusParams.status[ic]);
 
         hits.detectorIndex(h) = me;
 

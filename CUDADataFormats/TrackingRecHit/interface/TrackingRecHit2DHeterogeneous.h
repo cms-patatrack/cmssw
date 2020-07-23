@@ -137,7 +137,7 @@ TrackingRecHit2DHeterogeneous<Traits>::TrackingRecHit2DHeterogeneous(
   view->m_yl = get32(1);
   view->m_xerr = get32(2);
   view->m_yerr = get32(3);
-  view->m_charge = reinterpret_cast<int32_t*>(get32(4));
+  view->m_chargeAndStatus = reinterpret_cast<uint32_t*>(get32(4));
 
   if
 #ifndef __CUDACC__

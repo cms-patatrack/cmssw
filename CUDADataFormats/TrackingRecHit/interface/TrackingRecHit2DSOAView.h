@@ -55,8 +55,10 @@ public:
   __device__ __forceinline__ int16_t& iphi(int i) { return m_iphi[i]; }
   __device__ __forceinline__ int16_t iphi(int i) const { return __ldg(m_iphi + i); }
 
-  __device__ __forceinline__ int32_t& charge(int i) { return m_charge[i]; }
-  __device__ __forceinline__ int32_t charge(int i) const { return __ldg(m_charge + i); }
+  __device__ __forceinline__ void setStatus(int i, Status is) { uint32_t w = *reinterpret_cast<uint8_t*>(&is); m_chargeAndStatus[i]&=(w<<24);}
+  __device__ __forceinline__ void setCharge(int i, uint32_t ich) { ich = std::min(ich,chargeMask()); m_chargeAndStatus[i]&=ich;} 
+  __device__ __forceinline__ Status status(int i) const { uint8_t w = __ldg(m_chargeAndStatus + i)>>24; return *reinterpret_cast<Status*>(&w); }
+  __device__ __forceinline__ uint32_t charge(int i) const { return __ldg(m_chargeAndStatus + i)&chargeMask(); }
   __device__ __forceinline__ int16_t& clusterSizeX(int i) { return m_xsize[i]; }
   __device__ __forceinline__ int16_t clusterSizeX(int i) const { return __ldg(m_xsize + i); }
   __device__ __forceinline__ int16_t& clusterSizeY(int i) { return m_ysize[i]; }
@@ -87,11 +89,11 @@ private:
   int16_t* m_iphi;
 
   // cluster properties
-  int32_t* m_charge;
+  static  constexpr uint32_t chargeMask()  {return (1<24) -1;}
+  uint32_t* m_chargeAndStatus;
   int16_t* m_xsize;
   int16_t* m_ysize;
   uint16_t* m_detInd;
-  uint8_t * m_status;
 
   // supporting objects
   AverageGeometry* m_averageGeometry;  // owned (corrected for beam spot: not sure where to host it otherwise)
