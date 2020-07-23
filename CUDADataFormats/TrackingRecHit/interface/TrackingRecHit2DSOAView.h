@@ -7,6 +7,8 @@
 #include "HeterogeneousCore/CUDAUtilities/interface/HistoContainer.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCompat.h"
 #include "Geometry/TrackerGeometryBuilder/interface/phase1PixelTopology.h"
+#include "CUDADataFormats/TrackingRecHit/interface/SiPixelStatus.h"
+
 
 namespace pixelCPEforGPU {
   struct ParamsOnGPU;
@@ -14,6 +16,10 @@ namespace pixelCPEforGPU {
 
 class TrackingRecHit2DSOAView {
 public:
+
+  using Status = SiPixelStatus;
+  static_assert(sizeof(Status)==sizeof(uint8_t));
+
   static constexpr uint32_t maxHits() { return gpuClustering::MaxNumClusters; }
   using hindex_type = uint16_t;  // if above is <=2^16
 
@@ -85,6 +91,7 @@ private:
   int16_t* m_xsize;
   int16_t* m_ysize;
   uint16_t* m_detInd;
+  uint8_t * m_status;
 
   // supporting objects
   AverageGeometry* m_averageGeometry;  // owned (corrected for beam spot: not sure where to host it otherwise)

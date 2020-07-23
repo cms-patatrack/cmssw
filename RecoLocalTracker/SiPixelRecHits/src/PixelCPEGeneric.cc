@@ -362,9 +362,8 @@ LocalPoint PixelCPEGeneric::localPosition(DetParam const& theDetParam, ClusterPa
         xPos -= theClusterParam.dx2;
       //cout<<" to "<<xPos<<" "<<(tmp1+theClusterParam.dx1)<<endl;
     } else {  // size>1
-      //cout << "Apply correction correction_deltax = " << theClusterParam.deltax << " to xPos = " << xPos;
+      cout << "Apply correction correction_deltax = " << theClusterParam.deltax << " to xPos = " << xPos << endl;
       xPos -= theClusterParam.deltax;
-      //cout<<" to "<<xPos<<endl;
     }
 
     if (theClusterParam.theCluster->sizeY() == 1) {
@@ -379,13 +378,13 @@ LocalPoint PixelCPEGeneric::localPosition(DetParam const& theDetParam, ClusterPa
         yPos -= theClusterParam.dy2;
 
     } else {
-      //cout << "Apply correction correction_deltay = " << theClusterParam.deltay << " to yPos = " << yPos << endl;
+      cout << "Apply correction correction_deltay = " << theClusterParam.deltay << " to yPos = " << yPos << endl;
       yPos -= theClusterParam.deltay;
     }
 
   }  // if ( IrradiationBiasCorrection_ )
 
-  //cout<<" in PixelCPEGeneric:localPosition - pos = "<<xPos<<" "<<yPos<<endl; //dk
+  // cout<<" in PixelCPEGeneric:localPosition - pos = "<<xPos<<" "<<yPos << endl; //dk
 
   //--- Now put the two together
   LocalPoint pos_in_local(xPos, yPos);
@@ -620,6 +619,8 @@ LocalError PixelCPEGeneric::localError(DetParam const& theDetParam, ClusterParam
   //cout<<" errors  "<<xerr<<" "<<yerr<<endl;  //dk
   //if(theClusterParam.qBin_ == 0) cout<<" qbin 0 "<<xerr<<" "<<yerr<<endl;
   //}
+
+  // std::cout<<" errors  "<<xerr<<" "<<yerr<<std::endl;  //dk
 
   auto xerr_sq = xerr * xerr;
   auto yerr_sq = yerr * yerr;

@@ -91,7 +91,7 @@ _oldStyleHasSelector = set([
 from RecoLocalTracker.SubCollectionProducers.trackClusterRemover_cfi import trackClusterRemover as _trackClusterRemover
 _trackClusterRemoverBase = _trackClusterRemover.clone(
     maxChi2                                  = 9.0,
-    pixelClusters                            = "siPixelClusters",
+    pixelClusters                            = "siPixelRecHits",
     stripClusters                            = "siStripClusters",
     TrackQuality                             = 'highPurity',
     minNumberOfLayersWithMeasBeforeFiltering = 0,
@@ -104,7 +104,7 @@ pp_on_AA_2018.toModify(_trackClusterRemoverBase, TrackQuality = 'tight')
 from RecoLocalTracker.SubCollectionProducers.phase2trackClusterRemover_cfi import phase2trackClusterRemover as _phase2trackClusterRemover
 _trackClusterRemoverBase_trackingPhase2PU140 = _phase2trackClusterRemover.clone(
     maxChi2                                  = 9.0,
-    phase2pixelClusters                      = "siPixelClusters",
+    phase2pixelClusters                      = "siPixelRecHits",
     phase2OTClusters                         = "siPhase2Clusters",
     TrackQuality                             = 'highPurity',
     minNumberOfLayersWithMeasBeforeFiltering = 0,
