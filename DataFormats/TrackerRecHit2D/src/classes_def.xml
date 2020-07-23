@@ -129,6 +129,11 @@
   <class name="reco::ClusterRemovalInfo::SiStripClusterRefProd" />
   <class name="edm::Wrapper<reco::ClusterRemovalInfo>" />
 
+  <class name="edm::ContainerMask<edmNew::DetSetVector<SiPixelRecHit> >"/>
+  <class name="edm::Wrapper<edm::ContainerMask<edmNew::DetSetVector<SiPixelRecHit> > >"/>
+  <class name="edm::RefProd<edmNew::DetSetVector<SiPixelRecHit> >"/>
+
+
   // fastsim containers
   
    <class name="FastTrackerRecHit" ClassVersion="11">
@@ -165,6 +170,7 @@
   <class name="edm::Ref<vector<vector<edm::Ref<edm::OwnVector<FastTrackerRecHit,edm::ClonePolicy<FastTrackerRecHit> >,FastTrackerRecHit,edm::refhelper::FindUsingAdvance<edm::OwnVector<FastTrackerRecHit,edm::ClonePolicy<FastTrackerRecHit> >,FastTrackerRecHit> > > >,vector<edm::Ref<edm::OwnVector<FastTrackerRecHit,edm::ClonePolicy<FastTrackerRecHit> >,FastTrackerRecHit,edm::refhelper::FindUsingAdvance<edm::OwnVector<FastTrackerRecHit,edm::ClonePolicy<FastTrackerRecHit> >,FastTrackerRecHit> > >,edm::refhelper::FindUsingAdvance<vector<vector<edm::Ref<edm::OwnVector<FastTrackerRecHit,edm::ClonePolicy<FastTrackerRecHit> >,FastTrackerRecHit,edm::refhelper::FindUsingAdvance<edm::OwnVector<FastTrackerRecHit,edm::ClonePolicy<FastTrackerRecHit> >,FastTrackerRecHit> > > >,vector<edm::Ref<edm::OwnVector<FastTrackerRecHit,edm::ClonePolicy<FastTrackerRecHit> >,FastTrackerRecHit,edm::refhelper::FindUsingAdvance<edm::OwnVector<FastTrackerRecHit,edm::ClonePolicy<FastTrackerRecHit> >,FastTrackerRecHit> > > > >"/>
 
   <class name="edm::Wrapper< edm::Ref<vector<vector<edm::Ref<edm::OwnVector<FastTrackerRecHit,edm::ClonePolicy<FastTrackerRecHit> >,FastTrackerRecHit,edm::refhelper::FindUsingAdvance<edm::OwnVector<FastTrackerRecHit,edm::ClonePolicy<FastTrackerRecHit> >,FastTrackerRecHit> > > >,vector<edm::Ref<edm::OwnVector<FastTrackerRecHit,edm::ClonePolicy<FastTrackerRecHit> >,FastTrackerRecHit,edm::refhelper::FindUsingAdvance<edm::OwnVector<FastTrackerRecHit,edm::ClonePolicy<FastTrackerRecHit> >,FastTrackerRecHit> > >,edm::refhelper::FindUsingAdvance<vector<vector<edm::Ref<edm::OwnVector<FastTrackerRecHit,edm::ClonePolicy<FastTrackerRecHit> >,FastTrackerRecHit,edm::refhelper::FindUsingAdvance<edm::OwnVector<FastTrackerRecHit,edm::ClonePolicy<FastTrackerRecHit> >,FastTrackerRecHit> > > >,vector<edm::Ref<edm::OwnVector<FastTrackerRecHit,edm::ClonePolicy<FastTrackerRecHit> >,FastTrackerRecHit,edm::refhelper::FindUsingAdvance<edm::OwnVector<FastTrackerRecHit,edm::ClonePolicy<FastTrackerRecHit> >,FastTrackerRecHit> > > > > >"/>
+
 
   // phase2 containers
 
