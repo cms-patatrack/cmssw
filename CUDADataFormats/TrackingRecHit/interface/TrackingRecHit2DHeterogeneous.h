@@ -151,11 +151,11 @@ TrackingRecHit2DHeterogeneous<Traits>::TrackingRecHit2DHeterogeneous(
     view->m_rg = get32(8);
 
     auto get16 = [&](int i) { return m_store16.get() + i * nHits; };
-    m_iphi = view->m_iphi = reinterpret_cast<int16_t*>(get16(0));
+    m_iphi = view->m_iphi = reinterpret_cast<int16_t*>(get16(1));
 
     view->m_xsize = reinterpret_cast<int16_t*>(get16(2));
     view->m_ysize = reinterpret_cast<int16_t*>(get16(3));
-    view->m_detInd = get16(1);
+    view->m_detInd = get16(0);
 
     m_hist = view->m_hist = m_HistStore.get();
     m_hitsLayerStart = view->m_hitsLayerStart = reinterpret_cast<uint32_t*>(get32(n32));

@@ -3,6 +3,7 @@
 #include "CUDADataFormats/Common/interface/Product.h"
 #include "CUDADataFormats/Common/interface/HostProduct.h"
 #include "CUDADataFormats/TrackingRecHit/interface/TrackingRecHit2DCUDA.h"
+#include "CUDADataFormats/TrackingRecHit/interface/TrackingRecHit2DReduced.h"
 #include "DataFormats/Common/interface/DetSetVectorNew.h"
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/SiPixelCluster/interface/SiPixelCluster.h"
@@ -30,7 +31,6 @@ public:
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
   using HMSstorage = HostProduct<unsigned int[]>;
-  using HLPstorage = HostProduct<float[]>;
 
 private:
   void acquire(edm::Event const& iEvent,
@@ -57,7 +57,7 @@ SiPixelRecHitFromSOA::SiPixelRecHitFromSOA(const edm::ParameterSet& iConfig)
     clusterToken_ = consumes<SiPixelClusterCollectionNew>(iConfig.getParameter<edm::InputTag>("src"));
   produces<SiPixelRecHitCollectionNew>();
   produces<HMSstorage>();
-  produces<HLPstorage>();
+  produces<TrackingRecHit2DReduced>();
 }
 
 void SiPixelRecHitFromSOA::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
@@ -82,7 +82,7 @@ void SiPixelRecHitFromSOA::acquire(edm::Event const& iEvent,
   if (0 == m_nHits)
     return;
   m_store32 = inputData.localCoordToHostAsync(ctx.stream());
-  //  m_store16 = inputData.detIndexToHostAsync(ctx.stream();
+  m_store16 = inputData.detIndexToHostAsync(ctx.stream());
   m_hitsModuleStart = inputData.hitsModuleStartToHostAsync(ctx.stream());
 }
 
@@ -105,9 +105,9 @@ void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es
   auto xe = yl + m_nHits;
   auto ye = xe + m_nHits;
 
-  auto hlp = std::make_unique<HLPstorage>(std::move(m_store32));  // m_store32 is gone!
+  auto hlp = std::make_unique<TrackingRecHit2DReduced>(std::move(m_store32),std::move(m_store16),m_nHits);  // m_store32/16 are gone!
   auto orphanHandle = iEvent.put(std::move(hlp));                 // hlp is gone
-  edm::RefProd<HLPstorage> refProd{orphanHandle};
+  edm::RefProd<TrackingRecHit2DReduced> refProd{orphanHandle};
   assert(refProd.isNonnull());
 
   edm::ESHandle<TrackerGeometry> hgeom;

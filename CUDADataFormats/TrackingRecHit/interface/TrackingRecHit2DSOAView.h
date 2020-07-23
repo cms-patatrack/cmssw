@@ -30,6 +30,7 @@ public:
 
   template <typename>
   friend class TrackingRecHit2DHeterogeneous;
+  friend class TrackingRecHit2DReduced;
 
   __device__ __forceinline__ uint32_t nHits() const { return m_nHits; }
 
