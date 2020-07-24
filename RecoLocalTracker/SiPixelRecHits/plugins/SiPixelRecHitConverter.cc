@@ -84,9 +84,9 @@
 
 // Make heterogeneous framework happy
 #include "CUDADataFormats/SiPixelCluster/interface/gpuClusteringConstants.h"
+#include "CUDADataFormats/TrackingRecHit/interface/TrackingRecHit2DReduced.h"
 #include "CUDADataFormats/Common/interface/HostProduct.h"
 using HMSstorage = HostProduct<unsigned int[]>;
-using HLPstorage = HostProduct<float[]>;
 
 using namespace std;
 
@@ -139,7 +139,7 @@ namespace cms {
         tTrackerGeom_(esConsumes<TrackerGeometry, TrackerDigiGeometryRecord>()),
         tCPE_(esConsumes<PixelClusterParameterEstimator, TkPixelCPERecord>(
             edm::ESInputTag("", conf.getParameter<std::string>("CPE")))) {
-    produces<HLPstorage>();
+    produces<TrackingRecHit2DReduced>();
   }
 
   // Destructor
@@ -218,11 +218,11 @@ namespace cms {
     // yes a unique ptr of a unique ptr so edm is happy and the pointer stay still...
     iEvent.emplace(tHost_, std::move(hmsp));  // hmsp is gone, hitsModuleStart still alive and kicking...
 
-    /// this is needed to make switch-producer happy
-    auto hlp = std::make_unique<HLPstorage>();
-    auto orphanHandle = iEvent.put(std::move(hlp));  // hlp is gone
-    edm::RefProd<HLPstorage> refProdHLP{orphanHandle};
-    assert(refProdHLP.isNonnull());
+    /// this is needed to make switch-producer happy  (maybe we soiuld fill it as well)
+ auto hlp = std::make_unique<TrackingRecHit2DReduced>(); 
+  auto orphanHandle = iEvent.put(std::move(hlp));                 // hlp is gone
+  edm::RefProd<TrackingRecHit2DReduced> refProdHLP{orphanHandle};
+  assert(refProdHLP.isNonnull());
 
     numberOfClusters = 0;
     for (auto DSViter = input.begin(); DSViter != input.end(); DSViter++) {
