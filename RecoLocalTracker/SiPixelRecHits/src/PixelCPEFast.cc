@@ -225,7 +225,7 @@ void PixelCPEFast::fillParamsForGpu() {
 
     g.pixmx = std::max(0, cp.pixmx);
     g.sx2 = toMicronX(cp.sx2);
-    g.sy1 = std::max(21,toMicronY(cp.sy1));
+    g.sy1 = std::max(21, toMicronY(cp.sy1));
     g.sy2 = std::max(55, toMicronY(cp.sy2));
 
     // sample xerr as function of position

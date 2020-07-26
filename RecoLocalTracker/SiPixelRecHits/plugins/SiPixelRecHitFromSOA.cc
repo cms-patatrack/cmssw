@@ -105,8 +105,9 @@ void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es
   auto xe = yl + m_nHits;
   auto ye = xe + m_nHits;
 
-  auto hlp = std::make_unique<TrackingRecHit2DReduced>(std::move(m_store32),std::move(m_store16),m_nHits);  // m_store32/16 are gone!
-  auto orphanHandle = iEvent.put(std::move(hlp));                 // hlp is gone
+  auto hlp = std::make_unique<TrackingRecHit2DReduced>(
+      std::move(m_store32), std::move(m_store16), m_nHits);  // m_store32/16 are gone!
+  auto orphanHandle = iEvent.put(std::move(hlp));            // hlp is gone
   edm::RefProd<TrackingRecHit2DReduced> refProd{orphanHandle};
   assert(refProd.isNonnull());
 

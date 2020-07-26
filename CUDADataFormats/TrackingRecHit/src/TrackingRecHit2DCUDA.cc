@@ -11,7 +11,6 @@ cms::cuda::host::unique_ptr<float[]> TrackingRecHit2DGPU::localCoordToHostAsync(
   return ret;
 }
 
-
 template <>
 cms::cuda::host::unique_ptr<uint16_t[]> TrackingRecHit2DGPU::detIndexToHostAsync(cudaStream_t stream) const {
   auto ret = cms::cuda::make_host_unique<uint16_t[]>(nHits(), stream);

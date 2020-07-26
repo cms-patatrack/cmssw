@@ -90,10 +90,10 @@ public:
 
   static void fillPSetDescription(edm::ParameterSetDescription &desc);
 
-
-  ReturnType getParameters(const TrackingRecHit2DSOAView & view,
-                                   const GeomDetUnit& det,
-                                   const LocalTrajectoryParameters& ltp) const override;
+  ReturnType getParameters(const TrackingRecHit2DSOAView &view,
+                           int ih,
+                           const GeomDetUnit &det,
+                           const LocalTrajectoryParameters &ltp) const override;
 
 private:
   std::unique_ptr<ClusterParam> createClusterParam(const SiPixelCluster &cl) const override;

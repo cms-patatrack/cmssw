@@ -219,10 +219,10 @@ namespace cms {
     iEvent.emplace(tHost_, std::move(hmsp));  // hmsp is gone, hitsModuleStart still alive and kicking...
 
     /// this is needed to make switch-producer happy  (maybe we soiuld fill it as well)
- auto hlp = std::make_unique<TrackingRecHit2DReduced>(); 
-  auto orphanHandle = iEvent.put(std::move(hlp));                 // hlp is gone
-  edm::RefProd<TrackingRecHit2DReduced> refProdHLP{orphanHandle};
-  assert(refProdHLP.isNonnull());
+    auto hlp = std::make_unique<TrackingRecHit2DReduced>();
+    auto orphanHandle = iEvent.put(std::move(hlp));  // hlp is gone
+    edm::RefProd<TrackingRecHit2DReduced> refProdHLP{orphanHandle};
+    assert(refProdHLP.isNonnull());
 
     numberOfClusters = 0;
     for (auto DSViter = input.begin(); DSViter != input.end(); DSViter++) {

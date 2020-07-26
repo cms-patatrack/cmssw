@@ -9,16 +9,14 @@
 #include "Geometry/TrackerGeometryBuilder/interface/phase1PixelTopology.h"
 #include "CUDADataFormats/TrackingRecHit/interface/SiPixelStatus.h"
 
-
 namespace pixelCPEforGPU {
   struct ParamsOnGPU;
 }
 
 class TrackingRecHit2DSOAView {
 public:
-
   using Status = SiPixelStatus;
-  static_assert(sizeof(Status)==sizeof(uint8_t));
+  static_assert(sizeof(Status) == sizeof(uint8_t));
 
   static constexpr uint32_t maxHits() { return gpuClustering::MaxNumClusters; }
   using hindex_type = uint16_t;  // if above is <=2^16
@@ -56,10 +54,19 @@ public:
   __device__ __forceinline__ int16_t& iphi(int i) { return m_iphi[i]; }
   __device__ __forceinline__ int16_t iphi(int i) const { return __ldg(m_iphi + i); }
 
-  __device__ __forceinline__ void setStatus(int i, Status is) { uint32_t w = *reinterpret_cast<uint8_t*>(&is); m_chargeAndStatus[i]&=(w<<24);}
-  __device__ __forceinline__ void setCharge(int i, uint32_t ich) { ich = std::min(ich,chargeMask()); m_chargeAndStatus[i]&=ich;} 
-  __device__ __forceinline__ Status status(int i) const { uint8_t w = __ldg(m_chargeAndStatus + i)>>24; return *reinterpret_cast<Status*>(&w); }
-  __device__ __forceinline__ uint32_t charge(int i) const { return __ldg(m_chargeAndStatus + i)&chargeMask(); }
+  __device__ __forceinline__ void setStatus(int i, Status is) {
+    uint32_t w = *reinterpret_cast<uint8_t*>(&is);
+    m_chargeAndStatus[i] &= (w << 24);
+  }
+  __device__ __forceinline__ void setCharge(int i, uint32_t ich) {
+    ich = std::min(ich, chargeMask());
+    m_chargeAndStatus[i] &= ich;
+  }
+  __device__ __forceinline__ Status status(int i) const {
+    uint8_t w = __ldg(m_chargeAndStatus + i) >> 24;
+    return *reinterpret_cast<Status*>(&w);
+  }
+  __device__ __forceinline__ uint32_t charge(int i) const { return __ldg(m_chargeAndStatus + i) & chargeMask(); }
   __device__ __forceinline__ int16_t& clusterSizeX(int i) { return m_xsize[i]; }
   __device__ __forceinline__ int16_t clusterSizeX(int i) const { return __ldg(m_xsize + i); }
   __device__ __forceinline__ int16_t& clusterSizeY(int i) { return m_ysize[i]; }
@@ -90,7 +97,7 @@ private:
   int16_t* m_iphi;
 
   // cluster properties
-  static  constexpr uint32_t chargeMask()  {return (1<24) -1;}
+  static constexpr uint32_t chargeMask() { return (1 < 24) - 1; }
   uint32_t* m_chargeAndStatus;
   int16_t* m_xsize;
   int16_t* m_ysize;
