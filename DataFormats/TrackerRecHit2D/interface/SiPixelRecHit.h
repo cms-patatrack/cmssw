@@ -60,7 +60,7 @@ public:
   int dimension() const override { return 2; }
   void getKfComponents(KfComponentsHolder& holder) const override { getKfComponents2D(holder); }
 
-  bool canImproveWithTrack() const override { return !omniCluster().isSoA(); }
+  bool canImproveWithTrack() const override { return omniCluster().isValid(); }
 
 private:
   // double dispatch
