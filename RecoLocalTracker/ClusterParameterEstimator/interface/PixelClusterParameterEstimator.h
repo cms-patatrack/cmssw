@@ -43,7 +43,8 @@ public:
                                    const GeomDetUnit& det,
                                    const LocalTrajectoryParameters& ltp) const = 0;
 
-  virtual ReturnType getParameters(const TrackingRecHit2DSOAView& view, int ih,
+  virtual ReturnType getParameters(const TrackingRecHit2DSOAView& view,
+                                   int ih,
                                    const GeomDetUnit& det,
                                    const TrajectoryStateOnSurface& tsos) const {
     return getParameters(view, ih, det, tsos.localParameters());

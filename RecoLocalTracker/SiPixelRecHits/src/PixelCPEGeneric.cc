@@ -647,7 +647,6 @@ PixelCPEGeneric::ReturnType PixelCPEGeneric::getParameters(const TrackingRecHit2
   float xerr2, yerr2;
 
   if (useTempErrors) {
-
     auto qclus = view.charge(ih);
     auto status = view.status(ih);
 
@@ -698,26 +697,23 @@ PixelCPEGeneric::ReturnType PixelCPEGeneric::getParameters(const TrackingRecHit2
     theClusterParam.sy1 = theClusterParam.sy1 * micronsToCm;
     theClusterParam.sy2 = theClusterParam.sy2 * micronsToCm;
 
-
     float xerr = EdgeClusterErrorX_ * micronsToCm;
     float yerr = EdgeClusterErrorY_ * micronsToCm;
 
-    bool isEdgeX = status.isBigX & (0==status.isOneX);
-   if (not isEdgeX)
-      xerr = status.isOneX ? (status.isBigX ? theClusterParam.sx2 : theClusterParam.sx1) :  theClusterParam.sigmax;
-     
-    bool isEdgeY = status.isBigY & (0==status.isOneY);
-   if (not isEdgeY)
-      xerr = status.isOneY ? (status.isBigY ? theClusterParam.sy2 : theClusterParam.sy1) :  theClusterParam.sigmay;
+    bool isEdgeX = status.isBigX & (0 == status.isOneX);
+    if (not isEdgeX)
+      xerr = status.isOneX ? (status.isBigX ? theClusterParam.sx2 : theClusterParam.sx1) : theClusterParam.sigmax;
 
-	
-    xerr2 = xerr*xerr;
-    yerr2 = yerr*yerr;
+    bool isEdgeY = status.isBigY & (0 == status.isOneY);
+    if (not isEdgeY)
+      xerr = status.isOneY ? (status.isBigY ? theClusterParam.sy2 : theClusterParam.sy1) : theClusterParam.sigmay;
+
+    xerr2 = xerr * xerr;
+    yerr2 = yerr * yerr;
 
   } else {
     xerr2 = view.xerrLocal(ih);
     yerr2 = view.yerrLocal(ih);
-
   }
 
   // compute precise error....
