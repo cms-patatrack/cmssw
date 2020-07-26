@@ -247,20 +247,7 @@ namespace cms {
         edm::Ref<edmNew::DetSetVector<SiPixelCluster>, SiPixelCluster> cluster =
             edmNew::makeRefTo(inputhandle, clustIt);
         // Make a RecHit and add it to the DetSet
-#define FROZEN_PIX_HITS
-#ifndef FROZEN_PIX_HITS
         SiPixelRecHit hit(lp, le, rqw, *genericDet, cluster);
-
-#else
-        // for test
-        edm::RefProd<edmNew::DetSetVector<SiPixelCluster>> refProd{inputhandle};
-        assert(refProd.isNonnull());
-        OmniClusterRef notCluster(refProd, cluster.key());
-
-        // OmniClusterRef notCluster(refProdHLP,hitsModuleStart[genericDet->index()]+cluster->originalId());
-        SiPixelRecHit hit(lp, le, rqw, *genericDet, notCluster);
-#endif
-
         //
         // Now save it =================
         recHitsOnDetUnit.push_back(hit);

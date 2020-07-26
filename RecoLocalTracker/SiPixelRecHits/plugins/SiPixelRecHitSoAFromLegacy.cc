@@ -247,12 +247,13 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
         LocalPoint lp(output->view()->xLocal(h), output->view()->yLocal(h));
         LocalError le(output->view()->xerrLocal(h), 0, output->view()->yerrLocal(h));
         SiPixelRecHitQuality::QualWordType rqw = 0;
+// #define TEST_CLUSTERLESS
 #ifndef TEST_CLUSTERLESS
         SiPixelRecHit hit(lp, le, rqw, *genericDet, clusterRef[ih]);
 #else
         // for test.....
         OmniClusterRef notCluster(refProdHLP,h);
-        SiPixelRecHit hit(lp, le, rqw, *genaericDet, notCluster);
+        SiPixelRecHit hit(lp, le, rqw, *genericDet, notCluster);
 #endif
         recHitsOnDetUnit.push_back(hit);
         std::push_heap(recHitsOnDetUnit.begin(), recHitsOnDetUnit.end(), [](auto const& h1, auto const& h2) {
