@@ -362,7 +362,7 @@ LocalPoint PixelCPEGeneric::localPosition(DetParam const& theDetParam, ClusterPa
         xPos -= theClusterParam.dx2;
       //cout<<" to "<<xPos<<" "<<(tmp1+theClusterParam.dx1)<<endl;
     } else {  // size>1
-      cout << "Apply correction correction_deltax = " << theClusterParam.deltax << " to xPos = " << xPos << endl;
+      // cout << "Apply correction correction_deltax = " << theClusterParam.deltax << " to xPos = " << xPos << endl;
       xPos -= theClusterParam.deltax;
     }
 
@@ -378,7 +378,7 @@ LocalPoint PixelCPEGeneric::localPosition(DetParam const& theDetParam, ClusterPa
         yPos -= theClusterParam.dy2;
 
     } else {
-      cout << "Apply correction correction_deltay = " << theClusterParam.deltay << " to yPos = " << yPos << endl;
+      // cout << "Apply correction correction_deltay = " << theClusterParam.deltay << " to yPos = " << yPos << endl;
       yPos -= theClusterParam.deltay;
     }
 
