@@ -189,6 +189,17 @@ public:
     return tuple;
   }
 
+
+  ReturnType getParameters(const TrackingRecHit2DSOAView & view,
+                                   const GeomDetUnit& det,
+                                   const LocalTrajectoryParameters& ltp) const override { 
+      // only implemented in Generic...
+     throw "cpe from view not implemented";
+     return ReturnType{};
+  }
+
+
+
 private:
   virtual std::unique_ptr<ClusterParam> createClusterParam(const SiPixelCluster& cl) const = 0;
 
@@ -200,6 +211,8 @@ private:
 
   void fillDetParams();
 
+protected:
+
   //-----------------------------------------------------------------------------
   //! A convenience method to fill a whole SiPixelRecHitQuality word in one shot.
   //! This way, we can keep the details of what is filled within the pixel
@@ -208,7 +221,6 @@ private:
   //-----------------------------------------------------------------------------
   SiPixelRecHitQuality::QualWordType rawQualityWord(ClusterParam& theClusterParam) const;
 
-protected:
   //--- All methods and data members are protected to facilitate (for now)
   //--- access from derived classes.
 

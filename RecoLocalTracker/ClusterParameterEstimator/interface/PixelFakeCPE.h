@@ -39,6 +39,15 @@ public:
     return getParameters(cl, det);
   }
 
+  ReturnType getParameters(const TrackingRecHit2DSOAView & view,
+                                   const GeomDetUnit& det,
+                                   const LocalTrajectoryParameters& ltp) const override {
+      // only implemented in Generic...
+     throw "cpe from view not implemented";
+     return ReturnType{};
+  }
+
+
   void setFakeCPE(FakeCPE *iFakeCPE) { m_fakeCPE = iFakeCPE; }
   FakeCPE const &fakeCPE() const { return *m_fakeCPE; }
 

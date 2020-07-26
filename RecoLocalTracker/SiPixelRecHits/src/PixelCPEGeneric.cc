@@ -628,6 +628,33 @@ LocalError PixelCPEGeneric::localError(DetParam const& theDetParam, ClusterParam
   return LocalError(xerr_sq, 0, yerr_sq);
 }
 
+
+
+PixelCPEGeneric::ReturnType PixelCPEGeneric::getParameters(const TrackingRecHit2DSOAView & view,
+                                   const GeomDetUnit& det,
+                                   const LocalTrajectoryParameters& ltp) const {
+
+    DetParam const& theDetParam = detParam(det);
+    ClusterParamGeneric theClusterParam;
+    computeAnglesFromDetPosition(theDetParam, theClusterParam);
+
+   // apply position correction (irradiation)
+    LocalPoint lp = localPosition(theDetParam, theClusterParam);
+
+    // compute precise error....
+    LocalError le = localError(theDetParam, theClusterParam);
+    SiPixelRecHitQuality::QualWordType rqw = rawQualityWord(theClusterParam);
+    auto tuple = std::make_tuple(lp, le, rqw);
+
+    return tuple;
+
+
+
+}
+
+
+
+
 void PixelCPEGeneric::fillPSetDescription(edm::ParameterSetDescription& desc) {
   desc.add<double>("eff_charge_cut_highX", 1.0);
   desc.add<double>("eff_charge_cut_highY", 1.0);
