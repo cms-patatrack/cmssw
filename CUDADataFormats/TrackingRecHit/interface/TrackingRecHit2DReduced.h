@@ -25,6 +25,10 @@ public:
     m_view.m_detInd = const_cast<uint16_t*>(m_store16.get());
   }
 
+  // view only!
+  TrackingRecHit2DReduced(TrackingRecHit2DSOAView const & iview, int nhits) : m_view(iview), m_nHits(nhits) {}
+
+
   TrackingRecHit2DReduced() = default;
   ~TrackingRecHit2DReduced() = default;
 
