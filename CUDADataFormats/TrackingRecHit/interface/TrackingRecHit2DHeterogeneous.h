@@ -97,7 +97,7 @@ TrackingRecHit2DHeterogeneous<Traits>::TrackingRecHit2DHeterogeneous(
   // if empy do not bother
   if (0 == nHits) {
     if
-#ifndef __CUDACC__
+#ifdef __cpp_if_constexpr
         constexpr
 #endif
         (std::is_same<Traits, cms::cudacompat::GPUTraits>::value) {
@@ -116,7 +116,7 @@ TrackingRecHit2DHeterogeneous<Traits>::TrackingRecHit2DHeterogeneous(
 
   // host copy is "reduced"  (to be reviewed at some point)
   if
-#ifndef __CUDACC__
+#ifdef __cpp_if_constexpr
       constexpr
 #endif
       (std::is_same<Traits, cms::cudacompat::HostTraits>::value) {
@@ -140,7 +140,7 @@ TrackingRecHit2DHeterogeneous<Traits>::TrackingRecHit2DHeterogeneous(
   view->m_chargeAndStatus = reinterpret_cast<uint32_t*>(get32(4));
 
   if
-#ifndef __CUDACC__
+#ifdef __cpp_if_constexpr
       constexpr
 #endif
       (!std::is_same<Traits, cms::cudacompat::HostTraits>::value) {
@@ -163,7 +163,7 @@ TrackingRecHit2DHeterogeneous<Traits>::TrackingRecHit2DHeterogeneous(
 
   // transfer view
   if
-#ifndef __CUDACC__
+#ifdef __cpp_if_constexpr
       constexpr
 #endif
       (std::is_same<Traits, cms::cudacompat::GPUTraits>::value) {
