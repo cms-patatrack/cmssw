@@ -7,6 +7,7 @@
 #include "DataFormats/TrackerRecHit2D/interface/SiPixelRecHit.h"
 #include "TrackingTools/DetLayers/interface/MeasurementEstimator.h"
 #include "TrackingTools/PatternTools/interface/TrajMeasLessEstim.h"
+#include "RecoTracker/TransientTrackingRecHit/interface/TkClonerImpl.h"
 
 namespace {
   // in cms units are in cm
@@ -137,8 +138,7 @@ TkPixelMeasurementDet::RecHitContainer TkPixelMeasurementDet::compHits(const Tra
 
     if (data.pixelClustersToSkip().empty() or (not data.pixelClustersToSkip()[index])) {
       if (ci->canImproveWithTrack()) {
-        SiPixelClusterRef cluster = ci->cluster();
-        result.push_back(buildRecHit(cluster, ts.localParameters()));
+        result.push_back(TkClonerImpl(cpe(),nullptr,nullptr).makeShared(*ci,ts));
       } else {
         result.push_back(std::make_shared<SiPixelRecHit>(*ci));
       }
