@@ -84,6 +84,7 @@
 
 // Make heterogeneous framework happy
 #include "CUDADataFormats/SiPixelCluster/interface/gpuClusteringConstants.h"
+#include "CUDADataFormats/TrackingRecHit/interface/TrackingRecHit2DReduced.h"
 #include "CUDADataFormats/Common/interface/HostProduct.h"
 using HMSstorage = HostProduct<unsigned int[]>;
 
@@ -137,7 +138,9 @@ namespace cms {
         tHost_(produces<HMSstorage>()),
         tTrackerGeom_(esConsumes<TrackerGeometry, TrackerDigiGeometryRecord>()),
         tCPE_(esConsumes<PixelClusterParameterEstimator, TkPixelCPERecord>(
-            edm::ESInputTag("", conf.getParameter<std::string>("CPE")))) {}
+            edm::ESInputTag("", conf.getParameter<std::string>("CPE")))) {
+    produces<TrackingRecHit2DReduced>();
+  }
 
   // Destructor
   SiPixelRecHitConverter::~SiPixelRecHitConverter() {}
@@ -215,6 +218,12 @@ namespace cms {
     // yes a unique ptr of a unique ptr so edm is happy and the pointer stay still...
     iEvent.emplace(tHost_, std::move(hmsp));  // hmsp is gone, hitsModuleStart still alive and kicking...
 
+    /// this is needed to make switch-producer happy  (maybe we soiuld fill it as well)
+    auto hlp = std::make_unique<TrackingRecHit2DReduced>();
+    auto orphanHandle = iEvent.put(std::move(hlp));  // hlp is gone
+    edm::RefProd<TrackingRecHit2DReduced> refProdHLP{orphanHandle};
+    assert(refProdHLP.isNonnull());
+
     numberOfClusters = 0;
     for (auto DSViter = input.begin(); DSViter != input.end(); DSViter++) {
       numberOfDetUnits++;
@@ -238,15 +247,20 @@ namespace cms {
         edm::Ref<edmNew::DetSetVector<SiPixelCluster>, SiPixelCluster> cluster =
             edmNew::makeRefTo(inputhandle, clustIt);
         // Make a RecHit and add it to the DetSet
-        // old : recHitsOnDetUnit.push_back( new SiPixelRecHit( lp, le, detIdObject, &*clustIt) );
         SiPixelRecHit hit(lp, le, rqw, *genericDet, cluster);
         //
         // Now save it =================
         recHitsOnDetUnit.push_back(hit);
+        std::push_heap(recHitsOnDetUnit.begin(), recHitsOnDetUnit.end(), [](auto const& h1, auto const& h2) {
+          return h1.localPosition().x() < h2.localPosition().x();
+        });
         // =============================
 
         // std::cout << "SiPixelRecHitConverterVI " << numberOfClusters << ' '<< lp << " " << le << std::endl;
       }  //  <-- End loop on Clusters
+      std::sort_heap(recHitsOnDetUnit.begin(), recHitsOnDetUnit.end(), [](auto const& h1, auto const& h2) {
+        return h1.localPosition().x() < h2.localPosition().x();
+      });
 
       //  LogDebug("SiPixelRecHitConverter")
       //std::cout << "SiPixelRecHitConverterVI "

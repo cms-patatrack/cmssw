@@ -192,12 +192,6 @@ const TrajectorySeed* SeedForPhotonConversion1Leg::buildSeed(TrajectorySeedColle
 SeedingHitSet::RecHitPointer SeedForPhotonConversion1Leg::refitHit(SeedingHitSet::ConstRecHitPointer hit,
                                                                    const TrajectoryStateOnSurface& state,
                                                                    const TkClonerImpl& cloner) const {
-  //const TransientTrackingRecHit* a= hit.get();
-  //return const_cast<TransientTrackingRecHit*> (a);
-  //This was modified otherwise the rechit will have just the local x component and local y=0
-  // To understand how to modify for pixels
-
-  //const TSiStripRecHit2DLocalPos* b = dynamic_cast<const TSiStripRecHit2DLocalPos*>(a);
-  //return const_cast<TSiStripRecHit2DLocalPos*>(b);
-  return (SeedingHitSet::RecHitPointer)(cloner(*hit, state));
+  return hit->canImproveWithTrack() ? (SeedingHitSet::RecHitPointer)(cloner(*hit, state))
+                                    : (SeedingHitSet::RecHitPointer)(hit->clone());
 }

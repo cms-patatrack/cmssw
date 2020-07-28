@@ -1,5 +1,7 @@
 #include "RecoLocalTracker/SiPixelRecHits/interface/PixelCPEGeneric.h"
 
+#include "CUDADataFormats/TrackingRecHit/interface/TrackingRecHit2DSOAView.h"
+
 #include "Geometry/CommonDetUnit/interface/PixelGeomDetUnit.h"
 #include "Geometry/TrackerGeometryBuilder/interface/RectangularPixelTopology.h"
 #include "DataFormats/DetId/interface/DetId.h"
@@ -362,9 +364,8 @@ LocalPoint PixelCPEGeneric::localPosition(DetParam const& theDetParam, ClusterPa
         xPos -= theClusterParam.dx2;
       //cout<<" to "<<xPos<<" "<<(tmp1+theClusterParam.dx1)<<endl;
     } else {  // size>1
-      //cout << "Apply correction correction_deltax = " << theClusterParam.deltax << " to xPos = " << xPos;
+      // cout << "Apply correction correction_deltax = " << theClusterParam.deltax << " to xPos = " << xPos << endl;
       xPos -= theClusterParam.deltax;
-      //cout<<" to "<<xPos<<endl;
     }
 
     if (theClusterParam.theCluster->sizeY() == 1) {
@@ -379,13 +380,13 @@ LocalPoint PixelCPEGeneric::localPosition(DetParam const& theDetParam, ClusterPa
         yPos -= theClusterParam.dy2;
 
     } else {
-      //cout << "Apply correction correction_deltay = " << theClusterParam.deltay << " to yPos = " << yPos << endl;
+      // cout << "Apply correction correction_deltay = " << theClusterParam.deltay << " to yPos = " << yPos << endl;
       yPos -= theClusterParam.deltay;
     }
 
   }  // if ( IrradiationBiasCorrection_ )
 
-  //cout<<" in PixelCPEGeneric:localPosition - pos = "<<xPos<<" "<<yPos<<endl; //dk
+  // cout<<" in PixelCPEGeneric:localPosition - pos = "<<xPos<<" "<<yPos << endl; //dk
 
   //--- Now put the two together
   LocalPoint pos_in_local(xPos, yPos);
@@ -621,10 +622,106 @@ LocalError PixelCPEGeneric::localError(DetParam const& theDetParam, ClusterParam
   //if(theClusterParam.qBin_ == 0) cout<<" qbin 0 "<<xerr<<" "<<yerr<<endl;
   //}
 
+  // std::cout<<" errors  "<<xerr<<" "<<yerr<<std::endl;  //dk
+
   auto xerr_sq = xerr * xerr;
   auto yerr_sq = yerr * yerr;
 
   return LocalError(xerr_sq, 0, yerr_sq);
+}
+
+PixelCPEGeneric::ReturnType PixelCPEGeneric::getParameters(const TrackingRecHit2DSOAView& view,
+                                                           int ih,
+                                                           const GeomDetUnit& det,
+                                                           const LocalTrajectoryParameters& ltp) const {
+  DetParam const& theDetParam = detParam(det);
+  ClusterParamGeneric theClusterParam;
+  computeAnglesFromTrajectory(theDetParam, theClusterParam, ltp);
+
+  // apply position correction (irradiation)
+  LocalPoint lp(view.xLocal(ih), view.yLocal(ih));
+
+  bool useTempErrors =
+      UseErrorsFromTemplates_ && (!NoTemplateErrorsWhenNoTrkAngles_ || theClusterParam.with_track_angle);
+
+  float xerr2, yerr2;
+
+  if (useTempErrors) {
+    auto qclus = view.charge(ih);
+    auto status = view.status(ih);
+
+    float locBz = theDetParam.bz;
+    float locBx = theDetParam.bx;
+    //cout << "PixelCPEFast::localPosition(...) : locBz = " << locBz << endl;
+
+    theClusterParam.pixmx = std::numeric_limits<int>::max();  // max pixel charge for truncation of 2-D cluster
+
+    theClusterParam.sigmay = -999.9;  // CPE Generic y-error for multi-pixel cluster
+    theClusterParam.sigmax = -999.9;  // CPE Generic x-error for multi-pixel cluster
+    theClusterParam.sy1 = -999.9;     // CPE Generic y-error for single single-pixel
+    theClusterParam.sy2 = -999.9;     // CPE Generic y-error for single double-pixel cluster
+    theClusterParam.sx1 = -999.9;     // CPE Generic x-error for single single-pixel cluster
+    theClusterParam.sx2 = -999.9;     // CPE Generic x-error for single double-pixel cluster
+
+    float dummy;
+
+    SiPixelGenError gtempl(thePixelGenError_);
+    int gtemplID_ = theDetParam.detTemplateId;
+
+    theClusterParam.qBin_ = gtempl.qbin(gtemplID_,
+                                        theClusterParam.cotalpha,
+                                        theClusterParam.cotbeta,
+                                        locBz,
+                                        locBx,
+                                        qclus,
+                                        false,
+                                        theClusterParam.pixmx,
+                                        theClusterParam.sigmay,
+                                        dummy,
+                                        theClusterParam.sigmax,
+                                        dummy,
+                                        theClusterParam.sy1,
+                                        dummy,
+                                        theClusterParam.sy2,
+                                        dummy,
+                                        theClusterParam.sx1,
+                                        dummy,
+                                        theClusterParam.sx2,
+                                        dummy);
+
+    theClusterParam.sigmax = theClusterParam.sigmax * micronsToCm;
+    theClusterParam.sx1 = theClusterParam.sx1 * micronsToCm;
+    theClusterParam.sx2 = theClusterParam.sx2 * micronsToCm;
+
+    theClusterParam.sigmay = theClusterParam.sigmay * micronsToCm;
+    theClusterParam.sy1 = theClusterParam.sy1 * micronsToCm;
+    theClusterParam.sy2 = theClusterParam.sy2 * micronsToCm;
+
+    float xerr = EdgeClusterErrorX_ * micronsToCm;
+    float yerr = EdgeClusterErrorY_ * micronsToCm;
+
+    bool isEdgeX = status.isBigX & (0 == status.isOneX);
+    if (not isEdgeX)
+      xerr = status.isOneX ? (status.isBigX ? theClusterParam.sx2 : theClusterParam.sx1) : theClusterParam.sigmax;
+
+    bool isEdgeY = status.isBigY & (0 == status.isOneY);
+    if (not isEdgeY)
+      xerr = status.isOneY ? (status.isBigY ? theClusterParam.sy2 : theClusterParam.sy1) : theClusterParam.sigmay;
+
+    xerr2 = xerr * xerr;
+    yerr2 = yerr * yerr;
+
+  } else {
+    xerr2 = view.xerrLocal(ih);
+    yerr2 = view.yerrLocal(ih);
+  }
+
+  // compute precise error....
+  LocalError le(xerr2, 0, yerr2);
+  SiPixelRecHitQuality::QualWordType rqw = rawQualityWord(theClusterParam);
+  auto tuple = std::make_tuple(lp, le, rqw);
+
+  return tuple;
 }
 
 void PixelCPEGeneric::fillPSetDescription(edm::ParameterSetDescription& desc) {

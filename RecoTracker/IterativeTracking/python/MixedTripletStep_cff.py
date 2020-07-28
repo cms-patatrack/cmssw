@@ -13,7 +13,7 @@ from Configuration.ProcessModifiers.trackdnn_cff import trackdnn
 #here just for backward compatibility
 chargeCut2069Clusters =  cms.EDProducer("ClusterChargeMasker",
     oldClusterRemovalInfo = cms.InputTag(""), # to be set below
-    pixelClusters = cms.InputTag("siPixelClusters"),
+    pixelClusters = cms.InputTag("siPixelRecHits"),
     stripClusters = cms.InputTag("siStripClusters"),
     clusterChargeCut = cms.PSet(refToPSet_ = cms.string('SiStripClusterChargeCutTight'))
 )

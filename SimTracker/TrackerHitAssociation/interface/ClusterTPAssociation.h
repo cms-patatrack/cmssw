@@ -28,8 +28,10 @@ public:
   using range = std::pair<const_iterator, const_iterator>;
 
   ClusterTPAssociation() {}
-  explicit ClusterTPAssociation(const edm::HandleBase& mappedHandle) : ClusterTPAssociation(mappedHandle.id()) {}
-  explicit ClusterTPAssociation(const edm::ProductID& mappedProductId) : mappedProductId_(mappedProductId) {}
+  explicit ClusterTPAssociation(const edm::HandleBase& mappedHandle, bool checkProductId = false)
+      : ClusterTPAssociation(mappedHandle.id(), checkProductId) {}
+  explicit ClusterTPAssociation(const edm::ProductID& mappedProductId, bool checkProductId = false)
+      : mappedProductId_(mappedProductId), checkProductId_(checkProductId) {}
 
   void addKeyID(edm::ProductID id) {
     auto foundKeyID = std::find(std::begin(keyProductIDs_), std::end(keyProductIDs_), id);
@@ -39,8 +41,10 @@ public:
   }
 
   void emplace_back(const OmniClusterRef& cluster, const TrackingParticleRef& tp) {
-    checkMappedProductID(tp);
-    checkKeyProductID(cluster.id());
+    if (checkProductId_) {
+      checkMappedProductID(tp);
+      checkKeyProductID(cluster.id());
+    }
     map_.emplace_back(cluster, tp);
   }
   void sortAndUnique() {
@@ -63,7 +67,8 @@ public:
   const_iterator cend() const { return map_.end(); }
 
   range equal_range(const OmniClusterRef& key) const {
-    checkKeyProductID(key);
+    if (checkProductId_)
+      checkKeyProductID(key);
     return std::equal_range(map_.begin(), map_.end(), value_type(key, TrackingParticleRef()), compare);
   }
 
@@ -77,17 +82,19 @@ public:
   void checkMappedProductID(const edm::ProductID& id) const;
 
 private:
-  static bool compare(const value_type& i, const value_type& j) { return i.first.rawIndex() > j.first.rawIndex(); }
+  static bool compare(const value_type& i, const value_type& j) { return i.first > j.first; }
 
   static bool compareSort(const value_type& i, const value_type& j) {
     // For sorting compare also TrackingParticle keys in order to
     // remove duplicate matches
-    return compare(i, j) || (i.first.rawIndex() == j.first.rawIndex() && i.second.key() > j.second.key());
+    return compare(i, j) || (i.first == j.first && i.second.key() > j.second.key());
   }
 
   map_type map_;
   edm::VecArray<edm::ProductID, 2> keyProductIDs_;
   edm::ProductID mappedProductId_;
+
+  bool checkProductId_;
 };
 
 #endif

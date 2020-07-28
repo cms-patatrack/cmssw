@@ -49,9 +49,9 @@ HitExtractor::Hits HitExtractorPIX::hits(const TkTransientTrackingRecHitBuilder&
     for (unsigned int iH = 0; iH != result.size(); ++iH) {
       if (result[iH]->isValid()) {  // can be NOT valid???
         auto const& concrete = (SiPixelRecHit const&)(*result[iH]);
-        assert(pixelClusterMask->refProd().id() == concrete.cluster().id());
-        if (pixelClusterMask->mask(concrete.cluster().key())) {
-          //too much debug LogDebug("HitExtractorPIX")<<"skipping a pixel hit on: "<< result[iH]->hit()->geographicalId().rawId()<<" key: "<<find(f->begin(),f->end(),concrete->cluster())->key();
+        // assert(pixelClusterMask->refProd().id() == concrete.cluster().id());
+        if (pixelClusterMask->mask(concrete.omniCluster().key())) {
+          //too much debug LogDebug("HitExtractorPIX")<<"skipping a pixel hit on: "<< result[iH]->hit()->geographicalId().rawId()<<" key: "<<find(f->begin(),f->end(),concrete->omniCluster())->key();
           skipped++;
           result[iH].reset();
         }
