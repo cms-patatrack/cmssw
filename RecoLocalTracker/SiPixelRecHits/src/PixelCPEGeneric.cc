@@ -716,7 +716,7 @@ PixelCPEGeneric::ReturnType PixelCPEGeneric::getParameters(const TrackingRecHit2
 
     bool isEdgeY = status.isBigY & (0 == status.isOneY);
     if (not isEdgeY)
-      xerr = status.isOneY ? (status.isBigY ? theClusterParam.sy2 : theClusterParam.sy1) : theClusterParam.sigmay;
+      yerr = status.isOneY ? (status.isBigY ? theClusterParam.sy2 : theClusterParam.sy1) : theClusterParam.sigmay;
 
     xerr2 = xerr * xerr;
     yerr2 = yerr * yerr;

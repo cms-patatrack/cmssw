@@ -1,4 +1,3 @@
-
 #ifndef RecoLocalTracker_SiPixelRecHits_pixelCPEforGPU_h
 #define RecoLocalTracker_SiPixelRecHits_pixelCPEforGPU_h
 
