@@ -77,7 +77,7 @@ void SiPixelRecHitFromSOA::acquire(edm::Event const& iEvent,
 
   m_nHits = inputData.nHits();
 
-  std::cout<< "converting " << m_nHits << " Hits"<< std::endl;
+  // std::cout<< "converting " << m_nHits << " Hits"<< std::endl;
 
   if (0 == m_nHits)
     return;
@@ -94,7 +94,7 @@ void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es
   auto hms = std::make_unique<HMSstorage>(std::move(m_hitsModuleStart));  // m_hitsModuleStart is gone
   iEvent.put(std::move(hms));                                             // hms is gone!
 
-  std::cout << "HSM stored" << std::endl;
+  // std::cout << "HSM stored" << std::endl;
 
   auto xl = m_store32.get();
   auto yl = xl + m_nHits;

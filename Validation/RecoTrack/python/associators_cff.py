@@ -10,7 +10,7 @@ hltTPClusterProducer = _tpClusterProducer.clone(
     pixelClusterSrc = "hltSiPixelClusters",
 #    stripClusterSrc = "hltSiStripClusters",
     stripClusterSrc = "hltSiStripRawToClustersFacility",
-    pixelRecHitLegacySrc = "hltSiPixelRecHit"
+    pixelRecHitLegacySrc = "hltSiPixelRecHits"
 )
 
 hltTrackAssociatorByHits = SimTracker.TrackAssociatorProducers.quickTrackAssociatorByHits_cfi.quickTrackAssociatorByHits.clone()

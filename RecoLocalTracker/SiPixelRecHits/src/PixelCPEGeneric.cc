@@ -638,13 +638,13 @@ PixelCPEGeneric::ReturnType PixelCPEGeneric::getParameters(const TrackingRecHit2
   ClusterParamGeneric theClusterParam;
   computeAnglesFromTrajectory(theDetParam, theClusterParam, ltp);
 
-  // apply position correction (irradiation)
-  LocalPoint lp(view.xLocal(ih), view.yLocal(ih));
 
   bool useTempErrors =
       UseErrorsFromTemplates_ && (!NoTemplateErrorsWhenNoTrkAngles_ || theClusterParam.with_track_angle);
 
   float xerr2, yerr2;
+
+  float xCorr=0, yCorr=0;
 
   if (useTempErrors) {
     auto qclus = view.charge(ih);
@@ -663,7 +663,6 @@ PixelCPEGeneric::ReturnType PixelCPEGeneric::getParameters(const TrackingRecHit2
     theClusterParam.sx1 = -999.9;     // CPE Generic x-error for single single-pixel cluster
     theClusterParam.sx2 = -999.9;     // CPE Generic x-error for single double-pixel cluster
 
-    float dummy;
 
     SiPixelGenError gtempl(thePixelGenError_);
     int gtemplID_ = theDetParam.detTemplateId;
@@ -674,20 +673,33 @@ PixelCPEGeneric::ReturnType PixelCPEGeneric::getParameters(const TrackingRecHit2
                                         locBz,
                                         locBx,
                                         qclus,
-                                        false,
+                                        IrradiationBiasCorrection_,
                                         theClusterParam.pixmx,
                                         theClusterParam.sigmay,
-                                        dummy,
+                                        theClusterParam.deltay,
                                         theClusterParam.sigmax,
-                                        dummy,
+                                        theClusterParam.deltax,
                                         theClusterParam.sy1,
-                                        dummy,
+                                        theClusterParam.dy1,
                                         theClusterParam.sy2,
-                                        dummy,
+                                        theClusterParam.dy2,
                                         theClusterParam.sx1,
-                                        dummy,
+                                        theClusterParam.dx1,
                                         theClusterParam.sx2,
-                                        dummy);
+                                        theClusterParam.dx2);
+
+    // These numbers come in microns from the qbin(...) call. Transform them to cm.
+    theClusterParam.deltax = theClusterParam.deltax * micronsToCm;
+    theClusterParam.dx1 = theClusterParam.dx1 * micronsToCm;
+    theClusterParam.dx2 = theClusterParam.dx2 * micronsToCm;
+
+    theClusterParam.deltay = theClusterParam.deltay * micronsToCm;
+    theClusterParam.dy1 = theClusterParam.dy1 * micronsToCm;
+    theClusterParam.dy2 = theClusterParam.dy2 * micronsToCm;
+
+    theClusterParam.sigmax = theClusterParam.sigmax * micronsToCm;
+    theClusterParam.sx1 = theClusterParam.sx1 * micronsToCm;
+    theClusterParam.sx2 = theClusterParam.sx2 * micronsToCm;
 
     theClusterParam.sigmax = theClusterParam.sigmax * micronsToCm;
     theClusterParam.sx1 = theClusterParam.sx1 * micronsToCm;
@@ -711,10 +723,51 @@ PixelCPEGeneric::ReturnType PixelCPEGeneric::getParameters(const TrackingRecHit2
     xerr2 = xerr * xerr;
     yerr2 = yerr * yerr;
 
+
+    if (IrradiationBiasCorrection_) {
+    if (status.isOneX) {  // size=1
+      // ggiurgiu@jhu.edu, 02/03/09 : for size = 1, the Lorentz shift is already accounted by the irradiation correction
+      xCorr = - (0.5f * theDetParam.lorentzShiftInCmX);
+      // Find if pixel is double (big).
+      if (!status.isBigX)
+        xCorr -= theClusterParam.dx1;
+      else
+        xCorr -= theClusterParam.dx2;
+      //cout<<" to "<<xPos<<" "<<(tmp1+theClusterParam.dx1)<<endl;
+    } else {  // size>1
+      // cout << "Apply correction correction_deltax = " << theClusterParam.deltax << endl;
+      xCorr = -theClusterParam.deltax;
+    }
+
+    if (status.isOneY) {
+      // ggiurgiu@jhu.edu, 02/03/09 : for size = 1, the Lorentz shift is already accounted by the irradiation correction
+      yCorr = - (0.5f * theDetParam.lorentzShiftInCmY);
+
+      // Find if pixel is double (big).
+      if (!status.isBigY)
+        yCorr -= theClusterParam.dy1;
+      else
+        yCorr -= theClusterParam.dy2;
+
+    } else {
+      // cout << "Apply correction correction_deltay = " << theClusterParam.deltay << endl;
+      yCorr = -theClusterParam.deltay;
+    }
+
+  }  // if ( IrradiationBiasCorrection_ )
+
+
+
   } else {
     xerr2 = view.xerrLocal(ih);
     yerr2 = view.yerrLocal(ih);
   }
+
+
+
+  // apply position correction (irradiation)
+  LocalPoint lp(view.xLocal(ih)+xCorr, view.yLocal(ih)+yCorr);
+
 
   // compute precise error....
   LocalError le(xerr2, 0, yerr2);
