@@ -154,8 +154,8 @@ void ClusterTPAssociationProducer::produce(edm::StreamID, edm::Event& iEvent, co
     uint32_t const* hitsModuleStart = nullptr;
     if (hitsInSoA_) {
       edm::Handle<HMSstorage> hhms;
-      iEvent.getByToken(hmsToken_, hhms);
-      hitsModuleStart = (*hhms).get();
+      if (!iEvent.getByToken(hmsToken_, hhms)) std::cout << "No HMS? " << pixelClusters->size() << std::endl;
+      hitsModuleStart = (*hhms).get(); // will crash anyhow
     }
 
     edm::ESHandle<TrackerGeometry> hgeom;
