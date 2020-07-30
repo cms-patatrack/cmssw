@@ -138,7 +138,7 @@ TkPixelMeasurementDet::RecHitContainer TkPixelMeasurementDet::compHits(const Tra
 
     if (data.pixelClustersToSkip().empty() or (not data.pixelClustersToSkip()[index])) {
       if (ci->canImproveWithTrack()) {
-        result.push_back(TkClonerImpl(cpe(),nullptr,nullptr).makeShared(*ci,ts));
+        result.push_back(TkClonerImpl(cpe(), nullptr, nullptr).makeShared(*ci, ts));
       } else {
         result.push_back(std::make_shared<SiPixelRecHit>(*ci));
       }

@@ -113,7 +113,6 @@ void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es
     return;
   }
 
-
   edm::ESHandle<TrackerGeometry> hgeom;
   es.get<TrackerDigiGeometryRecord>().get(hgeom);
   auto const& geom = *hgeom.product();

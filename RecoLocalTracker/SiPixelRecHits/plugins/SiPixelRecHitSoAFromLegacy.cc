@@ -155,8 +155,8 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
   auto output = std::make_unique<TrackingRecHit2DCPU>(numberOfClusters, &cpeView, hitsModuleStart, nullptr);
 
   // copy view
-  auto hlp = std::make_unique<TrackingRecHit2DReduced>(*output->view(),numberOfClusters);
-  auto orphanHandle = iEvent.put(std::move(hlp));            // hlp is gone
+  auto hlp = std::make_unique<TrackingRecHit2DReduced>(*output->view(), numberOfClusters);
+  auto orphanHandle = iEvent.put(std::move(hlp));  // hlp is gone
   edm::RefProd<TrackingRecHit2DReduced> refProdHLP{orphanHandle};
   assert(refProdHLP.isNonnull());
 
@@ -252,7 +252,7 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
         SiPixelRecHit hit(lp, le, rqw, *genericDet, clusterRef[ih]);
 #else
         // for test.....
-        OmniClusterRef notCluster(refProdHLP,h);
+        OmniClusterRef notCluster(refProdHLP, h);
         SiPixelRecHit hit(lp, le, rqw, *genericDet, notCluster);
 #endif
         recHitsOnDetUnit.push_back(hit);

@@ -26,8 +26,7 @@ public:
   }
 
   // view only!
-  TrackingRecHit2DReduced(TrackingRecHit2DSOAView const & iview, int nhits) : m_view(iview), m_nHits(nhits) {}
-
+  TrackingRecHit2DReduced(TrackingRecHit2DSOAView const& iview, int nhits) : m_view(iview), m_nHits(nhits) {}
 
   TrackingRecHit2DReduced() = default;
   ~TrackingRecHit2DReduced() = default;

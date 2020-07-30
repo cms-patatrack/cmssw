@@ -638,13 +638,12 @@ PixelCPEGeneric::ReturnType PixelCPEGeneric::getParameters(const TrackingRecHit2
   ClusterParamGeneric theClusterParam;
   computeAnglesFromTrajectory(theDetParam, theClusterParam, ltp);
 
-
   bool useTempErrors =
       UseErrorsFromTemplates_ && (!NoTemplateErrorsWhenNoTrkAngles_ || theClusterParam.with_track_angle);
 
   float xerr2, yerr2;
 
-  float xCorr=0, yCorr=0;
+  float xCorr = 0, yCorr = 0;
 
   if (useTempErrors) {
     auto qclus = view.charge(ih);
@@ -662,7 +661,6 @@ PixelCPEGeneric::ReturnType PixelCPEGeneric::getParameters(const TrackingRecHit2
     theClusterParam.sy2 = -999.9;     // CPE Generic y-error for single double-pixel cluster
     theClusterParam.sx1 = -999.9;     // CPE Generic x-error for single single-pixel cluster
     theClusterParam.sx2 = -999.9;     // CPE Generic x-error for single double-pixel cluster
-
 
     SiPixelGenError gtempl(thePixelGenError_);
     int gtemplID_ = theDetParam.detTemplateId;
@@ -723,51 +721,45 @@ PixelCPEGeneric::ReturnType PixelCPEGeneric::getParameters(const TrackingRecHit2
     xerr2 = xerr * xerr;
     yerr2 = yerr * yerr;
 
-
     if (IrradiationBiasCorrection_) {
-    if (status.isOneX) {  // size=1
-      // ggiurgiu@jhu.edu, 02/03/09 : for size = 1, the Lorentz shift is already accounted by the irradiation correction
-      xCorr = - (0.5f * theDetParam.lorentzShiftInCmX);
-      // Find if pixel is double (big).
-      if (!status.isBigX)
-        xCorr -= theClusterParam.dx1;
-      else
-        xCorr -= theClusterParam.dx2;
-      //cout<<" to "<<xPos<<" "<<(tmp1+theClusterParam.dx1)<<endl;
-    } else {  // size>1
-      // cout << "Apply correction correction_deltax = " << theClusterParam.deltax << endl;
-      xCorr = -theClusterParam.deltax;
-    }
+      if (status.isOneX) {  // size=1
+        // ggiurgiu@jhu.edu, 02/03/09 : for size = 1, the Lorentz shift is already accounted by the irradiation correction
+        xCorr = -(0.5f * theDetParam.lorentzShiftInCmX);
+        // Find if pixel is double (big).
+        if (!status.isBigX)
+          xCorr -= theClusterParam.dx1;
+        else
+          xCorr -= theClusterParam.dx2;
+        //cout<<" to "<<xPos<<" "<<(tmp1+theClusterParam.dx1)<<endl;
+      } else {  // size>1
+        // cout << "Apply correction correction_deltax = " << theClusterParam.deltax << endl;
+        xCorr = -theClusterParam.deltax;
+      }
 
-    if (status.isOneY) {
-      // ggiurgiu@jhu.edu, 02/03/09 : for size = 1, the Lorentz shift is already accounted by the irradiation correction
-      yCorr = - (0.5f * theDetParam.lorentzShiftInCmY);
+      if (status.isOneY) {
+        // ggiurgiu@jhu.edu, 02/03/09 : for size = 1, the Lorentz shift is already accounted by the irradiation correction
+        yCorr = -(0.5f * theDetParam.lorentzShiftInCmY);
 
-      // Find if pixel is double (big).
-      if (!status.isBigY)
-        yCorr -= theClusterParam.dy1;
-      else
-        yCorr -= theClusterParam.dy2;
+        // Find if pixel is double (big).
+        if (!status.isBigY)
+          yCorr -= theClusterParam.dy1;
+        else
+          yCorr -= theClusterParam.dy2;
 
-    } else {
-      // cout << "Apply correction correction_deltay = " << theClusterParam.deltay << endl;
-      yCorr = -theClusterParam.deltay;
-    }
+      } else {
+        // cout << "Apply correction correction_deltay = " << theClusterParam.deltay << endl;
+        yCorr = -theClusterParam.deltay;
+      }
 
-  }  // if ( IrradiationBiasCorrection_ )
-
-
+    }  // if ( IrradiationBiasCorrection_ )
 
   } else {
     xerr2 = view.xerrLocal(ih);
     yerr2 = view.yerrLocal(ih);
   }
 
-
-
   // apply position correction (irradiation)
-  LocalPoint lp(view.xLocal(ih)+xCorr, view.yLocal(ih)+yCorr);
-
+  LocalPoint lp(view.xLocal(ih) + xCorr, view.yLocal(ih) + yCorr);
 
   // compute precise error....
   LocalError le(xerr2, 0, yerr2);
