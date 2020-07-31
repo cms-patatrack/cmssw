@@ -701,10 +701,6 @@ PixelCPEGeneric::ReturnType PixelCPEGeneric::getParameters(const TrackingRecHit2
     theClusterParam.sx1 = theClusterParam.sx1 * micronsToCm;
     theClusterParam.sx2 = theClusterParam.sx2 * micronsToCm;
 
-    theClusterParam.sigmax = theClusterParam.sigmax * micronsToCm;
-    theClusterParam.sx1 = theClusterParam.sx1 * micronsToCm;
-    theClusterParam.sx2 = theClusterParam.sx2 * micronsToCm;
-
     theClusterParam.sigmay = theClusterParam.sigmay * micronsToCm;
     theClusterParam.sy1 = theClusterParam.sy1 * micronsToCm;
     theClusterParam.sy2 = theClusterParam.sy2 * micronsToCm;
@@ -725,7 +721,7 @@ PixelCPEGeneric::ReturnType PixelCPEGeneric::getParameters(const TrackingRecHit2
 
     xerr2 = xerr * xerr;
     yerr2 = yerr * yerr;
-
+    
     if (IrradiationBiasCorrection_) {
       if (status.isOneX) {  // size=1
         // ggiurgiu@jhu.edu, 02/03/09 : for size = 1, the Lorentz shift is already accounted by the irradiation correction
@@ -757,7 +753,7 @@ PixelCPEGeneric::ReturnType PixelCPEGeneric::getParameters(const TrackingRecHit2
       }
 
     }  // if ( IrradiationBiasCorrection_ )
-
+    
   } else {
     xerr2 = view.xerrLocal(ih);
     yerr2 = view.yerrLocal(ih);
