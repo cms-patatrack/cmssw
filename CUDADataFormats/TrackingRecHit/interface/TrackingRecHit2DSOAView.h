@@ -54,14 +54,15 @@ public:
   __device__ __forceinline__ int16_t& iphi(int i) { return m_iphi[i]; }
   __device__ __forceinline__ int16_t iphi(int i) const { return __ldg(m_iphi + i); }
 
-  __device__ __forceinline__ void setStatus(int i, Status is) {
-    uint32_t w = *reinterpret_cast<uint8_t*>(&is);
-    m_chargeAndStatus[i] &= (w << 24);
-  }
-  __device__ __forceinline__ void setCharge(int i, uint32_t ich) {
+
+  __device__ __forceinline__ void setChargeAndStatus(int i, uint32_t ich, Status is) {
+    // static_assert(0xffffff == chargeMask());
     ich = std::min(ich, chargeMask());
-    m_chargeAndStatus[i] &= ich;
+    uint32_t w = *reinterpret_cast<uint8_t*>(&is);
+    ich |= (w << 24);
+    m_chargeAndStatus[i] = ich;
   }
+
   __device__ __forceinline__ Status status(int i) const {
     uint8_t w = __ldg(m_chargeAndStatus + i) >> 24;
     return *reinterpret_cast<Status*>(&w);
@@ -97,7 +98,7 @@ private:
   int16_t* m_iphi;
 
   // cluster properties
-  static constexpr uint32_t chargeMask() { return (1 < 24) - 1; }
+  static constexpr uint32_t chargeMask() { return (1 << 24) - 1; }
   uint32_t* m_chargeAndStatus;
   int16_t* m_xsize;
   int16_t* m_ysize;

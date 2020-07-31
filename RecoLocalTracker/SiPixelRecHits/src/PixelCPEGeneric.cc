@@ -624,6 +624,8 @@ LocalError PixelCPEGeneric::localError(DetParam const& theDetParam, ClusterParam
 
   // std::cout<<" errors  "<<xerr<<" "<<yerr<<std::endl;  //dk
 
+  // std::cout << "gen err " << theClusterParam.theCluster->charge() << ' ' << theClusterParam.qBin_ << ' ' << xerr << ' ' << yerr << std::endl;
+  
   auto xerr_sq = xerr * xerr;
   auto yerr_sq = yerr * yerr;
 
@@ -717,6 +719,9 @@ PixelCPEGeneric::ReturnType PixelCPEGeneric::getParameters(const TrackingRecHit2
     bool isEdgeY = status.isBigY & (0 == status.isOneY);
     if (not isEdgeY)
       yerr = status.isOneY ? (status.isBigY ? theClusterParam.sy2 : theClusterParam.sy1) : theClusterParam.sigmay;
+
+
+    // std::cout << "new err " << qclus << ' ' << theClusterParam.qBin_ << ' ' << xerr << ' ' << yerr << std::endl;
 
     xerr2 = xerr * xerr;
     yerr2 = yerr * yerr;
