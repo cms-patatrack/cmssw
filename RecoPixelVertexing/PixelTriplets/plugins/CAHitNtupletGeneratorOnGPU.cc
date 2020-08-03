@@ -145,7 +145,7 @@ void CAHitNtupletGeneratorOnGPU::fillDescriptions(edm::ParameterSetDescription& 
       ->setComment("Polynomial coefficients to derive the pT-dependent chi2 cut");
   trackQualityCuts.add<double>("chi2Scale", 25.)
       ->setComment(
-          "Factor to multiply the pT-dependent chi2 cut (currently: 16 for the broken line fit, ?? for the Riemann "
+          "Factor to multiply the pT-dependent chi2 cut (currently: 25 for the broken line fit, ?? for the Riemann "
           "fit)");
   trackQualityCuts.add<double>("tripletMinPt", 0.5)->setComment("Min pT for triplets, in GeV");
   trackQualityCuts.add<double>("tripletMaxTip", 0.3)->setComment("Max |Tip| for triplets, in cm");
