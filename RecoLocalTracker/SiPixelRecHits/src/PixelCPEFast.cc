@@ -193,15 +193,10 @@ void PixelCPEFast::fillParamsForGpu() {
     auto lape = p.theDet->localAlignmentError();
     if (lape.invalid())
       lape = LocalError();  // zero....
-    auto apeX = lape.xx();
-    auto apeY = lape.yy();
+    g.apeX = lape.xx();
+    g.apeY = lape.yy();
 
-    auto toMicronX = [&](float x) {
-      x = std::sqrt(x * x + apeX);
-      return std::min(511, int(x * 1.e4f + 0.5f));
-    };
-    auto toMicronY = [&](float x) {
-      x = std::sqrt(x * x + apeY);
+    auto toMicron = [&](float x) {
       return std::min(511, int(x * 1.e4f + 0.5f));
     };
 
@@ -224,9 +219,9 @@ void PixelCPEFast::fillParamsForGpu() {
 #endif
 
     g.pixmx = std::max(0, cp.pixmx);
-    g.sx2 = toMicronX(cp.sx2);
-    g.sy1 = toMicronY(cp.sy1);
-    g.sy2 = std::max(55, toMicronY(cp.sy2));
+    g.sx2 = toMicron(cp.sx2);
+    g.sy1 = toMicron(cp.sy1);
+    g.sy2 = std::max(55, toMicron(cp.sy2));  // sometimes sy2 is smaller than others (due to angle?)
 
     // sample xerr as function of position
     auto xoff = -81.f * m_commonParamsGPU.thePitchX;
@@ -239,8 +234,8 @@ void PixelCPEFast::fillParamsForGpu() {
       cp.cotbeta = gvy * gvz;
       cp.cotalpha = gvx * gvz;
       errorFromTemplates(p, cp, 20000.f);
-      g.sigmax[ix] = toMicronX(cp.sigmax);
-      g.sigmax1[ix] = toMicronX(cp.sx1);
+      g.sigmax[ix] = toMicron(cp.sigmax);
+      g.sigmax1[ix] = toMicron(cp.sx1);
 #ifdef DUMP_ERRORS
       std::cout << "sigmax vs x " << i << ' ' << x << ' ' << cp.cotalpha << ' ' << int(g.sigmax[ix]) << ' '
                 << int(g.sigmax1[ix]) << ' ' << 10000.f * cp.sigmay << std::endl;
@@ -314,7 +309,7 @@ void PixelCPEFast::fillParamsForGpu() {
       // cp.cotalpha = ys*100.f/(8.f*285.f);
       cp.cotbeta = std::copysign(ys * 150.f / (8.f * 285.f), aveCB);
       errorFromTemplates(p, cp, 20000.f);
-      g.sigmay[iy] = toMicronY(cp.sigmay);
+      g.sigmay[iy] = toMicron(cp.sigmay);
 #ifdef DUMP_ERRORS
       std::cout << "sigmax/sigmay " << i << ' ' << (ys + 4.f) / 8.f << ' ' << cp.cotalpha << '/' << cp.cotbeta << ' '
                 << 10000.f * cp.sigmax << '/' << int(g.sigmay[iy]) << std::endl;
