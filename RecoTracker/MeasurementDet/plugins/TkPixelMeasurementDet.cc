@@ -121,7 +121,7 @@ TkPixelMeasurementDet::RecHitContainer TkPixelMeasurementDet::compHits(const Tra
       edm::LogError("IndexMisMatch") << "TkPixelMeasurementDet cannot create hit because of index mismatch.";
       return result;
     }
-    unsigned int index = ci - begin;
+    auto index = ci->omniCluster().key();
     if (!data.pixelClustersToSkip().empty() && index >= data.pixelClustersToSkip().size()) {
       edm::LogError("IndexMisMatch") << "TkPixelMeasurementDet cannot create hit because of index mismatch. i.e "
                                      << index << " >= " << data.pixelClustersToSkip().size();
