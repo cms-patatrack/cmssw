@@ -1,4 +1,3 @@
-
 #ifndef RecoLocalTracker_SiPixelRecHits_pixelCPEforGPU_h
 #define RecoLocalTracker_SiPixelRecHits_pixelCPEforGPU_h
 
@@ -43,7 +42,7 @@ namespace pixelCPEforGPU {
 
     float x0, y0, z0;  // the vertex in the local coord of the detector
 
-    float apeX, apeY;  // ape^2
+    float apeX, apexY;  // ape^2
     uint8_t sx2, sy1, sy2;
     uint8_t sigmax[16], sigmax1[16], sigmay[16];  // in micron
     float xfact[5], yfact[5];
@@ -105,7 +104,7 @@ namespace pixelCPEforGPU {
     int16_t xsize[N];  // (*8) clipped at 127 if negative is edge....
     int16_t ysize[N];
 
-    Status status;
+    Status status[N];
   };
 
   constexpr int32_t MaxHitsInIter = gpuClustering::maxHitsInIter();
@@ -349,11 +348,11 @@ namespace pixelCPEforGPU {
         break;
     assert(bin < 5);
 
-    cp.status.qBin = 4 - bin;
-    cp.status.isOneX = isOneX;
-    cp.status.isBigX = (isOneX & isBigX) | isEdgeX;
-    cp.status.isOneY = isOneY;
-    cp.status.isBigY = (isOneY & isBigY) | isEdgeY;
+    cp.status[ic].qBin = 4 - bin;
+    cp.status[ic].isOneX = isOneX;
+    cp.status[ic].isBigX = (isOneX & isBigX) | isEdgeX;
+    cp.status[ic].isOneY = isOneY;
+    cp.status[ic].isBigY = (isOneY & isBigY) | isEdgeY;
 
     auto xoff = 81.f * comParams.thePitchX;
     int jx = std::min(15, std::max(0, int(16.f * (cp.xpos[ic] + xoff) / (162.f * comParams.thePitchX))));

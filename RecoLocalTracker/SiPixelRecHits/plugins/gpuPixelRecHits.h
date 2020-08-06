@@ -182,7 +182,9 @@ namespace gpuPixelRecHits {
 
         // store it
 
-        hits.charge(h) = clusParams.charge[ic];
+        hits.setChargeAndStatus(h, clusParams.charge[ic], clusParams.status[ic]);
+
+        // printf("charge,status %d %d %d %d %d\n",hits.charge(h),hits.status(h).qBin,hits.chargeAndStatus(h),clusParams.charge[ic],clusParams.status[ic].qBin);
 
         hits.detectorIndex(h) = me;
 
