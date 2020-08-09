@@ -731,7 +731,6 @@ PixelCPEGeneric::ReturnType PixelCPEGeneric::getParameters(const TrackingRecHit2
           xCorr -= theClusterParam.dx1;
         else
           xCorr -= theClusterParam.dx2;
-        //cout<<" to "<<xPos<<" "<<(tmp1+theClusterParam.dx1)<<endl;
       } else {  // size>1
         // cout << "Apply correction correction_deltax = " << theClusterParam.deltax << endl;
         xCorr = -theClusterParam.deltax;
@@ -740,13 +739,11 @@ PixelCPEGeneric::ReturnType PixelCPEGeneric::getParameters(const TrackingRecHit2
       if (status.isOneY) {
         // ggiurgiu@jhu.edu, 02/03/09 : for size = 1, the Lorentz shift is already accounted by the irradiation correction
         yCorr = -(0.5f * theDetParam.lorentzShiftInCmY);
-
         // Find if pixel is double (big).
         if (!status.isBigY)
           yCorr -= theClusterParam.dy1;
         else
           yCorr -= theClusterParam.dy2;
-
       } else {
         // cout << "Apply correction correction_deltay = " << theClusterParam.deltay << endl;
         yCorr = -theClusterParam.deltay;
