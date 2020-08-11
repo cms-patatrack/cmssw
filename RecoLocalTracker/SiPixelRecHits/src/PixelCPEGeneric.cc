@@ -655,15 +655,6 @@ PixelCPEGeneric::ReturnType PixelCPEGeneric::getParameters(const TrackingRecHit2
     float locBx = theDetParam.bx;
     //cout << "PixelCPEFast::localPosition(...) : locBz = " << locBz << endl;
 
-    theClusterParam.pixmx = std::numeric_limits<int>::max();  // max pixel charge for truncation of 2-D cluster
-
-    theClusterParam.sigmay = -999.9;  // CPE Generic y-error for multi-pixel cluster
-    theClusterParam.sigmax = -999.9;  // CPE Generic x-error for multi-pixel cluster
-    theClusterParam.sy1 = -999.9;     // CPE Generic y-error for single single-pixel
-    theClusterParam.sy2 = -999.9;     // CPE Generic y-error for single double-pixel cluster
-    theClusterParam.sx1 = -999.9;     // CPE Generic x-error for single single-pixel cluster
-    theClusterParam.sx2 = -999.9;     // CPE Generic x-error for single double-pixel cluster
-
     SiPixelGenError gtempl(thePixelGenError_);
     int gtemplID_ = theDetParam.detTemplateId;
 
@@ -727,10 +718,10 @@ PixelCPEGeneric::ReturnType PixelCPEGeneric::getParameters(const TrackingRecHit2
         // ggiurgiu@jhu.edu, 02/03/09 : for size = 1, the Lorentz shift is already accounted by the irradiation correction
         xCorr = -(0.5f * theDetParam.lorentzShiftInCmX);
         // Find if pixel is double (big).
-        if (!status.isBigX)
-          xCorr -= theClusterParam.dx1;
-        else
+        if (status.isBigX)
           xCorr -= theClusterParam.dx2;
+        else
+          xCorr -= theClusterParam.dx1;
       } else {  // size>1
         // cout << "Apply correction correction_deltax = " << theClusterParam.deltax << endl;
         xCorr = -theClusterParam.deltax;
@@ -740,10 +731,10 @@ PixelCPEGeneric::ReturnType PixelCPEGeneric::getParameters(const TrackingRecHit2
         // ggiurgiu@jhu.edu, 02/03/09 : for size = 1, the Lorentz shift is already accounted by the irradiation correction
         yCorr = -(0.5f * theDetParam.lorentzShiftInCmY);
         // Find if pixel is double (big).
-        if (!status.isBigY)
-          yCorr -= theClusterParam.dy1;
-        else
+        if (status.isBigY)
           yCorr -= theClusterParam.dy2;
+        else
+          yCorr -= theClusterParam.dy1;
       } else {
         // cout << "Apply correction correction_deltay = " << theClusterParam.deltay << endl;
         yCorr = -theClusterParam.deltay;
