@@ -45,6 +45,7 @@ def customise_cpu_pixel(process):
 
     # FIXME replace the Sequences with empty ones to avoid exanding them during the (re)definition of Modules and EDAliases
 
+    process.HLTDoLocalPixelSequence = cms.Sequence()
     process.HLTRecoPixelTracksSequence = cms.Sequence()
     process.HLTRecopixelvertexingSequence = cms.Sequence()
 
@@ -107,9 +108,15 @@ def customise_cpu_pixel(process):
 
     # Tasks and Sequences
 
+    process.HLTDoLocalPixelTask = cms.Task(
+          process.hltSiPixelDigis,                          # legacy module
+          process.hltSiPixelClusters,                       # legacy module
+          process.hltSiPixelClustersCache,                  # legacy module
+          process.hltSiPixelRecHits)                        # legacy module
+
+    process.HLTDoLocalPixelSequence = cms.Sequence(process.HLTDoLocalPixelTask)
+
     process.HLTRecoPixelTracksTask = cms.Task(
-          process.hltPixelTracksFitter,                     # not used here, kept for compatibility with legacy sequences
-          process.hltPixelTracksFilter,                     # not used here, kept for compatibility with legacy sequences
           process.hltPixelTracksTrackingRegions,            # from the original sequence
           process.hltSiPixelRecHitSoA,                      # pixel rechits on cpu, converted to SoA
           process.hltPixelTracksHitQuadruplets,             # pixel ntuplets on cpu, in SoA format
@@ -119,12 +126,15 @@ def customise_cpu_pixel(process):
     process.HLTRecoPixelTracksSequence = cms.Sequence(process.HLTRecoPixelTracksTask)
 
     process.HLTRecopixelvertexingTask = cms.Task(
-         process.HLTRecoPixelTracksTask,
-         process.hltPixelVerticesSoA,                       # pixel vertices on cpu, in SoA format
-         process.hltPixelVertices,                          # pixel vertices on cpu, in legacy format
-         process.hltTrimmedPixelVertices)                   # from the original sequence
+          process.HLTRecoPixelTracksTask,
+          process.hltPixelVerticesSoA,                      # pixel vertices on cpu, in SoA format
+          process.hltPixelVertices,                         # pixel vertices on cpu, in legacy format
+          process.hltTrimmedPixelVertices)                  # from the original sequence
 
-    process.HLTRecopixelvertexingSequence = cms.Sequence(process.HLTRecopixelvertexingTask)
+    process.HLTRecopixelvertexingSequence = cms.Sequence(
+          process.hltPixelTracksFitter +                    # not used here, kept for compatibility with legacy sequences
+          process.hltPixelTracksFilter,                     # not used here, kept for compatibility with legacy sequences
+          process.HLTRecopixelvertexingTask)
 
 
     # done
@@ -273,8 +283,6 @@ def customise_gpu_pixel(process):
     process.HLTDoLocalPixelSequence = cms.Sequence(process.HLTDoLocalPixelTask)
 
     process.HLTRecoPixelTracksTask = cms.Task(
-          process.hltPixelTracksFitter,                     # not used here, kept for compatibility with legacy sequences
-          process.hltPixelTracksFilter,                     # not used here, kept for compatibility with legacy sequences
           process.hltPixelTracksTrackingRegions,            # from the original sequence
           process.hltPixelTracksHitQuadruplets,             # pixel ntuplets on gpu, in SoA format
           process.hltPixelTracksSoA,                        # pixel ntuplets on cpu, in SoA format
@@ -283,13 +291,16 @@ def customise_gpu_pixel(process):
     process.HLTRecoPixelTracksSequence = cms.Sequence(process.HLTRecoPixelTracksTask)
 
     process.HLTRecopixelvertexingTask = cms.Task(
-         process.HLTRecoPixelTracksTask,
-         process.hltPixelVerticesCUDA,                      # pixel vertices on gpu, in SoA format
-         process.hltPixelVerticesSoA,                       # pixel vertices on cpu, in SoA format
-         process.hltPixelVertices,                          # pixel vertices on cpu, in legacy format
-         process.hltTrimmedPixelVertices)                   # from the original sequence
+          process.HLTRecoPixelTracksTask,
+          process.hltPixelVerticesCUDA,                     # pixel vertices on gpu, in SoA format
+          process.hltPixelVerticesSoA,                      # pixel vertices on cpu, in SoA format
+          process.hltPixelVertices,                         # pixel vertices on cpu, in legacy format
+          process.hltTrimmedPixelVertices)                  # from the original sequence
 
-    process.HLTRecopixelvertexingSequence = cms.Sequence(process.HLTRecopixelvertexingTask)
+    process.HLTRecopixelvertexingSequence = cms.Sequence(
+          process.hltPixelTracksFitter +                    # not used here, kept for compatibility with legacy sequences
+          process.hltPixelTracksFilter,                     # not used here, kept for compatibility with legacy sequences
+          process.HLTRecopixelvertexingTask)
 
 
     # done
@@ -454,10 +465,15 @@ def customise_gpu_ecal(process):
 
     process.HLTDoFullUnpackingEgammaEcalWithoutPreshowerSequence = cms.Sequence(process.HLTDoFullUnpackingEgammaEcalWithoutPreshowerTask)
 
-    process.HLTDoFullUnpackingEgammaEcalTask = cms.Task(
-        process.HLTDoFullUnpackingEgammaEcalWithoutPreshowerTask,
+    process.HLTPreshowerTask = cms.Task(
         process.hltEcalPreshowerDigis,                      # unpack ECAL preshower digis on the host
         process.hltEcalPreshowerRecHit)                     # build ECAL preshower rechits on the host
+
+    process.HLTPreshowerSequence = cms.Sequence(process.HLTPreshowerTask)
+
+    process.HLTDoFullUnpackingEgammaEcalTask = cms.Task(
+        process.HLTDoFullUnpackingEgammaEcalWithoutPreshowerTask,
+        process.HLTPreshowerTask)
 
     process.HLTDoFullUnpackingEgammaEcalSequence = cms.Sequence(process.HLTDoFullUnpackingEgammaEcalTask)
 
