@@ -1,40 +1,50 @@
 import copy
 import FWCore.ParameterSet.Config as cms
-
-# customisation for running on CPUs, common parts
-def customise_cpu_common(process):
-
-    # Services
-
-    process.CUDAService = cms.Service("CUDAService",
-        enabled = cms.untracked.bool(False)
-    )
+from HeterogeneousCore.CUDACore.SwitchProducerCUDA import SwitchProducerCUDA
+from HLTrigger.Configuration.common import *
 
 
-    # done
-    return process
+# check if CUDA is enabled, using the same mechanism as the SwitchProducerCUDA
+def cudaIsEnabled():
+    from HeterogeneousCore.CUDACore.SwitchProducerCUDA import _switch_cuda
+    return _switch_cuda()[0]
 
 
-# customisation for offloading to GPUs, common parts
-def customise_gpu_common(process):
+# customisation for running on CPUs or GPUs, common parts
+def customise_common(process):
 
     # Services
 
-    process.CUDAService = cms.Service("CUDAService",
-        enabled = cms.untracked.bool(True),
-        allocator = cms.untracked.PSet(
-            devicePreallocate = cms.untracked.vuint32(),
-        ),
-        limits = cms.untracked.PSet(
-            cudaLimitDevRuntimePendingLaunchCount = cms.untracked.int32(-1),
-            cudaLimitDevRuntimeSyncDepth = cms.untracked.int32(-1),
-            cudaLimitMallocHeapSize = cms.untracked.int32(-1),
-            cudaLimitPrintfFifoSize = cms.untracked.int32(-1),
-            cudaLimitStackSize = cms.untracked.int32(-1)
-        )
-    )
+    process.load("HeterogeneousCore.CUDAServices.CUDAService_cfi")
+    process.CUDAService.enabled = cudaIsEnabled()
 
     process.load("HeterogeneousCore.CUDAServices.NVProfilerService_cfi")
+
+
+    # EndPaths
+
+    # make the ScoutingCaloMuonOutput endpath compatible with using Tasks in the Scouting paths
+    if 'hltOutputScoutingCaloMuon' in process.__dict__ and not 'hltPreScoutingCaloMuonOutputSmart' in process.__dict__:
+        process.hltPreScoutingCaloMuonOutputSmart = cms.EDFilter( "TriggerResultsFilter",
+            l1tIgnoreMaskAndPrescale = cms.bool( False ),
+            l1tResults = cms.InputTag( "" ),
+            hltResults = cms.InputTag( 'TriggerResults','','@currentProcess' ),
+            triggerConditions = process.hltOutputScoutingCaloMuon.SelectEvents.SelectEvents,
+            throw = cms.bool( True )
+        )
+        insert_modules_after(process, process.hltPreScoutingCaloMuonOutput, process.hltPreScoutingCaloMuonOutputSmart)
+
+    # make the ScoutingPFOutput endpath compatible with using Tasks in the Scouting paths
+    if 'hltOutputScoutingPF' in process.__dict__ and not 'hltPreScoutingPFOutputSmart' in process.__dict__:
+        process.hltPreScoutingPFOutputSmart = cms.EDFilter( "TriggerResultsFilter",
+            l1tIgnoreMaskAndPrescale = cms.bool( False ),
+            l1tResults = cms.InputTag( "" ),
+            hltResults = cms.InputTag( 'TriggerResults','','@currentProcess' ),
+            triggerConditions = process.hltOutputScoutingPF.SelectEvents.SelectEvents,
+            throw = cms.bool( True )
+        )
+        insert_modules_after(process, process.hltPreScoutingPFOutput, process.hltPreScoutingPFOutputSmart)
+
 
     # done
     return process
@@ -576,14 +586,14 @@ def customise_gpu_hcal(process):
 
 # customisation for running on CPUs
 def customise_for_Patatrack_on_cpu(process):
-    process = customise_cpu_common(process)
+    process = customise_common(process)
     process = customise_cpu_pixel(process)
     return process
 
 
 # customisation for offloading to GPUs
 def customise_for_Patatrack_on_gpu(process):
-    process = customise_gpu_common(process)
+    process = customise_common(process)
     process = customise_gpu_pixel(process)
     process = customise_gpu_ecal(process)
     process = customise_gpu_hcal(process)
