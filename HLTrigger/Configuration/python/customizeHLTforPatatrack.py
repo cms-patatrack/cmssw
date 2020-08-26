@@ -4,10 +4,23 @@ from HeterogeneousCore.CUDACore.SwitchProducerCUDA import SwitchProducerCUDA
 from HLTrigger.Configuration.common import *
 
 
+# force the SwitchProducerCUDA choice to pick a specific backend: True for offloading to a GPU, False for running on the CPU
+def forceGpuOffload(status = True):
+    import HeterogeneousCore.CUDACore.SwitchProducerCUDA
+    HeterogeneousCore.CUDACore.SwitchProducerCUDA._cuda_enabled_cached = bool(status)
+
+
+# reset the SwitchProducerCUDA choice to pick a backend depending on the availability of a supported GPU
+def resetGpuOffload():
+    import HeterogeneousCore.CUDACore.SwitchProducerCUDA
+    HeterogeneousCore.CUDACore.SwitchProducerCUDA._cuda_enabled_cached = None
+    HeterogeneousCore.CUDACore.SwitchProducerCUDA._switch_cuda()
+
+
 # check if CUDA is enabled, using the same mechanism as the SwitchProducerCUDA
 def cudaIsEnabled():
-    from HeterogeneousCore.CUDACore.SwitchProducerCUDA import _switch_cuda
-    return _switch_cuda()[0]
+    import HeterogeneousCore.CUDACore.SwitchProducerCUDA
+    return HeterogeneousCore.CUDACore.SwitchProducerCUDA._switch_cuda()[0]
 
 
 # customisation for running on CPUs or GPUs, common parts
@@ -24,16 +37,16 @@ def customiseCommon(process):
     # Paths
 
     # produce a boolean to track if the events ar being processed on gpu (true) or cpu (false)
-    process.hltOnGPU = SwitchProducerCUDA(
+    process.statusOnGPU = SwitchProducerCUDA(
         cpu  = cms.EDProducer("BooleanProducer", value = cms.bool(False)),
         cuda = cms.EDProducer("BooleanProducer", value = cms.bool(True))
     )
 
-    process.hltOnGpuFilter = cms.EDFilter("BooleanFilter",
-        src = cms.InputTag("hltOnGPU")
+    process.statusOnGPUFilter = cms.EDFilter("BooleanFilter",
+        src = cms.InputTag("statusOnGPU")
     )
 
-    process.OnGPU = cms.Path(process.hltOnGPU + process.hltOnGpuFilter)
+    process.status_OnGPU = cms.Path(process.statusOnGPU + process.statusOnGPUFilter)
 
 
     # EndPaths
