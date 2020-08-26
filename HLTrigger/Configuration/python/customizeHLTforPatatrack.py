@@ -11,7 +11,7 @@ def cudaIsEnabled():
 
 
 # customisation for running on CPUs or GPUs, common parts
-def customise_common(process):
+def customiseCommon(process):
 
     # Services
 
@@ -19,6 +19,21 @@ def customise_common(process):
     process.CUDAService.enabled = cudaIsEnabled()
 
     process.load("HeterogeneousCore.CUDAServices.NVProfilerService_cfi")
+
+
+    # Paths
+
+    # produce a boolean to track if the events ar being processed on gpu (true) or cpu (false)
+    process.hltOnGPU = SwitchProducerCUDA(
+        cpu  = cms.EDProducer("BooleanProducer", value = cms.bool(False)),
+        cuda = cms.EDProducer("BooleanProducer", value = cms.bool(True))
+    )
+
+    process.hltOnGpuFilter = cms.EDFilter("BooleanFilter",
+        src = cms.InputTag("hltOnGPU")
+    )
+
+    process.OnGPU = cms.Path(process.hltOnGPU + process.hltOnGpuFilter)
 
 
     # EndPaths
@@ -51,7 +66,11 @@ def customise_common(process):
 
 
 # customisation for running the "Patatrack" pixel track reconstruction
-def customise_pixel_local_reconstruction(process):
+def customisePixelLocalReconstruction(process):
+
+    if not 'HLTDoLocalPixelSequence' in process.__dict__:
+        return process
+
 
     # FIXME replace the Sequences with empty ones to avoid exanding them during the (re)definition of Modules and EDAliases
 
@@ -205,9 +224,7 @@ def customise_cpu_pixel_track_reconstruction(process):
 
     process.hltPixelTracksSoA = cms.EDAlias(
         hltPixelTracksHitQuadruplets = cms.VPSet(
-            cms.PSet(
-                type = cms.string("32768TrackSoATHeterogeneousSoA")
-            )
+            cms.PSet(type = cms.string("32768TrackSoATHeterogeneousSoA"))
         )
     )
 
@@ -341,7 +358,11 @@ def customise_gpu_pixel_track_reconstruction(process):
 
 
 # customisation for offloading the ECAL local reconstruction to GPUs
-def customise_gpu_ecal(process):
+def customiseEcalLocalReconstruction(process):
+
+    if not 'HLTDoFullUnpackingEgammaEcalSequence' in process.__dict__:
+        return process
+
 
     # FIXME replace the Sequences with empty ones to avoid exanding them during the (re)definition of Modules and EDAliases
 
@@ -374,6 +395,7 @@ def customise_gpu_ecal(process):
 
     # Modules and EDAliases
 
+    # ECAL unpacker running on gpu
     process.hltEcalDigisGPU = cms.EDProducer("EcalRawToDigiGPU",
         InputLabel = cms.InputTag("rawDataCollector"),
         FEDs = cms.vint32(
@@ -395,20 +417,41 @@ def customise_gpu_ecal(process):
         maxChannelsEE = cms.uint32(14648),
     )
 
-    process.hltEcalDigis = cms.EDProducer("EcalCPUDigisProducer",
-        digisInLabelEB = cms.InputTag("hltEcalDigisGPU", "ebDigis"),
-        digisInLabelEE = cms.InputTag("hltEcalDigisGPU", "eeDigis"),
-        digisOutLabelEB = cms.string("ebDigis"),
-        digisOutLabelEE = cms.string("eeDigis"),
-        produceDummyIntegrityCollections = cms.bool(True)
+    # SwitchProducer wrapping the legacy ECAL unpacker or the ECAL digi converter from SoA format on GPU to legacy format on CPU
+    process.hltEcalDigisLegacy = process.hltEcalDigis.clone()
+
+    process.hltEcalDigis = SwitchProducerCUDA(
+        # legacy producer
+        cpu = cms.EDAlias(
+            hltEcalDigisLegacy = cms.VPSet(
+                cms.PSet(type = cms.string("EBDigiCollection")),
+                cms.PSet(type = cms.string("EEDigiCollection")),
+                cms.PSet(type = cms.string("EBDetIdedmEDCollection")),
+                cms.PSet(type = cms.string("EEDetIdedmEDCollection")),
+                cms.PSet(type = cms.string("EBSrFlagsSorted")),
+                cms.PSet(type = cms.string("EESrFlagsSorted")),
+                cms.PSet(type = cms.string("EcalElectronicsIdedmEDCollection"), fromProductInstance = cms.string("EcalIntegrityBlockSizeErrors")),
+                cms.PSet(type = cms.string("EcalElectronicsIdedmEDCollection"), fromProductInstance = cms.string("EcalIntegrityTTIdErrors"))
+            )
+        ),
+        # convert ECAL digis from SoA format on GPU to legacy format on CPU
+        cuda = cms.EDProducer("EcalCPUDigisProducer",
+            digisInLabelEB = cms.InputTag("hltEcalDigisGPU", "ebDigis"),
+            digisInLabelEE = cms.InputTag("hltEcalDigisGPU", "eeDigis"),
+            digisOutLabelEB = cms.string("ebDigis"),
+            digisOutLabelEE = cms.string("eeDigis"),
+            produceDummyIntegrityCollections = cms.bool(True)
+        )
     )
 
+    # ECAL multifit running on gpu
     from RecoLocalCalo.EcalRecProducers.ecalUncalibRecHitProducerGPU_cfi import ecalUncalibRecHitProducerGPU as _ecalUncalibRecHitProducerGPU
     process.hltEcalUncalibRecHitGPU = _ecalUncalibRecHitProducerGPU.clone(
         digisLabelEB = cms.InputTag("hltEcalDigisGPU", "ebDigis"),
         digisLabelEE = cms.InputTag("hltEcalDigisGPU", "eeDigis")
     )
 
+    # copy the ECAL uncalibrated rechits from gpu to cpu in SoA format
     process.hltEcalUncalibRecHitSoA = cms.EDProducer("EcalCPUUncalibRecHitProducer",
         containsTimingInformation = cms.bool(False),
         recHitsInLabelEB = cms.InputTag("hltEcalUncalibRecHitGPU", "EcalUncalibRecHitsEB"),
@@ -417,11 +460,17 @@ def customise_gpu_ecal(process):
         recHitsOutLabelEE = cms.string("EcalUncalibRecHitsEE")
     )
 
-    process.hltEcalUncalibRecHit = cms.EDProducer("EcalUncalibRecHitConvertGPU2CPUFormat",
-        recHitsLabelGPUEB = cms.InputTag("hltEcalUncalibRecHitSoA", "EcalUncalibRecHitsEB"),
-        recHitsLabelGPUEE = cms.InputTag("hltEcalUncalibRecHitSoA", "EcalUncalibRecHitsEE"),
-        recHitsLabelCPUEB = cms.string("EcalUncalibRecHitsEB"),
-        recHitsLabelCPUEE = cms.string("EcalUncalibRecHitsEE")
+    # SwitchProducer wrapping the legacy ECAL uncalibrated rechits producer or a converter from SoA to legacy format
+    process.hltEcalUncalibRecHit = SwitchProducerCUDA(
+        # legacy producer
+        cpu = process.hltEcalUncalibRecHit,
+        # convert the ECAL uncalibrated rechits from SoA to legacy format
+        cuda = cms.EDProducer("EcalUncalibRecHitConvertGPU2CPUFormat",
+            recHitsLabelGPUEB = cms.InputTag("hltEcalUncalibRecHitSoA", "EcalUncalibRecHitsEB"),
+            recHitsLabelGPUEE = cms.InputTag("hltEcalUncalibRecHitSoA", "EcalUncalibRecHitsEE"),
+            recHitsLabelCPUEB = cms.string("EcalUncalibRecHitsEB"),
+            recHitsLabelCPUEE = cms.string("EcalUncalibRecHitsEE")
+        )
     )
 
     # Reconstructing the ECAL calibrated rechits on GPU works, but is extremely slow.
@@ -473,20 +522,38 @@ def customise_gpu_ecal(process):
         containsTimingInformation = cms.bool(False),
     )
 
-    process.hltEcalRecHit = cms.EDProducer("EcalRecHitConvertGPU2CPUFormat",
-        recHitsLabelGPUEB = cms.InputTag("hltEcalRecHitSoA", "EcalRecHitsEB"),
-        recHitsLabelGPUEE = cms.InputTag("hltEcalRecHitSoA", "EcalRecHitsEE"),
-        recHitsLabelCPUEB = cms.string("EcalRecHitsEB"),
-        recHitsLabelCPUEE = cms.string("EcalRecHitsEE"),
-    )
+    # SwitchProducer wrapping the legacy ECAL calibrated rechits producer or a converter from SoA to legacy format
+    process.hltEcalRecHit = SwitchProducerCUDA(
+        # legacy producer
+        cpu = process.hltEcalRecHit,
+        # convert the ECAL calibrated rechits from SoA to legacy format
+        cuda = cms.EDProducer("EcalRecHitConvertGPU2CPUFormat",
+            recHitsLabelGPUEB = cms.InputTag("hltEcalRecHitSoA", "EcalRecHitsEB"),
+            recHitsLabelGPUEE = cms.InputTag("hltEcalRecHitSoA", "EcalRecHitsEE"),
+            recHitsLabelCPUEB = cms.string("EcalRecHitsEB"),
+            recHitsLabelCPUEE = cms.string("EcalRecHitsEE"),
+        )
     """
 
+    
+    # the GPU unpacker does not produce the TPs used for the recovery, so the SwitchProducer alias does not provide them:
+    #   - the CPU uncalibrated rechit producer may mark them for recovery, read the TPs explicitly from the CPU unpacker
+    #   - the GPU uncalibrated rechit producer does not flag them for recovery, so the TPs are not necessary
+    process.hltEcalRecHit = SwitchProducerCUDA(
+        cpu = process.hltEcalRecHit.clone(
+            triggerPrimitiveDigiCollection = cms.InputTag('hltEcalDigisLegacy', 'EcalTriggerPrimitives')
+        ),
+        cuda = process.hltEcalRecHit.clone(
+            triggerPrimitiveDigiCollection = cms.InputTag('unused')
+        )
+    )
 
     # Tasks and Sequences
 
     process.HLTDoFullUnpackingEgammaEcalWithoutPreshowerTask = cms.Task(
         process.hltEcalDigisGPU,                            # unpack ECAL digis on gpu
-        process.hltEcalDigis,                               # copy to host and convert to legacy format
+        process.hltEcalDigisLegacy,                         # legacy producer, referenced in the SwitchProducer
+        process.hltEcalDigis,                               # SwitchProducer
         process.hltEcalUncalibRecHitGPU,                    # run ECAL local reconstruction and multifit on gpu
         process.hltEcalUncalibRecHitSoA,                    # needed by hltEcalPhiSymFilter - copy to host
         process.hltEcalUncalibRecHit,                       # needed by hltEcalPhiSymFilter - convert to legacy format
@@ -516,7 +583,11 @@ def customise_gpu_ecal(process):
     return process
 
 # customisation for offloading the HCAL local reconstruction to GPUs
-def customise_gpu_hcal(process):
+def customiseHcalLocalReconstruction(process):
+
+    if not 'HLTDoLocalHcalSequence' in process.__dict__:
+        return process
+
 
     # FIXME replace the Sequences with empty ones to avoid exanding them during the (re)definition of Modules and EDAliases
 
@@ -564,6 +635,7 @@ def customise_gpu_hcal(process):
         maxChannelsF3HB = cms.uint32(10000)
     )
 
+    # run the HCAL local reconstruction (including Method 0 and MAHI) on gpu
     from RecoLocalCalo.HcalRecProducers.hbheRecHitProducerGPU_cfi import hbheRecHitProducerGPU as _hbheRecHitProducerGPU
     process.hltHbherecoGPU = _hbheRecHitProducerGPU.clone(
         digisLabelF01HE = "hltHcalDigisGPU",
@@ -572,11 +644,24 @@ def customise_gpu_hcal(process):
         recHitsLabelM0HBHE = ""
     )
 
+    # transfer the HCAL rechits to the cpu, and convert them to the legacy format
     from RecoLocalCalo.HcalRecProducers.hcalCPURecHitsProducer_cfi import hcalCPURecHitsProducer as _hcalCPURecHitsProducer
-    process.hltHbhereco = _hcalCPURecHitsProducer.clone(
+    process.hltHbherecoFromGPU = _hcalCPURecHitsProducer.clone(
         recHitsM0LabelIn = "hltHbherecoGPU",
         recHitsM0LabelOut = "",
         recHitsLegacyLabelOut = ""
+    )
+
+    # SwitchProducer between the legacy producer and the copy from gpu with conversion
+    process.hltHbhereco = SwitchProducerCUDA(
+        # legacy producer
+        cpu = process.hltHbhereco,
+        # alias to the rechits converted to legacy format
+        cuda = cms.EDAlias(
+            hltHbherecoFromGPU = cms.VPSet(
+                cms.PSet(type = cms.string("HBHERecHitsSorted"))
+            )
+        )
     )
 
 
@@ -585,8 +670,9 @@ def customise_gpu_hcal(process):
     process.HLTDoLocalHcalTask = cms.Task(
           process.hltHcalDigis,                             # legacy producer, unpack HCAL digis on cpu
           process.hltHcalDigisGPU,                          # copy to gpu and convert to SoA format
-          process.hltHbherecoGPU,                           # run HCAL local reconstruction (Method 0 and MAHI) on gpu
-          process.hltHbhereco,                              # copy to host and convert to legacy format
+          process.hltHbherecoGPU,                           # run the HCAL local reconstruction (including Method 0 and MAHI) on gpu
+          process.hltHbherecoFromGPU,                       # transfer the HCAL rechits to the cpu, and convert them to the legacy format
+          process.hltHbhereco,                              # SwitchProducer between the legacy producer and the copy from gpu with conversion
           process.hltHfprereco,                             # legacy producer
           process.hltHfreco,                                # legacy producer
           process.hltHoreco)                                # legacy producer
@@ -596,8 +682,9 @@ def customise_gpu_hcal(process):
     process.HLTStoppedHSCPLocalHcalRecoTask = cms.Task(
           process.hltHcalDigis,                             # legacy producer, unpack HCAL digis on cpu
           process.hltHcalDigisGPU,                          # copy to gpu and convert to SoA format
-          process.hltHbherecoGPU,                           # run HCAL local reconstruction (Method 0 and MAHI) on gpu
-          process.hltHbhereco)                              # copy to host and convert to legacy format
+          process.hltHbherecoGPU,                           # run the HCAL local reconstruction (including Method 0 and MAHI) on gpu
+          process.hltHbherecoFromGPU,                       # transfer the HCAL rechits to the cpu, and convert them to the legacy format
+          process.hltHbhereco)                              # SwitchProducer between the legacy producer and the copy from gpu with conversion
 
     process.HLTStoppedHSCPLocalHcalReco = cms.Sequence(process.HLTStoppedHSCPLocalHcalRecoTask)
 
@@ -606,19 +693,11 @@ def customise_gpu_hcal(process):
     return process
 
 
-# customisation for running on CPUs
-def customise_for_Patatrack_on_cpu(process):
-    process = customise_common(process)
-    process = customise_pixel_local_reconstruction(process)
-    process = customise_cpu_pixel_track_reconstruction(process)
-    return process
-
-
-# customisation for offloading to GPUs
-def customise_for_Patatrack_on_gpu(process):
-    process = customise_common(process)
-    process = customise_pixel_local_reconstruction(process)
-    process = customise_gpu_pixel_track_reconstruction(process)
-    process = customise_gpu_ecal(process)
-    process = customise_gpu_hcal(process)
+# automatic offload to GPUs via CUDA when available, with fallback to cpu otherwise
+def customizeHLTforPatatrack(process):
+    process = customiseCommon(process)
+    process = customisePixelLocalReconstruction(process)
+   #process = customisePixelTrackReconstruction(process)
+    process = customiseEcalLocalReconstruction(process)
+    process = customiseHcalLocalReconstruction(process)
     return process
