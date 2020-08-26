@@ -46,7 +46,7 @@ def customiseCommon(process):
         src = cms.InputTag("statusOnGPU")
     )
 
-    process.status_OnGPU = cms.Path(process.statusOnGPU + process.statusOnGPUFilter)
+    process.Status_OnGPU = cms.Path(process.statusOnGPU + process.statusOnGPUFilter)
 
 
     # EndPaths
@@ -208,8 +208,12 @@ def customisePixelLocalReconstruction(process):
     return process
 
 
-# customisation for running the "Patatrack" pixel track reconstruction on CPUs
-def customise_cpu_pixel_track_reconstruction(process):
+# customisation for running the "Patatrack" pixel track reconstruction
+def customisePixelTrackReconstruction(process):
+
+    if not 'HLTRecoPixelTracksSequence' in process.__dict__:
+        return process
+
 
     # FIXME replace the Sequences with empty ones to avoid exanding them during the (re)definition of Modules and EDAliases
 
@@ -221,6 +225,7 @@ def customise_cpu_pixel_track_reconstruction(process):
 
     # referenced in process.HLTRecoPixelTracksTask
 
+    # cpu only: convert the pixel rechits from legacy to SoA format
     from RecoLocalTracker.SiPixelRecHits.siPixelRecHitHostSoA_cfi import siPixelRecHitHostSoA as _siPixelRecHitHostSoA
     process.hltSiPixelRecHitSoA = _siPixelRecHitHostSoA.clone(
         src = "hltSiPixelClusters",
@@ -228,19 +233,29 @@ def customise_cpu_pixel_track_reconstruction(process):
         convertToLegacy = True
     )
 
+    # build pixel ntuplets and pixel tracks in SoA format on gpu
     from RecoPixelVertexing.PixelTriplets.caHitNtupletCUDA_cfi import caHitNtupletCUDA as _caHitNtupletCUDA
-    process.hltPixelTracksHitQuadruplets = _caHitNtupletCUDA.clone(
+    process.hltPixelTracksCUDA = _caHitNtupletCUDA.clone(
         idealConditions = False,
-        pixelRecHitSrc = "hltSiPixelRecHitSoA",
-        onGPU = False
+        pixelRecHitSrc = "hltSiPixelRecHitsCUDA",
+        onGPU = True
     )
 
-    process.hltPixelTracksSoA = cms.EDAlias(
-        hltPixelTracksHitQuadruplets = cms.VPSet(
-            cms.PSet(type = cms.string("32768TrackSoATHeterogeneousSoA"))
+    # SwitchProducer providing the pixel tracks in SoA format on cpu
+    process.hltPixelTracksSoA = SwitchProducerCUDA(
+        # build pixel ntuplets and pixel tracks in SoA format on cpu
+        cpu = _caHitNtupletCUDA.clone(
+            idealConditions = False,
+            pixelRecHitSrc = "hltSiPixelRecHitSoA",
+            onGPU = False
+        ),
+        # transfer the pixel tracks in SoA format to the host
+        cuda = cms.EDProducer("PixelTrackSoAFromCUDA",
+            src = cms.InputTag("hltPixelTracksCUDA")
         )
     )
 
+    # convert the pixel tracks from SoA to legacy format
     from RecoPixelVertexing.PixelTrackFitting.pixelTrackProducerFromSoA_cfi import pixelTrackProducerFromSoA as _pixelTrackProducerFromSoA
     process.hltPixelTracks = _pixelTrackProducerFromSoA.clone(
         beamSpot = "hltOnlineBeamSpot",
@@ -251,17 +266,32 @@ def customise_cpu_pixel_track_reconstruction(process):
 
     # referenced in process.HLTRecopixelvertexingTask
 
+    # build pixel vertices in SoA format on gpu
     from RecoPixelVertexing.PixelVertexFinding.pixelVertexCUDA_cfi import pixelVertexCUDA as _pixelVertexCUDA
-    process.hltPixelVerticesSoA = _pixelVertexCUDA.clone(
-        pixelTrackSrc = "hltPixelTracksSoA",
-        onGPU = False
+    process.hltPixelVerticesCUDA = _pixelVertexCUDA.clone(
+        pixelTrackSrc = "hltPixelTracksCUDA",
+        onGPU = True
     )
 
+    # build or transfer pixel vertices in SoA format on cpu
+    process.hltPixelVerticesSoA = SwitchProducerCUDA(
+        # build pixel vertices in SoA format on cpu
+        cpu = _pixelVertexCUDA.clone(
+            pixelTrackSrc = "hltPixelTracksSoA",
+            onGPU = False
+        ),
+        # transfer the pixel vertices in SoA format to cpu
+        cuda = cms.EDProducer("PixelVertexSoAFromCUDA",
+            src = cms.InputTag("hltPixelVerticesCUDA")
+        )
+    )
+
+    # convert the pixel vertices from SoA to legacy format
     from RecoPixelVertexing.PixelVertexFinding.pixelVertexFromSoA_cfi import pixelVertexFromSoA as _pixelVertexFromSoA
     process.hltPixelVertices = _pixelVertexFromSoA.clone(
+        src = "hltPixelVerticesSoA",
         TrackCollection = "hltPixelTracks",
-        beamSpot = "hltOnlineBeamSpot",
-        src = "hltPixelVerticesSoA"
+        beamSpot = "hltOnlineBeamSpot"
     )
 
 
@@ -270,85 +300,10 @@ def customise_cpu_pixel_track_reconstruction(process):
     process.HLTRecoPixelTracksTask = cms.Task(
           process.hltPixelTracksTrackingRegions,            # from the original sequence
           process.hltSiPixelRecHitSoA,                      # pixel rechits on cpu, converted to SoA
-          process.hltPixelTracksHitQuadruplets,             # pixel ntuplets on cpu, in SoA format
-        # process.hltPixelTracksSoA,                        # alias for hltPixelTracksHitQuadruplets
-          process.hltPixelTracks)                           # pixel tracks on cpu, with conversion to legacy
-
-    process.HLTRecoPixelTracksSequence = cms.Sequence(process.HLTRecoPixelTracksTask)
-
-    process.HLTRecopixelvertexingTask = cms.Task(
-          process.HLTRecoPixelTracksTask,
-          process.hltPixelVerticesSoA,                      # pixel vertices on cpu, in SoA format
-          process.hltPixelVertices,                         # pixel vertices on cpu, in legacy format
-          process.hltTrimmedPixelVertices)                  # from the original sequence
-
-    process.HLTRecopixelvertexingSequence = cms.Sequence(
-          process.hltPixelTracksFitter +                    # not used here, kept for compatibility with legacy sequences
-          process.hltPixelTracksFilter,                     # not used here, kept for compatibility with legacy sequences
-          process.HLTRecopixelvertexingTask)
-
-
-    # done
-    return process
-
-
-# customisation for offloading the Pixel local reconstruction to GPUs
-def customise_gpu_pixel_track_reconstruction(process):
-
-    # FIXME replace the Sequences with empty ones to avoid exanding them during the (re)definition of Modules and EDAliases
-
-    process.HLTRecoPixelTracksSequence = cms.Sequence()
-    process.HLTRecopixelvertexingSequence = cms.Sequence()
-
-
-    # Modules and EDAliases
-
-    # referenced in process.HLTRecoPixelTracksTask
-
-    from RecoPixelVertexing.PixelTriplets.caHitNtupletCUDA_cfi import caHitNtupletCUDA as _caHitNtupletCUDA
-    process.hltPixelTracksHitQuadruplets = _caHitNtupletCUDA.clone(
-        idealConditions = False,
-        pixelRecHitSrc = "hltSiPixelRecHitsCUDA",
-        onGPU = True
-    )
-
-    process.hltPixelTracksSoA = cms.EDProducer("PixelTrackSoAFromCUDA",
-        src = cms.InputTag("hltPixelTracksHitQuadruplets")
-    )
-
-    process.hltPixelTracks = cms.EDProducer("PixelTrackProducerFromSoA",
-        beamSpot = cms.InputTag("hltOnlineBeamSpot"),
-        minNumberOfHits = cms.int32(0),
-        pixelRecHitLegacySrc = cms.InputTag("hltSiPixelRecHits"),
-        trackSrc = cms.InputTag("hltPixelTracksSoA")
-    )
-
-    # referenced in process.HLTRecopixelvertexingTask
-
-    from RecoPixelVertexing.PixelVertexFinding.pixelVertexCUDA_cfi import pixelVertexCUDA as _pixelVertexCUDA
-    process.hltPixelVerticesCUDA = _pixelVertexCUDA.clone(
-        pixelTrackSrc = "hltPixelTracksHitQuadruplets",
-        onGPU = True
-    )
-
-    process.hltPixelVerticesSoA = cms.EDProducer("PixelVertexSoAFromCUDA",
-        src = cms.InputTag("hltPixelVerticesCUDA")
-    )
-
-    process.hltPixelVertices = cms.EDProducer("PixelVertexProducerFromSoA",
-        src = cms.InputTag("hltPixelVerticesSoA"),
-        beamSpot = cms.InputTag("hltOnlineBeamSpot"),
-        TrackCollection = cms.InputTag("hltPixelTracks"),
-    )
-
-
-    # Tasks and Sequences
-
-    process.HLTRecoPixelTracksTask = cms.Task(
-          process.hltPixelTracksTrackingRegions,            # from the original sequence
-          process.hltPixelTracksHitQuadruplets,             # pixel ntuplets on gpu, in SoA format
+          process.hltPixelTracksCUDA,                       # pixel ntuplets on gpu, in SoA format
           process.hltPixelTracksSoA,                        # pixel ntuplets on cpu, in SoA format
-          process.hltPixelTracks)                           # pixel tracks on gpu, with transfer and conversion to legacy
+          process.hltPixelTracks)                           # pixel tracks on cpu, in legacy format
+
 
     process.HLTRecoPixelTracksSequence = cms.Sequence(process.HLTRecoPixelTracksTask)
 
@@ -366,7 +321,6 @@ def customise_gpu_pixel_track_reconstruction(process):
 
 
     # done
-
     return process
 
 
@@ -550,7 +504,7 @@ def customiseEcalLocalReconstruction(process):
 
     
     # the GPU unpacker does not produce the TPs used for the recovery, so the SwitchProducer alias does not provide them:
-    #   - the CPU uncalibrated rechit producer may mark them for recovery, read the TPs explicitly from the CPU unpacker
+    #   - the CPU uncalibrated rechit producer may mark them for recovery, read the TPs explicitly from the legacy unpacker
     #   - the GPU uncalibrated rechit producer does not flag them for recovery, so the TPs are not necessary
     process.hltEcalRecHit = SwitchProducerCUDA(
         cpu = process.hltEcalRecHit.clone(
@@ -668,7 +622,7 @@ def customiseHcalLocalReconstruction(process):
     # SwitchProducer between the legacy producer and the copy from gpu with conversion
     process.hltHbhereco = SwitchProducerCUDA(
         # legacy producer
-        cpu = process.hltHbhereco,
+        cpu = process.hltHbhereco.clone(),
         # alias to the rechits converted to legacy format
         cuda = cms.EDAlias(
             hltHbherecoFromGPU = cms.VPSet(
@@ -710,7 +664,7 @@ def customiseHcalLocalReconstruction(process):
 def customizeHLTforPatatrack(process):
     process = customiseCommon(process)
     process = customisePixelLocalReconstruction(process)
-   #process = customisePixelTrackReconstruction(process)
+    process = customisePixelTrackReconstruction(process)
     process = customiseEcalLocalReconstruction(process)
     process = customiseHcalLocalReconstruction(process)
     return process
