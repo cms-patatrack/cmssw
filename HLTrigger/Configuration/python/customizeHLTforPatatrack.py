@@ -4,13 +4,13 @@ from HeterogeneousCore.CUDACore.SwitchProducerCUDA import SwitchProducerCUDA
 from HLTrigger.Configuration.common import *
 
 
-# force the SwitchProducerCUDA choice to pick a specific backend: True for offloading to a GPU, False for running on the CPU
+# force the SwitchProducerCUDA choice to pick a specific backend: True for offloading to a gpu, False for running on cpu
 def forceGpuOffload(status = True):
     import HeterogeneousCore.CUDACore.SwitchProducerCUDA
     HeterogeneousCore.CUDACore.SwitchProducerCUDA._cuda_enabled_cached = bool(status)
 
 
-# reset the SwitchProducerCUDA choice to pick a backend depending on the availability of a supported GPU
+# reset the SwitchProducerCUDA choice to pick a backend depending on the availability of a supported gpu
 def resetGpuOffload():
     import HeterogeneousCore.CUDACore.SwitchProducerCUDA
     HeterogeneousCore.CUDACore.SwitchProducerCUDA._cuda_enabled_cached = None
@@ -23,7 +23,7 @@ def cudaIsEnabled():
     return HeterogeneousCore.CUDACore.SwitchProducerCUDA._switch_cuda()[0]
 
 
-# customisation for running on CPUs or GPUs, common parts
+# customisation for running the Patatrack reconstruction, common parts
 def customiseCommon(process):
 
     # Services
@@ -34,7 +34,11 @@ def customiseCommon(process):
     process.load("HeterogeneousCore.CUDAServices.NVProfilerService_cfi")
 
 
-    # Paths
+    # Paths and EndPaths
+
+    # the hltGetConditions module would force gpu-specific ESProducers to run even if no supported gpu is present
+    if 'hltGetConditions' in process.__dict__:
+        del process.hltGetConditions
 
     # produce a boolean to track if the events ar being processed on gpu (true) or cpu (false)
     process.statusOnGPU = SwitchProducerCUDA(
@@ -48,8 +52,6 @@ def customiseCommon(process):
 
     process.Status_OnGPU = cms.Path(process.statusOnGPU + process.statusOnGPUFilter)
 
-
-    # EndPaths
 
     # make the ScoutingCaloMuonOutput endpath compatible with using Tasks in the Scouting paths
     if 'hltOutputScoutingCaloMuon' in process.__dict__ and not 'hltPreScoutingCaloMuonOutputSmart' in process.__dict__:
@@ -78,7 +80,7 @@ def customiseCommon(process):
     return process
 
 
-# customisation for running the "Patatrack" pixel track reconstruction
+# customisation for running the "Patatrack" pixel local reconstruction
 def customisePixelLocalReconstruction(process):
 
     if not 'HLTDoLocalPixelSequence' in process.__dict__:
@@ -324,7 +326,7 @@ def customisePixelTrackReconstruction(process):
     return process
 
 
-# customisation for offloading the ECAL local reconstruction to GPUs
+# customisation for offloading the ECAL local reconstruction via CUDA if a supported gpu is present
 def customiseEcalLocalReconstruction(process):
 
     if not 'HLTDoFullUnpackingEgammaEcalSequence' in process.__dict__:
@@ -384,7 +386,7 @@ def customiseEcalLocalReconstruction(process):
         maxChannelsEE = cms.uint32(14648),
     )
 
-    # SwitchProducer wrapping the legacy ECAL unpacker or the ECAL digi converter from SoA format on GPU to legacy format on CPU
+    # SwitchProducer wrapping the legacy ECAL unpacker or the ECAL digi converter from SoA format on gpu to legacy format on cpu
     process.hltEcalDigisLegacy = process.hltEcalDigis.clone()
 
     process.hltEcalDigis = SwitchProducerCUDA(
@@ -401,7 +403,7 @@ def customiseEcalLocalReconstruction(process):
                 cms.PSet(type = cms.string("EcalElectronicsIdedmEDCollection"), fromProductInstance = cms.string("EcalIntegrityTTIdErrors"))
             )
         ),
-        # convert ECAL digis from SoA format on GPU to legacy format on CPU
+        # convert ECAL digis from SoA format on gpu to legacy format on cpu
         cuda = cms.EDProducer("EcalCPUDigisProducer",
             digisInLabelEB = cms.InputTag("hltEcalDigisGPU", "ebDigis"),
             digisInLabelEE = cms.InputTag("hltEcalDigisGPU", "eeDigis"),
@@ -440,7 +442,7 @@ def customiseEcalLocalReconstruction(process):
         )
     )
 
-    # Reconstructing the ECAL calibrated rechits on GPU works, but is extremely slow.
+    # Reconstructing the ECAL calibrated rechits on gpu works, but is extremely slow.
     # Disable it for the time being, until the performance has been addressed.
     """
     process.hltEcalRecHitGPU = cms.EDProducer("EcalRecHitProducerGPU",
@@ -503,9 +505,9 @@ def customiseEcalLocalReconstruction(process):
     """
 
     
-    # the GPU unpacker does not produce the TPs used for the recovery, so the SwitchProducer alias does not provide them:
-    #   - the CPU uncalibrated rechit producer may mark them for recovery, read the TPs explicitly from the legacy unpacker
-    #   - the GPU uncalibrated rechit producer does not flag them for recovery, so the TPs are not necessary
+    # the gpu unpacker does not produce the TPs used for the recovery, so the SwitchProducer alias does not provide them:
+    #   - the cpu uncalibrated rechit producer may mark them for recovery, read the TPs explicitly from the legacy unpacker
+    #   - the gpu uncalibrated rechit producer does not flag them for recovery, so the TPs are not necessary
     process.hltEcalRecHit = SwitchProducerCUDA(
         cpu = process.hltEcalRecHit.clone(
             triggerPrimitiveDigiCollection = cms.InputTag('hltEcalDigisLegacy', 'EcalTriggerPrimitives')
@@ -549,7 +551,7 @@ def customiseEcalLocalReconstruction(process):
     # done
     return process
 
-# customisation for offloading the HCAL local reconstruction to GPUs
+# customisation for offloading the HCAL local reconstruction via CUDA if a supported gpu is present
 def customiseHcalLocalReconstruction(process):
 
     if not 'HLTDoLocalHcalSequence' in process.__dict__:
@@ -660,7 +662,7 @@ def customiseHcalLocalReconstruction(process):
     return process
 
 
-# automatic offload to GPUs via CUDA when available, with fallback to cpu otherwise
+# customisation for running the Patatrack reconstruction, with automatic offload via CUDA when a supported gpu is available
 def customizeHLTforPatatrack(process):
     process = customiseCommon(process)
     process = customisePixelLocalReconstruction(process)
