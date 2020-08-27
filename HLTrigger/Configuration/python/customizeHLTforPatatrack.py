@@ -505,6 +505,7 @@ def customiseEcalLocalReconstruction(process):
     """
 
     
+    # SwitchProducer wrapping the legacy ECAL rechits producer
     # the gpu unpacker does not produce the TPs used for the recovery, so the SwitchProducer alias does not provide them:
     #   - the cpu uncalibrated rechit producer may mark them for recovery, read the TPs explicitly from the legacy unpacker
     #   - the gpu uncalibrated rechit producer does not flag them for recovery, so the TPs are not necessary
@@ -515,6 +516,11 @@ def customiseEcalLocalReconstruction(process):
         cuda = process.hltEcalRecHit.clone(
             triggerPrimitiveDigiCollection = cms.InputTag('unused')
         )
+    )
+
+    # consume the ECAL rechits
+    process.hltEcalConsumer = cms.EDAnalyzer("GenericConsumer",
+        eventProducts = cms.untracked.vstring( 'hltEcalRecHit' )
     )
 
     # Tasks and Sequences
@@ -531,7 +537,9 @@ def customiseEcalLocalReconstruction(process):
         process.hltEcalDetIdToBeRecovered,                  # legacy producer
         process.hltEcalRecHit)                              # legacy producer
 
-    process.HLTDoFullUnpackingEgammaEcalWithoutPreshowerSequence = cms.Sequence(process.HLTDoFullUnpackingEgammaEcalWithoutPreshowerTask)
+    process.HLTDoFullUnpackingEgammaEcalWithoutPreshowerSequence = cms.Sequence(
+        process.hltEcalConsumer,                            # consume the ECAL rechits
+        process.HLTDoFullUnpackingEgammaEcalWithoutPreshowerTask)
 
     process.HLTPreshowerTask = cms.Task(
         process.hltEcalPreshowerDigis,                      # unpack ECAL preshower digis on the host
@@ -543,9 +551,13 @@ def customiseEcalLocalReconstruction(process):
         process.HLTDoFullUnpackingEgammaEcalWithoutPreshowerTask,
         process.HLTPreshowerTask)
 
-    process.HLTDoFullUnpackingEgammaEcalSequence = cms.Sequence(process.HLTDoFullUnpackingEgammaEcalTask)
+    process.HLTDoFullUnpackingEgammaEcalSequence = cms.Sequence(
+        process.hltEcalConsumer,                            # consume the ECAL rechits
+        process.HLTDoFullUnpackingEgammaEcalTask)
 
-    process.HLTDoFullUnpackingEgammaEcalMFSequence = cms.Sequence(process.HLTDoFullUnpackingEgammaEcalTask)
+    process.HLTDoFullUnpackingEgammaEcalMFSequence = cms.Sequence(
+        process.hltEcalConsumer,                            # consume the ECAL rechits
+        process.HLTDoFullUnpackingEgammaEcalTask)
 
 
     # done
@@ -633,29 +645,38 @@ def customiseHcalLocalReconstruction(process):
         )
     )
 
+    # consume the HCAL rechits
+    process.hltHbheConsumer = cms.EDAnalyzer("GenericConsumer",
+        eventProducts = cms.untracked.vstring( 'hltHbhereco' )
+    )
+
 
     # Tasks and Sequences
 
     process.HLTDoLocalHcalTask = cms.Task(
-          process.hltHcalDigis,                             # legacy producer, unpack HCAL digis on cpu
-          process.hltHcalDigisGPU,                          # copy to gpu and convert to SoA format
-          process.hltHbherecoGPU,                           # run the HCAL local reconstruction (including Method 0 and MAHI) on gpu
-          process.hltHbherecoFromGPU,                       # transfer the HCAL rechits to the cpu, and convert them to the legacy format
-          process.hltHbhereco,                              # SwitchProducer between the legacy producer and the copy from gpu with conversion
-          process.hltHfprereco,                             # legacy producer
-          process.hltHfreco,                                # legacy producer
-          process.hltHoreco)                                # legacy producer
+        process.hltHcalDigis,                               # legacy producer, unpack HCAL digis on cpu
+        process.hltHcalDigisGPU,                            # copy to gpu and convert to SoA format
+        process.hltHbherecoGPU,                             # run the HCAL local reconstruction (including Method 0 and MAHI) on gpu
+        process.hltHbherecoFromGPU,                         # transfer the HCAL rechits to the cpu, and convert them to the legacy format
+        process.hltHbhereco,                                # SwitchProducer between the legacy producer and the copy from gpu with conversion
+        process.hltHfprereco,                               # legacy producer
+        process.hltHfreco,                                  # legacy producer
+        process.hltHoreco)                                  # legacy producer
 
-    process.HLTDoLocalHcalSequence = cms.Sequence(process.HLTDoLocalHcalTask)
+    process.HLTDoLocalHcalSequence = cms.Sequence(
+        process.hltHbheConsumer,                            # consume the HCAL rechits
+        process.HLTDoLocalHcalTask)
 
     process.HLTStoppedHSCPLocalHcalRecoTask = cms.Task(
-          process.hltHcalDigis,                             # legacy producer, unpack HCAL digis on cpu
-          process.hltHcalDigisGPU,                          # copy to gpu and convert to SoA format
-          process.hltHbherecoGPU,                           # run the HCAL local reconstruction (including Method 0 and MAHI) on gpu
-          process.hltHbherecoFromGPU,                       # transfer the HCAL rechits to the cpu, and convert them to the legacy format
-          process.hltHbhereco)                              # SwitchProducer between the legacy producer and the copy from gpu with conversion
+        process.hltHcalDigis,                               # legacy producer, unpack HCAL digis on cpu
+        process.hltHcalDigisGPU,                            # copy to gpu and convert to SoA format
+        process.hltHbherecoGPU,                             # run the HCAL local reconstruction (including Method 0 and MAHI) on gpu
+        process.hltHbherecoFromGPU,                         # transfer the HCAL rechits to the cpu, and convert them to the legacy format
+        process.hltHbhereco)                                # SwitchProducer between the legacy producer and the copy from gpu with conversion
 
-    process.HLTStoppedHSCPLocalHcalReco = cms.Sequence(process.HLTStoppedHSCPLocalHcalRecoTask)
+    process.HLTStoppedHSCPLocalHcalReco = cms.Sequence(
+        process.hltHbheConsumer,                            # consume the HCAL rechits
+        process.HLTStoppedHSCPLocalHcalRecoTask)
 
 
     # done
