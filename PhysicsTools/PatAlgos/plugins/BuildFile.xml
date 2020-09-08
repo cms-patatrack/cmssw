@@ -6,7 +6,6 @@
   <use name="FWCore/Framework"/>
   <use name="FWCore/ParameterSet"/>
   <use name="FWCore/MessageLogger"/>
-  <use name="FWCore/MessageService"/>
   <use name="L1Trigger/GlobalTriggerAnalyzer"/>
   <use name="HLTrigger/HLTcore"/>
   <use name="DataFormats/PatCandidates"/>
@@ -22,18 +21,20 @@
   <use name="CondFormats/HcalObjects"/>
   <use name="CondFormats/DataRecord"/>
   <use name="CommonTools/CandAlgos"/>
+  <use name="CommonTools/Egamma"/>
   <use name="CommonTools/MVAUtils"/>
   <use name="JetMETCorrections/Objects"/>
   <use name="JetMETCorrections/JetCorrector"/>
   <use name="TrackingTools/TransientTrack"/>
+  <use name="RecoEgamma/EgammaTools"/>
   <use name="SimDataFormats/Track"/>
   <use name="SimDataFormats/Vertex"/>
   <use name="SimDataFormats/JetMatching"/>
   <use name="SimDataFormats/PileupSummaryInfo"/>
   <use name="SimGeneral/HepPDTRecord"/>
   <use name="RecoMET/METAlgorithms"/>
-  <use name="RecoEgamma/EgammaTools"/>
   <use name="RecoTracker/DeDx"/>
   <use name="TrackingTools/IPTools"/>
+  <use name="RecoTauTag/RecoTau"/>
   <use name="root"/>
 </library>

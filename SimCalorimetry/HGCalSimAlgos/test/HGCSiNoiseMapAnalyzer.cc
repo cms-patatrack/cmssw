@@ -71,6 +71,7 @@ HGCSiNoiseMapAnalyzer::HGCSiNoiseMapAnalyzer(const edm::ParameterSet &iConfig) {
   //configure the dose map
   std::string doseMapURL(iConfig.getParameter<std::string>("doseMap"));
   unsigned int doseMapAlgo(iConfig.getParameter<unsigned int>("doseMapAlgo"));
+  double scaleByDoseFactor(iConfig.getParameter<double>("scaleByDoseFactor"));
   std::vector<double> ileakParam(
       iConfig.getParameter<edm::ParameterSet>("ileakParam").template getParameter<std::vector<double>>("ileakParam"));
   std::vector<double> cceParamFine(
@@ -82,11 +83,14 @@ HGCSiNoiseMapAnalyzer::HGCSiNoiseMapAnalyzer(const edm::ParameterSet &iConfig) {
 
   noiseMaps_[DetId::HGCalEE] = std::unique_ptr<HGCalSiNoiseMap>(new HGCalSiNoiseMap);
   noiseMaps_[DetId::HGCalEE]->setDoseMap(doseMapURL, doseMapAlgo);
+  noiseMaps_[DetId::HGCalEE]->setFluenceScaleFactor(scaleByDoseFactor);
+
   noiseMaps_[DetId::HGCalEE]->setIleakParam(ileakParam);
   noiseMaps_[DetId::HGCalEE]->setCceParam(cceParamFine, cceParamThin, cceParamThick);
 
   noiseMaps_[DetId::HGCalHSi] = std::unique_ptr<HGCalSiNoiseMap>(new HGCalSiNoiseMap);
   noiseMaps_[DetId::HGCalHSi]->setDoseMap(doseMapURL, doseMapAlgo);
+  noiseMaps_[DetId::HGCalHSi]->setFluenceScaleFactor(scaleByDoseFactor);
   noiseMaps_[DetId::HGCalHSi]->setIleakParam(ileakParam);
   noiseMaps_[DetId::HGCalHSi]->setCceParam(cceParamFine, cceParamThin, cceParamThick);
 
@@ -180,27 +184,27 @@ void HGCSiNoiseMapAnalyzer::analyze(const edm::Event &iEvent, const edm::EventSe
 
       //fill histos (layer,radius)
       detN_[d]->Fill(layer, r, 1);
-      detCCE_[d]->Fill(layer, r, siop.cce);
-      detNoise_[d]->Fill(layer, r, siop.noise);
-      detSN_[d]->Fill(layer, r, siop.mipfC / siop.noise);
+      detCCE_[d]->Fill(layer, r, siop.core.cce);
+      detNoise_[d]->Fill(layer, r, siop.core.noise);
+      detSN_[d]->Fill(layer, r, siop.mipfC / siop.core.noise);
       detIleak_[d]->Fill(layer, r, siop.ileak);
       detF_[d]->Fill(layer, r, siop.fluence);
-      detGain_[d]->Fill(layer, r, siop.gain + 1);
+      detGain_[d]->Fill(layer, r, siop.core.gain + 1);
       detMipPeak_[d]->Fill(layer, r, siop.mipADC);
 
       //per layer histograms
       std::pair<DetId::Detector, int> key(d, layer);
       layerN_[key]->Fill(r, 1);
-      layerCCE_[key]->Fill(r, siop.cce);
-      layerNoise_[key]->Fill(r, siop.noise);
-      layerSN_[key]->Fill(r, siop.mipfC / siop.noise);
+      layerCCE_[key]->Fill(r, siop.core.cce);
+      layerNoise_[key]->Fill(r, siop.core.noise);
+      layerSN_[key]->Fill(r, siop.mipfC / siop.core.noise);
       layerIleak_[key]->Fill(r, siop.ileak);
       layerF_[key]->Fill(r, siop.fluence);
-      layerGain_[key]->Fill(r, siop.gain + 1);
+      layerGain_[key]->Fill(r, siop.core.gain + 1);
       layerMipPeak_[key]->Fill(r, siop.mipADC);
 
       std::pair<DetId::Detector, int> key2(d, id.type());
-      detCCEVsFluence_[key2]->Fill(siop.fluence, siop.cce);
+      detCCEVsFluence_[key2]->Fill(siop.fluence, siop.core.cce);
     }
 
     //normalize histos per cell counts

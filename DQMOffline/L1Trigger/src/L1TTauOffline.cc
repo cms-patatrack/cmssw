@@ -144,7 +144,7 @@ void L1TTauOffline::bookHistograms(DQMStore::IBooker& ibooker, edm::Run const&, 
   for (auto trigNamesIt = triggerPath_.begin(); trigNamesIt != triggerPath_.end(); trigNamesIt++) {
     std::string tNameTmp = (*trigNamesIt);
     std::string tNamePattern = "";
-    std::size_t found0 = tNameTmp.find("*");
+    std::size_t found0 = tNameTmp.find('*');
     if (found0 != std::string::npos)
       tNamePattern = tNameTmp.substr(0, tNameTmp.size() - 1);
     else
@@ -678,7 +678,7 @@ void L1TTauOffline::getProbeTaus(const edm::Event& iEvent,
       {
         const edm::Provenance* prov = antiele.provenance();
         const std::vector<std::string> psetsFromProvenance =
-            edm::parameterSet(*prov, iEvent.processHistory()).getParameter<std::vector<std::string>>("workingsPoints");
+            edm::parameterSet(*prov, iEvent.processHistory()).getParameter<std::vector<std::string>>("workingPoints");
         for (uint i = 0; i < psetsFromProvenance.size(); i++) {
           if (psetsFromProvenance[i] == AntiEleWP_)
             AntiEleWPIndex_ = i;

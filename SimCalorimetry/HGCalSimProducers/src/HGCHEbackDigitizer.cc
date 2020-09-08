@@ -20,6 +20,7 @@ HGCHEbackDigitizer::HGCHEbackDigitizer(const edm::ParameterSet& ps) : HGCDigitiz
   sipmMapFile_ = cfg.getParameter<std::string>("sipmMap");
   scaleByDose_ = cfg.getParameter<edm::ParameterSet>("noise").getParameter<bool>("scaleByDose");
   unsigned int scaleByDoseAlgo = cfg.getParameter<edm::ParameterSet>("noise").getParameter<uint32_t>("scaleByDoseAlgo");
+  scaleByDoseFactor_ = cfg.getParameter<edm::ParameterSet>("noise").getParameter<double>("scaleByDoseFactor");
   doseMapFile_ = cfg.getParameter<edm::ParameterSet>("noise").getParameter<std::string>("doseMap");
   noise_MIP_ = cfg.getParameter<edm::ParameterSet>("noise").getParameter<double>("noise_MIP");
   thresholdFollowsMIP_ = cfg.getParameter<bool>("thresholdFollowsMIP");
@@ -31,6 +32,7 @@ HGCHEbackDigitizer::HGCHEbackDigitizer(const edm::ParameterSet& ps) : HGCDigitiz
   sdPixels_ = cfg.getParameter<double>("sdPixels");
 
   scal_.setDoseMap(doseMapFile_, scaleByDoseAlgo);
+  scal_.setFluenceScaleFactor(scaleByDoseFactor_);
   scal_.setSipmMap(sipmMapFile_);
 }
 
@@ -114,7 +116,7 @@ void HGCHEbackDigitizer::runRealisticDigitizer(std::unique_ptr<HGCalDigiCollecti
 
     if (id.det() == DetId::HGCalHSc)  //skip those geometries that have HE used as BH
     {
-      radiiVec radius;
+      double radius(0);
       if (scaleByTileArea_ or scaleByDose_ or scaleBySipmArea_)
         radius = scal_.computeRadius(id);
 
@@ -131,7 +133,7 @@ void HGCHEbackDigitizer::runRealisticDigitizer(std::unique_ptr<HGCalDigiCollecti
 
       //take into account the sipm size
       if (scaleBySipmArea_) {
-        sipmFactor = scal_.scaleBySipmArea(id, radius[0]);
+        sipmFactor = scal_.scaleBySipmArea(id, radius);
         scaledPePerMip *= sipmFactor;
         tunedNoise *= sqrt(sipmFactor);
       }

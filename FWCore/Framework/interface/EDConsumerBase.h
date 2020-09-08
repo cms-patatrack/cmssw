@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 #include <array>
+#include <cassert>
 
 // user include files
 #include "DataFormats/Provenance/interface/BranchType.h"
@@ -31,8 +32,8 @@
 #include "FWCore/Framework/interface/HCTypeTag.h"
 #include "FWCore/Framework/interface/DataKey.h"
 #include "FWCore/Framework/interface/data_default_record_trait.h"
-#include "FWCore/Utilities/interface/ESIndices.h"
 #include "FWCore/ServiceRegistry/interface/ConsumesInfo.h"
+#include "FWCore/Utilities/interface/ESIndices.h"
 #include "FWCore/Utilities/interface/TypeID.h"
 #include "FWCore/Utilities/interface/TypeToGet.h"
 #include "FWCore/Utilities/interface/InputTag.h"
@@ -52,6 +53,12 @@ namespace edm {
   class ProductResolverIndexHelper;
   class ProductRegistry;
   class ConsumesCollector;
+  template <Transition Tr>
+  class EDConsumerBaseESAdaptor;
+  template <Transition Tr>
+  class EDConsumerBaseWithTagESAdaptor;
+  template <BranchType B>
+  class EDConsumerBaseAdaptor;
   template <typename T>
   class WillGetIfMatch;
 
@@ -108,15 +115,34 @@ namespace edm {
     std::vector<ConsumesInfo> consumesInfo() const;
 
     ESProxyIndex const* esGetTokenIndices(edm::Transition iTrans) const {
-      auto const& v = esItemsToGetFromTransition_[static_cast<unsigned int>(iTrans)];
-      if (v.empty()) {
-        return nullptr;
+      if (iTrans < edm::Transition::NumberOfEventSetupTransitions) {
+        auto const& v = esItemsToGetFromTransition_[static_cast<unsigned int>(iTrans)];
+        if (v.empty()) {
+          return nullptr;
+        }
+        return &(esItemsToGetFromTransition_[static_cast<unsigned int>(iTrans)].front());
       }
-      return &(esItemsToGetFromTransition_[static_cast<unsigned int>(iTrans)].front());
+      return nullptr;
+    }
+
+    std::vector<ESProxyIndex> const& esGetTokenIndicesVector(edm::Transition iTrans) const {
+      assert(iTrans < edm::Transition::NumberOfEventSetupTransitions);
+      return esItemsToGetFromTransition_[static_cast<unsigned int>(iTrans)];
+    }
+
+    std::vector<ESRecordIndex> const& esGetTokenRecordIndicesVector(edm::Transition iTrans) const {
+      assert(iTrans < edm::Transition::NumberOfEventSetupTransitions);
+      return esRecordsToGetFromTransition_[static_cast<unsigned int>(iTrans)];
     }
 
   protected:
     friend class ConsumesCollector;
+    template <Transition Tr>
+    friend class EDConsumerBaseESAdaptor;
+    template <Transition Tr>
+    friend class EDConsumerBaseWithTagESAdaptor;
+    template <BranchType B>
+    friend class EDConsumerBaseAdaptor;
     template <typename T>
     friend class WillGetIfMatch;
     ///Use a ConsumesCollector to gather consumes information from helper functions
@@ -126,6 +152,11 @@ namespace edm {
     EDGetTokenT<ProductType> consumes(edm::InputTag const& tag) {
       TypeToGet tid = TypeToGet::make<ProductType>();
       return EDGetTokenT<ProductType>{recordConsumes(B, tid, checkIfEmpty(tag), true)};
+    }
+
+    template <BranchType B = InEvent>
+    [[nodiscard]] EDConsumerBaseAdaptor<B> consumes(edm::InputTag tag) noexcept {
+      return EDConsumerBaseAdaptor<B>(this, std::move(tag));
     }
 
     EDGetToken consumes(const TypeToGet& id, edm::InputTag const& tag) {
@@ -181,6 +212,16 @@ namespace edm {
       return ESGetToken<ESProduct, ESRecord>{static_cast<unsigned int>(Tr), index, labelFor(index)};
     }
 
+    template <Transition Tr = Transition::Event>
+    [[nodiscard]] constexpr auto esConsumes() noexcept {
+      return EDConsumerBaseESAdaptor<Tr>(this);
+    }
+
+    template <Transition Tr = Transition::Event>
+    [[nodiscard]] auto esConsumes(ESInputTag tag) noexcept {
+      return EDConsumerBaseWithTagESAdaptor<Tr>(this, std::move(tag));
+    }
+
   private:
     unsigned int recordConsumes(BranchType iBranch, TypeToGet const& iType, edm::InputTag const& iTag, bool iAlwaysGets);
     ESTokenIndex recordESConsumes(Transition,
@@ -194,6 +235,7 @@ namespace edm {
     void throwBranchMismatch(BranchType, EDGetToken) const;
     void throwBadToken(edm::TypeID const& iType, EDGetToken iToken) const;
     void throwConsumesCallAfterFrozen(TypeToGet const&, InputTag const&) const;
+    void throwESConsumesInProcessBlock() const;
 
     edm::InputTag const& checkIfEmpty(edm::InputTag const& tag);
     // ---------- member data --------------------------------
@@ -245,11 +287,66 @@ namespace edm {
     // inserts in the middle of the data structure.
     enum { kESLookupInfo, kESProxyIndex };
     edm::SoATuple<ESTokenLookupInfo, ESProxyIndex> m_esTokenInfo;
-    std::array<std::vector<ESProxyIndex>, static_cast<unsigned int>(edm::Transition::NumberOfTransitions)>
+    std::array<std::vector<ESProxyIndex>, static_cast<unsigned int>(edm::Transition::NumberOfEventSetupTransitions)>
         esItemsToGetFromTransition_;
+    std::array<std::vector<ESRecordIndex>, static_cast<unsigned int>(edm::Transition::NumberOfEventSetupTransitions)>
+        esRecordsToGetFromTransition_;
     bool frozen_;
     bool containsCurrentProcessAlias_;
   };
+
+  template <Transition TR>
+  class EDConsumerBaseESAdaptor {
+  public:
+    template <typename TYPE, typename REC>
+    ESGetToken<TYPE, REC> consumes() {
+      return m_consumer->template esConsumes<TYPE, REC, TR>();
+    }
+
+  private:
+    //only EDConsumerBase is allowed to make an instance of this class
+    friend class EDConsumerBase;
+    EDConsumerBaseESAdaptor(EDConsumerBase* iBase) : m_consumer(iBase) {}
+
+    EDConsumerBase* m_consumer;
+  };
+
+  template <Transition TR>
+  class EDConsumerBaseWithTagESAdaptor {
+  public:
+    template <typename TYPE, typename REC>
+    ESGetToken<TYPE, REC> consumes() {
+      return m_consumer->template esConsumes<TYPE, REC, TR>(m_tag);
+    }
+
+  private:
+    //only EDConsumerBase is allowed to make an instance of this class
+    friend class EDConsumerBase;
+    EDConsumerBaseWithTagESAdaptor(EDConsumerBase* iBase, ESInputTag iTag) noexcept
+        : m_consumer(iBase), m_tag(std::move(iTag)) {}
+
+    EDConsumerBase* m_consumer;
+    ESInputTag const m_tag;
+  };
+
+  template <BranchType B>
+  class EDConsumerBaseAdaptor {
+  public:
+    template <typename TYPE>
+    EDGetTokenT<TYPE> consumes() {
+      return m_consumer->template consumes<TYPE, B>(m_tag);
+    }
+
+  private:
+    //only EDConsumerBase is allowed to make an instance of this class
+    friend class EDConsumerBase;
+    EDConsumerBaseAdaptor(EDConsumerBase* iBase, edm::InputTag iTag) noexcept
+        : m_consumer(iBase), m_tag(std::move(iTag)) {}
+
+    EDConsumerBase* m_consumer;
+    edm::InputTag const m_tag;
+  };
+
 }  // namespace edm
 
 #endif

@@ -15,6 +15,7 @@
 class L1TMuonEndCapParamsOnlineProd : public L1ConfigOnlineProdBaseExt<L1TMuonEndCapParamsO2ORcd, L1TMuonEndCapParams> {
 private:
   bool transactionSafe;
+  edm::ESGetToken<L1TMuonEndCapParams, L1TMuonEndCapParamsRcd> baseSettings_token;
 
 public:
   std::unique_ptr<const L1TMuonEndCapParams> newObject(const std::string& objectKey,
@@ -26,27 +27,27 @@ public:
 
 L1TMuonEndCapParamsOnlineProd::L1TMuonEndCapParamsOnlineProd(const edm::ParameterSet& iConfig)
     : L1ConfigOnlineProdBaseExt<L1TMuonEndCapParamsO2ORcd, L1TMuonEndCapParams>(iConfig) {
+  wrappedSetWhatProduced(iConfig).setConsumes(baseSettings_token);
   transactionSafe = iConfig.getParameter<bool>("transactionSafe");
 }
 
 std::unique_ptr<const L1TMuonEndCapParams> L1TMuonEndCapParamsOnlineProd::newObject(
     const std::string& objectKey, const L1TMuonEndCapParamsO2ORcd& record) {
   const L1TMuonEndCapParamsRcd& baseRcd = record.template getRecord<L1TMuonEndCapParamsRcd>();
-  edm::ESHandle<L1TMuonEndCapParams> baseSettings;
-  baseRcd.get(baseSettings);
+  auto const& baseSettings = baseRcd.get(baseSettings_token);
 
   if (objectKey.empty()) {
     edm::LogError("L1-O2O: L1TMuonEndCapParamsOnlineProd") << "Key is empty";
     if (transactionSafe)
-      throw std::runtime_error("SummaryForFunctionManager: BMTF  | Faulty  | Empty objectKey");
+      throw std::runtime_error("SummaryForFunctionManager: EMTF  | Faulty  | Empty objectKey");
     else {
       edm::LogError("L1-O2O: L1TMuonEndCapParamsOnlineProd") << "returning unmodified prototype of L1TMuonEndCapParams";
-      return std::make_unique<const L1TMuonEndCapParams>(*(baseSettings.product()));
+      return std::make_unique<const L1TMuonEndCapParams>(baseSettings);
     }
   }
 
-  std::string tscKey = objectKey.substr(0, objectKey.find(":"));
-  std::string rsKey = objectKey.substr(objectKey.find(":") + 1, std::string::npos);
+  std::string tscKey = objectKey.substr(0, objectKey.find(':'));
+  std::string rsKey = objectKey.substr(objectKey.find(':') + 1, std::string::npos);
 
   edm::LogInfo("L1-O2O: L1TMuonEndCapParamsOnlineProd")
       << "Producing L1TMuonEndCapParams with TSC key = " << tscKey << " and RS key = " << rsKey;
@@ -70,18 +71,18 @@ std::unique_ptr<const L1TMuonEndCapParams> L1TMuonEndCapParamsOnlineProd::newObj
       throw std::runtime_error("SummaryForFunctionManager: EMTF  | Faulty  | Broken key");
     else {
       edm::LogError("L1-O2O: L1TMuonEndCapParamsOnlineProd") << "returning unmodified prototype of L1TMuonEndCapParams";
-      return std::make_unique<const L1TMuonEndCapParams>(*(baseSettings.product()));
+      return std::make_unique<const L1TMuonEndCapParams>(baseSettings);
     }
   }
 
   // for debugging purposes dump the configs to local files
   {
-    std::ofstream output(std::string("/tmp/").append(hw_key.substr(0, hw_key.find("/"))).append(".xml"));
+    std::ofstream output(std::string("/tmp/").append(hw_key.substr(0, hw_key.find('/'))).append(".xml"));
     output << hw_payload;
     output.close();
   }
   {
-    std::ofstream output(std::string("/tmp/").append(algo_key.substr(0, algo_key.find("/"))).append(".xml"));
+    std::ofstream output(std::string("/tmp/").append(algo_key.substr(0, algo_key.find('/'))).append(".xml"));
     output << algo_payload;
     output.close();
   }
@@ -103,7 +104,7 @@ std::unique_ptr<const L1TMuonEndCapParams> L1TMuonEndCapParamsOnlineProd::newObj
       throw std::runtime_error("SummaryForFunctionManager: EMTF  | Faulty  | Cannot parse XMLs");
     else {
       edm::LogError("L1-O2O: L1TMuonEndCapParamsOnlineProd") << "returning unmodified prototype of L1TMuonEndCapParams";
-      return std::make_unique<const L1TMuonEndCapParams>(*(baseSettings.product()));
+      return std::make_unique<const L1TMuonEndCapParams>(baseSettings);
     }
   }
 

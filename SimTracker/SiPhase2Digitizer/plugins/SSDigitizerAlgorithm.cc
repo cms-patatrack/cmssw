@@ -6,6 +6,7 @@
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
+#include "CondFormats/DataRecord/interface/SiPhase2OuterTrackerLorentzAngleRcd.h"
 
 // Geometry
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
@@ -14,7 +15,26 @@
 
 using namespace edm;
 
-void SSDigitizerAlgorithm::init(const edm::EventSetup& es) { es.get<TrackerDigiGeometryRecord>().get(geom_); }
+namespace {
+  double nFactorial(int n);
+  double aScalingConstant(int N, int i);
+}  // namespace
+namespace {
+  double nFactorial(int n) { return std::tgamma(n + 1); }
+  double aScalingConstant(int N, int i) {
+    return std::pow(-1, (double)i) * nFactorial(N) * nFactorial(N + 2) /
+           (nFactorial(N - i) * nFactorial(N + 2 - i) * nFactorial(i));
+  }
+}  // namespace
+
+void SSDigitizerAlgorithm::init(const edm::EventSetup& es) {
+  if (use_LorentzAngle_DB_) {  // Get Lorentz angle from DB record
+    es.get<SiPhase2OuterTrackerLorentzAngleSimRcd>().get(siPhase2OTLorentzAngle_);
+  }
+
+  es.get<TrackerDigiGeometryRecord>().get(geom_);
+}
+
 SSDigitizerAlgorithm::SSDigitizerAlgorithm(const edm::ParameterSet& conf)
     : Phase2TrackerDigitizerAlgorithm(conf.getParameter<ParameterSet>("AlgorithmCommon"),
                                       conf.getParameter<ParameterSet>("SSDigitizerAlgorithm")),
@@ -33,50 +53,10 @@ SSDigitizerAlgorithm::SSDigitizerAlgorithm(const edm::ParameterSet& conf)
   storeSignalShape();
 }
 SSDigitizerAlgorithm::~SSDigitizerAlgorithm() { LogDebug("SSDigitizerAlgorithm") << "SSDigitizerAlgorithm deleted"; }
-void SSDigitizerAlgorithm::accumulateSimHits(std::vector<PSimHit>::const_iterator inputBegin,
-                                             std::vector<PSimHit>::const_iterator inputEnd,
-                                             const size_t inputBeginGlobalIndex,
-                                             const uint32_t tofBin,
-                                             const Phase2TrackerGeomDetUnit* pixdet,
-                                             const GlobalVector& bfield) {
-  // produce SignalPoint's for all SimHit's in detector
-  // Loop over hits
-  uint32_t detId = pixdet->geographicalId().rawId();
-  size_t simHitGlobalIndex = inputBeginGlobalIndex;  // This needs to be stored to create the digi-sim link later
-
-  // find the relevant hits
-  std::vector<PSimHit> matchedSimHits;
-  std::copy_if(inputBegin, inputEnd, std::back_inserter(matchedSimHits), [detId](auto const& hit) -> bool {
-    return hit.detUnitId() == detId;
-  });
-  // loop over a much reduced set of SimHits
-  for (auto const& hit : matchedSimHits) {
-    LogDebug("SSDigitizerAlgorithm") << hit.particleType() << " " << hit.pabs() << " " << hit.energyLoss() << " "
-                                     << hit.tof() << " " << hit.trackId() << " " << hit.processType() << " "
-                                     << hit.detUnitId() << hit.entryPoint() << " " << hit.exitPoint();
-
-    std::vector<DigitizerUtility::EnergyDepositUnit> ionization_points;
-    std::vector<DigitizerUtility::SignalPoint> collection_points;
-
-    double signalScale = 1.0;
-    // fill collection_points for this SimHit, indpendent of topology
-    if (select_hit(hit, (pixdet->surface().toGlobal(hit.localPosition()).mag() * c_inv), signalScale)) {
-      primary_ionization(hit, ionization_points);  // fills ionization_points
-
-      // transforms ionization_points -> collection_points
-      drift(hit, pixdet, bfield, ionization_points, collection_points);
-
-      // compute induced signal on readout elements and add to _signal
-      // hit needed only for SimHit<-->Digi link
-      induce_signal(hit, simHitGlobalIndex, tofBin, pixdet, collection_points);
-    }
-    ++simHitGlobalIndex;
-  }
-}
 //
 // -- Select the Hit for Digitization
 //
-bool SSDigitizerAlgorithm::select_hit(const PSimHit& hit, double tCorr, double& sigScale) {
+bool SSDigitizerAlgorithm::select_hit(const PSimHit& hit, double tCorr, double& sigScale) const {
   bool result = false;
   if (hitDetectionMode_ == SSDigitizerAlgorithm::SampledMode)
     result = select_hit_sampledMode(hit, tCorr, sigScale);
@@ -91,7 +71,7 @@ bool SSDigitizerAlgorithm::select_hit(const PSimHit& hit, double tCorr, double& 
 //
 // -- Select Hits in Sampled Mode
 //
-bool SSDigitizerAlgorithm::select_hit_sampledMode(const PSimHit& hit, double tCorr, double& sigScale) {
+bool SSDigitizerAlgorithm::select_hit_sampledMode(const PSimHit& hit, double tCorr, double& sigScale) const {
   double toa = hit.tof() - tCorr;
   double sampling_time = bx_time;
 
@@ -105,7 +85,7 @@ bool SSDigitizerAlgorithm::select_hit_sampledMode(const PSimHit& hit, double tCo
 //
 // -- Select Hits in Hit Detection Mode
 //
-bool SSDigitizerAlgorithm::select_hit_latchedMode(const PSimHit& hit, double tCorr, double& sigScale) {
+bool SSDigitizerAlgorithm::select_hit_latchedMode(const PSimHit& hit, double tCorr, double& sigScale) const {
   float toa = hit.tof() - tCorr;
   toa -= hit.eventId().bunchCrossing() * bx_time;
 
@@ -128,13 +108,7 @@ bool SSDigitizerAlgorithm::select_hit_latchedMode(const PSimHit& hit, double tCo
   }
   return false;
 }
-
-double SSDigitizerAlgorithm::nFactorial(int n) { return std::tgamma(n + 1); }
-double SSDigitizerAlgorithm::aScalingConstant(int N, int i) {
-  return std::pow(-1, (double)i) * nFactorial(N) * nFactorial(N + 2) /
-         (nFactorial(N - i) * nFactorial(N + 2 - i) * nFactorial(i));
-}
-double SSDigitizerAlgorithm::cbc3PulsePolarExpansion(double x) {
+double SSDigitizerAlgorithm::cbc3PulsePolarExpansion(double x) const {
   constexpr size_t max_par = 6;
   if (pulseShapeParameters_.size() < max_par)
     return -1;
@@ -152,10 +126,10 @@ double SSDigitizerAlgorithm::cbc3PulsePolarExpansion(double x) {
   for (int i = 0; i < nTerms; i++) {
     double angularTerm = 0;
     double temporalTerm = 0;
-    double rTerm = std::pow(r, i) / (std::pow(tau, 2. * i) * nFactorial(i + 2));
+    double rTerm = std::pow(r, i) / (std::pow(tau, 2. * i) * ::nFactorial(i + 2));
     for (int j = 0; j <= i; j++) {
       angularTerm += std::pow(std::cos(theta), (double)(i - j)) * std::pow(std::sin(theta), (double)j);
-      temporalTerm += aScalingConstant(i, j) * std::pow(xx, (double)(i - j)) * std::pow(tau, (double)j);
+      temporalTerm += ::aScalingConstant(i, j) * std::pow(xx, (double)(i - j)) * std::pow(tau, (double)j);
     }
     double fi = rTerm * angularTerm * temporalTerm;
 
@@ -163,7 +137,7 @@ double SSDigitizerAlgorithm::cbc3PulsePolarExpansion(double x) {
   }
   return fN;
 }
-double SSDigitizerAlgorithm::signalShape(double x) {
+double SSDigitizerAlgorithm::signalShape(double x) const {
   double xOffset = pulseShapeParameters_[0];
   double tau = pulseShapeParameters_[1];
   double maxCharge = pulseShapeParameters_[5];
@@ -178,7 +152,7 @@ void SSDigitizerAlgorithm::storeSignalShape() {
     pulseShapeVec_.push_back(signalShape(val));
   }
 }
-double SSDigitizerAlgorithm::getSignalScale(double xval) {
+double SSDigitizerAlgorithm::getSignalScale(double xval) const {
   double res = 0.0;
   int len = pulseShapeVec_.size();
 
@@ -201,6 +175,6 @@ double SSDigitizerAlgorithm::getSignalScale(double xval) {
 //
 bool SSDigitizerAlgorithm::isAboveThreshold(const DigitizerUtility::SimHitInfo* const hisInfo,
                                             float charge,
-                                            float thr) {
+                                            float thr) const {
   return (charge >= thr);
 }

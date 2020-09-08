@@ -33,8 +33,8 @@ namespace ecaldqm {
         lumiFlag_(false),
         batchMode_(false),
         active_(false) {
-    if (path_.empty() || path_.find("/") == std::string::npos ||
-        (otype_ != binning::kChannel && path_.find("/") == path_.size() - 1))
+    if (path_.empty() || path_.find('/') == std::string::npos ||
+        (otype_ != binning::kChannel && path_.find('/') == path_.size() - 1))
       throw_(_path + " cannot be used for ME path name");
 
     switch (kind_) {
@@ -487,14 +487,3 @@ namespace ecaldqm {
     return true;
   }
 }  // namespace ecaldqm
-
-namespace boost {
-  template <>
-  inline ecaldqm::MESet *new_clone<ecaldqm::MESet>(ecaldqm::MESet const &_s) {
-    return _s.clone();
-  }
-  template <>
-  void delete_clone<ecaldqm::MESet>(ecaldqm::MESet const *_s) {
-    checked_delete(_s);
-  }
-}  // namespace boost

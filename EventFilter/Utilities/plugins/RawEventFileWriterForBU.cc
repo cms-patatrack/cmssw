@@ -107,12 +107,6 @@ void RawEventFileWriterForBU::doOutputEvent(FRDEventMsgView const& msg) {
   //  cms::Adler32((const char*) msg.startAddress(), msg.size(), adlera_, adlerb_);
 }
 
-void RawEventFileWriterForBU::doOutputEventFragment(unsigned char* dataPtr, unsigned long dataSize) {
-  throw cms::Exception("RawEventFileWriterForBU", "doOutputEventFragment") << "Unsupported output mode ";
-
-  //cms::Adler32((const char*) dataPtr, dataSize, adlera_, adlerb_);
-}
-
 void RawEventFileWriterForBU::initialize(std::string const& destinationDir, std::string const& name, int ls) {
   destinationDir_ = destinationDir;
 
@@ -223,7 +217,7 @@ void RawEventFileWriterForBU::finishFileWrite(int ls) {
     write(outfd_, (char*)&frdFileHeader, sizeof(FRDFileHeader_v1));
     closefd();
     //move raw file from open to run directory
-    rename(fileName_.c_str(), (destinationDir_ + fileName_.substr(fileName_.rfind("/"))).c_str());
+    rename(fileName_.c_str(), (destinationDir_ + fileName_.substr(fileName_.rfind('/'))).c_str());
 
     edm::LogInfo("RawEventFileWriterForBU")
         << "Wrote RAW input file: " << fileName_ << " with perFileEventCount = " << perFileEventCount_.value()
@@ -231,10 +225,10 @@ void RawEventFileWriterForBU::finishFileWrite(int ls) {
   } else {
     closefd();
     //move raw file from open to run directory
-    rename(fileName_.c_str(), (destinationDir_ + fileName_.substr(fileName_.rfind("/"))).c_str());
+    rename(fileName_.c_str(), (destinationDir_ + fileName_.substr(fileName_.rfind('/'))).c_str());
     //create equivalent JSON file
     //TODO:fix this to use DaqDirector convention and better extension replace
-    boost::filesystem::path source(fileName_);
+    std::filesystem::path source(fileName_);
     std::string path = source.replace_extension(".jsn").string();
 
     fileMon_->snap(ls);
@@ -242,7 +236,7 @@ void RawEventFileWriterForBU::finishFileWrite(int ls) {
     fileMon_->discardCollected(ls);
 
     //move the json file from open
-    rename(path.c_str(), (destinationDir_ + path.substr(path.rfind("/"))).c_str());
+    rename(path.c_str(), (destinationDir_ + path.substr(path.rfind('/'))).c_str());
 
     edm::LogInfo("RawEventFileWriterForBU")
         << "Wrote JSON input file: " << path << " with perFileEventCount = " << perFileEventCount_.value()

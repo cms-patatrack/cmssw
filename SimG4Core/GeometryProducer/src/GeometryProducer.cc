@@ -28,6 +28,7 @@
 #include "G4TransportationManager.hh"
 
 #include <iostream>
+#include <memory>
 
 static void createWatchers(const edm::ParameterSet &iP,
                            SimActivityRegistry &iReg,
@@ -101,7 +102,7 @@ void GeometryProducer::beginLuminosityBlock(edm::LuminosityBlock &, edm::EventSe
   //     updateMagneticField( es );
 }
 
-void GeometryProducer::beginRun(const edm::Run &, const edm::EventSetup &) {}
+void GeometryProducer::beginRun(const edm::Run &run, const edm::EventSetup &es) { updateMagneticField(es); }
 
 void GeometryProducer::endRun(const edm::Run &, const edm::EventSetup &) {}
 
@@ -130,7 +131,7 @@ void GeometryProducer::produce(edm::Event &e, const edm::EventSetup &es) {
   if (m_pUseSensitiveDetectors) {
     edm::LogInfo("GeometryProducer") << " instantiating sensitive detectors ";
     // instantiate and attach the sensitive detectors
-    m_trackManager = std::unique_ptr<SimTrackManager>(new SimTrackManager);
+    m_trackManager = std::make_unique<SimTrackManager>();
     if (m_attach == nullptr)
       m_attach = new AttachSD;
     {

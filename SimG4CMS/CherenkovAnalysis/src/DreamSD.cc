@@ -1,4 +1,6 @@
 
+#include <memory>
+
 #include "Geometry/Records/interface/IdealGeometryRecord.h"
 #include "DetectorDescription/Core/interface/DDCompactView.h"
 #include "DetectorDescription/Core/interface/DDFilter.h"
@@ -119,7 +121,7 @@ void DreamSD::initMap(const std::string &sd, const edm::EventSetup &es) {
     const cms::DDFilter filter("ReadOutName", sd);
     cms::DDFilteredView fv((*cpv), filter);
     while (fv.firstChild()) {
-      std::string name = static_cast<std::string>(cms::dd::noNamespace(fv.name()));
+      std::string name = static_cast<std::string>(dd4hep::dd::noNamespace(fv.name()));
       std::vector<double> paras(fv.parameters());
 #ifdef EDM_ML_DEBUG
       edm::LogVerbatim("EcalSim") << "DreamSD::initMap (for " << sd << "): Solid " << name << " Shape "
@@ -464,7 +466,7 @@ bool DreamSD::setPbWO2MaterialProperties_(G4Material *aMaterial) {
 
   // Calculate Cherenkov angle integrals:
   // This is an ad-hoc solution (we hold it in the class, not in the material)
-  chAngleIntegrals_.reset(new G4PhysicsOrderedFreeVector());
+  chAngleIntegrals_ = std::make_unique<G4PhysicsOrderedFreeVector>();
 
   int index = 0;
   double currentRI = RefractiveIndex[index];

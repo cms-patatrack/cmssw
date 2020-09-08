@@ -8,6 +8,8 @@
    Author: Sven Dildick (TAMU), Tao Huang (TAMU)
 */
 
+#include "FWCore/Utilities/interface/ESGetToken.h"
+#include "Geometry/Records/interface/MuonGeometryRecord.h"
 #include "Geometry/CSCGeometry/interface/CSCGeometry.h"
 #include "Validation/MuonHits/interface/MuonSimHitMatcher.h"
 
@@ -73,7 +75,9 @@ public:
 private:
   void matchSimHitsToSimTrack();
 
-  edm::ESHandle<CSCGeometry> csc_geom_;
+  void clear();
+
+  edm::ESGetToken<CSCGeometry, MuonGeometryRecord> geomToken_;
 };
 
 #endif

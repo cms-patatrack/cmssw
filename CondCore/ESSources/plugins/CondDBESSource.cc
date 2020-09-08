@@ -79,7 +79,7 @@ namespace {
     //if ( proxy.proxy()->stats.nLoad>0) {
     out << "Time look up, payloadIds:" << std::endl;
     const auto& pids = *proxy.requests();
-    for (auto id : pids)
+    for (const auto& id : pids)
       out << "   " << id.since << " - " << id.till << " : " << id.payloadId << std::endl;
   }
 
@@ -260,7 +260,7 @@ CondDBESSource::CondDBESSource(const edm::ParameterSet& iConfig)
     if (tagSnapshotTime == boost::posix_time::time_from_string(std::string(cond::time::MAX_TIMESTAMP)))
       tagSnapshotTime = boost::posix_time::ptime();
 
-    proxy->lateInit(nsess, tag, tagSnapshotTime, it->second.recordLabel(), connStr);
+    proxy->lateInit(nsess, tag, tagSnapshotTime, it->second.recordLabel(), connStr, &m_queue, &m_mutex);
   }
 
   // one loaded expose all other tags to the Proxy!
@@ -334,6 +334,7 @@ void CondDBESSource::setIntervalFor(const EventSetupRecordKey& iKey,
                                  << iTime.eventID() << ", timestamp: " << iTime.time().value()
                                  << "; from CondDBESSource::setIntervalFor";
 
+  std::lock_guard<std::mutex> guard(m_mutex);
   m_stats.nSet++;
   //{
   // not really required, keep here for the time being

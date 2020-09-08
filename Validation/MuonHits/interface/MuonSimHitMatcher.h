@@ -11,7 +11,6 @@
 #include "DataFormats/GeometryVector/interface/GlobalPoint.h"
 #include "DataFormats/Math/interface/deltaPhi.h"
 #include "FWCore/Framework/interface/ConsumesCollector.h"
-#include "FWCore/Framework/interface/ESHandle.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/Framework/interface/Frameworkfwd.h"
@@ -71,6 +70,8 @@ protected:
   std::vector<unsigned int> getIdsOfSimTrackShower(unsigned trk_id,
                                                    const edm::SimTrackContainer& simTracks,
                                                    const edm::SimVertexContainer& simVertices);
+
+  void clear();
 
   bool verboseSimTrack_;
   bool simMuOnly_;

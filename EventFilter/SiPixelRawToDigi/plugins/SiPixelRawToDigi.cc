@@ -8,6 +8,8 @@
 
 #include "SiPixelRawToDigi.h"
 
+#include <memory>
+
 #include "DataFormats/Common/interface/Handle.h"
 #include "FWCore/Framework/interface/ESHandle.h"
 #include "FWCore/Framework/interface/ESTransientHandle.h"
@@ -26,11 +28,8 @@
 
 #include "DataFormats/FEDRawData/interface/FEDNumbering.h"
 #include "DataFormats/DetId/interface/DetIdCollection.h"
-#include "CondFormats/SiPixelObjects/interface/SiPixelFedCablingMap.h"
 #include "CondFormats/SiPixelObjects/interface/SiPixelFedCablingTree.h"
 #include "EventFilter/SiPixelRawToDigi/interface/PixelDataFormatter.h"
-
-#include "CondFormats/SiPixelObjects/interface/SiPixelQuality.h"
 
 #include "DataFormats/SiPixelDetId/interface/PixelFEDChannel.h"
 #include "EventFilter/SiPixelRawToDigi/interface/PixelUnpackingRegions.h"
@@ -51,6 +50,9 @@ SiPixelRawToDigi::SiPixelRawToDigi(const edm::ParameterSet& conf)
   usererrorlist = config_.getParameter<std::vector<int>>("UserErrorList");
 
   tFEDRawDataCollection = consumes<FEDRawDataCollection>(config_.getParameter<edm::InputTag>("InputLabel"));
+  if (useQuality) {
+    tSiPixelQuality = esConsumes<SiPixelQuality, SiPixelQualityRcd>();
+  }
 
   //start counters
   ndigis = 0;
@@ -73,7 +75,7 @@ SiPixelRawToDigi::SiPixelRawToDigi(const edm::ParameterSet& conf)
   // Timing
   bool timing = config_.getUntrackedParameter<bool>("Timing", false);
   if (timing) {
-    theTimer.reset(new edm::CPUTimer);
+    theTimer = std::make_unique<edm::CPUTimer>();
     hCPU = new TH1D("hCPU", "hCPU", 100, 0., 0.050);
     hDigi = new TH1D("hDigi", "hDigi", 50, 0., 15000.);
   }
@@ -90,6 +92,7 @@ SiPixelRawToDigi::SiPixelRawToDigi(const edm::ParameterSet& conf)
 
   //CablingMap could have a label //Tav
   cablingMapLabel = config_.getParameter<std::string>("CablingMapLabel");
+  tCablingMap = esConsumes<SiPixelFedCablingMap, SiPixelFedCablingMapRcd>(edm::ESInputTag("", cablingMapLabel));
 }
 
 // -----------------------------------------------------------------------------
@@ -152,8 +155,7 @@ void SiPixelRawToDigi::produce(edm::Event& ev, const edm::EventSetup& es) {
   // initialize cabling map or update if necessary
   if (recordWatcher.check(es)) {
     // cabling map, which maps online address (fed->link->ROC->local pixel) to offline (DetId->global pixel)
-    edm::ESTransientHandle<SiPixelFedCablingMap> cablingMap;
-    es.get<SiPixelFedCablingMapRcd>().get(cablingMapLabel, cablingMap);  //Tav
+    edm::ESHandle<SiPixelFedCablingMap> cablingMap = es.getHandle(tCablingMap);
     fedIds = cablingMap->fedIds();
     cabling_ = cablingMap->cablingTree();
     LogDebug("map version:") << cabling_->version();
@@ -161,8 +163,7 @@ void SiPixelRawToDigi::produce(edm::Event& ev, const edm::EventSetup& es) {
   // initialize quality record or update if necessary
   if (qualityWatcher.check(es) && useQuality) {
     // quality info for dead pixel modules or ROCs
-    edm::ESHandle<SiPixelQuality> qualityInfo;
-    es.get<SiPixelQualityRcd>().get(qualityInfo);
+    edm::ESHandle<SiPixelQuality> qualityInfo = es.getHandle(tSiPixelQuality);
     badPixelInfo_ = qualityInfo.product();
     if (!badPixelInfo_) {
       edm::LogError("SiPixelQualityNotPresent")

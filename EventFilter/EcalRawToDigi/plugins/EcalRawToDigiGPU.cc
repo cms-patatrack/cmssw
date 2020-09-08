@@ -1,29 +1,20 @@
 #include <iostream>
 
-// framework
-#include "FWCore/Framework/interface/stream/EDProducer.h"
-//#include "HeterogeneousCore/Producer/interface/HeterogeneousEDProducer.h"
-//#include "HeterogeneousCore/Producer/interface/HeterogeneousEvent.h"
-
-#include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
-#include "HeterogeneousCore/CUDACore/interface/ScopedContext.h"
-#include "FWCore/ParameterSet/interface/ParameterSet.h"
+#include "CUDADataFormats/EcalDigi/interface/DigisCollection.h"
+#include "CondFormats/DataRecord/interface/EcalMappingElectronicsRcd.h"
+#include "DataFormats/EcalDigi/interface/EcalDigiCollections.h"
+#include "DataFormats/FEDRawData/interface/FEDRawDataCollection.h"
+#include "EventFilter/EcalRawToDigi/interface/ElectronicsMappingGPU.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
+#include "FWCore/Framework/interface/stream/EDProducer.h"
+#include "FWCore/ParameterSet/interface/ParameterSet.h"
+#include "HeterogeneousCore/CUDACore/interface/ScopedContext.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 
-// algorithm specific
-
-#include "DataFormats/FEDRawData/interface/FEDRawDataCollection.h"
-#include "DataFormats/EcalDigi/interface/EcalDigiCollections.h"
-#include "CUDADataFormats/EcalDigi/interface/DigisCollection.h"
-
-#include "CondFormats/DataRecord/interface/EcalMappingElectronicsRcd.h"
-
-#include "EventFilter/EcalRawToDigi/interface/ElectronicsMappingGPU.h"
-
-#include "EventFilter/EcalRawToDigi/interface/DeclsForKernels.h"
-#include "EventFilter/EcalRawToDigi/interface/UnpackGPU.h"
+#include "DeclsForKernels.h"
+#include "UnpackGPU.h"
 
 class EcalRawToDigiGPU : public edm::stream::EDProducer<edm::ExternalWork> {
 public:
@@ -37,18 +28,15 @@ private:
 
 private:
   edm::EDGetTokenT<FEDRawDataCollection> rawDataToken_;
-  edm::EDPutTokenT<cms::cuda::Product<ecal::DigisCollection>> digisEBToken_, digisEEToken_;
+  using OutputProduct = cms::cuda::Product<ecal::DigisCollection<calo::common::DevStoragePolicy>>;
+  edm::EDPutTokenT<OutputProduct> digisEBToken_, digisEEToken_;
 
   cms::cuda::ContextState cudaState_;
 
   std::vector<int> fedsToUnpack_;
 
   ecal::raw::ConfigurationParameters config_;
-  // FIXME move this to use raii
-  ecal::raw::InputDataCPU inputCPU_;
-  ecal::raw::InputDataGPU inputGPU_;
   ecal::raw::OutputDataGPU outputGPU_;
-  ecal::raw::ScratchDataGPU scratchGPU_;
   ecal::raw::OutputDataCPU outputCPU_;
 };
 
@@ -60,7 +48,8 @@ void EcalRawToDigiGPU::fillDescriptions(edm::ConfigurationDescriptions& confDesc
   for (uint32_t i = 0; i < 54; ++i)
     feds[i] = i + 601;
   desc.add<std::vector<int>>("FEDs", feds);
-  desc.add<uint32_t>("maxChannels", 20000);
+  desc.add<uint32_t>("maxChannelsEB", 61200);
+  desc.add<uint32_t>("maxChannelsEE", 14648);
   desc.add<std::string>("digisLabelEB", "ebDigisGPU");
   desc.add<std::string>("digisLabelEE", "eeDigisGPU");
 
@@ -70,23 +59,14 @@ void EcalRawToDigiGPU::fillDescriptions(edm::ConfigurationDescriptions& confDesc
 
 EcalRawToDigiGPU::EcalRawToDigiGPU(const edm::ParameterSet& ps)
     : rawDataToken_{consumes<FEDRawDataCollection>(ps.getParameter<edm::InputTag>("InputLabel"))},
-      digisEBToken_{produces<cms::cuda::Product<ecal::DigisCollection>>(ps.getParameter<std::string>("digisLabelEB"))},
-      digisEEToken_{produces<cms::cuda::Product<ecal::DigisCollection>>(ps.getParameter<std::string>("digisLabelEE"))},
+      digisEBToken_{produces<OutputProduct>(ps.getParameter<std::string>("digisLabelEB"))},
+      digisEEToken_{produces<OutputProduct>(ps.getParameter<std::string>("digisLabelEE"))},
       fedsToUnpack_{ps.getParameter<std::vector<int>>("FEDs")} {
-  config_.maxChannels = ps.getParameter<uint32_t>("maxChannels");
-
-  inputCPU_.allocate();
-  inputGPU_.allocate();
-  outputGPU_.allocate(config_);
-  scratchGPU_.allocate(config_);
-  outputCPU_.allocate();
+  config_.maxChannelsEB = ps.getParameter<uint32_t>("maxChannelsEB");
+  config_.maxChannelsEE = ps.getParameter<uint32_t>("maxChannelsEE");
 }
 
-EcalRawToDigiGPU::~EcalRawToDigiGPU() {
-  inputGPU_.deallocate();
-  outputGPU_.deallocate(config_);
-  scratchGPU_.deallocate(config_);
-}
+EcalRawToDigiGPU::~EcalRawToDigiGPU() {}
 
 void EcalRawToDigiGPU::acquire(edm::Event const& event,
                                edm::EventSetup const& setup,
@@ -106,6 +86,27 @@ void EcalRawToDigiGPU::acquire(edm::Event const& event,
   edm::Handle<FEDRawDataCollection> rawDataHandle;
   event.getByToken(rawDataToken_, rawDataHandle);
 
+  // scratch
+  ecal::raw::ScratchDataGPU scratchGPU = {cms::cuda::make_device_unique<uint32_t[]>(2, ctx.stream())};
+
+  // input cpu data
+  ecal::raw::InputDataCPU inputCPU = {
+      cms::cuda::make_host_unique<unsigned char[]>(ecal::raw::nfeds_max * ecal::raw::nbytes_per_fed_max, ctx.stream()),
+      cms::cuda::make_host_unique<uint32_t[]>(ecal::raw::nfeds_max, ctx.stream()),
+      cms::cuda::make_host_unique<int[]>(ecal::raw::nfeds_max, ctx.stream())};
+
+  // input data gpu
+  ecal::raw::InputDataGPU inputGPU = {cms::cuda::make_device_unique<unsigned char[]>(
+                                          ecal::raw::nfeds_max * ecal::raw::nbytes_per_fed_max, ctx.stream()),
+                                      cms::cuda::make_device_unique<uint32_t[]>(ecal::raw::nfeds_max, ctx.stream()),
+                                      cms::cuda::make_device_unique<int[]>(ecal::raw::nfeds_max, ctx.stream())};
+
+  // output cpu
+  outputCPU_ = {cms::cuda::make_host_unique<uint32_t[]>(2, ctx.stream())};
+
+  // output gpu
+  outputGPU_.allocate(config_, ctx.stream());
+
   // iterate over feds
   // TODO: another idea
   //   - loop over all feds to unpack and enqueue cuda memcpy
@@ -124,10 +125,10 @@ void EcalRawToDigiGPU::acquire(edm::Event const& event,
       continue;
 
     // copy raw data into plain buffer
-    std::memcpy(inputCPU_.data.data() + currentCummOffset, data.data(), nbytes);
+    std::memcpy(inputCPU.data.get() + currentCummOffset, data.data(), nbytes);
     // set the offset in bytes from the start
-    inputCPU_.offsets[counter] = currentCummOffset;
-    inputCPU_.feds[counter] = fed;
+    inputCPU.offsets[counter] = currentCummOffset;
+    inputCPU.feds[counter] = fed;
 
     // this is the current offset into the vector
     currentCummOffset += nbytes;
@@ -135,21 +136,24 @@ void EcalRawToDigiGPU::acquire(edm::Event const& event,
   }
 
   ecal::raw::entryPoint(
-      inputCPU_, inputGPU_, outputGPU_, scratchGPU_, outputCPU_, conditions, ctx.stream(), counter, currentCummOffset);
+      inputCPU, inputGPU, outputGPU_, scratchGPU, outputCPU_, conditions, ctx.stream(), counter, currentCummOffset);
 }
 
 void EcalRawToDigiGPU::produce(edm::Event& event, edm::EventSetup const& setup) {
   cms::cuda::ScopedContextProduce ctx{cudaState_};
 
   // get the number of channels
-  auto const nchannelsEB = outputCPU_.nchannels[0];
-  auto const nchannelsEE = outputCPU_.nchannels[1];
+  outputGPU_.digisEB.size = outputCPU_.nchannels[0];
+  outputGPU_.digisEE.size = outputCPU_.nchannels[1];
 
-  ecal::DigisCollection digisEB{outputGPU_.idsEB, outputGPU_.samplesEB, nchannelsEB};
-  ecal::DigisCollection digisEE{outputGPU_.idsEE, outputGPU_.samplesEE, nchannelsEE};
+  //ecal::DigisCollection digisEB{outputGPU_.idsEB, outputGPU_.samplesEB, nchannelsEB};
+  //ecal::DigisCollection digisEE{outputGPU_.idsEE, outputGPU_.samplesEE, nchannelsEE};
 
-  ctx.emplace(event, digisEBToken_, std::move(digisEB));
-  ctx.emplace(event, digisEEToken_, std::move(digisEE));
+  ctx.emplace(event, digisEBToken_, std::move(outputGPU_.digisEB));
+  ctx.emplace(event, digisEEToken_, std::move(outputGPU_.digisEE));
+
+  // reset ptrs that are carried as members
+  outputCPU_.nchannels.reset();
 }
 
 DEFINE_FWK_MODULE(EcalRawToDigiGPU);

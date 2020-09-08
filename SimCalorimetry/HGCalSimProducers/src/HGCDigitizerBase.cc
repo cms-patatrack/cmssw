@@ -36,8 +36,10 @@ HGCDigitizerBase<DFr>::HGCDigitizerBase(const edm::ParameterSet& ps)
     scaleByDose_ = myCfg_.getParameter<edm::ParameterSet>("noise_fC").template getParameter<bool>("scaleByDose");
     int scaleByDoseAlgo =
         myCfg_.getParameter<edm::ParameterSet>("noise_fC").template getParameter<uint32_t>("scaleByDoseAlgo");
+    scaleByDoseFactor_ = myCfg_.getParameter<edm::ParameterSet>("noise_fC").getParameter<double>("scaleByDoseFactor");
     doseMapFile_ = myCfg_.getParameter<edm::ParameterSet>("noise_fC").template getParameter<std::string>("doseMap");
     scal_.setDoseMap(doseMapFile_, scaleByDoseAlgo);
+    scal_.setFluenceScaleFactor(scaleByDoseFactor_);
   } else {
     noise_fC_.resize(1, 1.f);
   }
@@ -51,10 +53,15 @@ HGCDigitizerBase<DFr>::HGCDigitizerBase(const edm::ParameterSet& ps)
         myCfg_.getParameter<edm::ParameterSet>("cceParams").template getParameter<std::vector<double>>("cceParamThin"),
         myCfg_.getParameter<edm::ParameterSet>("cceParams").template getParameter<std::vector<double>>("cceParamThick"));
   }
+
   edm::ParameterSet feCfg = myCfg_.getParameter<edm::ParameterSet>("feCfg");
   myFEelectronics_ = std::unique_ptr<HGCFEElectronics<DFr>>(new HGCFEElectronics<DFr>(feCfg));
   myFEelectronics_->SetNoiseValues(noise_fC_);
-  RandNoiseGenerationFlag_ = 0;
+
+  //override the "default ADC pulse" with the one with which was configured the FE electronics class
+  scal_.setDefaultADCPulseShape(myFEelectronics_->getDefaultADCPulse());
+
+  RandNoiseGenerationFlag_ = false;
 }
 
 template <class DFr>
@@ -76,7 +83,7 @@ void HGCDigitizerBase<DFr>::run(std::unique_ptr<HGCDigitizerBase::DColl>& digiCo
                                 uint32_t digitizationType,
                                 CLHEP::HepRandomEngine* engine) {
   if (scaleByDose_)
-    scal_.setGeometry(theGeom);
+    scal_.setGeometry(theGeom, HGCalSiNoiseMap::AUTO, myFEelectronics_->getTargetMipValue());
   if (NoiseGeneration_Method_ == true) {
     if (RandNoiseGenerationFlag_ == false) {
       GenerateGaussianNoise(engine, NoiseMean_, NoiseStd_);
@@ -101,9 +108,11 @@ void HGCDigitizerBase<DFr>::runSimple(std::unique_ptr<HGCDigitizerBase::DColl>& 
   HGCCellInfo zeroData;
   zeroData.hit_info[0].fill(0.f);  //accumulated energy
   zeroData.hit_info[1].fill(0.f);  //time-of-flight
+
   std::array<double, samplesize_> cellNoiseArray;
   for (size_t i = 0; i < samplesize_; i++)
     cellNoiseArray[i] = 0.0;
+
   for (const auto& id : validIds) {
     chargeColl.fill(0.f);
     toa.fill(0.f);
@@ -115,21 +124,24 @@ void HGCDigitizerBase<DFr>::runSimple(std::unique_ptr<HGCDigitizerBase::DColl>& 
 
       cellNoiseArray = GaussianNoiseArray_[hash_index];
     }
-    //set the noise,cce, LSB and threshold to be used
+
+    //set the noise,cce, LSB, threshold, and ADC pulse shape to be used
     float cce(1.f), noiseWidth(0.f), lsbADC(-1.f), maxADC(-1.f);
     // half the target mip value is the specification for ZS threshold
     uint32_t thrADC(std::floor(myFEelectronics_->getTargetMipValue() / 2));
     uint32_t gainIdx = 0;
+    std::array<float, 6>& adcPulse = myFEelectronics_->getDefaultADCPulse();
+
     if (scaleByDose_) {
       HGCSiliconDetId detId(id);
-      HGCalSiNoiseMap::SiCellOpCharacteristics siop =
-          scal_.getSiCellOpCharacteristics(detId, HGCalSiNoiseMap::AUTO, myFEelectronics_->getTargetMipValue());
+      HGCalSiNoiseMap::SiCellOpCharacteristicsCore siop = scal_.getSiCellOpCharacteristicsCore(detId);
       cce = siop.cce;
       noiseWidth = siop.noise;
-      lsbADC = scal_.getLSBPerGain()[(HGCalSiNoiseMap::GainRange_t)siop.gain];
-      maxADC = scal_.getMaxADCPerGain()[(HGCalSiNoiseMap::GainRange_t)siop.gain];
+      HGCalSiNoiseMap::GainRange_t gain((HGCalSiNoiseMap::GainRange_t)siop.gain);
+      lsbADC = scal_.getLSBPerGain()[gain];
+      maxADC = scal_.getMaxADCPerGain()[gain];
+      adcPulse = scal_.adcPulseForGain(gain);
       gainIdx = siop.gain;
-
       if (thresholdFollowsMIP_)
         thrADC = siop.thrADC;
     } else if (noise_fC_[cell.thickness - 1] != 0) {
@@ -168,7 +180,8 @@ void HGCDigitizerBase<DFr>::runSimple(std::unique_ptr<HGCDigitizerBase::DColl>& 
     //run the shaper to create a new data frame
     DFr rawDataFrame(id);
     int thickness = cell.thickness > 0 ? cell.thickness : 1;
-    myFEelectronics_->runShaper(rawDataFrame, chargeColl, toa, engine, thrADC, lsbADC, gainIdx, maxADC, thickness);
+    myFEelectronics_->runShaper(
+        rawDataFrame, chargeColl, toa, adcPulse, engine, thrADC, lsbADC, gainIdx, maxADC, thickness);
 
     //update the output according to the final shape
     updateOutput(coll, rawDataFrame);
@@ -177,22 +190,25 @@ void HGCDigitizerBase<DFr>::runSimple(std::unique_ptr<HGCDigitizerBase::DColl>& 
 
 template <class DFr>
 void HGCDigitizerBase<DFr>::updateOutput(std::unique_ptr<HGCDigitizerBase::DColl>& coll, const DFr& rawDataFrame) {
+  // 9th is the sample of hte intime amplitudes
   int itIdx(9);
   if (rawDataFrame.size() <= itIdx + 2)
     return;
 
   DFr dataFrame(rawDataFrame.id());
   dataFrame.resize(5);
-  bool putInEvent(false);
-  for (int it = 0; it < 5; it++) {
-    dataFrame.setSample(it, rawDataFrame[itIdx - 2 + it]);
-    if (it == 2)
-      putInEvent = rawDataFrame[itIdx - 2 + it].threshold();
+
+  // if in time amplitude is above threshold
+  // , then don't push back the dataframe
+  if ((!rawDataFrame[itIdx].threshold())) {
+    return;
   }
 
-  if (putInEvent) {
-    coll->push_back(dataFrame);
+  for (int it = 0; it < 5; it++) {
+    dataFrame.setSample(it, rawDataFrame[itIdx - 2 + it]);
   }
+
+  coll->push_back(dataFrame);
 }
 
 // cause the compiler to generate the appropriate code

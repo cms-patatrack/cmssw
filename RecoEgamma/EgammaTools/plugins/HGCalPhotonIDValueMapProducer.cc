@@ -79,7 +79,7 @@ HGCalPhotonIDValueMapProducer::HGCalPhotonIDValueMapProducer(const edm::Paramete
     produces<edm::ValueMap<float>>(key);
   }
 
-  phoIDHelper_.reset(new HGCalEgammaIDHelper(iConfig, consumesCollector()));
+  phoIDHelper_ = std::make_unique<HGCalEgammaIDHelper>(iConfig, consumesCollector());
 }
 
 HGCalPhotonIDValueMapProducer::~HGCalPhotonIDValueMapProducer() {}
@@ -216,6 +216,7 @@ void HGCalPhotonIDValueMapProducer::fillDescriptions(edm::ConfigurationDescripti
   desc.add<edm::InputTag>("EERecHits", edm::InputTag("HGCalRecHit", "HGCEERecHits"));
   desc.add<edm::InputTag>("FHRecHits", edm::InputTag("HGCalRecHit", "HGCHEFRecHits"));
   desc.add<edm::InputTag>("BHRecHits", edm::InputTag("HGCalRecHit", "HGCHEBRecHits"));
+  desc.add<edm::InputTag>("hitMapTag", edm::InputTag("hgcalRecHitMapProducer"));
   descriptions.add("hgcalPhotonIDValueMap", desc);
 }
 

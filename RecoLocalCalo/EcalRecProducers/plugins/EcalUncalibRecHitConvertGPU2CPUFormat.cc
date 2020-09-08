@@ -1,18 +1,16 @@
-// framework
-#include "FWCore/Framework/interface/stream/EDProducer.h"
-#include "FWCore/ParameterSet/interface/ParameterSet.h"
+#include <iostream>
+
+#include "CUDADataFormats/EcalRecHitSoA/interface/EcalUncalibratedRecHit.h"
+#include "DataFormats/EcalDigi/interface/EcalDigiCollections.h"
+#include "DataFormats/EcalRecHit/interface/EcalRecHitCollections.h"
+#include "DataFormats/EcalRecHit/interface/EcalUncalibratedRecHit.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
+#include "FWCore/Framework/interface/stream/EDProducer.h"
+#include "FWCore/ParameterSet/interface/ParameterSet.h"
 
-// algorithm specific
-#include "DataFormats/EcalDigi/interface/EcalDigiCollections.h"
-#include "CUDADataFormats/EcalRecHitSoA/interface/EcalUncalibratedRecHit_soa.h"
-#include "DataFormats/EcalRecHit/interface/EcalUncalibratedRecHit.h"
-#include "DataFormats/EcalRecHit/interface/EcalRecHitCollections.h"
-#include "RecoLocalCalo/EcalRecAlgos/interface/Common.h"
-
-#include <iostream>
+#include "Common.h"
 
 class EcalUncalibRecHitConvertGPU2CPUFormat : public edm::stream::EDProducer<> {
 public:
@@ -21,12 +19,12 @@ public:
   static void fillDescriptions(edm::ConfigurationDescriptions&);
 
 private:
-  using GPURecHitType = ecal::UncalibratedRecHit<ecal::Tag::soa>;
+  using InputProduct = ecal::UncalibratedRecHit<calo::common::VecStoragePolicy<calo::common::CUDAHostAllocatorAlias>>;
   void produce(edm::Event&, edm::EventSetup const&) override;
 
 private:
-  const edm::EDGetTokenT<ecal::SoAUncalibratedRecHitCollection> recHitsGPUEB_;
-  const edm::EDGetTokenT<ecal::SoAUncalibratedRecHitCollection> recHitsGPUEE_;
+  const edm::EDGetTokenT<InputProduct> recHitsGPUEB_;
+  const edm::EDGetTokenT<InputProduct> recHitsGPUEE_;
 
   const std::string recHitsLabelCPUEB_, recHitsLabelCPUEE_;
 };
@@ -45,10 +43,8 @@ void EcalUncalibRecHitConvertGPU2CPUFormat::fillDescriptions(edm::ConfigurationD
 }
 
 EcalUncalibRecHitConvertGPU2CPUFormat::EcalUncalibRecHitConvertGPU2CPUFormat(const edm::ParameterSet& ps)
-    : recHitsGPUEB_{consumes<ecal::SoAUncalibratedRecHitCollection>(
-          ps.getParameter<edm::InputTag>("recHitsLabelGPUEB"))},
-      recHitsGPUEE_{
-          consumes<ecal::SoAUncalibratedRecHitCollection>(ps.getParameter<edm::InputTag>("recHitsLabelGPUEE"))},
+    : recHitsGPUEB_{consumes<InputProduct>(ps.getParameter<edm::InputTag>("recHitsLabelGPUEB"))},
+      recHitsGPUEE_{consumes<InputProduct>(ps.getParameter<edm::InputTag>("recHitsLabelGPUEE"))},
       recHitsLabelCPUEB_{ps.getParameter<std::string>("recHitsLabelCPUEB")},
       recHitsLabelCPUEE_{ps.getParameter<std::string>("recHitsLabelCPUEE")} {
   produces<EBUncalibratedRecHitCollection>(recHitsLabelCPUEB_);
@@ -58,7 +54,7 @@ EcalUncalibRecHitConvertGPU2CPUFormat::EcalUncalibRecHitConvertGPU2CPUFormat(con
 EcalUncalibRecHitConvertGPU2CPUFormat::~EcalUncalibRecHitConvertGPU2CPUFormat() {}
 
 void EcalUncalibRecHitConvertGPU2CPUFormat::produce(edm::Event& event, edm::EventSetup const& setup) {
-  edm::Handle<ecal::SoAUncalibratedRecHitCollection> hRecHitsGPUEB, hRecHitsGPUEE;
+  edm::Handle<InputProduct> hRecHitsGPUEB, hRecHitsGPUEE;
   event.getByToken(recHitsGPUEB_, hRecHitsGPUEB);
   event.getByToken(recHitsGPUEE_, hRecHitsGPUEE);
 

@@ -12,8 +12,10 @@
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
+#include "FWCore/ServiceRegistry/interface/Service.h"
 #include "FWCore/Utilities/interface/EDMException.h"
 #include "FWCore/Utilities/interface/isFinite.h"
+#include "HeterogeneousCore/CUDAServices/interface/CUDAService.h"
 #include "TrackingTools/DetLayers/interface/BarrelDetLayer.h"
 
 #include "CAHitNtupletGeneratorOnGPU.h"
@@ -92,8 +94,12 @@ CAHitNtupletGeneratorOnGPU::CAHitNtupletGeneratorOnGPU(const edm::ParameterSet& 
 #endif
 
   if (m_params.onGPU_) {
-    cudaCheck(cudaMalloc(&m_counters, sizeof(Counters)));
-    cudaCheck(cudaMemset(m_counters, 0, sizeof(Counters)));
+    // allocate pinned host memory only if CUDA is available
+    edm::Service<CUDAService> cs;
+    if (cs and cs->enabled()) {
+      cudaCheck(cudaMalloc(&m_counters, sizeof(Counters)));
+      cudaCheck(cudaMemset(m_counters, 0, sizeof(Counters)));
+    }
   } else {
     m_counters = new Counters();
     memset(m_counters, 0, sizeof(Counters));
@@ -101,17 +107,20 @@ CAHitNtupletGeneratorOnGPU::CAHitNtupletGeneratorOnGPU(const edm::ParameterSet& 
 }
 
 CAHitNtupletGeneratorOnGPU::~CAHitNtupletGeneratorOnGPU() {
-  if (m_params.doStats_) {
-    // crash on multi-gpu processes
-    if (m_params.onGPU_) {
-      CAHitNtupletGeneratorKernelsGPU::printCounters(m_counters);
-    } else {
+  if (m_params.onGPU_) {
+    // print the gpu statistics and free pinned host memory only if CUDA is available
+    edm::Service<CUDAService> cs;
+    if (cs and cs->enabled()) {
+      if (m_params.doStats_) {
+        // crash on multi-gpu processes
+        CAHitNtupletGeneratorKernelsGPU::printCounters(m_counters);
+      }
+      cudaFree(m_counters);
+    }
+  } else {
+    if (m_params.doStats_) {
       CAHitNtupletGeneratorKernelsCPU::printCounters(m_counters);
     }
-  }
-  if (m_params.onGPU_) {
-    cudaFree(m_counters);
-  } else {
     delete m_counters;
   }
 }
@@ -168,14 +177,15 @@ PixelTrackHeterogeneous CAHitNtupletGeneratorOnGPU::makeTuplesAsync(TrackingRecH
 
   CAHitNtupletGeneratorKernelsGPU kernels(m_params);
   kernels.counters_ = m_counters;
-  HelixFitOnGPU fitter(bfield, m_params.fit5as4_);
 
   kernels.allocateOnGPU(stream);
-  fitter.allocateOnGPU(&(soa->hitIndices), kernels.tupleMultiplicity(), soa);
 
   kernels.buildDoublets(hits_d, stream);
   kernels.launchKernels(hits_d, soa, stream);
   kernels.fillHitDetIndices(hits_d.view(), soa, stream);  // in principle needed only if Hits not "available"
+
+  HelixFitOnGPU fitter(bfield, m_params.fit5as4_);
+  fitter.allocateOnGPU(&(soa->hitIndices), kernels.tupleMultiplicity(), soa);
   if (m_params.useRiemannFit_) {
     fitter.launchRiemannKernels(hits_d.view(), hits_d.nHits(), CAConstants::maxNumberOfQuadruplets(), stream);
   } else {

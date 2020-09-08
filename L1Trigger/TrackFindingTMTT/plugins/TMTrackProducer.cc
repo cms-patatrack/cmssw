@@ -15,8 +15,6 @@
 #include "FWCore/MessageService/interface/MessageLogger.h"
 #include "FWCore/Framework/interface/ESHandle.h"
 
-#include <boost/numeric/ublas/matrix.hpp>
-
 #include <iostream>
 #include <vector>
 #include <list>
@@ -25,7 +23,6 @@
 #include <mutex>
 
 using namespace std;
-using boost::numeric::ublas::matrix;
 
 namespace tmtt {
 
@@ -374,7 +371,7 @@ namespace tmtt {
         }
       }
       PrintL1trk() << "Number of tracks after HT = " << numHTtracks;
-      for (const auto p : mapFinalTracks) {
+      for (const auto& p : mapFinalTracks) {
         const string& fitName = p.first;
         const list<const L1fittedTrack*> fittedTracks = p.second;
         PrintL1trk() << "Number of tracks after " << fitName << " track helix fit = " << fittedTracks.size();

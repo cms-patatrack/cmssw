@@ -34,8 +34,12 @@
 #include "DataFormats/CSCDigi/interface/CSCCLCTDigi.h"
 #include "DataFormats/CSCDigi/interface/CSCCLCTPreTriggerDigi.h"
 #include "L1Trigger/CSCTriggerPrimitives/interface/CSCBaseboard.h"
+#include "L1Trigger/CSCTriggerPrimitives/interface/CSCComparatorCodeLUT.h"
+#include "L1Trigger/CSCTriggerPrimitives/interface/LCTQualityControl.h"
 
 #include <vector>
+#include <array>
+#include <string>
 
 class CSCCathodeLCTProcessor : public CSCBaseboard {
 public:
@@ -49,6 +53,9 @@ public:
 
   /** Default constructor. Used for testing. */
   CSCCathodeLCTProcessor();
+
+  /** Default destructor. */
+  ~CSCCathodeLCTProcessor() override = default;
 
   /** Sets configuration parameters obtained via EventSetup mechanism. */
   void setConfigParameters(const CSCDBL1TPParameters* conf);
@@ -70,7 +77,7 @@ public:
   std::vector<CSCCLCTDigi> readoutCLCTsME1b(int nMaxCLCTs = CSCConstants::MAX_CLCTS_READOUT) const;
 
   /** Returns vector of all found CLCTs, if any. */
-  std::vector<CSCCLCTDigi> getCLCTs() const;
+  std::vector<CSCCLCTDigi> getCLCTs(unsigned nMaxCLCTs = CSCConstants::MAX_CLCTS_PER_PROCESSOR) const;
 
   /** get best/second best CLCT
    * Note: CLCT has BX shifted */
@@ -85,8 +92,15 @@ public:
   std::vector<CSCCLCTPreTriggerDigi> preTriggerDigisME1b() const;
 
 protected:
-  /** LCTs in this chamber, as found by the processor. */
-  CSCCLCTDigi CLCTContainer_[CSCConstants::MAX_CLCT_TBINS][CSCConstants::MAX_CLCTS_PER_PROCESSOR];
+  /** Best LCT in this chamber, as found by the processor. */
+  CSCCLCTDigi bestCLCT[CSCConstants::MAX_CLCT_TBINS];
+
+  /** Second best LCT in this chamber, as found by the processor. */
+  CSCCLCTDigi secondCLCT[CSCConstants::MAX_CLCT_TBINS];
+
+  // unique pointers to the luts
+  std::array<std::unique_ptr<CSCComparatorCodeLUT>, 5> lutpos_;
+  std::array<std::unique_ptr<CSCComparatorCodeLUT>, 5> lutslope_;
 
   /** Access routines to comparator digis. */
   bool getDigis(const CSCComparatorDigiCollection* compdc);
@@ -125,7 +139,7 @@ protected:
   // enum used in the comparator code logic
   enum CLCT_CompCode { INVALID_HALFSTRIP = 65535 };
 
-  void cleanComparatorContainer(CSCCLCTDigi::ComparatorContainer& compHits) const;
+  void cleanComparatorContainer(CSCCLCTDigi& lct) const;
 
   /* Mark the half-strips around the best half-strip as busy */
   void markBusyKeys(const int best_hstrip, const int best_patid, int quality[CSCConstants::NUM_HALF_STRIPS_7CFEBS]);
@@ -138,6 +152,20 @@ protected:
   void dumpDigis(const std::vector<int> strip[CSCConstants::NUM_LAYERS][CSCConstants::NUM_HALF_STRIPS_7CFEBS],
                  const int nStrips) const;
 
+  // --------Functions for the comparator code algorith for Run-3 ---------//
+  //calculates the id based on location of hits
+  int calculateComparatorCode(const std::array<std::array<int, 3>, 6>& halfStripPattern) const;
+
+  // sets the 1/4 and 1/8 strip bits given a floating point position offset
+  void calculatePositionCC(float offset, uint16_t& halfstrip, bool& quartstrip, bool& eightstrip) const;
+
+  // converts the floating point slope into integer slope
+  int calculateSlopeCC(float slope, int nBits) const;
+
+  // runs the CCLUT procedure
+  void runCCLUT(CSCCLCTDigi& digi) const;
+
+  unsigned convertSlopeToRun2Pattern(unsigned slope, unsigned bend) const;
   //--------------------------- Member variables -----------------------------
 
   /* best pattern Id for a given half-strip */
@@ -152,7 +180,7 @@ protected:
   bool ispretrig[CSCConstants::NUM_HALF_STRIPS_7CFEBS];
 
   // actual LUT used
-  CSCPatternBank::CLCTPatterns clct_pattern_ = {};
+  CSCPatternBank::LCTPatterns clct_pattern_ = {};
 
   // we use these next ones to address the various bits inside the array that's
   // used to make the cathode LCTs.
@@ -194,11 +222,8 @@ protected:
   bool readout_earliest_2;
 
   // Use the new patterns according to the comparator code format
-  bool use_run3_patterns_;
-  bool use_comparator_codes_;
-
-  // which hits per CLCT?
-  PulseArray hitsCLCT[99];
+  unsigned int nbits_position_cc_;
+  unsigned int nbits_slope_cc_;
 
   /** Default values of configuration parameters. */
   static const unsigned int def_fifo_tbins, def_fifo_pretrig;
@@ -207,6 +232,12 @@ protected:
   static const unsigned int def_nplanes_hit_pattern;
   static const unsigned int def_pid_thresh_pretrig, def_min_separation;
   static const unsigned int def_tmb_l1a_window_size;
+
+  std::vector<std::string> positionLUTFiles_;
+  std::vector<std::string> slopeLUTFiles_;
+
+  /* quality control */
+  std::unique_ptr<LCTQualityControl> qualityControl_;
 };
 
 #endif

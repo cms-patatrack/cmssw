@@ -1,44 +1,37 @@
-// framework
-#include "FWCore/Framework/interface/stream/EDProducer.h"
-//#include "HeterogeneousCore/Producer/interface/HeterogeneousEDProducer.h"
-//#include "HeterogeneousCore/Producer/interface/HeterogeneousEvent.h"
-
-#include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
-#include "HeterogeneousCore/CUDACore/interface/ScopedContext.h"
-#include "FWCore/ParameterSet/interface/ParameterSet.h"
-#include "FWCore/Framework/interface/Event.h"
-#include "FWCore/Framework/interface/EventSetup.h"
-#include "FWCore/Framework/interface/MakerMacros.h"
-
-// algorithm specific
-#include "DataFormats/EcalDigi/interface/EcalDigiCollections.h"
-#include "CUDADataFormats/EcalRecHitSoA/interface/EcalUncalibratedRecHit_soa.h"
-#include "RecoLocalCalo/EcalRecAlgos/interface/Common.h"
-
 #include <iostream>
 
-#include "CondFormats/EcalObjects/interface/EcalTimeOffsetConstant.h"
-
-#include "CondFormats/DataRecord/interface/EcalPedestalsRcd.h"
+#include "CUDADataFormats/EcalRecHitSoA/interface/EcalUncalibratedRecHit.h"
 #include "CondFormats/DataRecord/interface/EcalGainRatiosRcd.h"
-#include "CondFormats/DataRecord/interface/EcalPulseShapesRcd.h"
+#include "CondFormats/DataRecord/interface/EcalPedestalsRcd.h"
 #include "CondFormats/DataRecord/interface/EcalPulseCovariancesRcd.h"
+#include "CondFormats/DataRecord/interface/EcalPulseShapesRcd.h"
+#include "CondFormats/DataRecord/interface/EcalSampleMaskRcd.h"
 #include "CondFormats/DataRecord/interface/EcalSamplesCorrelationRcd.h"
 #include "CondFormats/DataRecord/interface/EcalTimeBiasCorrectionsRcd.h"
 #include "CondFormats/DataRecord/interface/EcalTimeCalibConstantsRcd.h"
 #include "CondFormats/DataRecord/interface/EcalTimeOffsetConstantRcd.h"
-#include "CondFormats/DataRecord/interface/EcalSampleMaskRcd.h"
-
-#include "RecoLocalCalo/EcalRecAlgos/interface/EcalPedestalsGPU.h"
+#include "CondFormats/EcalObjects/interface/EcalTimeOffsetConstant.h"
+#include "DataFormats/EcalDigi/interface/EcalDigiCollections.h"
+#include "FWCore/Framework/interface/Event.h"
+#include "FWCore/Framework/interface/EventSetup.h"
+#include "FWCore/Framework/interface/MakerMacros.h"
+#include "FWCore/Framework/interface/stream/EDProducer.h"
+#include "FWCore/ParameterSet/interface/ParameterSet.h"
+#include "HeterogeneousCore/CUDACore/interface/ScopedContext.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalGainRatiosGPU.h"
-#include "RecoLocalCalo/EcalRecAlgos/interface/EcalPulseShapesGPU.h"
+#include "RecoLocalCalo/EcalRecAlgos/interface/EcalPedestalsGPU.h"
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalPulseCovariancesGPU.h"
+#include "RecoLocalCalo/EcalRecAlgos/interface/EcalPulseShapesGPU.h"
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalSamplesCorrelationGPU.h"
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalTimeBiasCorrectionsGPU.h"
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalTimeCalibConstantsGPU.h"
+#include "RecoLocalCalo/EcalRecAlgos/interface/EcalMultifitParametersGPU.h"
 
-#include "RecoLocalCalo/EcalRecAlgos/interface/DeclsForKernels.h"
-#include "RecoLocalCalo/EcalRecAlgos/interface/EcalUncalibRecHitMultiFitAlgo_gpu_new.h"
+#include "Common.h"
+#include "DeclsForKernels.h"
+#include "EcalUncalibRecHitMultiFitAlgo_gpu_new.h"
+#include "EcalMultifitParametersGPURecord.h"
 
 class EcalUncalibRecHitProducerGPU : public edm::stream::EDProducer<edm::ExternalWork> {
 public:
@@ -47,35 +40,35 @@ public:
   static void fillDescriptions(edm::ConfigurationDescriptions&);
 
 private:
-  using RecHitType = ecal::UncalibratedRecHit<ecal::Tag::soa>;
   void acquire(edm::Event const&, edm::EventSetup const&, edm::WaitingTaskWithArenaHolder) override;
   void produce(edm::Event&, edm::EventSetup const&) override;
 
 private:
-  edm::EDGetTokenT<cms::cuda::Product<ecal::DigisCollection>> digisTokenEB_, digisTokenEE_;
-  edm::EDPutTokenT<cms::cuda::Product<ecal::UncalibratedRecHit<ecal::Tag::ptr>>> recHitsTokenEB_, recHitsTokenEE_;
+  using InputProduct = cms::cuda::Product<ecal::DigisCollection<calo::common::DevStoragePolicy>>;
+  const edm::EDGetTokenT<InputProduct> digisTokenEB_, digisTokenEE_;
+  using OutputProduct = cms::cuda::Product<ecal::UncalibratedRecHit<calo::common::DevStoragePolicy>>;
+  const edm::EDPutTokenT<OutputProduct> recHitsTokenEB_, recHitsTokenEE_;
 
-  // conditions handles
-  edm::ESHandle<EcalPedestalsGPU> pedestalsHandle_;
-  edm::ESHandle<EcalGainRatiosGPU> gainRatiosHandle_;
-  edm::ESHandle<EcalPulseShapesGPU> pulseShapesHandle_;
-  edm::ESHandle<EcalPulseCovariancesGPU> pulseCovariancesHandle_;
-  edm::ESHandle<EcalSamplesCorrelationGPU> samplesCorrelationHandle_;
-  edm::ESHandle<EcalTimeBiasCorrectionsGPU> timeBiasCorrectionsHandle_;
-  edm::ESHandle<EcalTimeCalibConstantsGPU> timeCalibConstantsHandle_;
-  edm::ESHandle<EcalSampleMask> sampleMaskHandle_;
-  edm::ESHandle<EcalTimeOffsetConstant> timeOffsetConstantHandle_;
+  // conditions tokens
+  const edm::ESGetToken<EcalPedestalsGPU, EcalPedestalsRcd> pedestalsToken_;
+  const edm::ESGetToken<EcalGainRatiosGPU, EcalGainRatiosRcd> gainRatiosToken_;
+  const edm::ESGetToken<EcalPulseShapesGPU, EcalPulseShapesRcd> pulseShapesToken_;
+  const edm::ESGetToken<EcalPulseCovariancesGPU, EcalPulseCovariancesRcd> pulseCovariancesToken_;
+  const edm::ESGetToken<EcalSamplesCorrelationGPU, EcalSamplesCorrelationRcd> samplesCorrelationToken_;
+  const edm::ESGetToken<EcalTimeBiasCorrectionsGPU, EcalTimeBiasCorrectionsRcd> timeBiasCorrectionsToken_;
+  const edm::ESGetToken<EcalTimeCalibConstantsGPU, EcalTimeCalibConstantsRcd> timeCalibConstantsToken_;
+  const edm::ESGetToken<EcalSampleMask, EcalSampleMaskRcd> sampleMaskToken_;
+  const edm::ESGetToken<EcalTimeOffsetConstant, EcalTimeOffsetConstantRcd> timeOffsetConstantToken_;
+  const edm::ESGetToken<EcalMultifitParametersGPU, EcalMultifitParametersGPURecord> multifitParametersToken_;
 
   // configuration parameters
   ecal::multifit::ConfigurationParameters configParameters_;
 
   // event data
   ecal::multifit::EventOutputDataGPU eventOutputDataGPU_;
-  ecal::multifit::EventDataForScratchGPU eventDataForScratchGPU_;
 
   cms::cuda::ContextState cudaState_;
 
-  uint32_t maxNumberHits_;
   uint32_t neb_, nee_;
 };
 
@@ -88,26 +81,6 @@ void EcalUncalibRecHitProducerGPU::fillDescriptions(edm::ConfigurationDescriptio
   desc.add<std::string>("recHitsLabelEB", "EcalUncalibRecHitsEB");
   desc.add<std::string>("recHitsLabelEE", "EcalUncalibRecHitsEE");
 
-  desc.add<std::vector<double>>("EBtimeFitParameters",
-                                {-2.015452e+00,
-                                 3.130702e+00,
-                                 -1.234730e+01,
-                                 4.188921e+01,
-                                 -8.283944e+01,
-                                 9.101147e+01,
-                                 -5.035761e+01,
-                                 1.105621e+01});
-  desc.add<std::vector<double>>("EEtimeFitParameters",
-                                {-2.390548e+00,
-                                 3.553628e+00,
-                                 -1.762341e+01,
-                                 6.767538e+01,
-                                 -1.332130e+02,
-                                 1.407432e+02,
-                                 -7.541106e+01,
-                                 1.620277e+01});
-  desc.add<std::vector<double>>("EBamplitudeFitParameters", {1.138, 1.652});
-  desc.add<std::vector<double>>("EEamplitudeFitParameters", {1.890, 1.400});
   desc.add<double>("EBtimeFitLimits_Lower", 0.2);
   desc.add<double>("EBtimeFitLimits_Upper", 1.4);
   desc.add<double>("EEtimeFitLimits_Lower", 0.2);
@@ -126,7 +99,8 @@ void EcalUncalibRecHitProducerGPU::fillDescriptions(edm::ConfigurationDescriptio
   desc.add<double>("outOfTimeThresholdGain61mEE", 1000);
   desc.add<double>("amplitudeThresholdEB", 10);
   desc.add<double>("amplitudeThresholdEE", 10);
-  desc.add<uint32_t>("maxNumberHits", 20000);  //---- AM TEST
+  desc.add<uint32_t>("maxNumberHitsEB", 61200);
+  desc.add<uint32_t>("maxNumberHitsEE", 14648);
   desc.add<std::vector<uint32_t>>("kernelMinimizeThreads", {32, 1, 1});
   // ---- default false or true? It was set to true, but at HLT it is false
   desc.add<bool>("shouldRunTimingComputation", false);
@@ -135,18 +109,20 @@ void EcalUncalibRecHitProducerGPU::fillDescriptions(edm::ConfigurationDescriptio
 }
 
 EcalUncalibRecHitProducerGPU::EcalUncalibRecHitProducerGPU(const edm::ParameterSet& ps)
-    : digisTokenEB_{consumes<cms::cuda::Product<ecal::DigisCollection>>(
-          ps.getParameter<edm::InputTag>("digisLabelEB"))},
-      digisTokenEE_{
-          consumes<cms::cuda::Product<ecal::DigisCollection>>(ps.getParameter<edm::InputTag>("digisLabelEE"))},
-      recHitsTokenEB_{produces<cms::cuda::Product<ecal::UncalibratedRecHit<ecal::Tag::ptr>>>(
-          ps.getParameter<std::string>("recHitsLabelEB"))},
-      recHitsTokenEE_{produces<cms::cuda::Product<ecal::UncalibratedRecHit<ecal::Tag::ptr>>>(
-          ps.getParameter<std::string>("recHitsLabelEE"))} {
-  auto EBamplitudeFitParameters = ps.getParameter<std::vector<double>>("EBamplitudeFitParameters");
-  auto EEamplitudeFitParameters = ps.getParameter<std::vector<double>>("EEamplitudeFitParameters");
-  auto EBtimeFitParameters = ps.getParameter<std::vector<double>>("EBtimeFitParameters");
-  auto EEtimeFitParameters = ps.getParameter<std::vector<double>>("EEtimeFitParameters");
+    : digisTokenEB_{consumes<InputProduct>(ps.getParameter<edm::InputTag>("digisLabelEB"))},
+      digisTokenEE_{consumes<InputProduct>(ps.getParameter<edm::InputTag>("digisLabelEE"))},
+      recHitsTokenEB_{produces<OutputProduct>(ps.getParameter<std::string>("recHitsLabelEB"))},
+      recHitsTokenEE_{produces<OutputProduct>(ps.getParameter<std::string>("recHitsLabelEE"))},
+      pedestalsToken_{esConsumes<EcalPedestalsGPU, EcalPedestalsRcd>()},
+      gainRatiosToken_{esConsumes<EcalGainRatiosGPU, EcalGainRatiosRcd>()},
+      pulseShapesToken_{esConsumes<EcalPulseShapesGPU, EcalPulseShapesRcd>()},
+      pulseCovariancesToken_{esConsumes<EcalPulseCovariancesGPU, EcalPulseCovariancesRcd>()},
+      samplesCorrelationToken_{esConsumes<EcalSamplesCorrelationGPU, EcalSamplesCorrelationRcd>()},
+      timeBiasCorrectionsToken_{esConsumes<EcalTimeBiasCorrectionsGPU, EcalTimeBiasCorrectionsRcd>()},
+      timeCalibConstantsToken_{esConsumes<EcalTimeCalibConstantsGPU, EcalTimeCalibConstantsRcd>()},
+      sampleMaskToken_{esConsumes<EcalSampleMask, EcalSampleMaskRcd>()},
+      timeOffsetConstantToken_{esConsumes<EcalTimeOffsetConstant, EcalTimeOffsetConstantRcd>()},
+      multifitParametersToken_{esConsumes<EcalMultifitParametersGPU, EcalMultifitParametersGPURecord>()} {
   std::pair<double, double> EBtimeFitLimits, EEtimeFitLimits;
   EBtimeFitLimits.first = ps.getParameter<double>("EBtimeFitLimits_Lower");
   EBtimeFitLimits.second = ps.getParameter<double>("EBtimeFitLimits_Upper");
@@ -170,7 +146,8 @@ EcalUncalibRecHitProducerGPU::EcalUncalibRecHitProducerGPU(const edm::ParameterS
   auto amplitudeThreshEE = ps.getParameter<double>("amplitudeThresholdEE");
 
   // max number of digis to allocate for
-  maxNumberHits_ = ps.getParameter<uint32_t>("maxNumberHits");
+  configParameters_.maxNumberHitsEB = ps.getParameter<uint32_t>("maxNumberHitsEB");
+  configParameters_.maxNumberHitsEE = ps.getParameter<uint32_t>("maxNumberHitsEE");
 
   // switch to run timing computation kernels
   configParameters_.shouldRunTimingComputation = ps.getParameter<bool>("shouldRunTimingComputation");
@@ -187,39 +164,11 @@ EcalUncalibRecHitProducerGPU::EcalUncalibRecHitProducerGPU(const edm::ParameterS
   // use sync copying
   //
 
-  // amplitude fit parameters copying
-  cudaCheck(cudaMalloc((void**)&configParameters_.amplitudeFitParametersEB,
-                       sizeof(ecal::multifit::ConfigurationParameters::type) * EBamplitudeFitParameters.size()));
-  cudaCheck(cudaMemcpy(configParameters_.amplitudeFitParametersEB,
-                       EBamplitudeFitParameters.data(),
-                       EBamplitudeFitParameters.size() * sizeof(ecal::multifit::ConfigurationParameters::type),
-                       cudaMemcpyHostToDevice));
-  cudaCheck(cudaMalloc((void**)&configParameters_.amplitudeFitParametersEE,
-                       sizeof(ecal::multifit::ConfigurationParameters::type) * EEamplitudeFitParameters.size()));
-  cudaCheck(cudaMemcpy(configParameters_.amplitudeFitParametersEE,
-                       EEamplitudeFitParameters.data(),
-                       EEamplitudeFitParameters.size() * sizeof(ecal::multifit::ConfigurationParameters::type),
-                       cudaMemcpyHostToDevice));
-
   // time fit parameters and limits
-  configParameters_.timeFitParametersSizeEB = EBtimeFitParameters.size();
-  configParameters_.timeFitParametersSizeEE = EEtimeFitParameters.size();
   configParameters_.timeFitLimitsFirstEB = EBtimeFitLimits.first;
   configParameters_.timeFitLimitsSecondEB = EBtimeFitLimits.second;
   configParameters_.timeFitLimitsFirstEE = EEtimeFitLimits.first;
   configParameters_.timeFitLimitsSecondEE = EEtimeFitLimits.second;
-  cudaCheck(cudaMalloc((void**)&configParameters_.timeFitParametersEB,
-                       sizeof(ecal::multifit::ConfigurationParameters::type) * EBtimeFitParameters.size()));
-  cudaCheck(cudaMemcpy(configParameters_.timeFitParametersEB,
-                       EBtimeFitParameters.data(),
-                       EBtimeFitParameters.size() * sizeof(ecal::multifit::ConfigurationParameters::type),
-                       cudaMemcpyHostToDevice));
-  cudaCheck(cudaMalloc((void**)&configParameters_.timeFitParametersEE,
-                       sizeof(ecal::multifit::ConfigurationParameters::type) * EEtimeFitParameters.size()));
-  cudaCheck(cudaMemcpy(configParameters_.timeFitParametersEE,
-                       EEtimeFitParameters.data(),
-                       EEtimeFitParameters.size() * sizeof(ecal::multifit::ConfigurationParameters::type),
-                       cudaMemcpyHostToDevice));
 
   // time constant terms
   configParameters_.timeConstantTermEB = EBtimeConstantTerm;
@@ -242,33 +191,9 @@ EcalUncalibRecHitProducerGPU::EcalUncalibRecHitProducerGPU(const edm::ParameterS
   configParameters_.outOfTimeThreshG12mEE = outOfTimeThreshG12mEE;
   configParameters_.outOfTimeThreshG61mEB = outOfTimeThreshG61mEB;
   configParameters_.outOfTimeThreshG61mEE = outOfTimeThreshG61mEE;
-
-  // allocate event output data
-  eventOutputDataGPU_.allocate(configParameters_, maxNumberHits_);
-
-  // allocate scratch data for gpu
-  eventDataForScratchGPU_.allocate(configParameters_, maxNumberHits_);
 }
 
-EcalUncalibRecHitProducerGPU::~EcalUncalibRecHitProducerGPU() {
-  //
-  // assume single device for now
-  //
-
-  if (configParameters_.amplitudeFitParametersEB) {
-    // configuration parameters
-    cudaCheck(cudaFree(configParameters_.amplitudeFitParametersEB));
-    cudaCheck(cudaFree(configParameters_.amplitudeFitParametersEE));
-    cudaCheck(cudaFree(configParameters_.timeFitParametersEB));
-    cudaCheck(cudaFree(configParameters_.timeFitParametersEE));
-
-    // free event ouput data
-    eventOutputDataGPU_.deallocate(configParameters_);
-
-    // free event scratch data
-    eventDataForScratchGPU_.deallocate(configParameters_);
-  }
-}
+EcalUncalibRecHitProducerGPU::~EcalUncalibRecHitProducerGPU() {}
 
 void EcalUncalibRecHitProducerGPU::acquire(edm::Event const& event,
                                            edm::EventSetup const& setup,
@@ -284,74 +209,75 @@ void EcalUncalibRecHitProducerGPU::acquire(edm::Event const& event,
   auto const& ebDigis = ctx.get(ebDigisProduct);
   auto const& eeDigis = ctx.get(eeDigisProduct);
   ecal::multifit::EventInputDataGPU inputDataGPU{ebDigis, eeDigis};
-  neb_ = ebDigis.ndigis;
-  nee_ = eeDigis.ndigis;
+  neb_ = ebDigis.size;
+  nee_ = eeDigis.size;
+
+  if ((neb_ > configParameters_.maxNumberHitsEB) || (nee_ > configParameters_.maxNumberHitsEE)) {
+    edm::LogError("EcalUncalibRecHitProducerGPU")
+        << "max number of channels exceeded. See options 'maxNumberHitsEB and maxNumberHitsEE' ";
+  }
 
   // conditions
-  setup.get<EcalPedestalsRcd>().get(pedestalsHandle_);
-  setup.get<EcalGainRatiosRcd>().get(gainRatiosHandle_);
-  setup.get<EcalPulseShapesRcd>().get(pulseShapesHandle_);
-  setup.get<EcalPulseCovariancesRcd>().get(pulseCovariancesHandle_);
-  setup.get<EcalSamplesCorrelationRcd>().get(samplesCorrelationHandle_);
-  setup.get<EcalTimeBiasCorrectionsRcd>().get(timeBiasCorrectionsHandle_);
-  setup.get<EcalTimeCalibConstantsRcd>().get(timeCalibConstantsHandle_);
-  setup.get<EcalSampleMaskRcd>().get(sampleMaskHandle_);
-  setup.get<EcalTimeOffsetConstantRcd>().get(timeOffsetConstantHandle_);
+  auto const& timeCalibConstantsData = setup.getData(timeCalibConstantsToken_);
+  auto const& sampleMaskData = setup.getData(sampleMaskToken_);
+  auto const& timeOffsetConstantData = setup.getData(timeOffsetConstantToken_);
+  auto const& multifitParametersData = setup.getData(multifitParametersToken_);
 
-  auto const& pedProduct = pedestalsHandle_->getProduct(ctx.stream());
-  auto const& gainsProduct = gainRatiosHandle_->getProduct(ctx.stream());
-  auto const& pulseShapesProduct = pulseShapesHandle_->getProduct(ctx.stream());
-  auto const& pulseCovariancesProduct = pulseCovariancesHandle_->getProduct(ctx.stream());
-  auto const& samplesCorrelationProduct = samplesCorrelationHandle_->getProduct(ctx.stream());
-  auto const& timeBiasCorrectionsProduct = timeBiasCorrectionsHandle_->getProduct(ctx.stream());
-  auto const& timeCalibConstantsProduct = timeCalibConstantsHandle_->getProduct(ctx.stream());
+  auto const& pedestals = setup.getData(pedestalsToken_).getProduct(ctx.stream());
+  auto const& gainRatios = setup.getData(gainRatiosToken_).getProduct(ctx.stream());
+  auto const& pulseShapes = setup.getData(pulseShapesToken_).getProduct(ctx.stream());
+  auto const& pulseCovariances = setup.getData(pulseCovariancesToken_).getProduct(ctx.stream());
+  auto const& samplesCorrelation = setup.getData(samplesCorrelationToken_).getProduct(ctx.stream());
+  auto const& timeBiasCorrections = setup.getData(timeBiasCorrectionsToken_).getProduct(ctx.stream());
+  auto const& timeCalibConstants = timeCalibConstantsData.getProduct(ctx.stream());
+  auto const& multifitParameters = multifitParametersData.getProduct(ctx.stream());
+
+  // assign ptrs/values: this is done not to change how things look downstream
+  configParameters_.amplitudeFitParametersEB = multifitParameters.amplitudeFitParametersEB;
+  configParameters_.amplitudeFitParametersEE = multifitParameters.amplitudeFitParametersEE;
+  configParameters_.timeFitParametersEB = multifitParameters.timeFitParametersEB;
+  configParameters_.timeFitParametersEE = multifitParameters.timeFitParametersEE;
+  configParameters_.timeFitParametersSizeEB = multifitParametersData.getValues()[2].get().size();
+  configParameters_.timeFitParametersSizeEE = multifitParametersData.getValues()[3].get().size();
 
   // bundle up conditions
-  ecal::multifit::ConditionsProducts conditions{pedProduct,
-                                                gainsProduct,
-                                                pulseShapesProduct,
-                                                pulseCovariancesProduct,
-                                                samplesCorrelationProduct,
-                                                timeBiasCorrectionsProduct,
-                                                timeCalibConstantsProduct,
-                                                *sampleMaskHandle_,
-                                                *timeOffsetConstantHandle_,
-                                                timeCalibConstantsHandle_->getOffset()};
+  ecal::multifit::ConditionsProducts conditions{pedestals,
+                                                gainRatios,
+                                                pulseShapes,
+                                                pulseCovariances,
+                                                samplesCorrelation,
+                                                timeBiasCorrections,
+                                                timeCalibConstants,
+                                                sampleMaskData,
+                                                timeOffsetConstantData,
+                                                timeCalibConstantsData.getOffset(),
+                                                multifitParameters};
+
+  // dev mem
+  eventOutputDataGPU_.allocate(configParameters_, ctx.stream());
+
+  // scratch mem
+  ecal::multifit::EventDataForScratchGPU eventDataForScratchGPU;
+  eventDataForScratchGPU.allocate(configParameters_, ctx.stream());
 
   //
   // schedule algorithms
   //
   ecal::multifit::entryPoint(
-      inputDataGPU, eventOutputDataGPU_, eventDataForScratchGPU_, conditions, configParameters_, ctx.stream());
+      inputDataGPU, eventOutputDataGPU_, eventDataForScratchGPU, conditions, configParameters_, ctx.stream());
 }
 
 void EcalUncalibRecHitProducerGPU::produce(edm::Event& event, edm::EventSetup const& setup) {
   //DurationMeasurer<std::chrono::milliseconds> timer{std::string{"produce duration"}};
   cms::cuda::ScopedContextProduce ctx{cudaState_};
 
-  // copy construct output collections
-  // note, output collections do not own device memory!
-  ecal::UncalibratedRecHit<ecal::Tag::ptr> ebRecHits{eventOutputDataGPU_}, eeRecHits{eventOutputDataGPU_};
-
   // set the size of eb and ee
-  ebRecHits.size = neb_;
-  eeRecHits.size = nee_;
-
-  // shift ptrs for ee
-  eeRecHits.amplitudesAll += neb_ * EcalDataFrame::MAXSAMPLES;
-  eeRecHits.amplitude += neb_;
-  eeRecHits.chi2 += neb_;
-  eeRecHits.pedestal += neb_;
-  eeRecHits.did += neb_;
-  eeRecHits.flags += neb_;
-  if (configParameters_.shouldRunTimingComputation) {
-    eeRecHits.jitter += neb_;
-    eeRecHits.jitterError += neb_;
-  }
+  eventOutputDataGPU_.recHitsEB.size = neb_;
+  eventOutputDataGPU_.recHitsEE.size = nee_;
 
   // put into the event
-  ctx.emplace(event, recHitsTokenEB_, std::move(ebRecHits));
-  ctx.emplace(event, recHitsTokenEE_, std::move(eeRecHits));
+  ctx.emplace(event, recHitsTokenEB_, std::move(eventOutputDataGPU_.recHitsEB));
+  ctx.emplace(event, recHitsTokenEE_, std::move(eventOutputDataGPU_.recHitsEE));
 }
 
 DEFINE_FWK_MODULE(EcalUncalibRecHitProducerGPU);

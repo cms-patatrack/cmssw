@@ -1379,6 +1379,8 @@ class ConfigBuilder(object):
             if self._options.scenario == 'HeavyIons':
                 if self._options.pileup=='HiMixGEN':
                     self.loadAndRemember("Configuration/StandardSequences/GeneratorMix_cff")
+                elif self._options.pileup=='HiMixEmbGEN':
+                    self.loadAndRemember("Configuration/StandardSequences/GeneratorEmbMix_cff")
                 else:
                     self.loadAndRemember("Configuration/StandardSequences/GeneratorHI_cff")
 
@@ -1644,8 +1646,6 @@ class ConfigBuilder(object):
         self.prepare_PATFILTER(self)
         self.loadDefaultOrSpecifiedCFF(sequence,self.PATDefaultCFF)
         self.labelsToAssociate.append('patTask')
-        if not self._options.runUnscheduled:
-            raise Exception("MiniAOD production can only run in unscheduled mode, please run cmsDriver with --runUnscheduled")
         if self._options.isData:
             self._options.customisation_file_unsch.insert(0,"PhysicsTools/PatAlgos/slimming/miniAOD_tools.miniAOD_customizeAllData")
         else:
@@ -1669,8 +1669,6 @@ class ConfigBuilder(object):
         ''' Enrich the schedule with PATGEN '''
         self.loadDefaultOrSpecifiedCFF(sequence,self.PATGENDefaultCFF) #this is unscheduled
         self.labelsToAssociate.append('patGENTask')
-        if not self._options.runUnscheduled:
-            raise Exception("MiniGEN production can only run in unscheduled mode, please run cmsDriver with --runUnscheduled")
         if self._options.isData:
             raise Exception("PATGEN step can only run on MC")
         return
@@ -1680,10 +1678,7 @@ class ConfigBuilder(object):
         self.loadDefaultOrSpecifiedCFF(sequence,self.NANODefaultCFF)
         self.scheduleSequence(sequence.split('.')[-1],'nanoAOD_step')
         custom = "nanoAOD_customizeData" if self._options.isData else "nanoAOD_customizeMC"
-        if self._options.runUnscheduled:
-            self._options.customisation_file_unsch.insert(0,"PhysicsTools/NanoAOD/nano_cff."+custom)
-        else:
-            self._options.customisation_file.insert(0,"PhysicsTools/NanoAOD/nano_cff."+custom)
+        self._options.customisation_file.insert(0,"PhysicsTools/NanoAOD/nano_cff."+custom)
         if self._options.hltProcess:
             if len(self._options.customise_commands) > 1:
                 self._options.customise_commands = self._options.customise_commands + " \n"
@@ -2182,6 +2177,9 @@ class ConfigBuilder(object):
                 self.pythonCfgCode +='\n'
                 self.pythonCfgCode +=dumpPython(self.process,object)
 
+        if self._options.pileup=='HiMixEmbGEN':
+            self.pythonCfgCode += "\nprocess.generator.embeddingMode=cms.bool(True)\n"
+
         # dump all paths
         self.pythonCfgCode += "\n# Path and EndPath definitions\n"
         for path in self.process.paths:
@@ -2246,7 +2244,7 @@ class ConfigBuilder(object):
             MassReplaceInputTag(self.process, new="rawDataMapperByLabel", old="rawDataCollector")
 
         # special treatment in case of production filter sequence 2/2
-        if self.productionFilterSequence:
+        if self.productionFilterSequence and not (self._options.pileup=='HiMixEmbGEN'):
             self.pythonCfgCode +='# filter all path with the production filter sequence\n'
             self.pythonCfgCode +='for path in process.paths:\n'
             if len(self.conditionalPaths):
@@ -2265,16 +2263,12 @@ class ConfigBuilder(object):
         self.pythonCfgCode += self.addCustomise()
 
         if self._options.runUnscheduled:
-            # prune and delete paths
-            #this is not supporting the blacklist at this point since I do not understand it
-            self.pythonCfgCode+="#do not add changes to your config after this point (unless you know what you are doing)\n"
-            self.pythonCfgCode+="from FWCore.ParameterSet.Utilities import convertToUnscheduled\n"
-            self.pythonCfgCode+="process=convertToUnscheduled(process)\n"
-
-            from FWCore.ParameterSet.Utilities import convertToUnscheduled
-            self.process=convertToUnscheduled(self.process)
-
-            self.pythonCfgCode += self.addCustomise(1)
+            print("--runUnscheduled is deprecated and not necessary anymore, and will be removed soon. Please update your command line.")
+        # Keep the "unscheduled customise functions" separate for now,
+        # there are customize functions given by users (in our unit
+        # tests) that need to be run before the "unscheduled customise
+        # functions"
+        self.pythonCfgCode += self.addCustomise(1)
 
         self.pythonCfgCode += self.addCustomiseCmdLine()
 

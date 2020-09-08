@@ -7,6 +7,7 @@
 #include "DataFormats/Common/interface/Handle.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/ESHandle.h"
+#include "FWCore/Utilities/interface/ESGetToken.h"
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/Utilities/interface/InputTag.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
@@ -28,6 +29,7 @@
 #include "DataFormats/CSCDigi/interface/CSCCLCTDigiCollection.h"
 #include "DataFormats/CSCDigi/interface/CSCCLCTPreTriggerCollection.h"
 #include "DataFormats/CSCDigi/interface/CSCCorrelatedLCTDigiCollection.h"
+#include "DataFormats/GEMDigi/interface/GEMPadDigiClusterCollection.h"
 
 namespace edm {
   class ConfigurationDescriptions;
@@ -50,6 +52,7 @@ private:
   unsigned int theFormatVersion;  // Select which version of data format to use Pre-LS1: 2005, Post-LS1: 2013
   bool usePreTriggers;            // Select if to use Pre-Triigers CLCT digis
   bool packEverything_;           // bypass all cuts and (pre)trigger requirements
+  bool useGEMs_;
 
   std::unique_ptr<const CSCDigiToRaw> packer_;
 
@@ -60,6 +63,8 @@ private:
   edm::EDGetTokenT<CSCCLCTDigiCollection> cl_token;
   edm::EDGetTokenT<CSCCLCTPreTriggerCollection> pr_token;
   edm::EDGetTokenT<CSCCorrelatedLCTDigiCollection> co_token;
+  edm::ESGetToken<CSCChamberMap, CSCChamberMapRcd> cham_token;
+  edm::EDGetTokenT<GEMPadDigiClusterCollection> gem_token;
 
   edm::EDPutTokenT<FEDRawDataCollection> put_token_;
 };
@@ -72,6 +77,7 @@ CSCDigiToRawModule::CSCDigiToRawModule(const edm::ParameterSet& pset) : packer_(
   packEverything_ = pset.getParameter<bool>("packEverything");  // don't check for consistency with trig primitives
                                                                 // overrides usePreTriggers
 
+  useGEMs_ = pset.getParameter<bool>("useGEMs");
   wd_token = consumes<CSCWireDigiCollection>(pset.getParameter<edm::InputTag>("wireDigiTag"));
   sd_token = consumes<CSCStripDigiCollection>(pset.getParameter<edm::InputTag>("stripDigiTag"));
   cd_token = consumes<CSCComparatorDigiCollection>(pset.getParameter<edm::InputTag>("comparatorDigiTag"));
@@ -81,7 +87,10 @@ CSCDigiToRawModule::CSCDigiToRawModule(const edm::ParameterSet& pset) : packer_(
   al_token = consumes<CSCALCTDigiCollection>(pset.getParameter<edm::InputTag>("alctDigiTag"));
   cl_token = consumes<CSCCLCTDigiCollection>(pset.getParameter<edm::InputTag>("clctDigiTag"));
   co_token = consumes<CSCCorrelatedLCTDigiCollection>(pset.getParameter<edm::InputTag>("correlatedLCTDigiTag"));
-
+  cham_token = esConsumes<CSCChamberMap, CSCChamberMapRcd>();
+  if (useGEMs_) {
+    gem_token = consumes<GEMPadDigiClusterCollection>(pset.getParameter<edm::InputTag>("padDigiClusterTag"));
+  }
   put_token_ = produces<FEDRawDataCollection>("CSCRawData");
 }
 
@@ -110,6 +119,7 @@ void CSCDigiToRawModule::fillDescriptions(edm::ConfigurationDescriptions& descri
   desc.add<bool>("usePreTriggers", true)->setComment("Set to false if CSCCLCTPreTrigger digis are not available");
   desc.add<bool>("packEverything", false)
       ->setComment("Set to true to disable trigger-related constraints on readout data");
+  desc.add<bool>("useGEMs", false)->setComment("Pack GEM trigger data");
 
   desc.add<edm::InputTag>("wireDigiTag", edm::InputTag("simMuonCSCDigis", "MuonCSCWireDigi"));
   desc.add<edm::InputTag>("stripDigiTag", edm::InputTag("simMuonCSCDigis", "MuonCSCStripDigi"));
@@ -118,6 +128,7 @@ void CSCDigiToRawModule::fillDescriptions(edm::ConfigurationDescriptions& descri
   desc.add<edm::InputTag>("clctDigiTag", edm::InputTag("simCscTriggerPrimitiveDigis"));
   desc.add<edm::InputTag>("preTriggerTag", edm::InputTag("simCscTriggerPrimitiveDigis"));
   desc.add<edm::InputTag>("correlatedLCTDigiTag", edm::InputTag("simCscTriggerPrimitiveDigis", "MPCSORTED"));
+  desc.add<edm::InputTag>("padDigiClusterTag", edm::InputTag("simMuonGEMPadDigiClusters"));
 
   desc.add<int32_t>("alctWindowMin", -3)->setComment("If min parameter = -999 always accept");
   desc.add<int32_t>("alctWindowMax", 3);
@@ -131,8 +142,7 @@ void CSCDigiToRawModule::fillDescriptions(edm::ConfigurationDescriptions& descri
 
 void CSCDigiToRawModule::produce(edm::StreamID, edm::Event& e, const edm::EventSetup& c) const {
   ///reverse mapping for packer
-  edm::ESHandle<CSCChamberMap> hcham;
-  c.get<CSCChamberMapRcd>().get(hcham);
+  edm::ESHandle<CSCChamberMap> hcham = c.getHandle(cham_token);
   const CSCChamberMap* theMapping = hcham.product();
 
   FEDRawDataCollection fed_buffers;
@@ -143,7 +153,6 @@ void CSCDigiToRawModule::produce(edm::StreamID, edm::Event& e, const edm::EventS
   edm::Handle<CSCComparatorDigiCollection> comparatorDigis;
   edm::Handle<CSCALCTDigiCollection> alctDigis;
   edm::Handle<CSCCLCTDigiCollection> clctDigis;
-  edm::Handle<CSCCLCTPreTriggerCollection> preTriggers;
   edm::Handle<CSCCorrelatedLCTDigiCollection> correlatedLCTDigis;
 
   e.getByToken(wd_token, wireDigis);
@@ -151,23 +160,27 @@ void CSCDigiToRawModule::produce(edm::StreamID, edm::Event& e, const edm::EventS
   e.getByToken(cd_token, comparatorDigis);
   e.getByToken(al_token, alctDigis);
   e.getByToken(cl_token, clctDigis);
+  CSCCLCTPreTriggerCollection const* preTriggersPtr = nullptr;
   if (usePreTriggers)
-    e.getByToken(pr_token, preTriggers);
+    preTriggersPtr = &e.get(pr_token);
   e.getByToken(co_token, correlatedLCTDigis);
-
+  const GEMPadDigiClusterCollection* padDigiClustersPtr = nullptr;
+  if (useGEMs_) {
+    padDigiClustersPtr = &e.get(gem_token);
+  }
   // Create the packed data
   packer_->createFedBuffers(*stripDigis,
                             *wireDigis,
                             *comparatorDigis,
                             *alctDigis,
                             *clctDigis,
-                            *preTriggers,
+                            preTriggersPtr,
                             *correlatedLCTDigis,
+                            padDigiClustersPtr,
                             fed_buffers,
                             theMapping,
-                            e,
+                            e.id(),
                             theFormatVersion,
-                            usePreTriggers,
                             packEverything_);
 
   // put the raw data to the event

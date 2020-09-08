@@ -33,6 +33,7 @@ private:
   void saveLayerPlots();
 
   edm::EDGetTokenT<std::vector<MaterialAccountingTrack> > m_materialToken;
+  edm::ESInputTag m_tag;
   SplitMode m_splitMode;
   bool m_skipAfterLastDetector;
   bool m_skipBeforeFirstDetector;
@@ -44,7 +45,7 @@ private:
   bool m_isHFNose;
   std::vector<DD4hep_MaterialAccountingGroup *> m_groups;
   std::vector<std::string> m_groupNames;
-  DD4hep_TrackingMaterialPlotter *m_plotter;
+  std::unique_ptr<DD4hep_TrackingMaterialPlotter> m_plotter;
 };
 
 #endif  // DD4hep_TrackingMaterialAnalyser_h

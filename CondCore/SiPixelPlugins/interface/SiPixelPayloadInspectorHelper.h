@@ -3,9 +3,9 @@
 
 #include <vector>
 #include <numeric>
+#include <fstream>  // std::ifstream
 #include <string>
-#include <boost/tokenizer.hpp>
-#include <boost/range/adaptor/indexed.hpp>
+#include <bitset>
 
 #include "TGraph.h"
 #include "TH1.h"
@@ -498,6 +498,8 @@ namespace SiPixelPI {
     }
   }
 
+  enum DetType { t_barrel = 0, t_forward = 1 };
+
   enum regions {
     BPixL1o,        //0  Barrel Pixel Layer 1 outer
     BPixL1i,        //1  Barrel Pixel Layer 1 inner
@@ -804,14 +806,10 @@ namespace SiPixelPI {
   /*--------------------------------------------------------------------*/
   {
     std::vector<std::pair<int, int>> rocsToMask;
-
-    //int nblade_list[2] = {11, 17};
     int nybins_list[2] = {92, 140};
-    //int nblade = nblade_list[ring - 1];
     int nybins = nybins_list[ring - 1];
 
     int start_x = disk > 0 ? ((disk + 3) * 8) + 1 : ((3 - (std::abs(disk))) * 8) + 1;
-    //int start_y = blade > 0 ? ((blade+nblade)*4)-panel*2  : ((nblade-(std::abs(blade)))*4)-panel*2;
     int start_y = blade > 0 ? (nybins / 2) + (blade * 4) - (panel * 2) + 3
                             : ((nybins / 2) - (std::abs(blade) * 4) - panel * 2) + 3;
 
@@ -839,14 +837,10 @@ namespace SiPixelPI {
   /*--------------------------------------------------------------------*/
   {
     std::vector<std::tuple<int, int, int>> rocsToMask;
-
-    //int nblade_list[2] = {11, 17};
     int nybins_list[2] = {92, 140};
-    //int nblade = nblade_list[ring - 1];
     int nybins = nybins_list[ring - 1];
 
     int start_x = disk > 0 ? ((disk + 3) * 8) + 1 : ((3 - (std::abs(disk))) * 8) + 1;
-    //int start_y = blade > 0 ? ((blade+nblade)*4)-panel*2  : ((nblade-(std::abs(blade)))*4)-panel*2;
     int start_y = blade > 0 ? (nybins / 2) + (blade * 4) - (panel * 2) + 3
                             : ((nybins / 2) - (std::abs(blade) * 4) - panel * 2) + 3;
 
@@ -910,69 +904,6 @@ namespace SiPixelPI {
       ++idx;
     }
     return rocsToMask;
-  }
-
-  using indexedCorners = std::map<unsigned int, std::pair<std::vector<float>, std::vector<float>>>;
-
-  /*--------------------------------------------------------------------*/
-  const indexedCorners retrieveCorners(const std::vector<edm::FileInPath>& cornerFiles, const unsigned int reads)
-  /*--------------------------------------------------------------------*/
-  {
-    indexedCorners theOutMap;
-
-    for (const auto& file : cornerFiles) {
-      auto cornerFileName = file.fullPath();
-      std::ifstream cornerFile(cornerFileName.c_str());
-      if (!cornerFile.good()) {
-        throw cms::Exception("FileError") << "Problem opening corner file: " << cornerFileName;
-      }
-      std::string line;
-      while (std::getline(cornerFile, line)) {
-        if (!line.empty()) {
-          std::istringstream iss(line);
-          unsigned int id;
-          std::string name;
-          std::vector<std::string> corners(reads, "");
-          std::vector<float> xP, yP;
-
-          iss >> id >> name;
-          for (unsigned int i = 0; i < reads; ++i) {
-            iss >> corners.at(i);
-          }
-
-          COUT << id << " : ";
-          for (unsigned int i = 0; i < reads; i++) {
-            // remove the leading and trailing " signs in the corners list
-            (corners[i]).erase(std::remove(corners[i].begin(), corners[i].end(), '"'), corners[i].end());
-            COUT << corners.at(i) << " ";
-            typedef boost::tokenizer<boost::char_separator<char>> tokenizer;
-            boost::char_separator<char> sep{","};
-            tokenizer tok{corners.at(i), sep};
-            for (const auto& t : tok | boost::adaptors::indexed(0)) {
-              if (t.index() == 0) {
-                xP.push_back(atof((t.value()).c_str()));
-              } else if (t.index() == 1) {
-                yP.push_back(atof((t.value()).c_str()));
-              } else {
-                edm::LogError("LogicError") << "There should not be any token with index " << t.index() << std::endl;
-              }
-            }
-          }
-          COUT << std::endl;
-
-          xP.push_back(xP.front());
-          yP.push_back(yP.front());
-
-          for (unsigned int i = 0; i < xP.size(); i++) {
-            COUT << "x[" << i << "]=" << xP[i] << " y[" << i << "]" << yP[i] << std::endl;
-          }
-
-          theOutMap[id] = std::make_pair(xP, yP);
-
-        }  // if line is empty
-      }    // loop on lines
-    }      // loop on files
-    return theOutMap;
   }
 
   /*--------------------------------------------------------------------*/

@@ -81,11 +81,11 @@ public:
 private:
   typedef std::tuple<float, float, float, float> HGCHitTuple;
 
-  virtual void beginJob() override;
-  virtual void endJob() override;
-  virtual void beginRun(edm::Run const &, edm::EventSetup const &) override;
-  virtual void analyze(edm::Event const &, edm::EventSetup const &) override;
-  virtual void endRun(edm::Run const &, edm::EventSetup const &) override {}
+  void beginJob() override;
+  void endJob() override;
+  void beginRun(edm::Run const &, edm::EventSetup const &) override;
+  void analyze(edm::Event const &, edm::EventSetup const &) override;
+  void endRun(edm::Run const &, edm::EventSetup const &) override {}
   virtual void beginLuminosityBlock(edm::LuminosityBlock const &, edm::EventSetup const &) {}
   virtual void endLuminosityBlock(edm::LuminosityBlock const &, edm::EventSetup const &) {}
   void analyzeHGCalSimHit(edm::Handle<std::vector<PCaloHit>> const &simHits,
@@ -194,14 +194,14 @@ HGCHitValidation::HGCHitValidation(const edm::ParameterSet &cfg)
 }
 
 void HGCHitValidation::fillDescriptions(edm::ConfigurationDescriptions &descriptions) {
-  std::vector<std::string> names = {"HGCalEESensitive", "HGCalHESiliconSensitive", "Hcal"};
+  std::vector<std::string> names = {"HGCalEESensitive", "HGCalHESiliconSensitive", "HGCalHEScintillatorSensitive"};
   std::vector<int> etas;
   edm::ParameterSetDescription desc;
   desc.addUntracked<bool>("makeTree", true);
   desc.addUntracked<std::vector<std::string>>("geometrySource", names);
   desc.add<edm::InputTag>("eeSimHitSource", edm::InputTag("g4SimHits", "HGCHitsEE"));
   desc.add<edm::InputTag>("fhSimHitSource", edm::InputTag("g4SimHits", "HGCHitsHEfront"));
-  desc.add<edm::InputTag>("bhSimHitSource", edm::InputTag("g4SimHits", "HcalHits"));
+  desc.add<edm::InputTag>("bhSimHitSource", edm::InputTag("g4SimHits", "HGCHitsHEback"));
   desc.add<edm::InputTag>("eeRecHitSource", edm::InputTag("HGCalRecHit", "HGCEERecHits"));
   desc.add<edm::InputTag>("fhRecHitSource", edm::InputTag("HGCalRecHit", "HGCHEFRecHits"));
   desc.add<edm::InputTag>("bhRecHitSource", edm::InputTag("HGCalRecHit", "HGCHEBRecHits"));
@@ -571,8 +571,7 @@ void HGCHitValidation::analyzeHGCalSimHit(edm::Handle<std::vector<PCaloHit>> con
     std::pair<float, float> xy;
     bool ok(true);
     int subdet(0), zside, layer, wafer, celltype, cell, wafer2(0), cell2(0);
-    if ((hgcCons_[idet]->geomMode() == HGCalGeometryMode::Hexagon8) ||
-        (hgcCons_[idet]->geomMode() == HGCalGeometryMode::Hexagon8Full)) {
+    if (hgcCons_[idet]->waferHexagon8()) {
       HGCSiliconDetId detId = HGCSiliconDetId(id);
       subdet = (int)(detId.det());
       cell = detId.cellU();
@@ -583,7 +582,7 @@ void HGCHitValidation::analyzeHGCalSimHit(edm::Handle<std::vector<PCaloHit>> con
       layer = detId.layer();
       zside = detId.zside();
       xy = hgcCons_[idet]->locateCell(layer, wafer, wafer2, cell, cell2, false, true);
-    } else if (hgcCons_[idet]->geomMode() == HGCalGeometryMode::Trapezoid) {
+    } else if (hgcCons_[idet]->tileTrapezoid()) {
       HGCScintillatorDetId detId = HGCScintillatorDetId(id);
       subdet = (int)(detId.det());
       cell = detId.ietaAbs();

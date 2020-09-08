@@ -191,7 +191,9 @@ void HGCalHitCalibration::fillWithRecHits(std::map<DetId, const HGCRecHit*>& hit
 void HGCalHitCalibration::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
   using namespace edm;
 
-  recHitTools_.getEventSetup(iSetup);
+  edm::ESHandle<CaloGeometry> geom;
+  iSetup.get<CaloGeometryRecord>().get(geom);
+  recHitTools_.setGeometry(*geom);
 
   Handle<HGCRecHitCollection> recHitHandleEE;
   Handle<HGCRecHitCollection> recHitHandleFH;
@@ -384,7 +386,7 @@ void HGCalHitCalibration::fillDescriptions(edm::ConfigurationDescriptions& descr
   desc.add<int>("debug", 0);
   desc.add<bool>("rawRecHits", true);
   desc.add<std::string>("detector", "all");
-  desc.add<int>("depletionFine", 100);
+  desc.add<int>("depletionFine", 120);
   desc.add<edm::InputTag>("caloParticles", edm::InputTag("mix", "MergedCaloTruth"));
   desc.add<edm::InputTag>("recHitsEE", edm::InputTag("HGCalRecHit", "HGCEERecHits"));
   desc.add<edm::InputTag>("recHitsFH", edm::InputTag("HGCalRecHit", "HGCHEFRecHits"));

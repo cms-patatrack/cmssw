@@ -12,9 +12,8 @@
  */
 
 #include <algorithm>
+#include <functional>
 #include <memory>
-
-#include "boost/bind.hpp"
 
 #include "RecoTauTag/RecoTau/interface/RecoTauPiZeroPlugins.h"
 
@@ -136,7 +135,7 @@ namespace reco {
       //qcuts_ = new RecoTauQualityCuts(qcuts_pset);
       //std::unique_ptr<RecoTauQualityCuts> qcuts_(new RecoTauQualityCuts(qcuts_pset));
 
-      qcuts_.reset(new RecoTauQualityCuts(qcuts_pset));
+      qcuts_ = std::make_unique<RecoTauQualityCuts>(qcuts_pset);
 
       inputParticleIds_ = pset.getParameter<std::vector<int> >("stripCandidatesParticleIds");
       const edm::ParameterSet& stripSize_eta_pset = pset.getParameterSet("stripEtaAssociationDistanceFunc");
@@ -334,8 +333,7 @@ namespace reco {
       if (combineStrips_ && output.size() > 1) {
         PiZeroVector stripCombinations;
         // Sort the output by descending pt
-        output.sort(
-            output.begin(), output.end(), boost::bind(&RecoTauPiZero::pt, _1) > boost::bind(&RecoTauPiZero::pt, _2));
+        output.sort(output.begin(), output.end(), [&](auto& arg1, auto& arg2) { return arg1.pt() > arg2.pt(); });
         // Get the end of interesting set of strips to try and combine
         PiZeroVector::const_iterator end_iter = takeNElements(output.begin(), output.end(), maxStrips_);
 

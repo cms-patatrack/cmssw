@@ -17,6 +17,8 @@
 <use name="CommonTools/UtilAlgos"/>
 <use name="CommonTools/Utils"/>
 <use name="RecoMuon/TrackingTools"/>
+<use name="CalibTracker/StandaloneTrackerTopology"/>
+<use name="CalibTracker/SiPixelESProducers"/>
 <use name="TrackingTools/TransientTrack"/>
 <use name="SimDataFormats/Track"/>
 <use name="SimDataFormats/GeneratorProducts"/>
@@ -47,7 +49,6 @@
 <use name="rootmath"/>
 <use name="rootrflx"/>
 <use name="rootcore"/>
-<use name="boost"/>
 <library file="*.cc" name="AlignmentOfflinevalidationPlugins">
   <use name="Alignment/OfflineValidation"/>
   <use name="CondFormats/GeometryObjects"/>

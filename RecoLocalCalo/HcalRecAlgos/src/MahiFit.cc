@@ -78,7 +78,7 @@ void MahiFit::phase1Apply(const HBHEChannelInfo& channelData,
     if (iTS == nnlsWork_.tsOffset)
       tstrig += amplitude;
   }
-
+  const double noisecorr = channelData.noisecorr();
   tsTOT *= channelData.tsGain(0);
   tstrig *= channelData.tsGain(0);
 
@@ -92,13 +92,13 @@ void MahiFit::phase1Apply(const HBHEChannelInfo& channelData,
 
     // only do pre-fit with 1 pulse if chiSq threshold is positive
     if (chiSqSwitch_ > 0) {
-      doFit(reconstructedVals, 1);
+      doFit(reconstructedVals, 1, noisecorr);
       if (reconstructedVals[2] > chiSqSwitch_) {
-        doFit(reconstructedVals, 0);  //nbx=0 means use configured BXs
+        doFit(reconstructedVals, 0, noisecorr);  //nbx=0 means use configured BXs
         useTriple = true;
       }
     } else {
-      doFit(reconstructedVals, 0);
+      doFit(reconstructedVals, 0, noisecorr);
       useTriple = true;
     }
   } else {
@@ -112,7 +112,7 @@ void MahiFit::phase1Apply(const HBHEChannelInfo& channelData,
   chi2 = reconstructedVals[2];
 }
 
-void MahiFit::doFit(std::array<float, 3>& correctedOutput, int nbx) const {
+void MahiFit::doFit(std::array<float, 3>& correctedOutput, int nbx, const double noisecorr) const {
   unsigned int bxSize = 1;
 
   if (nbx == 1) {
@@ -175,7 +175,7 @@ void MahiFit::doFit(std::array<float, 3>& correctedOutput, int nbx) const {
     }
   }
 
-  const float chiSq = minimize();
+  const float chiSq = minimize(noisecorr);
 
   bool foundintime = false;
   unsigned int ipulseintime = 0;
@@ -203,13 +203,22 @@ void MahiFit::doFit(std::array<float, 3>& correctedOutput, int nbx) const {
   }
 }
 
-const float MahiFit::minimize() const {
+const float MahiFit::minimize(const double noisecorr) const {
   nnlsWork_.invcovp.setZero(nnlsWork_.tsSize, nnlsWork_.nPulseTot);
   nnlsWork_.ampVec.setZero(nnlsWork_.nPulseTot);
 
   SampleMatrix invCovMat;
   invCovMat.setConstant(nnlsWork_.tsSize, nnlsWork_.tsSize, nnlsWork_.pedVal);
   invCovMat += nnlsWork_.noiseTerms.asDiagonal();
+
+  //Add off-Diagonal components up to first order
+  if (noisecorr != 0) {
+    for (unsigned int i = 1; i < nnlsWork_.tsSize; ++i) {
+      auto const noiseCorrTerm = noisecorr * sqrt(nnlsWork_.noiseTerms.coeff(i - 1) * nnlsWork_.noiseTerms.coeff(i));
+      invCovMat(i - 1, i) += noiseCorrTerm;
+      invCovMat(i, i - 1) += noiseCorrTerm;
+    }
+  }
 
   float oldChiSq = 9999;
   float chiSq = oldChiSq;
@@ -443,32 +452,54 @@ float MahiFit::calculateChiSq() const {
       .squaredNorm();
 }
 
-void MahiFit::setPulseShapeTemplate(const HcalPulseShapes::Shape& ps,
-                                    bool hasTimeInfo,
+void MahiFit::setPulseShapeTemplate(const int pulseShapeId,
+                                    const HcalPulseShapes& ps,
+                                    const bool hasTimeInfo,
                                     const HcalTimeSlew* hcalTimeSlewDelay,
-                                    unsigned int nSamples) {
-  if (!(&ps == currentPulseShape_)) {
+                                    const unsigned int nSamples) {
+  if (hcalTimeSlewDelay != hcalTimeSlewDelay_) {
+    assert(hcalTimeSlewDelay);
     hcalTimeSlewDelay_ = hcalTimeSlewDelay;
     tsDelay1GeV_ = hcalTimeSlewDelay->delay(1.0, slewFlavor_);
-
-    resetPulseShapeTemplate(ps, hasTimeInfo, nSamples);
-    currentPulseShape_ = &ps;
   }
-}
 
-void MahiFit::resetPulseShapeTemplate(const HcalPulseShapes::Shape& ps, bool hasTimeInfo, unsigned int nSamples) {
-  ++cntsetPulseShape_;
-
-  // only the pulse shape itself from PulseShapeFunctor is used for Mahi
-  // the uncertainty terms calculated inside PulseShapeFunctor are used for Method 2 only
-  psfPtr_.reset(new FitterFuncs::PulseShapeFunctor(ps, false, false, false, 1, 0, 0, HcalConst::maxSamples));
+  if (pulseShapeId != currentPulseShapeId_) {
+    resetPulseShapeTemplate(pulseShapeId, ps, nSamples);
+  }
 
   // 1 sigma time constraint
   nnlsWork_.dt = hasTimeInfo ? timeSigmaSiPM_ : timeSigmaHPD_;
 
-  nnlsWork_.tsSize = nSamples;
-  nnlsWork_.amplitudes.resize(nnlsWork_.tsSize);
-  nnlsWork_.noiseTerms.resize(nnlsWork_.tsSize);
+  if (nnlsWork_.tsSize != nSamples) {
+    nnlsWork_.tsSize = nSamples;
+    nnlsWork_.amplitudes.resize(nSamples);
+    nnlsWork_.noiseTerms.resize(nSamples);
+  }
+}
+
+void MahiFit::resetPulseShapeTemplate(const int pulseShapeId,
+                                      const HcalPulseShapes& ps,
+                                      const unsigned int /* nSamples */) {
+  ++cntsetPulseShape_;
+
+  psfPtr_ = nullptr;
+  for (auto& elem : knownPulseShapes_) {
+    if (elem.first == pulseShapeId) {
+      psfPtr_ = &*elem.second;
+      break;
+    }
+  }
+
+  if (!psfPtr_) {
+    // only the pulse shape itself from PulseShapeFunctor is used for Mahi
+    // the uncertainty terms calculated inside PulseShapeFunctor are used for Method 2 only
+    auto p = std::make_shared<FitterFuncs::PulseShapeFunctor>(
+        ps.getShape(pulseShapeId), false, false, false, 1, 0, 0, HcalConst::maxSamples);
+    knownPulseShapes_.emplace_back(pulseShapeId, p);
+    psfPtr_ = &*p;
+  }
+
+  currentPulseShapeId_ = pulseShapeId;
 }
 
 void MahiFit::nnlsUnconstrainParameter(Index idxp) const {

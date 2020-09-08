@@ -6,7 +6,6 @@
   <use name="EventFilter/SiStripRawToDigi"/>
   <use name="Geometry/CommonTopologies"/>
   <use name="Geometry/TrackerGeometryBuilder"/>
-  <use name="Geometry/TrackerNumberingBuilder"/>
   <use name="MagneticField/Engine"/>
   <use name="MagneticField/Records"/>
   <use name="CondFormats/SiStripObjects"/>
@@ -21,7 +20,6 @@
   <use name="Alignment/LaserAlignment"/>
   <use name="Alignment/TrackerAlignment"/>
   <use name="CommonTools/UtilAlgos"/>
-  <use name="boost"/>
   <use name="CLHEP"/>
   <use name="rootcore"/>
   <flags EDM_PLUGIN="1"/>

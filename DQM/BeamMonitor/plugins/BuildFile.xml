@@ -1,4 +1,5 @@
 <use name="DQMServices/Core"/>
+<use name="DataFormats/Scalers"/>
 <use name="DataFormats/TrackReco"/>
 <use name="FWCore/Framework"/>
 <use name="DataFormats/BeamSpot"/>
@@ -7,6 +8,7 @@
 <use name="RecoVertex/BeamSpotProducer"/>
 <use name="DataFormats/VertexReco"/>
 <use name="DataFormats/TrackerRecHit2D"/>
+<use name="CondCore/DBOutputService"/>
 <library file="BeamMonitor.cc" name="BeamMonitor">
   <flags EDM_PLUGIN="1"/>
 </library>
@@ -41,5 +43,9 @@
 </library>
 
 <library file="BeamSpotProblemMonitor.cc" name="BeamSpotProblemMonitor">
+  <flags EDM_PLUGIN="1"/>
+</library>
+
+<library file="FakeBeamMonitor.cc" name="FakeBeamMonitor">
   <flags EDM_PLUGIN="1"/>
 </library>

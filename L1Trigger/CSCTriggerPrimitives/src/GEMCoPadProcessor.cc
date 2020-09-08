@@ -27,6 +27,8 @@ GEMCoPadProcessor::GEMCoPadProcessor() : theRegion(1), theStation(1), theChamber
 void GEMCoPadProcessor::clear() { gemCoPadV.clear(); }
 
 std::vector<GEMCoPadDigi> GEMCoPadProcessor::run(const GEMPadDigiCollection* in_pads) {
+  clear();
+
   // Build coincidences
   for (auto det_range = in_pads->begin(); det_range != in_pads->end(); ++det_range) {
     const GEMDetId& id = (*det_range).first;
@@ -57,7 +59,15 @@ std::vector<GEMCoPadDigi> GEMCoPadProcessor::run(const GEMPadDigiCollection* in_
       // now let's correlate the pads in two layers of this partition
       const auto& pads_range = (*det_range).second;
       for (auto p = pads_range.first; p != pads_range.second; ++p) {
+        // only consider valid pads
+        if (!p->isValid())
+          continue;
+
         for (auto co_p = co_pads_range.first; co_p != co_pads_range.second; ++co_p) {
+          // only consider valid pads
+          if (!co_p->isValid())
+            continue;
+
           // check the match in pad
           if ((unsigned)std::abs(p->pad() - co_p->pad()) > maxDeltaPad_)
             continue;
@@ -89,6 +99,10 @@ void GEMCoPadProcessor::declusterize(const GEMPadDigiClusterCollection* in_clust
     const GEMDetId& id = (*detUnitIt).first;
     const auto& range = (*detUnitIt).second;
     for (auto digiIt = range.first; digiIt != range.second; ++digiIt) {
+      // only consider valid clusters
+      if (!digiIt->isValid())
+        continue;
+
       for (const auto& p : digiIt->pads()) {
         out_pads.insertDigi(id, GEMPadDigi(p, digiIt->bx()));
       }

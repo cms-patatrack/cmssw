@@ -1,13 +1,12 @@
+#include "Validation/MuonCSCDigis/plugins/CSCDigiValidation.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
-#include "Geometry/CSCGeometry/interface/CSCGeometry.h"
-#include "Geometry/Records/interface/MuonGeometryRecord.h"
 #include "Validation/MuonCSCDigis/interface/CSCALCTDigiValidation.h"
 #include "Validation/MuonCSCDigis/interface/CSCCLCTDigiValidation.h"
 #include "Validation/MuonCSCDigis/interface/CSCComparatorDigiValidation.h"
-#include "Validation/MuonCSCDigis/plugins/CSCDigiValidation.h"
 #include "Validation/MuonCSCDigis/interface/CSCStripDigiValidation.h"
 #include "Validation/MuonCSCDigis/interface/CSCWireDigiValidation.h"
 #include <iostream>
+#include <memory>
 
 CSCDigiValidation::CSCDigiValidation(const edm::ParameterSet &ps)
     : doSim_(ps.getParameter<bool>("doSim")),
@@ -18,23 +17,25 @@ CSCDigiValidation::CSCDigiValidation(const edm::ParameterSet &ps)
       theComparatorDigiValidation(nullptr),
       theALCTDigiValidation(nullptr),
       theCLCTDigiValidation(nullptr) {
-  theStripDigiValidation.reset(
-      new CSCStripDigiValidation(ps.getParameter<edm::InputTag>("stripDigiTag"), consumesCollector()));
-  theWireDigiValidation.reset(
-      new CSCWireDigiValidation(ps.getParameter<edm::InputTag>("wireDigiTag"), consumesCollector(), doSim_));
-  theComparatorDigiValidation.reset(new CSCComparatorDigiValidation(ps.getParameter<edm::InputTag>("comparatorDigiTag"),
-                                                                    ps.getParameter<edm::InputTag>("stripDigiTag"),
-                                                                    consumesCollector()));
-  theALCTDigiValidation.reset(
-      new CSCALCTDigiValidation(ps.getParameter<edm::InputTag>("alctDigiTag"), consumesCollector()));
-  theCLCTDigiValidation.reset(
-      new CSCCLCTDigiValidation(ps.getParameter<edm::InputTag>("clctDigiTag"), consumesCollector()));
+  theStripDigiValidation =
+      std::make_unique<CSCStripDigiValidation>(ps.getParameter<edm::InputTag>("stripDigiTag"), consumesCollector());
+  theWireDigiValidation = std::make_unique<CSCWireDigiValidation>(
+      ps.getParameter<edm::InputTag>("wireDigiTag"), consumesCollector(), doSim_);
+  theComparatorDigiValidation =
+      std::make_unique<CSCComparatorDigiValidation>(ps.getParameter<edm::InputTag>("comparatorDigiTag"),
+                                                    ps.getParameter<edm::InputTag>("stripDigiTag"),
+                                                    consumesCollector());
+  theALCTDigiValidation =
+      std::make_unique<CSCALCTDigiValidation>(ps.getParameter<edm::InputTag>("alctDigiTag"), consumesCollector());
+  theCLCTDigiValidation =
+      std::make_unique<CSCCLCTDigiValidation>(ps.getParameter<edm::InputTag>("clctDigiTag"), consumesCollector());
 
   if (doSim_) {
     theStripDigiValidation->setSimHitMap(&theSimHitMap);
     theWireDigiValidation->setSimHitMap(&theSimHitMap);
     theComparatorDigiValidation->setSimHitMap(&theSimHitMap);
   }
+  geomToken_ = esConsumes<CSCGeometry, MuonGeometryRecord>();
 }
 
 CSCDigiValidation::~CSCDigiValidation() {}
@@ -54,9 +55,7 @@ void CSCDigiValidation::analyze(const edm::Event &e, const edm::EventSetup &even
   theSimHitMap.fill(e);
 
   // find the geometry & conditions for this event
-  edm::ESHandle<CSCGeometry> hGeom;
-  eventSetup.get<MuonGeometryRecord>().get(hGeom);
-  const CSCGeometry *pGeom = &*hGeom;
+  const CSCGeometry *pGeom = &eventSetup.getData(geomToken_);
 
   theStripDigiValidation->setGeometry(pGeom);
   theWireDigiValidation->setGeometry(pGeom);

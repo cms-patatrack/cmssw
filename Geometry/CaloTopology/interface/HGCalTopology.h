@@ -85,7 +85,9 @@ public:
 
   ///Is this a valid cell id
   bool valid(const DetId& id) const override;
+  bool valid(const DetId& id, int cornerMin) const;
   bool validHashIndex(uint32_t ix) const { return (ix < kSizeForDenseIndexing); }
+  bool validModule(const DetId& id, int cornerMin) const;
 
   unsigned int totalModules() const { return kSizeForDenseIndexing; }
   unsigned int totalGeomModules() const { return (unsigned int)(2 * kHGeomHalf_); }
@@ -117,6 +119,17 @@ public:
   bool detectorType() const { return false; }
   bool isHFNose() const {
     return (((det_ == DetId::Forward) && (subdet_ == ForwardSubdetector::HFNose)) ? true : false);
+  }
+
+  bool tileTrapezoid() const {
+    return ((mode_ == HGCalGeometryMode::Trapezoid) || (mode_ == HGCalGeometryMode::TrapezoidFile));
+  }
+  bool waferHexagon6() const {
+    return ((mode_ == HGCalGeometryMode::Hexagon) || (mode_ == HGCalGeometryMode::HexagonFull));
+  }
+  bool waferHexagon8() const {
+    return ((mode_ == HGCalGeometryMode::Hexagon8) || (mode_ == HGCalGeometryMode::Hexagon8Full) ||
+            (mode_ == HGCalGeometryMode::Hexagon8File));
   }
 
 private:

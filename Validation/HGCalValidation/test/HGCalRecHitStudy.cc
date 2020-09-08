@@ -30,7 +30,6 @@
 #include "DataFormats/HcalDetId/interface/HcalSubdetector.h"
 #include "DataFormats/HcalRecHit/interface/HcalRecHitCollections.h"
 
-#include "DetectorDescription/Core/interface/DDCompactView.h"
 #include "Geometry/CaloGeometry/interface/CaloGeometry.h"
 #include "Geometry/HGCalGeometry/interface/HGCalGeometry.h"
 #include "Geometry/HcalCommonData/interface/HcalDDDRecConstants.h"
@@ -64,11 +63,11 @@ private:
     int layer;
   };
 
-  virtual void beginJob() override {}
-  virtual void endJob() override {}
-  virtual void beginRun(edm::Run const&, edm::EventSetup const&) override;
-  virtual void endRun(edm::Run const&, edm::EventSetup const&) override {}
-  virtual void analyze(edm::Event const&, edm::EventSetup const&) override;
+  void beginJob() override {}
+  void endJob() override {}
+  void beginRun(edm::Run const&, edm::EventSetup const&) override;
+  void endRun(edm::Run const&, edm::EventSetup const&) override {}
+  void analyze(edm::Event const&, edm::EventSetup const&) override;
 
   template <class T1, class T2>
   void recHitValidation(DetId& detId, int layer, const T1* geom, T2 it);

@@ -87,7 +87,7 @@ HGCalElectronIDValueMapProducer::HGCalElectronIDValueMapProducer(const edm::Para
     produces<edm::ValueMap<float>>(key);
   }
 
-  eIDHelper_.reset(new HGCalEgammaIDHelper(iConfig, consumesCollector()));
+  eIDHelper_ = std::make_unique<HGCalEgammaIDHelper>(iConfig, consumesCollector());
 }
 
 HGCalElectronIDValueMapProducer::~HGCalElectronIDValueMapProducer() {}
@@ -232,6 +232,7 @@ void HGCalElectronIDValueMapProducer::fillDescriptions(edm::ConfigurationDescrip
   desc.add<edm::InputTag>("EERecHits", edm::InputTag("HGCalRecHit", "HGCEERecHits"));
   desc.add<edm::InputTag>("FHRecHits", edm::InputTag("HGCalRecHit", "HGCHEFRecHits"));
   desc.add<edm::InputTag>("BHRecHits", edm::InputTag("HGCalRecHit", "HGCHEBRecHits"));
+  desc.add<edm::InputTag>("hitMapTag", edm::InputTag("hgcalRecHitMapProducer"));
   descriptions.add("hgcalElectronIDValueMap", desc);
 }
 

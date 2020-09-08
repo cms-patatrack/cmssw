@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <cstring>
 #include <cstdlib>
-#include <boost/format.hpp>
+#include <fmt/printf.h>
 
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/Framework/interface/Event.h"
@@ -41,6 +41,7 @@ DD4hep_TrackingMaterialAnalyser::DD4hep_TrackingMaterialAnalyser(const edm::Para
         << "Invalid SplitMode \"" << splitmode
         << "\". Acceptable values are \"NearestLayer\", \"InnerLayer\", \"OuterLayer\".";
   }
+  m_tag = iPSet.getParameter<edm::ESInputTag>("DDDetector");
   m_skipAfterLastDetector = iPSet.getParameter<bool>("SkipAfterLastDetector");
   m_skipBeforeFirstDetector = iPSet.getParameter<bool>("SkipBeforeFirstDetector");
   m_saveSummaryPlot = iPSet.getParameter<bool>("SaveSummaryPlot");
@@ -51,11 +52,11 @@ DD4hep_TrackingMaterialAnalyser::DD4hep_TrackingMaterialAnalyser(const edm::Para
   m_isHFNose = iPSet.getParameter<bool>("isHFNose");
   if (m_saveSummaryPlot) {
     if (m_isHGCal) {
-      m_plotter = new DD4hep_TrackingMaterialPlotter(550., 300., 10);
+      m_plotter = std::make_unique<DD4hep_TrackingMaterialPlotter>(550., 300., 10);
     } else if (m_isHFNose) {
-      m_plotter = new DD4hep_TrackingMaterialPlotter(1200., 350., 10);
+      m_plotter = std::make_unique<DD4hep_TrackingMaterialPlotter>(1200., 350., 10);
     } else {
-      m_plotter = new DD4hep_TrackingMaterialPlotter(300., 120., 10);
+      m_plotter = std::make_unique<DD4hep_TrackingMaterialPlotter>(300., 120., 10);
     }  // 10x10 points per cm2
   } else {
     m_plotter = nullptr;
@@ -63,35 +64,45 @@ DD4hep_TrackingMaterialAnalyser::DD4hep_TrackingMaterialAnalyser(const edm::Para
 }
 
 //-------------------------------------------------------------------------
-DD4hep_TrackingMaterialAnalyser::~DD4hep_TrackingMaterialAnalyser(void) {
-  if (m_plotter)
-    delete m_plotter;
-}
+DD4hep_TrackingMaterialAnalyser::~DD4hep_TrackingMaterialAnalyser(void) {}
 
 //-------------------------------------------------------------------------
 void DD4hep_TrackingMaterialAnalyser::saveParameters(const char* name) {
   std::ofstream parameters(name);
-  std::cout << std::endl;
+  edm::LogVerbatim("TrackerMaterialAnalysis") << "TrackingMaterialAnalyser" << std::endl;
   for (unsigned int i = 0; i < m_groups.size(); ++i) {
     DD4hep_MaterialAccountingGroup& layer = *(m_groups[i]);
-    std::cout << layer.name() << std::endl;
-    std::cout << boost::format("\tnumber of hits:               %9d") % layer.tracks() << std::endl;
-    std::cout << boost::format("\tnormalized segment length:    %9.1f ± %9.1f cm") % layer.averageLength() %
-                     layer.sigmaLength()
-              << std::endl;
-    std::cout << boost::format("\tnormalized radiation lengths: %9.3f ± %9.3f") % layer.averageRadiationLengths() %
-                     layer.sigmaRadiationLengths()
-              << std::endl;
-    std::cout << boost::format("\tnormalized energy loss:       %6.5fe-03 ± %6.5fe-03 GeV") %
-                     layer.averageEnergyLoss() % layer.sigmaEnergyLoss()
-              << std::endl;
-    parameters << boost::format("%-20s\t%7d\t%5.1f ± %5.1f cm\t%6.4f ± %6.4f \t%6.4fe-03 ± %6.4fe-03 GeV") %
-                      layer.name() % layer.tracks() % layer.averageLength() % layer.sigmaLength() %
-                      layer.averageRadiationLengths() % layer.sigmaRadiationLengths() % layer.averageEnergyLoss() %
-                      layer.sigmaEnergyLoss()
+    edm::LogVerbatim("TrackerMaterialAnalysis") << "TrackingMaterialAnalyser" << layer.name() << std::endl;
+    edm::LogVerbatim("TrackerMaterialAnalysis")
+        << "TrackingMaterialAnalyser" << fmt::sprintf("\tnumber of hits:               %9d", layer.tracks())
+        << std::endl;
+    edm::LogVerbatim("TrackerMaterialAnalysis")
+        << "TrackingMaterialAnalyser"
+        << fmt::sprintf("\tnormalized segment length:    %9.1f ± %9.1f cm", layer.averageLength(), layer.sigmaLength())
+        << std::endl;
+    edm::LogVerbatim("TrackerMaterialAnalysis") << "TrackingMaterialAnalyser"
+                                                << fmt::sprintf("\tnormalized radiation lengths: %9.3f ± %9.3f",
+                                                                layer.averageRadiationLengths(),
+                                                                layer.sigmaRadiationLengths())
+                                                << std::endl;
+    edm::LogVerbatim("TrackerMaterialAnalysis")
+        << "TrackingMaterialAnalyser"
+        << fmt::sprintf("\tnormalized energy loss:       %6.5fe-03 ± %6.5fe-03 GeV",
+                        layer.averageEnergyLoss(),
+                        layer.sigmaEnergyLoss())
+        << std::endl;
+    parameters << fmt::sprintf("%-20s\t%7d\t%5.1f ± %5.1f cm\t%6.4f ± %6.4f \t%6.4fe-03 ± %6.4fe-03 GeV",
+                               layer.name(),
+                               layer.tracks(),
+                               layer.averageLength(),
+                               layer.sigmaLength(),
+                               layer.averageRadiationLengths(),
+                               layer.sigmaRadiationLengths(),
+                               layer.averageEnergyLoss(),
+                               layer.sigmaEnergyLoss())
                << std::endl;
   }
-  std::cout << std::endl;
+  edm::LogVerbatim("TrackerMaterialAnalysis") << "TrackingMaterialAnalyser" << std::endl;
 
   parameters.close();
 }
@@ -143,7 +154,7 @@ void DD4hep_TrackingMaterialAnalyser::endJob(void) {
 void DD4hep_TrackingMaterialAnalyser::analyze(const edm::Event& event, const edm::EventSetup& setup) {
   using namespace edm;
   ESTransientHandle<cms::DDCompactView> hDDD;
-  setup.get<IdealGeometryRecord>().get(hDDD);
+  setup.get<IdealGeometryRecord>().get(m_tag, hDDD);
 
   m_groups.reserve(m_groupNames.size());
   // Initialize m_groups iff it has size equal to zero, so that we are
@@ -151,11 +162,13 @@ void DD4hep_TrackingMaterialAnalyser::analyze(const edm::Event& event, const edm
   // over again in the eventloop, at each call of the analyze method.
   if (m_groups.empty()) {
     for (unsigned int i = 0; i < m_groupNames.size(); ++i)
-      m_groups.push_back(new DD4hep_MaterialAccountingGroup(m_groupNames[i], *hDDD));
+      m_groups.emplace_back(new DD4hep_MaterialAccountingGroup(m_groupNames[i], *hDDD));
 
-    edm::LogVerbatim("TrackingMaterialAnalyser") << "TrackingMaterialAnalyser: List of the tracker groups: " << std::endl;
+    edm::LogVerbatim("TrackerMaterialAnalysis")
+        << "TrackingMaterialAnalyser: List of the tracker groups: " << std::endl;
     for (unsigned int i = 0; i < m_groups.size(); ++i)
-      edm::LogVerbatim("TrackingMaterialAnalyser") << i << " TrackingMaterialAnalyser:\t" << m_groups[i]->info() << std::endl;
+      edm::LogVerbatim("TrackerMaterialAnalysis")
+          << i << " TrackingMaterialAnalyser:\t" << m_groups[i]->info() << std::endl;
   }
   Handle<std::vector<MaterialAccountingTrack> > h_tracks;
   event.getByToken(m_materialToken, h_tracks);
@@ -185,11 +198,12 @@ void DD4hep_TrackingMaterialAnalyser::split(MaterialAccountingTrack& track) {
 
   for (unsigned int i = 0; i < group.size(); ++i)
     if (group[i] > 0)
-      edm::LogVerbatim("TrackingMaterialAnalyser") << "For detector i: " << i << " index: " << group[i]
-                                          << " R-ranges: " << m_groups[group[i] - 1]->getBoundingR().first << ", "
-                                          << m_groups[group[i] - 1]->getBoundingR().second << group[i]
-                                          << " Z-ranges: " << m_groups[group[i] - 1]->getBoundingZ().first << ", "
-                                          << m_groups[group[i] - 1]->getBoundingZ().second << std::endl;
+      edm::LogVerbatim("TrackerMaterialAnalysis") << "TrackingMaterialAnalyser:\n"
+                                                  << "For detector i: " << i << " index: " << group[i]
+                                                  << " R-ranges: " << m_groups[group[i] - 1]->getBoundingR().first
+                                                  << ", " << m_groups[group[i] - 1]->getBoundingR().second << group[i]
+                                                  << " Z-ranges: " << m_groups[group[i] - 1]->getBoundingZ().first
+                                                  << ", " << m_groups[group[i] - 1]->getBoundingZ().second << std::endl;
 
   unsigned int detectors = track.detectors().size();
   if (detectors == 0) {
@@ -281,8 +295,9 @@ void DD4hep_TrackingMaterialAnalyser::split(MaterialAccountingTrack& track) {
       //   limits[index] < begin < limits[index+1] < end <  limits[index+2]
       if (begin < limits[index] or end > limits[index + 2]) {
         // sanity check
-        std::cerr << "MaterialAccountingTrack::split(): ERROR: internal logic error, expected " << limits[index]
-                  << " < " << begin << " < " << limits[index + 1] << std::endl;
+        edm::LogError("TrackerMaterialAnalysis")
+            << "TrackingMaterialAnalyser::split(): ERROR: internal logic error, expected " << limits[index] << " < "
+            << begin << " < " << limits[index + 1] << std::endl;
         break;
       }
 
@@ -344,21 +359,23 @@ int DD4hep_TrackingMaterialAnalyser::findLayer(const MaterialAccountingDetector&
     }
   if (inside == 0) {
     index = 0;
-    std::cerr << "TrackingMaterialAnalyser::findLayer(...): ERROR: detector does not belong to any DetLayer"
-              << std::endl;
-    std::cerr << "TrackingMaterialAnalyser::findLayer(...): detector position: " << std::fixed
-              << " (r: " << std::setprecision(1) << std::setw(5) << detector.position().perp()
-              << ", z: " << std::setprecision(1) << std::setw(6) << detector.position().z()
-              << ", phi: " << std::setprecision(3) << std::setw(6) << detector.position().phi() << ")" << std::endl;
+    edm::LogError("TrackerMaterialAnalysis")
+        << "TrackingMaterialAnalyser::findLayer(...): ERROR: detector does not belong to any DetLayer" << std::endl;
+    edm::LogError("TrackerMaterialAnalysis")
+        << "TrackingMaterialAnalyser::findLayer(...): detector position: " << std::fixed
+        << " (r: " << std::setprecision(1) << std::setw(5) << detector.position().perp()
+        << ", z: " << std::setprecision(1) << std::setw(6) << detector.position().z()
+        << ", phi: " << std::setprecision(3) << std::setw(6) << detector.position().phi() << ")" << std::endl;
   }
   if (inside > 1) {
     index = 0;
-    std::cerr << "TrackingMaterialAnalyser::findLayer(...): ERROR: detector belongs to " << inside << " DetLayers"
-              << std::endl;
-    std::cerr << "TrackingMaterialAnalyser::findLayer(...): detector position: " << std::fixed
-              << " (r: " << std::setprecision(1) << std::setw(5) << detector.position().perp()
-              << ", z: " << std::setprecision(1) << std::setw(6) << detector.position().z()
-              << ", phi: " << std::setprecision(3) << std::setw(6) << detector.position().phi() << ")" << std::endl;
+    edm::LogError("TrackerMaterialAnalysis") << "TrackingMaterialAnalyser::findLayer(...): ERROR: detector belongs to "
+                                             << inside << " DetLayers" << std::endl;
+    edm::LogError("TrackerMaterialAnalysis")
+        << "TrackingMaterialAnalyser::findLayer(...): detector position: " << std::fixed
+        << " (r: " << std::setprecision(1) << std::setw(5) << detector.position().perp()
+        << ", z: " << std::setprecision(1) << std::setw(6) << detector.position().z()
+        << ", phi: " << std::setprecision(3) << std::setw(6) << detector.position().phi() << ")" << std::endl;
   }
 
   return index;

@@ -80,7 +80,9 @@ namespace edm {
 
     void adjustIndexesAfterProductRegistryAddition();
 
+    void fillPrincipal(DelayedReader* reader);
     void fillPrincipal(ProcessHistoryID const& hist, ProcessHistory const* phr, DelayedReader* reader);
+    void fillPrincipal(std::string const& processNameOfBlock, DelayedReader* reader);
 
     void clearPrincipal();
 
@@ -230,7 +232,8 @@ namespace edm {
     void addParentProcessProduct(std::shared_ptr<BranchDescription const> bd);
 
     WrapperBase const* getIt(ProductID const&) const override;
-    WrapperBase const* getThinnedProduct(ProductID const&, unsigned int&) const override;
+    std::optional<std::tuple<WrapperBase const*, unsigned int>> getThinnedProduct(ProductID const&,
+                                                                                  unsigned int) const override;
     void getThinnedProducts(ProductID const&,
                             std::vector<WrapperBase const*>&,
                             std::vector<unsigned int>&) const override;

@@ -1,12 +1,13 @@
 <use name="root"/>
+<use name="dd4hep"/>
 <use name="geant4core"/>
 <use name="boost"/>
-<use name="classlib"/>
 <use name="FWCore/Framework"/>
 <use name="FWCore/ParameterSet"/>
 <use name="FWCore/MessageLogger"/>
 <use name="FWCore/ServiceRegistry"/>
 <use name="DetectorDescription/Core"/>
+<use name="DetectorDescription/DDCMS"/>
 <use name="Geometry/Records"/>
 <use name="SimG4Core/Notification"/>
 <use name="SimG4Core/Watcher"/>
