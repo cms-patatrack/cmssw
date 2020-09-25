@@ -355,7 +355,7 @@ upgradeWFs['PatatrackPixelOnlyTripletsCPU'] = UpgradeWorkflowPatatrack_PixelOnly
     ],
     PU = [],
     suffix = 'Patatrack_PixelOnlyTripletsCPU',
-    offset = 0.503,
+    offset = 0.505,
 )
 
 upgradeWFs['PatatrackPixelOnlyTripletsCPU'].step3 = {
@@ -394,16 +394,6 @@ upgradeWFs['PatatrackPixelOnlyGPU'].step3 = {
     '--procModifiers': 'gpu'
 }
 
-class UpgradeWorkflowPatatrack_PixelOnlyTripletsGPU(UpgradeWorkflowPatatrack):
-    def setup_(self, step, stepName, stepDict, k, properties):
-        if 'Reco' in step:
-            stepDict[stepName][k] = merge([self.step3, stepDict[step][k]])
-        elif 'HARVEST' in step:
-            stepDict[stepName][k] = merge([{'-s': 'HARVESTING:@trackingOnlyValidation+@pixelTrackingOnlyDQM'}, stepDict[step][k]])
-
-    def condition_(self, fragment, stepList, key, hasHarvest):
-        return '2018' in key or '2021' in key
-
 upgradeWFs['PatatrackPixelOnlyTripletsGPU'] = UpgradeWorkflowPatatrack_PixelOnlyGPU(
     steps = [
         'Reco',
@@ -413,7 +403,7 @@ upgradeWFs['PatatrackPixelOnlyTripletsGPU'] = UpgradeWorkflowPatatrack_PixelOnly
     ],
     PU = [],
     suffix = 'Patatrack_PixelOnlyTripletsGPU',
-    offset = 0.504,
+    offset = 0.506,
 )
 
 upgradeWFs['PatatrackPixelOnlyTripletsGPU'].step3 = {
