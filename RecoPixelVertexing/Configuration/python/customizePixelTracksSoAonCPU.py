@@ -18,7 +18,7 @@ def customizePixelTracksSoAonCPU(process) :
   process.pixelTrackSoA.pixelRecHitSrc = 'siPixelRecHitHostSoA'
   process.pixelVertexSoA = pixelVertexCUDA.clone()
   process.pixelVertexSoA.onGPU = False
-  process.pixelVertexSoA.pixelTrackSrc = 'pixelTrackSoA' 
+  process.pixelVertexSoA.pixelTrackSrc = 'pixelTrackSoA'
 
   process.pixelTracks = pixelTrackProducerFromSoA.clone()
   process.pixelVertices = pixelVertexFromSoA.clone()
