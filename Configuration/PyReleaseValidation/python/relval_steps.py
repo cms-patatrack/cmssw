@@ -2189,9 +2189,6 @@ step3Up2015Hal = {'-s'            :'RAW2DIGI,L1Reco,RECO,EI,VALIDATION,DQM',
                   '--era'          :'Run2_2016'
                   }
 
-step3_pixelNtupleFit = {
-    '--procModifiers': 'pixelNtupleFit',
-}
 step3_pata_cpu = {
     '--customise': 'RecoPixelVertexing/Configuration/customizePixelTracksSoAonCPU.customizePixelTracksSoAonCPUForWF'
 }
