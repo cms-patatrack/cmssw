@@ -64,9 +64,9 @@ def customizePixelTracksForTriplets(process) :
   if 'caHitNtupletCUDA' in process.__dict__:
         process.caHitNtupletCUDA.includeJumpingForwardDoublets = True
         process.caHitNtupletCUDA.minHitsPerNtuplet = 3
-  elif 'pixelTrackSoA' in process.__dict__:
+  if 'pixelTrackSoA' in process.__dict__:
         process.pixelTrackSoA.includeJumpingForwardDoublets = True
-	process.pixelTrackSoA.minHitsPerNtuplet = 3
+        process.pixelTrackSoA.minHitsPerNtuplet = 3
  
   return process
  
