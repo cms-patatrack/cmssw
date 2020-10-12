@@ -1,34 +1,34 @@
 import FWCore.ParameterSet.Config as cms
 
-def customizePixelTracksSoAonCPU(process) :
+def customizePixelTracksSoAonCPU(process):
   
   process.CUDAService = cms.Service("CUDAService",
     enabled = cms.untracked.bool(False)
   )
 
-  from RecoLocalTracker.SiPixelRecHits.siPixelRecHitHostSoA_cfi import *
+  from RecoLocalTracker.SiPixelRecHits.siPixelRecHitHostSoA_cfi import siPixelRecHitHostSoA
   process.siPixelRecHitsPreSplitting = siPixelRecHitHostSoA.clone(
     convertToLegacy = True
   )
 
-  from RecoPixelVertexing.PixelTriplets.caHitNtupletCUDA_cfi import *
+  from RecoPixelVertexing.PixelTriplets.caHitNtupletCUDA_cfi import caHitNtupletCUDA
   process.pixelTrackSoA = caHitNtupletCUDA.clone(
     onGPU = False,
     pixelRecHitSrc = 'siPixelRecHitsPreSplitting'
   )
 
-  from RecoPixelVertexing.PixelVertexFinding.pixelVertexCUDA_cfi import *
+  from RecoPixelVertexing.PixelVertexFinding.pixelVertexCUDA_cfi import pixelVertexCUDA
   process.pixelVertexSoA = pixelVertexCUDA.clone(
     onGPU = False,
     pixelTrackSrc = 'pixelTrackSoA'
   )
 
-  from RecoPixelVertexing.PixelTrackFitting.pixelTrackProducerFromSoA_cfi import *
+  from RecoPixelVertexing.PixelTrackFitting.pixelTrackProducerFromSoA_cfi import pixelTrackProducerFromSoA
   process.pixelTracks = pixelTrackProducerFromSoA.clone(
     pixelRecHitLegacySrc = 'siPixelRecHitsPreSplitting'
   )
 
-  from RecoPixelVertexing.PixelVertexFinding.pixelVertexFromSoA_cfi import *
+  from RecoPixelVertexing.PixelVertexFinding.pixelVertexFromSoA_cfi import pixelVertexFromSoA
   process.pixelVertices = pixelVertexFromSoA.clone()
 
   process.reconstruction_step += process.siPixelRecHitsPreSplitting + process.pixelTrackSoA + process.pixelVertexSoA
@@ -36,20 +36,17 @@ def customizePixelTracksSoAonCPU(process) :
   return process
 
 
-def customizePixelTracksForTriplets(process) :
- 
-  if 'caHitNtupletCUDA' in process.__dict__:
-        process.caHitNtupletCUDA.includeJumpingForwardDoublets = True
-        process.caHitNtupletCUDA.minHitsPerNtuplet = 3
+def customizePixelTracksForTriplets(process):
 
-  if 'pixelTrackSoA' in process.__dict__:
-        process.pixelTrackSoA.includeJumpingForwardDoublets = True
-        process.pixelTrackSoA.minHitsPerNtuplet = 3
+  from HLTrigger.Configuration.common import producers_by_type
+  for producer in producers_by_type(process, 'CAHitNtupletCUDA'):
+        producer.includeJumpingForwardDoublets = True
+        producer.minHitsPerNtuplet = 3
  
   return process
  
 
-def customizePixelTracksSoAonCPUForProfiling(process) :
+def customizePixelTracksSoAonCPUForProfiling(process):
 
   process.MessageLogger.cerr.FwkReport.reportEvery = 100
 
