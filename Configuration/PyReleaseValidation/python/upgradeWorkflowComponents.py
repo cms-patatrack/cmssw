@@ -362,7 +362,7 @@ upgradeWFs['PatatrackPixelOnlyTripletsCPU'].step3 = {
     '-s': 'RAW2DIGI:RawToDigi_pixelOnly,RECO:reconstruction_pixelTrackingOnly,VALIDATION:@pixelTrackingOnlyValidation,DQM:@pixelTrackingOnlyDQM',
     '--datatier': 'GEN-SIM-RECO,DQMIO',
     '--eventcontent': 'RECOSIM,DQM',
-    '--customise' : 'RecoPixelVertexing/Configuration/customizePixelTracksSoAonCPU.customizePixelTracksSoAonCPU, RecoPixelVertexing/Configuration/customizePixelTracksSoAonCPU.customizePixelTracksForTriplets'
+    '--customise' : 'RecoPixelVertexing/Configuration/customizePixelTracksSoAonCPU.customizePixelTracksSoAonCPU,RecoPixelVertexing/Configuration/customizePixelTracksSoAonCPU.customizePixelTracksForTriplets'
 }
 
 class UpgradeWorkflowPatatrack_PixelOnlyGPU(UpgradeWorkflowPatatrack):
