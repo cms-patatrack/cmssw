@@ -107,7 +107,7 @@ void PixelVertexCollectionTrimmer::produce(edm::Event& iEvent, const edm::EventS
     if (sumpt2 >= sumpt2first * fractionSumPt2_ && sumpt2 > minSumPt2_)
       vtxs_trim->push_back(*vtx);
   }
-  //  std::cout << " ==> # vertices: " << vtxs_trim->size() << std::endl;
+  // std::cout << " ==> # vertices: " << vtxs_trim->size() << " out of " << vtxs->size() << std::endl;
   iEvent.put(std::move(vtxs_trim));
 }
 

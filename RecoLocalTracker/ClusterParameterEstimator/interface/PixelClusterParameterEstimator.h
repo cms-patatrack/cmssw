@@ -12,6 +12,8 @@
 #include "DataFormats/TrackerRecHit2D/interface/SiPixelRecHitQuality.h"
 #include <tuple>
 
+class TrackingRecHit2DSOAView;
+
 class PixelClusterParameterEstimator {
 public:
   virtual ~PixelClusterParameterEstimator() {}
@@ -34,6 +36,18 @@ public:
                                    const GeomDetUnit& det,
                                    const TrajectoryStateOnSurface& tsos) const {
     return getParameters(cl, det, tsos.localParameters());
+  }
+
+  virtual ReturnType getParameters(const TrackingRecHit2DSOAView& view,
+                                   int ih,
+                                   const GeomDetUnit& det,
+                                   const LocalTrajectoryParameters& ltp) const = 0;
+
+  virtual ReturnType getParameters(const TrackingRecHit2DSOAView& view,
+                                   int ih,
+                                   const GeomDetUnit& det,
+                                   const TrajectoryStateOnSurface& tsos) const {
+    return getParameters(view, ih, det, tsos.localParameters());
   }
 
   virtual VLocalValues localParametersV(const SiPixelCluster& cluster, const GeomDetUnit& gd) const {

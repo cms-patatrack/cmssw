@@ -1,5 +1,7 @@
 #include "RecoLocalTracker/SiPixelRecHits/interface/PixelCPEGeneric.h"
 
+#include "CUDADataFormats/TrackingRecHit/interface/TrackingRecHit2DSOAView.h"
+
 #include "Geometry/CommonDetUnit/interface/PixelGeomDetUnit.h"
 #include "Geometry/TrackerGeometryBuilder/interface/RectangularPixelTopology.h"
 #include "DataFormats/DetId/interface/DetId.h"
@@ -362,9 +364,8 @@ LocalPoint PixelCPEGeneric::localPosition(DetParam const& theDetParam, ClusterPa
         xPos -= theClusterParam.dx2;
       //cout<<" to "<<xPos<<" "<<(tmp1+theClusterParam.dx1)<<endl;
     } else {  // size>1
-      //cout << "Apply correction correction_deltax = " << theClusterParam.deltax << " to xPos = " << xPos;
+      // cout << "Apply correction correction_deltax = " << theClusterParam.deltax << " to xPos = " << xPos << endl;
       xPos -= theClusterParam.deltax;
-      //cout<<" to "<<xPos<<endl;
     }
 
     if (theClusterParam.theCluster->sizeY() == 1) {
@@ -379,13 +380,13 @@ LocalPoint PixelCPEGeneric::localPosition(DetParam const& theDetParam, ClusterPa
         yPos -= theClusterParam.dy2;
 
     } else {
-      //cout << "Apply correction correction_deltay = " << theClusterParam.deltay << " to yPos = " << yPos << endl;
+      // cout << "Apply correction correction_deltay = " << theClusterParam.deltay << " to yPos = " << yPos << endl;
       yPos -= theClusterParam.deltay;
     }
 
   }  // if ( IrradiationBiasCorrection_ )
 
-  //cout<<" in PixelCPEGeneric:localPosition - pos = "<<xPos<<" "<<yPos<<endl; //dk
+  // cout<<" in PixelCPEGeneric:localPosition - pos = "<<xPos<<" "<<yPos << endl; //dk
 
   //--- Now put the two together
   LocalPoint pos_in_local(xPos, yPos);
@@ -621,10 +622,140 @@ LocalError PixelCPEGeneric::localError(DetParam const& theDetParam, ClusterParam
   //if(theClusterParam.qBin_ == 0) cout<<" qbin 0 "<<xerr<<" "<<yerr<<endl;
   //}
 
+  // std::cout<<" errors  "<<xerr<<" "<<yerr<<std::endl;  //dk
+
+  // std::cout << "gen err " << theClusterParam.theCluster->charge() << ' ' << theClusterParam.qBin_ << ' ' << xerr << ' ' << yerr << std::endl;
+  
   auto xerr_sq = xerr * xerr;
   auto yerr_sq = yerr * yerr;
 
   return LocalError(xerr_sq, 0, yerr_sq);
+}
+
+PixelCPEGeneric::ReturnType PixelCPEGeneric::getParameters(const TrackingRecHit2DSOAView& view,
+                                                           int ih,
+                                                           const GeomDetUnit& det,
+                                                           const LocalTrajectoryParameters& ltp) const {
+  DetParam const& theDetParam = detParam(det);
+  ClusterParamGeneric theClusterParam;
+  computeAnglesFromTrajectory(theDetParam, theClusterParam, ltp);
+
+  bool useTempErrors =
+      UseErrorsFromTemplates_ && (!NoTemplateErrorsWhenNoTrkAngles_ || theClusterParam.with_track_angle);
+
+  float xerr2, yerr2;
+
+  float xCorr = 0, yCorr = 0;
+
+  if (useTempErrors) {
+    auto qclus = view.charge(ih);
+    auto status = view.status(ih);
+
+    float locBz = theDetParam.bz;
+    float locBx = theDetParam.bx;
+    //cout << "PixelCPEFast::localPosition(...) : locBz = " << locBz << endl;
+
+    SiPixelGenError gtempl(thePixelGenError_);
+    int gtemplID_ = theDetParam.detTemplateId;
+
+    theClusterParam.qBin_ = gtempl.qbin(gtemplID_,
+                                        theClusterParam.cotalpha,
+                                        theClusterParam.cotbeta,
+                                        locBz,
+                                        locBx,
+                                        qclus,
+                                        IrradiationBiasCorrection_,
+                                        theClusterParam.pixmx,
+                                        theClusterParam.sigmay,
+                                        theClusterParam.deltay,
+                                        theClusterParam.sigmax,
+                                        theClusterParam.deltax,
+                                        theClusterParam.sy1,
+                                        theClusterParam.dy1,
+                                        theClusterParam.sy2,
+                                        theClusterParam.dy2,
+                                        theClusterParam.sx1,
+                                        theClusterParam.dx1,
+                                        theClusterParam.sx2,
+                                        theClusterParam.dx2);
+
+    // These numbers come in microns from the qbin(...) call. Transform them to cm.
+    theClusterParam.deltax = theClusterParam.deltax * micronsToCm;
+    theClusterParam.dx1 = theClusterParam.dx1 * micronsToCm;
+    theClusterParam.dx2 = theClusterParam.dx2 * micronsToCm;
+
+    theClusterParam.deltay = theClusterParam.deltay * micronsToCm;
+    theClusterParam.dy1 = theClusterParam.dy1 * micronsToCm;
+    theClusterParam.dy2 = theClusterParam.dy2 * micronsToCm;
+
+    theClusterParam.sigmax = theClusterParam.sigmax * micronsToCm;
+    theClusterParam.sx1 = theClusterParam.sx1 * micronsToCm;
+    theClusterParam.sx2 = theClusterParam.sx2 * micronsToCm;
+
+    theClusterParam.sigmay = theClusterParam.sigmay * micronsToCm;
+    theClusterParam.sy1 = theClusterParam.sy1 * micronsToCm;
+    theClusterParam.sy2 = theClusterParam.sy2 * micronsToCm;
+
+    float xerr = EdgeClusterErrorX_ * micronsToCm;
+    float yerr = EdgeClusterErrorY_ * micronsToCm;
+
+    bool isEdgeX = status.isBigX & (0 == status.isOneX);
+    if (not isEdgeX)
+      xerr = status.isOneX ? (status.isBigX ? theClusterParam.sx2 : theClusterParam.sx1) : theClusterParam.sigmax;
+
+    bool isEdgeY = status.isBigY & (0 == status.isOneY);
+    if (not isEdgeY)
+      yerr = status.isOneY ? (status.isBigY ? theClusterParam.sy2 : theClusterParam.sy1) : theClusterParam.sigmay;
+
+
+    // std::cout << "new err " << qclus << ' ' << theClusterParam.qBin_ << ' ' << xerr << ' ' << yerr << std::endl;
+
+    xerr2 = xerr * xerr;
+    yerr2 = yerr * yerr;
+    
+    if (IrradiationBiasCorrection_) {
+      if (status.isOneX) {  // size=1
+        // ggiurgiu@jhu.edu, 02/03/09 : for size = 1, the Lorentz shift is already accounted by the irradiation correction
+        xCorr = -(0.5f * theDetParam.lorentzShiftInCmX);
+        // Find if pixel is double (big).
+        if (status.isBigX)
+          xCorr -= theClusterParam.dx2;
+        else
+          xCorr -= theClusterParam.dx1;
+      } else {  // size>1
+        // cout << "Apply correction correction_deltax = " << theClusterParam.deltax << endl;
+        xCorr = -theClusterParam.deltax;
+      }
+
+      if (status.isOneY) {
+        // ggiurgiu@jhu.edu, 02/03/09 : for size = 1, the Lorentz shift is already accounted by the irradiation correction
+        yCorr = -(0.5f * theDetParam.lorentzShiftInCmY);
+        // Find if pixel is double (big).
+        if (status.isBigY)
+          yCorr -= theClusterParam.dy2;
+        else
+          yCorr -= theClusterParam.dy1;
+      } else {
+        // cout << "Apply correction correction_deltay = " << theClusterParam.deltay << endl;
+        yCorr = -theClusterParam.deltay;
+      }
+
+    }  // if ( IrradiationBiasCorrection_ )
+    
+  } else {
+    xerr2 = view.xerrLocal(ih);
+    yerr2 = view.yerrLocal(ih);
+  }
+
+  // apply position correction (irradiation)
+  LocalPoint lp(view.xLocal(ih) + xCorr, view.yLocal(ih) + yCorr);
+
+  // compute precise error....
+  LocalError le(xerr2, 0, yerr2);
+  SiPixelRecHitQuality::QualWordType rqw = rawQualityWord(theClusterParam);
+  auto tuple = std::make_tuple(lp, le, rqw);
+
+  return tuple;
 }
 
 void PixelCPEGeneric::fillPSetDescription(edm::ParameterSetDescription& desc) {

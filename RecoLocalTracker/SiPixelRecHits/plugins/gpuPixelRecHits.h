@@ -149,8 +149,9 @@ namespace gpuPixelRecHits {
         assert(cl < MaxHitsInIter);
         auto x = digis.xx(i);
         auto y = digis.yy(i);
-        auto ch = std::min(digis.adc(i), pixmx);
+        auto ch = digis.adc(i);
         atomicAdd(&clusParams.charge[cl], ch);
+        ch = std::min(ch, pixmx);
         if (clusParams.minRow[cl] == x)
           atomicAdd(&clusParams.Q_f_X[cl], ch);
         if (clusParams.maxRow[cl] == x)
@@ -181,7 +182,9 @@ namespace gpuPixelRecHits {
 
         // store it
 
-        hits.charge(h) = clusParams.charge[ic];
+        hits.setChargeAndStatus(h, clusParams.charge[ic], clusParams.status[ic]);
+
+        // printf("charge,status %d %d %d %d %d\n",hits.charge(h),hits.status(h).qBin,hits.chargeAndStatus(h),clusParams.charge[ic],clusParams.status[ic].qBin);
 
         hits.detectorIndex(h) = me;
 

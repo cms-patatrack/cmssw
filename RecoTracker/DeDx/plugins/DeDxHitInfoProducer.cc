@@ -169,7 +169,7 @@ void DeDxHitInfoProducer::processHit(const TrackingRecHit* recHit,
   float cosineAbs = std::max(0.00000001f, std::abs(cosine));  //make sure cosine is not 0
 
   auto const& clus = thit.firstClusterRef();
-  if (!clus.isValid())
+  if (!clus.isValid() || clus.isSoA())
     return;
 
   if (clus.isPixel()) {

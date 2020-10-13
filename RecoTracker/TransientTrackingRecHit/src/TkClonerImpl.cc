@@ -6,6 +6,7 @@
 #include "DataFormats/TrackerRecHit2D/interface/SiStripRecHit2D.h"
 #include "DataFormats/TrackerRecHit2D/interface/SiStripRecHit1D.h"
 #include "DataFormats/TrackerRecHit2D/interface/Phase2TrackerRecHit1D.h"
+#include "CUDADataFormats/TrackingRecHit/interface/TrackingRecHit2DReduced.h"
 
 #include "Geometry/CommonDetUnit/interface/GeomDet.h"
 #include "TrackingTools/TrajectoryState/interface/TrajectoryStateOnSurface.h"
@@ -25,10 +26,18 @@
 
 std::unique_ptr<SiPixelRecHit> TkClonerImpl::operator()(SiPixelRecHit const& hit,
                                                         TrajectoryStateOnSurface const& tsos) const {
-  const SiPixelCluster& clust = *hit.cluster();
-  auto&& params = pixelCPE->getParameters(clust, *hit.detUnit(), tsos);
-  return std::unique_ptr<SiPixelRecHit>(
-      new SiPixelRecHit(std::get<0>(params), std::get<1>(params), std::get<2>(params), *hit.det(), hit.cluster()));
+  auto const& oc = hit.omniCluster();
+  if (oc.isSoA()) {
+    auto const& soa = *reinterpret_cast<edm::RefProd<TrackingRecHit2DReduced> const&>(oc.refCore()).product();
+    auto&& params = pixelCPE->getParameters(soa.view(), oc.index(), *hit.detUnit(), tsos);
+    return std::unique_ptr<SiPixelRecHit>(
+        new SiPixelRecHit(std::get<0>(params), std::get<1>(params), std::get<2>(params), *hit.det(), oc));
+  } else {
+    const SiPixelCluster& clust = *hit.cluster();
+    auto&& params = pixelCPE->getParameters(clust, *hit.detUnit(), tsos);
+    return std::unique_ptr<SiPixelRecHit>(
+        new SiPixelRecHit(std::get<0>(params), std::get<1>(params), std::get<2>(params), *hit.det(), hit.cluster()));
+  }
 }
 
 std::unique_ptr<SiStripRecHit2D> TkClonerImpl::operator()(SiStripRecHit2D const& hit,
@@ -60,10 +69,18 @@ std::unique_ptr<Phase2TrackerRecHit1D> TkClonerImpl::operator()(Phase2TrackerRec
 TrackingRecHit::ConstRecHitPointer TkClonerImpl::makeShared(SiPixelRecHit const& hit,
                                                             TrajectoryStateOnSurface const& tsos) const {
   // std::cout << "cloning " << typeid(hit).name() << std::endl;
-  const SiPixelCluster& clust = *hit.cluster();
-  auto&& params = pixelCPE->getParameters(clust, *hit.detUnit(), tsos);
-  return std::make_shared<SiPixelRecHit>(
-      std::get<0>(params), std::get<1>(params), std::get<2>(params), *hit.det(), hit.cluster());
+  auto const& oc = hit.omniCluster();
+  if (oc.isSoA()) {
+    auto const& soa = *reinterpret_cast<edm::RefProd<TrackingRecHit2DReduced> const&>(oc.refCore()).product();
+    auto&& params = pixelCPE->getParameters(soa.view(), oc.index(), *hit.detUnit(), tsos);
+    return std::make_shared<SiPixelRecHit>(
+        std::get<0>(params), std::get<1>(params), std::get<2>(params), *hit.det(), oc);
+  } else {
+    const SiPixelCluster& clust = *hit.cluster();
+    auto&& params = pixelCPE->getParameters(clust, *hit.detUnit(), tsos);
+    return std::make_shared<SiPixelRecHit>(
+        std::get<0>(params), std::get<1>(params), std::get<2>(params), *hit.det(), hit.cluster());
+  }
 }
 
 TrackingRecHit::ConstRecHitPointer TkClonerImpl::makeShared(SiStripRecHit2D const& hit,

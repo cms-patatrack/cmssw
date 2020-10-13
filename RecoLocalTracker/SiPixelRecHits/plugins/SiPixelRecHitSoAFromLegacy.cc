@@ -5,6 +5,7 @@
 #include "CUDADataFormats/SiPixelCluster/interface/SiPixelClustersCUDA.h"
 #include "CUDADataFormats/SiPixelDigi/interface/SiPixelDigisCUDA.h"
 #include "CUDADataFormats/TrackingRecHit/interface/TrackingRecHit2DHeterogeneous.h"
+#include "CUDADataFormats/TrackingRecHit/interface/TrackingRecHit2DReduced.h"
 #include "CUDADataFormats/Common/interface/HostProduct.h"
 #include "DataFormats/BeamSpot/interface/BeamSpot.h"
 #include "DataFormats/Common/interface/DetSetVectorNew.h"
@@ -58,6 +59,7 @@ SiPixelRecHitSoAFromLegacy::SiPixelRecHitSoAFromLegacy(const edm::ParameterSet& 
       tokenModuleStart_{produces<HMSstorage>()},
       cpeName_(iConfig.getParameter<std::string>("CPE")),
       convert2Legacy_(iConfig.getParameter<bool>("convertToLegacy")) {
+  produces<TrackingRecHit2DReduced>();
   if (convert2Legacy_)
     produces<SiPixelRecHitCollectionNew>();
 }
@@ -152,6 +154,12 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
   // output SoA
   auto output = std::make_unique<TrackingRecHit2DCPU>(numberOfClusters, &cpeView, hitsModuleStart, nullptr);
 
+  // copy view
+  auto hlp = std::make_unique<TrackingRecHit2DReduced>(*output->view(), numberOfClusters);
+  auto orphanHandle = iEvent.put(std::move(hlp));  // hlp is gone
+  edm::RefProd<TrackingRecHit2DReduced> refProdHLP{orphanHandle};
+  assert(refProdHLP.isNonnull());
+
   if (0 == numberOfClusters) {
     iEvent.put(std::move(output));
     if (convert2Legacy_)
@@ -239,11 +247,24 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
         LocalPoint lp(output->view()->xLocal(h), output->view()->yLocal(h));
         LocalError le(output->view()->xerrLocal(h), 0, output->view()->yerrLocal(h));
         SiPixelRecHitQuality::QualWordType rqw = 0;
+// #define TEST_CLUSTERLESS
+#ifndef TEST_CLUSTERLESS
         SiPixelRecHit hit(lp, le, rqw, *genericDet, clusterRef[ih]);
+#else
+        // for test.....
+        OmniClusterRef notCluster(refProdHLP, h);
+        SiPixelRecHit hit(lp, le, rqw, *genericDet, notCluster);
+#endif
         recHitsOnDetUnit.push_back(hit);
-      }
-    }
-  }
+        std::push_heap(recHitsOnDetUnit.begin(), recHitsOnDetUnit.end(), [](auto const& h1, auto const& h2) {
+          return h1.localPosition().x() < h2.localPosition().x();
+        });
+      }  // hits
+      std::sort_heap(recHitsOnDetUnit.begin(), recHitsOnDetUnit.end(), [](auto const& h1, auto const& h2) {
+        return h1.localPosition().x() < h2.localPosition().x();
+      });
+    }  // convert2legacy
+  }    // detset
   assert(numberOfHits == numberOfClusters);
 
   // fill data structure to support CA

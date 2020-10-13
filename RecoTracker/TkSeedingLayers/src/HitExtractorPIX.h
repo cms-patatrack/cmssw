@@ -21,7 +21,7 @@ namespace ctfseeding {
     HitExtractorPIX* clone() const override { return new HitExtractorPIX(*this); }
 
   private:
-    typedef edm::ContainerMask<edmNew::DetSetVector<SiPixelCluster> > SkipClustersCollection;
+    typedef edm::ContainerMask<edmNew::DetSetVector<SiPixelRecHit> > SkipClustersCollection;
     void useSkipClusters_(const edm::InputTag& m, edm::ConsumesCollector& iC) override;
 
     edm::EDGetTokenT<SkipClustersCollection> theSkipClusters;

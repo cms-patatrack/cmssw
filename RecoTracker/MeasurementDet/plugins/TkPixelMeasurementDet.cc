@@ -7,6 +7,7 @@
 #include "DataFormats/TrackerRecHit2D/interface/SiPixelRecHit.h"
 #include "TrackingTools/DetLayers/interface/MeasurementEstimator.h"
 #include "TrackingTools/PatternTools/interface/TrajMeasLessEstim.h"
+#include "RecoTracker/TransientTrackingRecHit/interface/TkClonerImpl.h"
 
 namespace {
   // in cms units are in cm
@@ -91,7 +92,7 @@ TkPixelMeasurementDet::RecHitContainer TkPixelMeasurementDet::compHits(const Tra
     return result;
   if (isActive(data) == false)
     return result;
-  const SiPixelCluster* begin = nullptr;
+  const SiPixelRecHit* begin = nullptr;
   if (!data.pixelData().handle()->data().empty()) {
     begin = &(data.pixelData().handle()->data().front());
   }
@@ -100,17 +101,17 @@ TkPixelMeasurementDet::RecHitContainer TkPixelMeasurementDet::compHits(const Tra
 
   // pixel topology is rectangular, all positions are independent
   LocalVector maxD(xl, yl, 0);
-  auto PMinus = specificGeomDet().specificTopology().measurementPosition(ts.localPosition() - maxD);
-  auto PPlus = specificGeomDet().specificTopology().measurementPosition(ts.localPosition() + maxD);
+  auto PMinus = ts.localPosition() - maxD;
+  auto PPlus = ts.localPosition() + maxD;
 
-  int xminus = PMinus.x();
-  int yminus = PMinus.y();
-  int xplus = PPlus.x() + 0.5f;
-  int yplus = PPlus.y() + 0.5f;
+  auto xminus = PMinus.x();
+  auto yminus = PMinus.y();
+  auto xplus = PPlus.x();
+  auto yplus = PPlus.y();
 
   // rechits are sorted in x...
   auto rightCluster = std::find_if(
-      detSet.begin(), detSet.end(), [xplus](const SiPixelCluster& cl) { return cl.minPixelRow() > xplus; });
+      detSet.begin(), detSet.end(), [xplus](const SiPixelRecHit& h) { return h.localPosition().x() > xplus; });
 
   // std::cout << "px xlim " << xl << ' ' << xminus << '/' << xplus << ' ' << rightCluster-detSet.begin() << ',' << detSet.end()-rightCluster << std::endl;
 
@@ -120,24 +121,27 @@ TkPixelMeasurementDet::RecHitContainer TkPixelMeasurementDet::compHits(const Tra
       edm::LogError("IndexMisMatch") << "TkPixelMeasurementDet cannot create hit because of index mismatch.";
       return result;
     }
-    unsigned int index = ci - begin;
+    auto index = ci->omniCluster().key();
     if (!data.pixelClustersToSkip().empty() && index >= data.pixelClustersToSkip().size()) {
       edm::LogError("IndexMisMatch") << "TkPixelMeasurementDet cannot create hit because of index mismatch. i.e "
                                      << index << " >= " << data.pixelClustersToSkip().size();
       return result;
     }
 
-    if (ci->maxPixelRow() < xminus)
+    if (ci->localPosition().x() < xminus)
       continue;
     // also check compatibility in y... (does not add much)
-    if (ci->minPixelCol() > yplus)
+    if (ci->localPosition().y() > yplus)
       continue;
-    if (ci->maxPixelCol() < yminus)
+    if (ci->localPosition().y() < yminus)
       continue;
 
     if (data.pixelClustersToSkip().empty() or (not data.pixelClustersToSkip()[index])) {
-      SiPixelClusterRef cluster = detSet.makeRefTo(data.pixelData().handle(), ci);
-      result.push_back(buildRecHit(cluster, ts.localParameters()));
+      if (ci->canImproveWithTrack()) {
+        result.push_back(TkClonerImpl(cpe(), nullptr, nullptr).makeShared(*ci, ts));
+      } else {
+        result.push_back(std::make_shared<SiPixelRecHit>(*ci));
+      }
     } else {
       LogDebug("TkPixelMeasurementDet") << "skipping this cluster from last iteration on "
                                         << fastGeomDet().geographicalId().rawId() << " key: " << index;
