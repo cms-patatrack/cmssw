@@ -5,6 +5,14 @@
 #include <cstdio>
 #include <tuple>
 
+// including <cuda_runtime.h> would pull in the dependency on all of CUDA;
+// instead, just define away the CUDA specific attributes to keep GCC happy.
+#ifndef __CUDACC__
+#define __host__
+#define __device__
+#define __restrict__
+#endif  // __CUDACC__
+
 #include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
 
 struct SiPixelGainForHLTonGPU_DecodingStructure {
