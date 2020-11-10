@@ -313,7 +313,7 @@ int main(int argc, char* argv[]) {
           hADCf5HBGPUvsCPU->Fill(cpuadc, gpuadc);
 
           // the must for us at RAW Decoding stage
-          assert(static_cast<hcal::Flavor5::adc_type>(cpuadc) == gpuadc);
+          assert(static_cast<uint8_t>(cpuadc) == gpuadc);
           assert(static_cast<uint8_t>(cpucapid) == gpucapid);
         }
       }
