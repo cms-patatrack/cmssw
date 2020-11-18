@@ -1,3 +1,4 @@
+#include "CondFormats/DataRecord/interface/HcalCombinedRecordsGPU.h"
 #include "CondFormats/DataRecord/interface/HcalGainWidthsRcd.h"
 #include "CondFormats/DataRecord/interface/HcalGainsRcd.h"
 #include "CondFormats/DataRecord/interface/HcalLUTCorrsRcd.h"
@@ -10,7 +11,6 @@
 #include "CondFormats/DataRecord/interface/HcalSiPMCharacteristicsRcd.h"
 #include "CondFormats/DataRecord/interface/HcalSiPMParametersRcd.h"
 #include "CondFormats/DataRecord/interface/HcalTimeCorrsRcd.h"
-#include "CondFormats/HcalObjects/interface/HcalCombinedRecordsGPU.h"
 #include "CondFormats/HcalObjects/interface/HcalConvertedEffectivePedestalWidthsGPU.h"
 #include "CondFormats/HcalObjects/interface/HcalConvertedEffectivePedestalsGPU.h"
 #include "CondFormats/HcalObjects/interface/HcalConvertedPedestalWidthsGPU.h"
