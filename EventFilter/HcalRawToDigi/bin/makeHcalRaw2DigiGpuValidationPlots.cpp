@@ -7,12 +7,12 @@
 #include <TFile.h>
 #include <TH1D.h>
 #include <TH2D.h>
-#include <TTree.h>
 #include <TPaveStats.h>
+#include <TTree.h>
 
+#include "CUDADataFormats/HcalDigi/interface/DigiCollection.h"
 #include "DataFormats/Common/interface/Wrapper.h"
 #include "DataFormats/HcalDigi/interface/HcalDigiCollections.h"
-#include "CUDADataFormats/HcalDigi/interface/DigiCollection.h"
 
 #define CREATE_HIST_1D(varname, nbins, first, last) auto varname = new TH1D(#varname, #varname, nbins, first, last)
 
@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) {
 
   // branches to use
   using Collectionf01 =
-      hcal::DigiCollection<hcal::Flavor01, calo::common::VecStoragePolicy<calo::common::CUDAHostAllocatorAlias>>;
+      hcal::DigiCollection<hcal::Flavor1, calo::common::VecStoragePolicy<calo::common::CUDAHostAllocatorAlias>>;
   using Collectionf5 =
       hcal::DigiCollection<hcal::Flavor5, calo::common::VecStoragePolicy<calo::common::CUDAHostAllocatorAlias>>;
   using Collectionf3 =
@@ -103,27 +103,6 @@ int main(int argc, char* argv[]) {
   CREATE_HIST_2D(hTDCf01HEGPUvsCPU, 64, 0, 64);
   CREATE_HIST_2D(hTDCf3HBGPUvsCPU, 4, 0, 4);
 
-  /*
-    auto hADCEBGPU = new TH1D("hADCEBGPU", "hADCEBGPU", nbins, 0, last);
-    auto hADCEBCPU = new TH1D("hADCEBCPU", "hADCEBCPU", nbins, 0, last);
-    auto hADCEEGPU = new TH1D("hADCEEGPU", "hADCEEGPU", nbins, 0, last);
-    auto hADCEECPU = new TH1D("hADCEECPU", "hADCEECPU", nbins, 0, last);
-
-    auto hGainEBGPU = new TH1D("hGainEBGPU", "hGainEBGPU", 4, 0, 4);
-    auto hGainEBCPU = new TH1D("hGainEBCPU", "hGainEBCPU", 4, 0, 4);
-    auto hGainEEGPU = new TH1D("hGainEEGPU", "hGainEEGPU", 4, 0, 4);
-    auto hGainEECPU = new TH1D("hGainEECPU", "hGainEECPU", 4, 0, 4);
-
-    auto hADCEBGPUvsCPU = new TH2D("hADCEBGPUvsCPU", "hADCEBGPUvsCPU",
-        nbins, 0, last, nbins, 0, last);
-    auto hADCEEGPUvsCPU = new TH2D("hADCEEGPUvsCPU", "hADCEEGPUvsCPU",
-        nbins, 0, last, nbins, 0, last);
-    auto hGainEBGPUvsCPU = new TH2D("hGainEBGPUvsCPU", "hGainEBGPUvsCPU",
-        4, 0, 4, 4, 0, 4);
-    auto hGainEEGPUvsCPU = new TH2D("hGainEEGPUvsCPU", "hGainEEGPUvsCPU",
-        4, 0, 4, 4, 0, 4);
-        */
-
   // prep input
   TFile rfin{inFileName.c_str()};
   TTree* rt = (TTree*)rfin.Get("Events");
@@ -134,7 +113,7 @@ int main(int argc, char* argv[]) {
       "f5HBDigis_RECO.",
       &wgpuf5hb);
   rt->SetBranchAddress(
-      "hcalFlavor01calocommonCUDAHostAllocatorAliascalocommonVecStoragePolicyhcalDigiCollection_hcalCPUDigisProducer_"
+      "hcalFlavor1calocommonCUDAHostAllocatorAliascalocommonVecStoragePolicyhcalDigiCollection_hcalCPUDigisProducer_"
       "f01HEDigis_RECO.",
       &wgpuf01he);
   rt->SetBranchAddress(
@@ -194,7 +173,7 @@ int main(int argc, char* argv[]) {
         assert(*iter2idgpu == cpuid);
 
         auto const ptrdiff = iter2idgpu - idsgpu.begin();
-        auto const nsamples_gpu = hcal::compute_nsamples<hcal::Flavor01>(f01HEProduct.stride);
+        auto const nsamples_gpu = hcal::compute_nsamples<hcal::Flavor1>(f01HEProduct.stride);
         auto const nsamples_cpu = qie11Filteredf01.samples();
         assert(static_cast<uint32_t>(nsamples_cpu) == nsamples_gpu);
 
@@ -203,11 +182,11 @@ int main(int argc, char* argv[]) {
         uint16_t const* df_start = datagpu.data() + offset;
         for (uint32_t sample = 0u; sample < nsamples_gpu; sample++) {
           auto const cpuadc = cpudf[sample].adc();
-          auto const gpuadc = hcal::adc_for_sample<hcal::Flavor01>(df_start, sample);
+          auto const gpuadc = hcal::adc_for_sample<hcal::Flavor1>(df_start, sample);
           auto const cputdc = cpudf[sample].tdc();
-          auto const gputdc = hcal::tdc_for_sample<hcal::Flavor01>(df_start, sample);
+          auto const gputdc = hcal::tdc_for_sample<hcal::Flavor1>(df_start, sample);
           auto const cpucapid = cpudf[sample].capid();
-          auto const gpucapid = hcal::capid_for_sample<hcal::Flavor01>(df_start, sample);
+          auto const gpucapid = hcal::capid_for_sample<hcal::Flavor1>(df_start, sample);
 
           hADCf01HEGPU->Fill(gpuadc);
           hADCf01HECPU->Fill(cpuadc);
@@ -306,14 +285,14 @@ int main(int argc, char* argv[]) {
           auto const cpuadc = cpudf.sample(sample).adc();
           auto const gpuadc = hcal::adc_for_sample<hcal::Flavor5>(df_start, sample);
           auto const cpucapid = cpudf.sample(sample).capid();
-          auto const gpucapid = hcal::capid_for_sample<hcal::Flavor01>(df_start, sample);
+          auto const gpucapid = hcal::capid_for_sample<hcal::Flavor1>(df_start, sample);
 
           hADCf5HBGPU->Fill(gpuadc);
           hADCf5HBCPU->Fill(cpuadc);
           hADCf5HBGPUvsCPU->Fill(cpuadc, gpuadc);
 
           // the must for us at RAW Decoding stage
-          assert(static_cast<hcal::Flavor5::adc_type>(cpuadc) == gpuadc);
+          assert(static_cast<uint8_t>(cpuadc) == gpuadc);
           assert(static_cast<uint8_t>(cpucapid) == gpucapid);
         }
       }

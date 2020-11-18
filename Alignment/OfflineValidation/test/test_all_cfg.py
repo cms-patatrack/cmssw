@@ -68,7 +68,7 @@ process.load("TrackingTools.TransientTrack.TransientTrackBuilder_cfi")
 ####################################################################
 # Get the Magnetic Field
 ####################################################################
-process.load('Configuration.StandardSequences.MagneticField_AutoFromDBCurrent_cff')
+process.load('Configuration.StandardSequences.MagneticField_cff')
 
 ###################################################################
 # Standard loads
@@ -323,7 +323,7 @@ process.HLTFilter = triggerResultsFilter.clone(
 # The analysis module
 ###################################################################
 process.myanalysis = cms.EDAnalyzer("GeneralPurposeTrackAnalyzer",
-                                    TkTag  = cms.string('FinalTrackRefitter'),
+                                    TkTag  = cms.InputTag('FinalTrackRefitter'),
                                     isCosmics = cms.bool(False)
                                     )
 

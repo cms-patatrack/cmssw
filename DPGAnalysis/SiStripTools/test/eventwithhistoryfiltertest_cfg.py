@@ -75,7 +75,7 @@ process.source = cms.Source("PoolSource",
 process.source.fileNames = cms.untracked.vstring(options.inputFiles)
 
 process.load("Configuration.StandardSequences.RawToDigi_Data_cff")
-process.load("Configuration.StandardSequences.MagneticField_AutoFromDBCurrent_cff")
+process.load("Configuration.StandardSequences.MagneticField_cff")
 process.load("Configuration.StandardSequences.GeometryDB_cff")
 process.load("Configuration.StandardSequences.Reconstruction_cff")
 
@@ -95,8 +95,8 @@ process.p0 = cms.Path(process.scalersRawToDigi + process.consecutiveHEs + proces
 
 #----GlobalTag ------------------------
 
-process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff")
-from Configuration.AlCa.GlobalTag_condDBv2 import GlobalTag
+process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
+from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, options.globalTag, '')
 
 

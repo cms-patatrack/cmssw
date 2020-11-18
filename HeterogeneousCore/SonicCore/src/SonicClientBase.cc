@@ -1,6 +1,6 @@
 #include "HeterogeneousCore/SonicCore/interface/SonicClientBase.h"
 #include "FWCore/Utilities/interface/Exception.h"
-#include "FWCore/ParameterSet/interface/EmptyGroupDescription.h"
+#include "FWCore/ParameterSet/interface/allowedValues.h"
 
 SonicClientBase::SonicClientBase(const edm::ParameterSet& params)
     : allowedTries_(params.getUntrackedParameter<unsigned>("allowedTries", 0)) {
@@ -29,7 +29,11 @@ void SonicClientBase::setDebugName(const std::string& debugName) {
 }
 
 void SonicClientBase::start(edm::WaitingTaskWithArenaHolder holder) {
+  start();
   holder_ = std::move(holder);
+}
+
+void SonicClientBase::start() {
   tries_ = 0;
   if (!debugName_.empty())
     t0_ = std::chrono::high_resolution_clock::now();
@@ -57,14 +61,17 @@ void SonicClientBase::finish(bool success, std::exception_ptr eptr) {
     edm::LogInfo(fullDebugName_) << "Client time: "
                                  << std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0_).count();
   }
-  holder_.doneWaiting(eptr);
+  if (holder_) {
+    holder_->doneWaiting(eptr);
+    holder_.reset();
+  } else if (eptr)
+    std::rethrow_exception(eptr);
 }
 
 void SonicClientBase::fillBasePSetDescription(edm::ParameterSetDescription& desc, bool allowRetry) {
   //restrict allowed values
   desc.ifValue(edm::ParameterDescription<std::string>("mode", "PseudoAsync", true),
-               "Sync" >> edm::EmptyGroupDescription() or "Async" >> edm::EmptyGroupDescription() or
-                   "PseudoAsync" >> edm::EmptyGroupDescription());
+               edm::allowedValues<std::string>("Sync", "Async", "PseudoAsync"));
   if (allowRetry)
     desc.addUntracked<unsigned>("allowedTries", 0);
 }

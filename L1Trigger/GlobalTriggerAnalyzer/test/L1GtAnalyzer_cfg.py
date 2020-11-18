@@ -42,7 +42,7 @@ process.maxEvents = cms.untracked.PSet(
 # https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideFrontierConditions
 
 process.load('Configuration.StandardSequences.GeometryDB_cff')
-process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff')
+process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 process.GlobalTag.globaltag = useGlobalTag
 
@@ -166,7 +166,6 @@ process.MessageLogger.destinations = ['L1GtAnalyzer_error',
                                       ]
 
 process.MessageLogger.cerr.default.limit = 0
-process.MessageLogger.cerr.FwkJob.limit = 0
 process.MessageLogger.cerr.FwkReport.limit = 0
 process.MessageLogger.cerr.FwkSummary.limit = 0
 

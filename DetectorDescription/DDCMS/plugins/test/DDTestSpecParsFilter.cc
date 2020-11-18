@@ -4,7 +4,7 @@
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "Geometry/Records/interface/DDSpecParRegistryRcd.h"
-#include "DetectorDescription/DDCMS/interface/DDSpecParRegistry.h"
+#include <DD4hep/SpecParRegistry.h>
 
 #include <iostream>
 
@@ -31,7 +31,7 @@ private:
 
 void DDTestSpecParsFilter::analyze(const Event&, const EventSetup& iEventSetup) {
   LogVerbatim("Geometry") << "DDTestSpecParsFilter::analyze: " << m_tag;
-  ESTransientHandle<DDSpecParRegistry> registry;
+  ESTransientHandle<dd4hep::SpecParRegistry> registry;
   iEventSetup.get<DDSpecParRegistryRcd>().get(m_tag, registry);
 
   LogVerbatim("Geometry") << "DDTestSpecParsFilter::analyze: " << m_tag << " for attribute " << m_attribute
@@ -42,7 +42,7 @@ void DDTestSpecParsFilter::analyze(const Event&, const EventSetup& iEventSetup) 
   for (auto i : namesInPath) {
     std::cout << i << "\n";
   }
-  DDSpecParRefs myReg;
+  dd4hep::SpecParRefs myReg;
   if (m_value.empty())
     registry->filter(myReg, m_attribute);
   else
@@ -52,10 +52,10 @@ void DDTestSpecParsFilter::analyze(const Event&, const EventSetup& iEventSetup) 
     log << "Filtered DD SpecPar Registry size: " << myReg.size() << "\n";
     for (const auto& t : myReg) {
       log << "\nRegExps { ";
-      for (const auto& ki : t->paths)
+      for (const auto& ki : t.second->paths)
         log << ki << " ";
       log << "};\n ";
-      for (const auto& kl : t->spars) {
+      for (const auto& kl : t.second->spars) {
         log << kl.first << " = ";
         for (const auto& kil : kl.second) {
           log << kil << " ";
@@ -65,9 +65,9 @@ void DDTestSpecParsFilter::analyze(const Event&, const EventSetup& iEventSetup) 
     }
   });
   std::cout << "*** Check names in a path after filtering:\n";
-  for (auto it : myReg) {
-    if (it->hasPath("//ME11AlumFrame")) {
-      std::cout << it->name << "\n";
+  for (const auto& it : myReg) {
+    if (it.second->hasPath("//ME11AlumFrame")) {
+      std::cout << it.first << "\n";
     }
   }
 }

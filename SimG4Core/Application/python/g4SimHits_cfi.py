@@ -14,13 +14,14 @@ common_heavy_suppression = cms.PSet(
 )
 
 common_maximum_time = cms.PSet(
-    MaxTrackTime  = cms.double(500.0),
-    MaxTimeNames  = cms.vstring('ZDCRegion'),
-    MaxTrackTimes = cms.vdouble(2000.0),
-    #DeadRegions   = cms.vstring('QuadRegion','CastorRegion','InterimRegion'),
+    MaxTrackTime  = cms.double(500.0), # ns
+    MaxTrackTimeForward = cms.double(2000.0), # ns
+    MaxTimeNames  = cms.vstring(),
+    MaxTrackTimes = cms.vdouble(),     # ns
+    MaxZCentralCMS = cms.double(50.0), # m
     DeadRegions   = cms.vstring('QuadRegion','InterimRegion'),
-    CriticalEnergyForVacuum = cms.double(2.0),
-    CriticalDensity         = cms.double(1e-15)
+    CriticalEnergyForVacuum = cms.double(2.0),   # MeV
+    CriticalDensity         = cms.double(1e-15)  # g/cm3
 )
 
 common_UsePMT = cms.PSet(
@@ -82,6 +83,7 @@ g4SimHits = cms.EDProducer("OscarMTProducer",
     Watchers = cms.VPSet(),
     HepMCProductLabel = cms.InputTag("generatorSmeared"),
     theLHCTlinkTag = cms.InputTag("LHCTransport"),
+    LHCTransport = cms.bool(False),
     CustomUIsession = cms.untracked.PSet(
         Type = cms.untracked.string("MessageLogger"), # alternatives: MessageLoggerThreadPrefix, FilePerThread
         ThreadPrefix = cms.untracked.string("W"),     # for MessageLoggerThreadPrefix
@@ -98,16 +100,22 @@ g4SimHits = cms.EDProducer("OscarMTProducer",
                 StepperParam = cms.PSet(
                     VacRegions = cms.vstring(),
 #                   VacRegions = cms.vstring('DefaultRegionForTheWorld','BeamPipeVacuum','BeamPipeOutside'),
-                    MaximumEpsilonStep = cms.untracked.double(0.01),   ## in mm
+                    EnergyThTracker = cms.double(0.2),     ## in GeV
+                    RmaxTracker = cms.double(8000),        ## in mm
+                    ZmaxTracker = cms.double(11000),       ## in mm
+                    MaximumEpsilonStep = cms.untracked.double(0.01),
                     DeltaOneStep = cms.double(0.001),      ## in mm
+                    DeltaOneStepTracker = cms.double(1e-4),## in mm
                     MaximumLoopCounts = cms.untracked.double(1000.0),
-                    DeltaChord = cms.double(0.001), ## in mm
-                    MinStep = cms.double(0.1),      ## in mm
+                    DeltaChord = cms.double(0.002),        ## in mm
+                    DeltaChordTracker = cms.double(0.001), ## in mm
+                    MinStep = cms.double(0.1),             ## in mm
                     DeltaIntersectionAndOneStep = cms.untracked.double(-1.0),
-                    DeltaIntersection = cms.double(0.0001),## in mm
+                    DeltaIntersection = cms.double(0.0001),     ## in mm
+                    DeltaIntersectionTracker = cms.double(1e-6),## in mm
                     MaxStep = cms.double(150.),            ## in cm
-                    MinimumEpsilonStep = cms.untracked.double(1e-05), ## in mm
-                    EnergyThSimple = cms.double(0.015),               ## in GeV
+                    MinimumEpsilonStep = cms.untracked.double(1e-05),
+                    EnergyThSimple = cms.double(0.015),    ## in GeV
                     DeltaChordSimple = cms.double(0.1),    ## in mm
                     DeltaOneStepSimple = cms.double(0.1),  ## in mm
                     DeltaIntersectionSimple = cms.double(0.01),       ## in mm
@@ -188,7 +196,9 @@ g4SimHits = cms.EDProducer("OscarMTProducer",
         ThresholdTrials           = cms.untracked.int32(10)
     ),
     Generator = cms.PSet(
+        common_maximum_time,
         HectorEtaCut,
+#        HepMCProductLabel = cms.InputTag('LHCTransport'),
         HepMCProductLabel = cms.InputTag('generatorSmeared'),
         ApplyPCuts = cms.bool(True),
         ApplyPtransCut = cms.bool(False),
@@ -318,7 +328,8 @@ g4SimHits = cms.EDProducer("OscarMTProducer",
         StoreRadLength  = cms.untracked.bool(False),
         ScaleRadLength  = cms.untracked.double(1.0),
         StoreLayerTimeSim = cms.untracked.bool(False),
-        AgeingWithSlopeLY = cms.untracked.bool(False)
+        AgeingWithSlopeLY = cms.untracked.bool(False),
+        DumpGeometry      = cms.untracked.int32(0)
         ),
     HCalSD = cms.PSet(
         common_UseLuminosity,
@@ -348,6 +359,7 @@ g4SimHits = cms.EDProducer("OscarMTProducer",
         UseLayerWt                = cms.untracked.bool(False),
         WtFile                    = cms.untracked.string('None'),
         TestNS                    = cms.untracked.bool(False),
+        DumpGeometry              = cms.untracked.bool(False),
         HFDarkeningParameterBlock = HFDarkeningParameterBlock
     ),
     CaloTrkProcessing = cms.PSet(
@@ -567,21 +579,34 @@ g4SimHits = cms.EDProducer("OscarMTProducer",
         IgnoreTrackID   = cms.bool(False),
     ),
 )
-
-
 ##
-## Change the HFShowerLibrary file used for Run 2
+## Change the HFShowerLibrary file from Run 2
 ##
 from Configuration.Eras.Modifier_run2_common_cff import run2_common
 run2_common.toModify( g4SimHits.HFShowerLibrary, FileName = 'SimG4CMS/Calo/data/HFShowerLibrary_npmt_noatt_eta4_16en_v4.root' )
 run2_common.toModify( g4SimHits.HFShower, ProbMax = 0.5)
 
+##
+## Change HCAL numbering scheme in 2017
+##
 from Configuration.Eras.Modifier_run2_HCAL_2017_cff import run2_HCAL_2017
 run2_HCAL_2017.toModify( g4SimHits, HCalSD = dict( TestNumberingScheme = True ) )
+
+##
+## Disable Castor from Run 3
+##
+from Configuration.Eras.Modifier_run3_common_cff import run3_common
+run3_common.toModify( g4SimHits, CastorSD = dict( useShowerLibrary = False ) ) 
+
+##
+## Change ECAL time slices
+##
 from Configuration.Eras.Modifier_phase2_timing_cff import phase2_timing
 phase2_timing.toModify( g4SimHits.ECalSD,
                              StoreLayerTimeSim = cms.untracked.bool(True),
                              TimeSliceUnit = cms.double(0.001) )
-
+##
+## DD4Hep migration
+##
 from Configuration.ProcessModifiers.dd4hep_cff import dd4hep
 dd4hep.toModify( g4SimHits, g4GeometryDD4hepSource = True )

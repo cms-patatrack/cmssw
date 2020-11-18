@@ -29,8 +29,8 @@ private:
 
   // type aliases
   using HostCollectionf01 =
-      hcal::DigiCollection<hcal::Flavor01, calo::common::VecStoragePolicy<calo::common::CUDAHostAllocatorAlias>>;
-  using DeviceCollectionf01 = hcal::DigiCollection<hcal::Flavor01, calo::common::DevStoragePolicy>;
+      hcal::DigiCollection<hcal::Flavor1, calo::common::VecStoragePolicy<calo::common::CUDAHostAllocatorAlias>>;
+  using DeviceCollectionf01 = hcal::DigiCollection<hcal::Flavor1, calo::common::DevStoragePolicy>;
   using HostCollectionf5 =
       hcal::DigiCollection<hcal::Flavor5, calo::common::VecStoragePolicy<calo::common::CUDAHostAllocatorAlias>>;
   using DeviceCollectionf5 = hcal::DigiCollection<hcal::Flavor5, calo::common::DevStoragePolicy>;
@@ -92,12 +92,17 @@ HcalDigisProducerGPU::HcalDigisProducerGPU(const edm::ParameterSet& ps)
 
   // this is a preallocation for the max statically known number of time samples
   // actual stride/nsamples will be inferred from data
+  hf01_.stride = hcal::compute_stride<hcal::Flavor1>(QIE11DigiCollection::MAXSAMPLES);
   hf5_.stride = hcal::compute_stride<hcal::Flavor5>(HBHEDataFrame::MAXSAMPLES);
-  hf01_.stride = hcal::compute_stride<hcal::Flavor01>(QIE11DigiCollection::MAXSAMPLES);
   hf3_.stride = hcal::compute_stride<hcal::Flavor3>(QIE11DigiCollection::MAXSAMPLES);
-  hf01_.reserve(config_.maxChannelsF01HE);
-  hf5_.reserve(config_.maxChannelsF5HB);
-  hf3_.reserve(config_.maxChannelsF3HB);
+
+  // preallocate pinned host memory only if CUDA is available
+  edm::Service<CUDAService> cs;
+  if (cs and cs->enabled()) {
+    hf01_.reserve(config_.maxChannelsF01HE);
+    hf5_.reserve(config_.maxChannelsF5HB);
+    hf3_.reserve(config_.maxChannelsF3HB);
+  }
 }
 
 void HcalDigisProducerGPU::acquire(edm::Event const& event,
@@ -117,39 +122,35 @@ void HcalDigisProducerGPU::acquire(edm::Event const& event,
   event.getByToken(hbheDigiToken_, hbheDigis);
   event.getByToken(qie11DigiToken_, qie11Digis);
 
-
   // init f5 collection
-  if (hbheDigis->size() > 0) {
+  if (not hbheDigis->empty()) {
     auto const nsamples = (*hbheDigis)[0].size();
     auto const stride = hcal::compute_stride<hcal::Flavor5>(nsamples);
     hf5_.stride = stride;
-  
+
     // flavor5 get device blobs
     df5_.stride = stride;
-    df5_.data = cms::cuda::make_device_unique<uint16_t[]>(
-      config_.maxChannelsF5HB * stride, ctx.stream());
+    df5_.data = cms::cuda::make_device_unique<uint16_t[]>(config_.maxChannelsF5HB * stride, ctx.stream());
     df5_.ids = cms::cuda::make_device_unique<uint32_t[]>(config_.maxChannelsF5HB, ctx.stream());
     df5_.npresamples = cms::cuda::make_device_unique<uint8_t[]>(config_.maxChannelsF5HB, ctx.stream());
   }
 
-  if (qie11Digis->size() > 0) {
+  if (not qie11Digis->empty()) {
     auto const nsamples = qie11Digis->samples();
-    auto const stride01 = hcal::compute_stride<hcal::Flavor01>(nsamples);
+    auto const stride01 = hcal::compute_stride<hcal::Flavor1>(nsamples);
     auto const stride3 = hcal::compute_stride<hcal::Flavor3>(nsamples);
 
     hf01_.stride = stride01;
     hf3_.stride = stride3;
-  
+
     // flavor 0/1 get devie blobs
     df01_.stride = stride01;
-    df01_.data = cms::cuda::make_device_unique<uint16_t[]>(
-      config_.maxChannelsF01HE * stride01, ctx.stream());
+    df01_.data = cms::cuda::make_device_unique<uint16_t[]>(config_.maxChannelsF01HE * stride01, ctx.stream());
     df01_.ids = cms::cuda::make_device_unique<uint32_t[]>(config_.maxChannelsF01HE, ctx.stream());
 
     // flavor3 get device blobs
     df3_.stride = stride3;
-    df3_.data = cms::cuda::make_device_unique<uint16_t[]>(
-      config_.maxChannelsF3HB * stride3, ctx.stream());
+    df3_.data = cms::cuda::make_device_unique<uint16_t[]>(config_.maxChannelsF3HB * stride3, ctx.stream());
     df3_.ids = cms::cuda::make_device_unique<uint32_t[]>(config_.maxChannelsF3HB, ctx.stream());
   }
 
@@ -180,10 +181,10 @@ void HcalDigisProducerGPU::acquire(edm::Event const& event,
         continue;
       auto const id = digi.detid().rawId();
       hf01_.ids.push_back(id);
-      for (int hw = 0; hw < hcal::Flavor01::HEADER_WORDS; hw++)
+      for (int hw = 0; hw < hcal::Flavor1::HEADER_WORDS; hw++)
         hf01_.data.push_back((*qie11Digis)[i][hw]);
       for (int sample = 0; sample < digi.samples(); sample++) {
-        hf01_.data.push_back((*qie11Digis)[i][hcal::Flavor01::HEADER_WORDS + sample]);
+        hf01_.data.push_back((*qie11Digis)[i][hcal::Flavor1::HEADER_WORDS + sample]);
       }
     } else if (digi.flavor() == 3) {
       if (digi.detid().subdetId() != HcalBarrel)
@@ -199,7 +200,8 @@ void HcalDigisProducerGPU::acquire(edm::Event const& event,
   }
 
   auto lambdaToTransfer = [&ctx](auto* dest, auto const& src) {
-    if (src.size() == 0) return;
+    if (src.empty())
+      return;
     using vector_type = typename std::remove_reference<decltype(src)>::type;
     using type = typename vector_type::value_type;
     using dest_data_type = typename std::remove_pointer<decltype(dest)>::type;

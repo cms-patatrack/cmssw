@@ -6,7 +6,7 @@
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "Geometry/CSCGeometry/interface/CSCGeometry.h"
-#include "L1Trigger/CSCCommonTrigger/interface/CSCConstants.h"
+#include "DataFormats/L1TMuon/interface/CSCConstants.h"
 #include "L1Trigger/CSCTriggerPrimitives/interface/CSCPatternBank.h"
 #include "L1Trigger/CSCTriggerPrimitives/interface/CSCUpgradeMotherboardLUT.h"
 #include "L1Trigger/CSCTriggerPrimitives/interface/CSCUpgradeMotherboardLUTGenerator.h"
@@ -50,6 +50,7 @@ protected:
 
   // is this an ME11 chamber?
   bool isME11_;
+  bool isME21_;
 
   // CSCDetId for this chamber
   CSCDetId cscId_;
@@ -105,5 +106,8 @@ protected:
   bool runME21Up_;
   bool runME31Up_;
   bool runME41Up_;
+
+  bool use_run3_patterns_;
+  bool use_comparator_codes_;
 };
 #endif

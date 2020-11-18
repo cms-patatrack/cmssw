@@ -36,7 +36,6 @@ process.MessageLogger.categories = ['Alignment']
 
 
 # initialize magnetic field
-#process.load("Configuration.StandardSequences.MagneticField_AutoFromDBCurrent_cff")
 process.load("Configuration.StandardSequences.MagneticField_cff")
 #process.load("Configuration.StandardSequences.MagneticField_0T_cff")
 
@@ -108,7 +107,6 @@ process.TrackRefitter.TrajectoryInEvent = True
 ##process.Chi2MeasurementEstimator.MaxChi2 = 50. # untested, default 30
 #process.load("RecoLocalTracker.SiStripRecHitConverter.StripCPEfromTrackAngle_cfi")
 #process.load("RecoLocalTracker.SiStripRecHitConverter.SiStripRecHitMatcher_cfi")
-#process.load("RecoLocalTracker.SiPixelRecHits.PixelCPEParmError_cfi")
 #process.load("RecoTracker.TransientTrackingRecHit.TransientTrackingRecHitBuilder_cfi")
 ## end refitting with analytical propagator
 

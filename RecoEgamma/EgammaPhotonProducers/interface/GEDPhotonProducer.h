@@ -65,7 +65,7 @@ private:
                             const EcalRecHitCollection* ecalBarrelHits,
                             const EcalRecHitCollection* ecalEndcapHits,
                             const EcalRecHitCollection* preshowerHits,
-                            CaloTowerCollection const& hcalTowers,
+                            CaloTowerCollection const* hcalTowers,
                             const reco::VertexCollection& pvVertices,
                             reco::PhotonCollection& outputCollection,
                             int& iSC);
@@ -113,6 +113,8 @@ private:
 
   edm::EDGetTokenT<edm::ValueMap<float>> phoPFECALClusIsolationToken_;
   edm::EDGetTokenT<edm::ValueMap<float>> phoPFHCALClusIsolationToken_;
+
+  const EcalClusterLazyTools::ESGetTokens ecalClusterESGetTokens_;
 
   std::string conversionProducer_;
   std::string conversionCollection_;

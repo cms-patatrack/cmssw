@@ -67,8 +67,11 @@ public:
   void fillHits(edm::PCaloHitContainer&, const std::string&) override;
   void reset() override;
 
+  bool isItFineCalo(const G4VTouchable* touch);
+
 protected:
   virtual double getEnergyDeposit(const G4Step* step);
+  virtual double EnergyCorrected(const G4Step& step, const G4Track*);
   virtual bool getFromLibrary(const G4Step* step);
 
   G4ThreeVector setToLocal(const G4ThreeVector&, const G4VTouchable*) const;
@@ -96,6 +99,7 @@ protected:
   virtual uint16_t getDepth(const G4Step*);
   double getResponseWt(const G4Track*);
   int getNumberOfHits();
+  void ignoreRejection() { ignoreReject = true; }
 
   inline void setParameterized(bool val) { isParameterized = val; }
   inline void setUseMap(bool val) { useMap = val; }
@@ -140,6 +144,13 @@ protected:
   bool forceSave;
 
 private:
+  struct Detector {
+    Detector() {}
+    std::string name;
+    G4LogicalVolume* lv;
+    int level;
+  };
+
   const SimTrackManager* m_trackManager;
 
   std::unique_ptr<CaloSlaveSD> slave;
@@ -149,6 +160,7 @@ private:
 
   bool ignoreTrackID;
   bool isParameterized;
+  bool ignoreReject;
   bool useMap;  // use map for comparison of ID
   bool corrTOFBeam;
 
@@ -167,6 +179,7 @@ private:
   std::map<CaloHitID, CaloG4Hit*> hitMap;
   std::map<int, TrackWithHistory*> tkMap;
   std::vector<std::unique_ptr<CaloG4Hit>> reusehit;
+  std::vector<Detector> fineDetectors_;
 };
 
 #endif  // SimG4CMS_CaloSD_h

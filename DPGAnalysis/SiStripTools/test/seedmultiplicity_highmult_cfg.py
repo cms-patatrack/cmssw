@@ -71,7 +71,7 @@ process.source = cms.Source("PoolSource",
                     )
 
 
-process.load("Configuration.StandardSequences.MagneticField_AutoFromDBCurrent_cff")
+process.load("Configuration.StandardSequences.MagneticField_cff")
 process.load("Configuration.StandardSequences.GeometryRecoDB_cff")
 process.load("Configuration.StandardSequences.Reconstruction_cff")
 
@@ -131,8 +131,8 @@ process.p0 = cms.Path(process.largeSiPixelClusterEvents
 
 #----GlobalTag ------------------------
 
-process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff")
-from Configuration.AlCa.GlobalTag_condDBv2 import GlobalTag
+process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
+from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, options.globalTag, '')
 
 
