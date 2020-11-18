@@ -80,7 +80,7 @@ using HcalConvertedPedestalsGPUESProducer = ConvertingESProducerWithDependencies
                                                                                   HcalQIETypes>;
 
 using HcalConvertedEffectivePedestalsGPUESProducer =
-    ConvertingESProducerWithDependenciesT<HcalConvertedEffectivePedestalsRcd,
+    ConvertingESProducerWithDependenciesT<HcalConvertedPedestalsRcd,
                                           HcalConvertedEffectivePedestalsGPU,
                                           HcalPedestals,
                                           HcalQIEData,
@@ -94,7 +94,7 @@ using HcalConvertedPedestalWidthsGPUESProducer = ConvertingESProducerWithDepende
                                                                                        HcalQIETypes>;
 
 using HcalConvertedEffectivePedestalWidthsGPUESProducer =
-    ConvertingESProducerWithDependenciesT<HcalConvertedEffectivePedestalWidthsRcd,
+    ConvertingESProducerWithDependenciesT<HcalConvertedPedestalWidthsRcd,
                                           HcalConvertedEffectivePedestalWidthsGPU,
                                           HcalPedestals,
                                           HcalPedestalWidths,
