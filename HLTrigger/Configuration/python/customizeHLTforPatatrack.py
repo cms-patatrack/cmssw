@@ -2,6 +2,7 @@ import copy
 import FWCore.ParameterSet.Config as cms
 from HeterogeneousCore.CUDACore.SwitchProducerCUDA import SwitchProducerCUDA
 from HLTrigger.Configuration.common import *
+from Configuration.Eras.Modifier_run3_common_cff import run3_common
 
 
 # force the SwitchProducerCUDA choice to pick a specific backend: True for offloading to a gpu, False for running on cpu
@@ -54,6 +55,10 @@ def customiseCommon(process):
         replace_with(process.Status_OnGPU, cms.Path(process.statusOnGPU + process.statusOnGPUFilter))
     else:
         process.Status_OnGPU = cms.Path(process.statusOnGPU + process.statusOnGPUFilter)
+        if 'HLTSchedule' in process.__dict__:
+            process.HLTSchedule.append(process.Status_OnGPU)
+        if process.schedule:
+            process.schedule.append(process.Status_OnGPU)
 
 
     # make the ScoutingCaloMuonOutput endpath compatible with using Tasks in the Scouting paths
@@ -108,14 +113,15 @@ def customisePixelLocalReconstruction(process):
     # referenced in HLTDoLocalPixelTask
 
     # transfer the beamspot to the gpu
-    from RecoVertex.BeamSpotProducer.offlineBeamSpotCUDA_cfi import offlineBeamSpotCUDA as _offlineBeamSpotCUDA
-    process.hltOnlineBeamSpotCUDA = _offlineBeamSpotCUDA.clone(
+    from RecoVertex.BeamSpotProducer.offlineBeamSpotToCUDA_cfi import offlineBeamSpotToCUDA as _offlineBeamSpotToCUDA
+    process.hltOnlineBeamSpotToCUDA = _offlineBeamSpotToCUDA.clone(
         src = "hltOnlineBeamSpot"
     )
 
     # reconstruct the pixel digis and clusters on the gpu
     from RecoLocalTracker.SiPixelClusterizer.siPixelRawToClusterCUDA_cfi import siPixelRawToClusterCUDA as _siPixelRawToClusterCUDA
     process.hltSiPixelClustersCUDA = _siPixelRawToClusterCUDA.clone()
+    run3_common.toModify(process.hltSiPixelClustersCUDA, isRun2 = False)
 
     # copy the pixel digis errors to the host
     from EventFilter.SiPixelRawToDigi.siPixelDigiErrorsSoAFromCUDA_cfi import siPixelDigiErrorsSoAFromCUDA as _siPixelDigiErrorsSoAFromCUDA
@@ -175,7 +181,7 @@ def customisePixelLocalReconstruction(process):
     from RecoLocalTracker.SiPixelRecHits.siPixelRecHitCUDA_cfi import siPixelRecHitCUDA as _siPixelRecHitCUDA
     process.hltSiPixelRecHitsCUDA = _siPixelRecHitCUDA.clone(
         src = "hltSiPixelClustersCUDA",
-        beamSpot = "hltOnlineBeamSpotCUDA"
+        beamSpot = "hltOnlineBeamSpotToCUDA"
     )
 
     # SwitchProducer wrapping the legacy pixel rechit producer or the transfer of the pixel rechits to the host and the conversion from SoA
@@ -194,7 +200,7 @@ def customisePixelLocalReconstruction(process):
     # Tasks and Sequences
 
     process.HLTDoLocalPixelTask = cms.Task(
-          process.hltOnlineBeamSpotCUDA,                    # transfer the beamspot to the gpu
+          process.hltOnlineBeamSpotToCUDA,                  # transfer the beamspot to the gpu
           process.hltSiPixelClustersCUDA,                   # reconstruct the pixel digis and clusters on the gpu
           process.hltSiPixelRecHitsCUDA,                    # reconstruct the pixel rechits on the gpu
           process.hltSiPixelDigisSoA,                       # copy the pixel digis (except errors) and clusters to the host
