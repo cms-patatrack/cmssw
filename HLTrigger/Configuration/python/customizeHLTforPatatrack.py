@@ -105,7 +105,6 @@ def customisePixelLocalReconstruction(process):
     process.load("CalibTracker.SiPixelESProducers.siPixelGainCalibrationForHLTGPU_cfi")         # this should be used only on GPUs, will crash otherwise
     process.load("RecoLocalTracker.SiPixelClusterizer.siPixelFedCablingMapGPUWrapper_cfi")      # this should be used only on GPUs, will crash otherwise
     process.load("RecoLocalTracker.SiPixelRecHits.PixelCPEFastESProducer_cfi")
-    process.PixelCPEFastESProducer.DoLorentz = True
 
 
     # Modules and EDAliases
@@ -121,6 +120,7 @@ def customisePixelLocalReconstruction(process):
     # reconstruct the pixel digis and clusters on the gpu
     from RecoLocalTracker.SiPixelClusterizer.siPixelRawToClusterCUDA_cfi import siPixelRawToClusterCUDA as _siPixelRawToClusterCUDA
     process.hltSiPixelClustersCUDA = _siPixelRawToClusterCUDA.clone()
+    # use the pixel channel calibrations scheme for Run 3
     run3_common.toModify(process.hltSiPixelClustersCUDA, isRun2 = False)
 
     # copy the pixel digis errors to the host
@@ -251,6 +251,8 @@ def customisePixelTrackReconstruction(process):
         pixelRecHitSrc = "hltSiPixelRecHitsCUDA",
         onGPU = True
     )
+    # use quality cuts tuned for Run 2 ideal conditions for all Run 3 workflows
+    run3_common.toModify(process.hltPixelTracksCUDA, idealConditions = True)
 
     # SwitchProducer providing the pixel tracks in SoA format on cpu
     process.hltPixelTracksSoA = SwitchProducerCUDA(
@@ -265,6 +267,8 @@ def customisePixelTrackReconstruction(process):
             src = cms.InputTag("hltPixelTracksCUDA")
         )
     )
+    # use quality cuts tuned for Run 2 ideal conditions for all Run 3 workflows
+    run3_common.toModify(process.hltPixelTracksSoA.cpu, idealConditions = True)
 
     # convert the pixel tracks from SoA to legacy format
     from RecoPixelVertexing.PixelTrackFitting.pixelTrackProducerFromSoA_cfi import pixelTrackProducerFromSoA as _pixelTrackProducerFromSoA
