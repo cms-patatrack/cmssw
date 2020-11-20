@@ -13,6 +13,7 @@
 
 #include "PixelRecHits.h"
 #include "gpuPixelRecHits.h"
+//#define GPU_DEBUG
 
 namespace {
   __global__ void setHitsLayerStart(uint32_t const* __restrict__ hitsModuleStart,
@@ -21,8 +22,10 @@ namespace {
     auto i = blockIdx.x * blockDim.x + threadIdx.x;
 
     assert(0 == hitsModuleStart[0]);
-
-    if (i < 11) {
+    uint8_t m = cpeParams->commonParams().isUpgrade ? 29 : 11;
+    if(cpeParams->commonParams().isUpgrade)
+printf("true\n");
+    if (i < m) {
       hitsLayerStart[i] = hitsModuleStart[cpeParams->layerGeometry().layerStart[i]];
 #ifdef GPU_DEBUG
       printf("LayerStart %d %d: %d\n", i, cpeParams->layerGeometry().layerStart[i], hitsLayerStart[i]);
@@ -63,7 +66,8 @@ namespace pixelgpudetails {
     }
 
     if (nHits) {
-      cms::cuda::fillManyFromVector(hits_d.phiBinner(), 10, hits_d.iphi(), hits_d.hitsLayerStart(), nHits, 256, stream);
+   
+      cms::cuda::fillManyFromVector(hits_d.phiBinner(),10, hits_d.iphi(), hits_d.hitsLayerStart(), nHits, 256, stream);
       cudaCheck(cudaGetLastError());
     }
 

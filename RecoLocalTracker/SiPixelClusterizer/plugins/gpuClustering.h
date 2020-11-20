@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <cstdio>
 
-#include "Geometry/TrackerGeometryBuilder/interface/phase1PixelTopology.h"
+#include "Geometry/TrackerGeometryBuilder/interface/pixelTopology.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/HistoContainer.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
 
@@ -46,7 +46,7 @@ namespace gpuClustering {
                uint32_t* __restrict__ nClustersInModule,  // output: number of clusters found in each module
                uint32_t* __restrict__ moduleId,           // output: module id of each module
                int32_t* __restrict__ clusterId,           // output: cluster id of each pixel
-               int numElements) {
+               int numElements,bool isUpgrade=false) {
     if (blockIdx.x >= moduleStart[0])
       return;
 
@@ -77,10 +77,10 @@ namespace gpuClustering {
       }
     }
 
-    //init hist  (ymax=416 < 512 : 9bits)
-    constexpr uint32_t maxPixInModule = 4000;
-    constexpr auto nbins = phase1PixelTopology::numColsInModule + 2;  //2+2;
-    using Hist = cms::cuda::HistoContainer<uint16_t, nbins, maxPixInModule, 9, uint16_t>;
+    //init hist  (ymax=416 < 512 : 9bits) 10bits needed for Phase2 
+    constexpr uint32_t maxPixInModule = 8000;
+    constexpr auto nbins = 800;
+    using Hist = cms::cuda::HistoContainer<uint16_t, nbins, maxPixInModule, 10, uint16_t>;
     __shared__ Hist hist;
     __shared__ typename Hist::Counter ws[32];
     for (auto j = threadIdx.x; j < Hist::totbins(); j += blockDim.x) {

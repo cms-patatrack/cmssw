@@ -49,6 +49,7 @@ private:
 
   std::string const cpeName_;
   bool const convert2Legacy_;
+  bool const isUpgrade_;
 };
 
 SiPixelRecHitSoAFromLegacy::SiPixelRecHitSoAFromLegacy(const edm::ParameterSet& iConfig)
@@ -57,7 +58,8 @@ SiPixelRecHitSoAFromLegacy::SiPixelRecHitSoAFromLegacy(const edm::ParameterSet& 
       tokenHit_{produces<TrackingRecHit2DCPU>()},
       tokenModuleStart_{produces<HMSstorage>()},
       cpeName_(iConfig.getParameter<std::string>("CPE")),
-      convert2Legacy_(iConfig.getParameter<bool>("convertToLegacy")) {
+      convert2Legacy_(iConfig.getParameter<bool>("convertToLegacy")),
+      isUpgrade_(iConfig.getParameter<bool>("Upgrade")){
   if (convert2Legacy_)
     produces<SiPixelRecHitCollectionNew>();
 }
@@ -69,6 +71,7 @@ void SiPixelRecHitSoAFromLegacy::fillDescriptions(edm::ConfigurationDescriptions
   desc.add<edm::InputTag>("src", edm::InputTag("siPixelClustersPreSplitting"));
   desc.add<std::string>("CPE", "PixelCPEFast");
   desc.add<bool>("convertToLegacy", false);
+  desc.add<bool>("Upgrade", false);
   descriptions.add("siPixelRecHitHostSoA", desc);
 }
 
@@ -117,15 +120,17 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
   std::vector<uint16_t> moduleInd_;
   std::vector<int32_t> clus_;
 
+  uint8_t nLayers = isUpgrade_ ? phase2PixelTopology::numberOfLayers : phase1PixelTopology::numberOfLayers;
+
   std::vector<edm::Ref<edmNew::DetSetVector<SiPixelCluster>, SiPixelCluster>> clusterRef;
 
   constexpr uint32_t MaxHitsInModule = gpuClustering::MaxHitsInModule;
-
+  uint16_t maxModules = isUpgrade_ ? 4000 : 2000;
   HitModuleStart moduleStart_;  // index of the first pixel of each module
   HitModuleStart clusInModule_;
   memset(&clusInModule_, 0, sizeof(HitModuleStart));  // needed??
-  assert(2001 == clusInModule_.size());
-  assert(0 == clusInModule_[2000]);
+  assert((maxModules+1) == clusInModule_.size());
+  assert(0 == clusInModule_[maxModules]);
   uint32_t moduleId_;
   moduleStart_[1] = 0;  // we run sequentially....
 
@@ -139,7 +144,7 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
     DetId detIdObject(detid);
     const GeomDetUnit* genericDet = geom_->idToDetUnit(detIdObject);
     auto gind = genericDet->index();
-    assert(gind < 2000);
+    assert(gind < maxModules);
     auto const nclus = DSViter->size();
     clusInModule_[gind] = nclus;
     numberOfClusters += nclus;
@@ -147,7 +152,7 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
   hitsModuleStart[0] = 0;
   for (int i = 1, n = clusInModule_.size(); i < n; ++i)
     hitsModuleStart[i] = hitsModuleStart[i - 1] + clusInModule_[i - 1];
-  assert(numberOfClusters == int(hitsModuleStart[2000]));
+  assert(numberOfClusters == int(hitsModuleStart[maxModules]));
 
   // output SoA
   auto output = std::make_unique<TrackingRecHit2DCPU>(numberOfClusters, &cpeView, hitsModuleStart, nullptr);
@@ -160,7 +165,7 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
   }
 
   if (convert2Legacy_)
-    legacyOutput->reserve(2000, numberOfClusters);
+    legacyOutput->reserve(maxModules, numberOfClusters);
 
   int numberOfDetUnits = 0;
   int numberOfHits = 0;
@@ -170,7 +175,7 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
     DetId detIdObject(detid);
     const GeomDetUnit* genericDet = geom_->idToDetUnit(detIdObject);
     auto const gind = genericDet->index();
-    assert(gind < 2000);
+    assert(gind < maxModules);
     const PixelGeomDetUnit* pixDet = dynamic_cast<const PixelGeomDetUnit*>(genericDet);
     assert(pixDet);
     auto const nclus = DSViter->size();
@@ -245,13 +250,13 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
     }
   }
   assert(numberOfHits == numberOfClusters);
-
+  
   // fill data structure to support CA
-  for (auto i = 0; i < 11; ++i) {
+  for (auto i = 0U; i <= nLayers; ++i) {
     output->hitsLayerStart()[i] = hitsModuleStart[cpeView.layerGeometry().layerStart[i]];
   }
   cms::cuda::fillManyFromVector(
-      output->phiBinner(), 10, output->iphi(), output->hitsLayerStart(), numberOfHits, 256, nullptr);
+      output->phiBinner(), nLayers, output->iphi(), output->hitsLayerStart(), numberOfHits, 256, nullptr);
 
   // std::cout << "created HitSoa for " <<  numberOfClusters << " clusters in " << numberOfDetUnits << " Dets" << std::endl;
   iEvent.put(std::move(output));

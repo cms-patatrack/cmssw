@@ -66,9 +66,9 @@ __global__ void kernel_checkOverflows(HitContainer const *foundNtuplets,
   }
 
   for (int idx = first, nt = foundNtuplets->nbins(); idx < nt; idx += gridDim.x * blockDim.x) {
-    if (foundNtuplets->size(idx) > 5)
+    if (foundNtuplets->size(idx) > 16)
       printf("ERROR %d, %d\n", idx, foundNtuplets->size(idx));
-    assert(foundNtuplets->size(idx) < 6);
+    assert(foundNtuplets->size(idx) < 17);
     for (auto ih = foundNtuplets->begin(idx); ih != foundNtuplets->end(idx); ++ih)
       assert(*ih < nHits);
   }
@@ -204,7 +204,8 @@ __global__ void kernel_connect(cms::cuda::AtomicPairCounter *apc1,
                                float CAThetaCutBarrel,
                                float CAThetaCutForward,
                                float dcaCutInnerTriplet,
-                               float dcaCutOuterTriplet) {
+                               float dcaCutOuterTriplet,
+			       bool upgrade) {
   auto const &hh = *hhp;
 
   auto firstCellIndex = threadIdx.y + blockIdx.y * blockDim.y;
@@ -225,8 +226,8 @@ __global__ void kernel_connect(cms::cuda::AtomicPairCounter *apc1,
     int numberOfPossibleNeighbors = isOuterHitOfCell[innerHitId].size();
     auto vi = isOuterHitOfCell[innerHitId].data();
 
-    constexpr uint32_t last_bpix1_detIndex = 96;
-    constexpr uint32_t last_barrel_detIndex = 1184;
+    uint32_t last_bpix1_detIndex = upgrade ? 108 : 96;
+    uint32_t last_barrel_detIndex = upgrade ? 756 : 1184;
     auto ri = thisCell.get_inner_r(hh);
     auto zi = thisCell.get_inner_z(hh);
 
@@ -317,7 +318,7 @@ __global__ void kernel_countMultiplicity(HitContainer const *__restrict__ foundN
     if (quality[it] == trackQuality::dup)
       continue;
     assert(quality[it] == trackQuality::bad);
-    if (nhits > 5)
+    if (nhits > 16)
       printf("wrong mult %d %d\n", it, nhits);
     assert(nhits < 8);
     tupleMultiplicity->countDirect(nhits);
@@ -335,7 +336,7 @@ __global__ void kernel_fillMultiplicity(HitContainer const *__restrict__ foundNt
     if (quality[it] == trackQuality::dup)
       continue;
     assert(quality[it] == trackQuality::bad);
-    if (nhits > 5)
+    if (nhits > 16)
       printf("wrong mult %d %d\n", it, nhits);
     assert(nhits < 8);
     tupleMultiplicity->fillDirect(nhits, it);
@@ -345,7 +346,7 @@ __global__ void kernel_fillMultiplicity(HitContainer const *__restrict__ foundNt
 __global__ void kernel_classifyTracks(HitContainer const *__restrict__ tuples,
                                       TkSoA const *__restrict__ tracks,
                                       CAHitNtupletGeneratorKernelsGPU::QualityCuts cuts,
-                                      Quality *__restrict__ quality) {
+                                      Quality *__restrict__ quality, bool upgrade) {
   int first = blockDim.x * blockIdx.x + threadIdx.x;
   for (int it = first, nt = tuples->nbins(); it < nt; it += gridDim.x * blockDim.x) {
     auto nhits = tuples->size(it);
@@ -381,10 +382,10 @@ __global__ void kernel_classifyTracks(HitContainer const *__restrict__ tuples,
     //   - chi2Scale = 30 for broken line fit, 45 for Riemann fit
     // (see CAHitNtupletGeneratorGPU.cc)
     float pt = std::min<float>(tracks->pt(it), cuts.chi2MaxPt);
-    float chi2Cut = cuts.chi2Scale *
-                    (cuts.chi2Coeff[0] + pt * (cuts.chi2Coeff[1] + pt * (cuts.chi2Coeff[2] + pt * cuts.chi2Coeff[3])));
+    float chi2Cut = upgrade ? 2.5 : cuts.chi2Scale * (cuts.chi2Coeff[0] + pt * (cuts.chi2Coeff[1] + pt * (cuts.chi2Coeff[2] + pt * cuts.chi2Coeff[3])));
     // above number were for Quads not normalized so for the time being just multiple by ndof for Quads  (triplets to be understood)
-    if (3.f * tracks->chi2(it) >= chi2Cut) {
+    bool isBad = upgrade ? (tracks->chi2(it)/tuples->size(it) >= chi2Cut) : (3.f * tracks->chi2(it) >= chi2Cut);
+    if (isBad) {
 #ifdef NTUPLE_DEBUG
       printf("Bad fit %d size %d pt %f eta %f chi2 %f\n",
              it,
@@ -503,7 +504,7 @@ __global__ void kernel_tripletCleaner(TrackingRecHit2DSOAView const *__restrict_
       continue;
 
     float mc = 10000.f;
-    uint16_t im = 60000;
+    uint16_t im = 60000; //for Phase2 would need uint32_t
     uint32_t maxNh = 0;
 
     // find maxNh

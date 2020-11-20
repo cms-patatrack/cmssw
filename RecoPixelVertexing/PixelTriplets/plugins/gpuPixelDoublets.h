@@ -8,7 +8,10 @@
 namespace gpuPixelDoublets {
 
   constexpr int nPairs = 13 + 2 + 4;
+  constexpr int nPairsUpgrade = 6 + 14 + 3 + 8 + 14;
+
   static_assert(nPairs <= CAConstants::maxNumberOfLayerPairs());
+  static_assert(nPairsUpgrade <= CAConstants::maxNumberOfLayerPairs());
 
   // start constants
   // clang-format off
@@ -26,6 +29,22 @@ namespace gpuPixelDoublets {
   constexpr int16_t phi0p05 = 522;  // round(521.52189...) = phi2short(0.05);
   constexpr int16_t phi0p06 = 626;  // round(625.82270...) = phi2short(0.06);
   constexpr int16_t phi0p07 = 730;  // round(730.12648...) = phi2short(0.07);
+
+  CONSTANT_VAR const int16_t phicutsUpgrade[nPairsUpgrade]{
+                                           phi0p05, phi0p05, phi0p05, phi0p05, phi0p05,
+
+                                           phi0p05, phi0p05, phi0p05, phi0p05, phi0p05,
+                                           phi0p05, phi0p05, phi0p05, phi0p05, phi0p05,
+                                           phi0p05, phi0p05, phi0p05, phi0p05, phi0p05,
+
+                                           phi0p05, phi0p05, phi0p05, phi0p05, phi0p05,
+                                           phi0p05, phi0p05, phi0p05, phi0p05, phi0p05,
+                                           phi0p05, phi0p05, phi0p05, phi0p05, phi0p05,
+
+                                           phi0p05, phi0p05, phi0p05, phi0p05, phi0p05,
+                                           phi0p05, phi0p05, phi0p05, phi0p05, phi0p05,
+
+                                           };
 
   CONSTANT_VAR const int16_t phicuts[nPairs]{phi0p05,
                                              phi0p07,
@@ -54,6 +73,28 @@ namespace gpuPixelDoublets {
       20., 30., 0., 22., 30., -10., 70., 70., 22., 30., -15., 70., 70., 20., 22., 30., 0., 70., 70.};
   CONSTANT_VAR float const maxr[nPairs] = {
       20., 9., 9., 20., 7., 7., 5., 5., 20., 6., 6., 5., 5., 20., 20., 9., 9., 9., 9.};
+
+  CONSTANT_VAR float const minzUpgrade[nPairsUpgrade] = {
+        -17.,   -1.,  -22.,  -17.,    6.,  -22.,   22.,   28.,   36.,
+         47.,   60.,   76.,   98.,  -28.,  -36.,  -46.,  -58.,  -74.,
+        -95., -121.,  -19.,   11.,  -22.,  125.,  157.,  180.,  207.,
+       -155., -193., -222., -255.,   22.,   28.,   36.,   47.,   60.,
+         76.,   98.,  -28.,  -36.,  -46.,  -58.,  -74.,  -95., -121.};
+
+  CONSTANT_VAR float const maxzUpgrade[nPairsUpgrade] = {
+         17.,   22.,    1.,   17.,   22.,   -5.,   28.,   36.,   46.,
+         58.,   74.,   95.,  121.,  -22.,  -28.,  -36.,  -47.,  -60.,
+        -76.,  -98.,   19.,   22.,  -11.,  155.,  193.,  222.,  255.,
+       -125., -157., -180., -207.,   28.,   36.,   46.,   58.,   74.,
+         95.,  121.,  -22.,  -28.,  -36.,  -47.,  -60.,  -76.,  -98.};
+
+
+  CONSTANT_VAR float const maxrUpgrade[nPairsUpgrade] = {
+        6. , 12. , 13.5,  7.5, 12. , 12. ,  7.5,  7.5,  7.5,  6. ,  6. ,
+        6. ,  6. ,  7.5,  7.5,  6. ,  6. ,  6. ,  6. ,  6. ,  7.5,  9. ,
+        9. ,  7.5,  6. ,  6. ,  6. ,  7.5,  6. ,  6. ,  6. , 12. , 12. ,
+       10.5, 10.5, 10.5, 10.5, 15. , 12. , 12. , 10.5, 10.5, 10.5, 10.5,
+       15.};
 
   // end constants
   // clang-format on
@@ -104,7 +145,7 @@ namespace gpuPixelDoublets {
                                 bool doClusterCut,
                                 bool doZ0Cut,
                                 bool doPtCut,
-                                uint32_t maxNumOfDoublets) {
+                                uint32_t maxNumOfDoublets, bool upgrade) {
     auto const& __restrict__ hh = *hhp;
     doubletsFromHisto(layerPairs,
                       nActualPairs,
@@ -114,15 +155,16 @@ namespace gpuPixelDoublets {
                       cellTracks,
                       hh,
                       isOuterHitOfCell,
-                      phicuts,
-                      minz,
-                      maxz,
-                      maxr,
+                      upgrade ? phicutsUpgrade : phicuts,
+                      upgrade ? minzUpgrade : minz,
+                      upgrade ? maxzUpgrade : maxz,
+                      upgrade ? maxrUpgrade : maxr,
                       ideal_cond,
-                      doClusterCut,
+                      doClusterCut && !upgrade,
                       doZ0Cut,
                       doPtCut,
-                      maxNumOfDoublets);
+                      maxNumOfDoublets,
+		      upgrade);
   }
 
 }  // namespace gpuPixelDoublets

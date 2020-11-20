@@ -38,7 +38,8 @@ namespace gpuPixelDoublets {
                                                     bool doClusterCut,
                                                     bool doZ0Cut,
                                                     bool doPtCut,
-                                                    uint32_t maxNumOfDoublets) {
+                                                    uint32_t maxNumOfDoublets,
+						    bool upgrade) {
     // ysize cuts (z in the barrel)  times 8
     // these are used if doClusterCut is true
     constexpr int minYsizeB1 = 36;
@@ -105,7 +106,8 @@ namespace gpuPixelDoublets {
 
       // found hit corresponding to our cuda thread, now do the job
       auto mi = hh.detectorIndex(i);
-      if (mi > 2000)
+      auto maxModules = upgrade ? 4000: 2000;
+      if (mi > maxModules)
         continue;  // invalid
 
       /* maybe clever, not effective when zoCut is on

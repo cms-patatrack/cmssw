@@ -1,0 +1,54 @@
+Reading cached build data
+>> Local Products Rules ..... started
+>> Local Products Rules ..... done
+>> Building CMSSW version CMSSW_11_1_3_Patatrack ----
+>> Subsystem BigProducts built
+>> Entering Package RecoPixelVertexing/PixelTriplets
+>> Creating project symlinks
+>> Entering Package RecoLocalTracker/SiPixelClusterizer
+>> Entering Package CUDADataFormats/SiPixelCluster
+>> Compiling edm plugin /data/user/adiflori/phase2/devs/cmssw_new/src/RecoPixelVertexing/PixelTriplets/plugins/CAHitNtupletGeneratorKernels.cc 
+>> Compiling  /data/user/adiflori/phase2/devs/cmssw_new/src/RecoPixelVertexing/PixelTriplets/plugins/CAHitNtupletGeneratorKernels.cu 
+>> Leaving Package CUDADataFormats/SiPixelCluster
+>> Leaving Package RecoLocalTracker/SiPixelClusterizer
+>> Package CUDADataFormats/SiPixelCluster built
+>> Package RecoLocalTracker/SiPixelClusterizer built
+>> Subsystem CUDADataFormats built
+>> Subsystem RecoLocalTracker built
+In file included from /data/user/adiflori/phase2/devs/cmssw_new/src/RecoPixelVertexing/PixelTriplets/plugins/CAHitNtupletGeneratorKernels.cc:1:
+/data/user/adiflori/phase2/devs/cmssw_new/src/RecoPixelVertexing/PixelTriplets/plugins/CAHitNtupletGeneratorKernelsImpl.h: In function 'void kernel_connect(cms::cuda::AtomicPairCounter*, cms::cuda::AtomicPairCounter*, const Hits*, GPUCACell*, const uint32_t*, gpuPixelDoublets::CellNeighborsVector*, const OuterHitOfCell*, float, float, float, float, float, float, bool)':
+/data/user/adiflori/phase2/devs/cmssw_new/src/RecoPixelVertexing/PixelTriplets/plugins/CAHitNtupletGeneratorKernelsImpl.h:229:62: error: 'upgrade' is not a constant expression
+     constexpr uint32_t last_bpix1_detIndex = upgrade ? 108 : 96;
+                                                              ^~
+/data/user/adiflori/phase2/devs/cmssw_new/src/RecoPixelVertexing/PixelTriplets/plugins/CAHitNtupletGeneratorKernelsImpl.h:230:63: error: 'upgrade' is not a constant expression
+     constexpr uint32_t last_barrel_detIndex = upgrade ? 756 : 1184;
+                                                               ^~~~
+/data/user/adiflori/phase2/devs/cmssw_new/src/RecoPixelVertexing/PixelTriplets/plugins/CAHitNtupletGeneratorKernels.cc: In member function 'void CAHitNtupletGeneratorKernels<TTraits>::launchKernels(const HitsOnCPU&, CAHitNtupletGeneratorKernels<TTraits>::TkSoA*, cudaStream_t) [with TTraits = cms::cudacompat::CPUTraits; CAHitNtupletGeneratorKernels<TTraits>::HitsOnCPU = TrackingRecHit2DHeterogeneous<cms::cudacompat::CPUTraits>; CAHitNtupletGeneratorKernels<TTraits>::TkSoA = TrackSoAT<32768>; cudaStream_t = CUstream_st*]':
+/data/user/adiflori/phase2/devs/cmssw_new/src/RecoPixelVertexing/PixelTriplets/plugins/CAHitNtupletGeneratorKernels.cc:108:46: error: too few arguments to function 'void kernel_connect(cms::cuda::AtomicPairCounter*, cms::cuda::AtomicPairCounter*, const Hits*, GPUCACell*, const uint32_t*, gpuPixelDoublets::CellNeighborsVector*, const OuterHitOfCell*, float, float, float, float, float, float, bool)'
+                  m_params.dcaCutOuterTriplet_);
+                                              ^
+In file included from /data/user/adiflori/phase2/devs/cmssw_new/src/RecoPixelVertexing/PixelTriplets/plugins/CAHitNtupletGeneratorKernels.cc:1:
+/data/user/adiflori/phase2/devs/cmssw_new/src/RecoPixelVertexing/PixelTriplets/plugins/CAHitNtupletGeneratorKernelsImpl.h:195:17: note: declared here
+ __global__ void kernel_connect(cms::cuda::AtomicPairCounter *apc1,
+                 ^~~~~~~~~~~~~~
+/data/user/adiflori/phase2/devs/cmssw_new/src/RecoPixelVertexing/PixelTriplets/plugins/CAHitNtupletGeneratorKernels.cc: In member function 'void CAHitNtupletGeneratorKernels<TTraits>::classifyTuples(const HitsOnCPU&, CAHitNtupletGeneratorKernels<TTraits>::TkSoA*, cudaStream_t) [with TTraits = cms::cudacompat::CPUTraits; CAHitNtupletGeneratorKernels<TTraits>::HitsOnCPU = TrackingRecHit2DHeterogeneous<cms::cudacompat::CPUTraits>; CAHitNtupletGeneratorKernels<TTraits>::TkSoA = TrackSoAT<32768>; cudaStream_t = CUstream_st*]':
+/data/user/adiflori/phase2/devs/cmssw_new/src/RecoPixelVertexing/PixelTriplets/plugins/CAHitNtupletGeneratorKernels.cc:161:70: error: too few arguments to function 'void kernel_classifyTracks(const HitContainer*, const TkSoA*, CAHitNtupletGeneratorKernels<cms::cudacompat::GPUTraits>::QualityCuts, Quality*, bool)'
+   kernel_classifyTracks(tuples_d, tracks_d, m_params.cuts_, quality_d);
+                                                                      ^
+In file included from /data/user/adiflori/phase2/devs/cmssw_new/src/RecoPixelVertexing/PixelTriplets/plugins/CAHitNtupletGeneratorKernels.cc:1:
+/data/user/adiflori/phase2/devs/cmssw_new/src/RecoPixelVertexing/PixelTriplets/plugins/CAHitNtupletGeneratorKernelsImpl.h:346:17: note: declared here
+ __global__ void kernel_classifyTracks(HitContainer const *__restrict__ tuples,
+                 ^~~~~~~~~~~~~~~~~~~~~
+/data/user/adiflori/phase2/devs/cmssw_new/src/RecoPixelVertexing/PixelTriplets/plugins/CAHitNtupletGeneratorKernelsImpl.h(229): error: expression must have a constant value
+/data/user/adiflori/phase2/devs/cmssw_new/src/RecoPixelVertexing/PixelTriplets/plugins/CAHitNtupletGeneratorKernelsImpl.h(229): note: the value of parameter "upgrade"
+(208): here cannot be used as a constant
+
+/data/user/adiflori/phase2/devs/cmssw_new/src/RecoPixelVertexing/PixelTriplets/plugins/CAHitNtupletGeneratorKernelsImpl.h(230): error: expression must have a constant value
+/data/user/adiflori/phase2/devs/cmssw_new/src/RecoPixelVertexing/PixelTriplets/plugins/CAHitNtupletGeneratorKernelsImpl.h(230): note: the value of parameter "upgrade"
+(208): here cannot be used as a constant
+
+2 errors detected in the compilation of "/data/user/adiflori/phase2/devs/cmssw_new/src/RecoPixelVertexing/PixelTriplets/plugins/CAHitNtupletGeneratorKernels.cu".
+gmake: *** [config/SCRAM/GMake/Makefile.rules:1744: tmp/slc7_amd64_gcc820/src/RecoPixelVertexing/PixelTriplets/plugins/RecoPixelVertexingPixelTripletsPlugins/CAHitNtupletGeneratorKernels.cu.o] Error 1
+gmake: *** Waiting for unfinished jobs....
+gmake: *** [config/SCRAM/GMake/Makefile.rules:1744: tmp/slc7_amd64_gcc820/src/RecoPixelVertexing/PixelTriplets/plugins/RecoPixelVertexingPixelTripletsPlugins/CAHitNtupletGeneratorKernels.cc.o] Error 1
+gmake: *** [There are compilation/build errors. Please see the detail log above.] Error 2

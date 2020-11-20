@@ -40,7 +40,7 @@ public:
 
   using TupleMultiplicity = CAConstants::TupleMultiplicity;
 
-  explicit HelixFitOnGPU(float bf, bool fit5as4) : bField_(bf), fit5as4_(fit5as4) {}
+  explicit HelixFitOnGPU(float bf, bool fit5as4, bool upgrade=false) : bField_(bf), fit5as4_(fit5as4), upgrade_(upgrade) {}
   ~HelixFitOnGPU() { deallocateOnGPU(); }
 
   void setBField(double bField) { bField_ = bField; }
@@ -63,6 +63,7 @@ private:
   float bField_;
 
   const bool fit5as4_;
+  const bool upgrade_;
 };
 
 #endif  // RecoPixelVertexing_PixelTrackFitting_plugins_HelixFitOnGPU_h

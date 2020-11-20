@@ -8,7 +8,7 @@
 
 #include "CUDADataFormats/SiPixelCluster/interface/gpuClusteringConstants.h"
 #include "DataFormats/GeometrySurface/interface/SOARotation.h"
-#include "Geometry/TrackerGeometryBuilder/interface/phase1PixelTopology.h"
+#include "Geometry/TrackerGeometryBuilder/interface/pixelTopology.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCompat.h"
 
 namespace pixelCPEforGPU {
@@ -22,11 +22,17 @@ namespace pixelCPEforGPU {
     float theThicknessE;
     float thePitchX;
     float thePitchY;
+    bool isUpgrade;
+
+    uint16_t maxModuleStride;
+    uint8_t numberOfLaddersInBarrel;
+
   };
 
   struct DetParams {
     bool isBarrel;
     bool isPosZ;
+
     uint16_t layer;
     uint16_t index;
     uint32_t rawId;
@@ -37,6 +43,13 @@ namespace pixelCPEforGPU {
     float chargeWidthY;
     uint16_t pixmx;  // max pix charge
 
+    uint16_t nRowsRoc; //we don't need 2^16 columns, is worth to use 15 + 1 for sign
+    uint16_t nColsRoc;
+    uint16_t nRows;
+    uint16_t nCols;
+
+    uint32_t numPixsInModule;
+
     float x0, y0, z0;  // the vertex in the local coord of the detector
 
     float sx[3], sy[3];  // the errors...
@@ -44,11 +57,12 @@ namespace pixelCPEforGPU {
     Frame frame;
   };
 
-  using phase1PixelTopology::AverageGeometry;
+  using pixelTopology::AverageGeometry;
 
   struct LayerGeometry {
-    uint32_t layerStart[phase1PixelTopology::numberOfLayers + 1];
-    uint8_t layer[phase1PixelTopology::layerIndexSize];
+    uint16_t layerStart[29]; //enough for phase2
+    uint8_t layer[1024];
+    uint16_t maxModuleStride;
   };
 
   struct ParamsOnGPU {
@@ -57,6 +71,7 @@ namespace pixelCPEforGPU {
     LayerGeometry const* m_layerGeometry;
     AverageGeometry const* m_averageGeometry;
 
+    // const uint8_t nLadd;
     constexpr CommonParams const& __restrict__ commonParams() const {
       CommonParams const* __restrict__ l = m_commonParams;
       return *l;
@@ -68,11 +83,14 @@ namespace pixelCPEforGPU {
     constexpr LayerGeometry const& __restrict__ layerGeometry() const { return *m_layerGeometry; }
     constexpr AverageGeometry const& __restrict__ averageGeometry() const { return *m_averageGeometry; }
 
+    // constexpr uint8_t   __restrict__ nLadd() const { return m_averageGeometry->numberOfLaddersInBarrel; }
+    // constexpr uint8_t   __restrict__ maxModuleStride() const { return m_averageGeometry->maxModuleStride; }
+
     __device__ uint8_t layer(uint16_t id) const {
-      return __ldg(m_layerGeometry->layer + id / phase1PixelTopology::maxModuleStride);
+      return __ldg(m_layerGeometry->layer + id / m_layerGeometry->maxModuleStride);
     };
   };
-
+ 
   // SOA (on device)
   template <uint32_t N>
   struct ClusParamsT {
@@ -174,8 +192,10 @@ namespace pixelCPEforGPU {
   constexpr inline void position(CommonParams const& __restrict__ comParams,
                                  DetParams const& __restrict__ detParams,
                                  ClusParams& cp,
-                                 uint32_t ic) {
+                                 uint32_t ic){//, bool upgrade = false) {
     //--- Upper Right corner of Lower Left pixel -- in measurement frame
+    
+   
     uint16_t llx = cp.minRow[ic] + 1;
     uint16_t lly = cp.minCol[ic] + 1;
 
@@ -183,11 +203,16 @@ namespace pixelCPEforGPU {
     uint16_t urx = cp.maxRow[ic];
     uint16_t ury = cp.maxCol[ic];
 
-    auto llxl = phase1PixelTopology::localX(llx);
-    auto llyl = phase1PixelTopology::localY(lly);
-    auto urxl = phase1PixelTopology::localX(urx);
-    auto uryl = phase1PixelTopology::localY(ury);
-
+    uint16_t llxl = llx,llyl = lly,urxl = urx,uryl = ury;
+    ////////////// printf("CPE> %d %d %d %d %d %d \n",ic,llx,lly,urx,ury,llxl);
+    if(!comParams.isUpgrade) //only in Phase1
+    {
+      llxl = phase1PixelTopology::localX(llx);
+      llyl = phase1PixelTopology::localY(lly);
+      urxl = phase1PixelTopology::localX(urx);
+      uryl = phase1PixelTopology::localY(ury);
+    }
+   
     auto mx = llxl + urxl;
     auto my = llyl + uryl;
 
@@ -196,31 +221,43 @@ namespace pixelCPEforGPU {
     assert(xsize >= 0);  // 0 if bixpix...
     assert(ysize >= 0);
 
-    if (phase1PixelTopology::isBigPixX(cp.minRow[ic]))
-      ++xsize;
-    if (phase1PixelTopology::isBigPixX(cp.maxRow[ic]))
-      ++xsize;
-    if (phase1PixelTopology::isBigPixY(cp.minCol[ic]))
-      ++ysize;
-    if (phase1PixelTopology::isBigPixY(cp.maxCol[ic]))
-      ++ysize;
+    if(!comParams.isUpgrade) //Phase 1 big pixels
+    {
+      if (phase1PixelTopology::isBigPixX(cp.minRow[ic]))
+        ++xsize;
+      if (phase1PixelTopology::isBigPixX(cp.maxRow[ic]))
+        ++xsize;
+      if (phase1PixelTopology::isBigPixY(cp.minCol[ic]))
+        ++ysize;
+      if (phase1PixelTopology::isBigPixY(cp.maxCol[ic]))
+        ++ysize;
+    }
+
 
     int unbalanceX = 8. * std::abs(float(cp.Q_f_X[ic] - cp.Q_l_X[ic])) / float(cp.Q_f_X[ic] + cp.Q_l_X[ic]);
     int unbalanceY = 8. * std::abs(float(cp.Q_f_Y[ic] - cp.Q_l_Y[ic])) / float(cp.Q_f_Y[ic] + cp.Q_l_Y[ic]);
     xsize = 8 * xsize - unbalanceX;
     ysize = 8 * ysize - unbalanceY;
 
-    cp.xsize[ic] = std::min(xsize, 1023);
-    cp.ysize[ic] = std::min(ysize, 1023);
+    cp.xsize[ic] = std::min(xsize, comParams.isUpgrade ? 2047 : 1023);
+    cp.ysize[ic] = std::min(ysize, comParams.isUpgrade ? 2047 : 1023);
 
-    if (cp.minRow[ic] == 0 || cp.maxRow[ic] == phase1PixelTopology::lastRowInModule)
+    if (cp.minRow[ic] == 0 || cp.maxRow[ic] == uint16_t(detParams.nRows - 1))
       cp.xsize[ic] = -cp.xsize[ic];
-    if (cp.minCol[ic] == 0 || cp.maxCol[ic] == phase1PixelTopology::lastColInModule)
+    if (cp.minCol[ic] == 0 || cp.maxCol[ic] == uint16_t(detParams.nCols - 1))
       cp.ysize[ic] = -cp.ysize[ic];
 
+    float xoff = 0.5f * float(detParams.nRows) * comParams.thePitchX;
+    float yoff = 0.5f * float(detParams.nCols) * comParams.thePitchY;
+
+    if(!comParams.isUpgrade) //correction for bigpixels for phase1
+    {
+      xoff = xoff + comParams.thePitchX;
+      yoff = yoff + 8.0f * comParams.thePitchY;
+    }
     // apply the lorentz offset correction
-    auto xPos = detParams.shiftX + comParams.thePitchX * (0.5f * float(mx) + float(phase1PixelTopology::xOffset));
-    auto yPos = detParams.shiftY + comParams.thePitchY * (0.5f * float(my) + float(phase1PixelTopology::yOffset));
+    auto xPos = detParams.shiftX + (comParams.thePitchX * 0.5f * float(mx)) - xoff;
+    auto yPos = detParams.shiftY + (comParams.thePitchY * 0.5f * float(my)) - yoff;
 
     float cotalpha = 0, cotbeta = 0;
 
@@ -237,8 +274,8 @@ namespace pixelCPEforGPU {
                             thickness,
                             cotalpha,
                             comParams.thePitchX,
-                            phase1PixelTopology::isBigPixX(cp.minRow[ic]),
-                            phase1PixelTopology::isBigPixX(cp.maxRow[ic]));
+                            comParams.isUpgrade? false : phase1PixelTopology::isBigPixX(cp.minRow[ic]),
+                            comParams.isUpgrade? false : phase1PixelTopology::isBigPixX(cp.maxRow[ic]));
 
     auto ycorr = correction(cp.maxCol[ic] - cp.minCol[ic],
                             cp.Q_f_Y[ic],
@@ -249,8 +286,8 @@ namespace pixelCPEforGPU {
                             thickness,
                             cotbeta,
                             comParams.thePitchY,
-                            phase1PixelTopology::isBigPixY(cp.minCol[ic]),
-                            phase1PixelTopology::isBigPixY(cp.maxCol[ic]));
+                            comParams.isUpgrade? false : phase1PixelTopology::isBigPixY(cp.minCol[ic]),
+                            comParams.isUpgrade? false : phase1PixelTopology::isBigPixY(cp.maxCol[ic]));
 
     cp.xpos[ic] = xPos + xcorr;
     cp.ypos[ic] = yPos + ycorr;
@@ -264,32 +301,48 @@ namespace pixelCPEforGPU {
     cp.xerr[ic] = 0.0050;
     cp.yerr[ic] = 0.0085;
 
+    bool isUpgrade = comParams.isUpgrade;
     // FIXME these are errors form Run1
+    // float xerr_barrel_l1[] = isUpgrade ? {0.00025, 0.00030, 0.00035, 0.00035} : {0.00115, 0.00120, 0.00088};
+    float xerr_barrel_l1_def = isUpgrade ? 0.00035 : 0.00200;  // 0.01030;
+    // float yerr_barrel_l1[] = isUpgrade ? {0.00210, 0.00115, 0.00125} : ;
+    float yerr_barrel_l1_def = isUpgrade ? 0.00125 : 0.00210;
+    // float xerr_barrel_ln[] = isUpgrade ? {0.00025, 0.00030, 0.00035, 0.00035} : ;
+    float xerr_barrel_ln_def = isUpgrade ? 0.00035 : 0.00200;  // 0.01030;
+    // float yerr_barrel_ln[] = isUpgrade ? {0.00210, 0.00115, 0.00125} : ;
+    float yerr_barrel_ln_def = isUpgrade ? 0.00125 : 0.00210;
+    // float xerr_endcap[] = isUpgrade ? {0.00072, 0.00025} : ;
+    float xerr_endcap_def = isUpgrade ? 0.00060 : 0.0020;
+    // float yerr_endcap[] = isUpgrade ? {0.00289, 0.00025} : ;
+    float yerr_endcap_def = isUpgrade ? 0.00180 : 0.00210;
+
+    constexpr float xerr_barrel_l1_u[] = {0.00025, 0.00030, 0.00035, 0.00035};
+    constexpr float yerr_barrel_l1_u[] = {0.00210, 0.00115, 0.00125};
+    constexpr float xerr_barrel_ln_u[] = {0.00025, 0.00030, 0.00035, 0.00035};
+    constexpr float yerr_barrel_ln_u[] = {0.00210, 0.00115, 0.00125};
+    constexpr float xerr_endcap_u[] = {0.00072, 0.00025};
+    constexpr float yerr_endcap_u[] = {0.00289, 0.00025};
+
     constexpr float xerr_barrel_l1[] = {0.00115, 0.00120, 0.00088};
-    constexpr float xerr_barrel_l1_def = 0.00200;  // 0.01030;
-    constexpr float yerr_barrel_l1[] = {
-        0.00375, 0.00230, 0.00250, 0.00250, 0.00230, 0.00230, 0.00210, 0.00210, 0.00240};
-    constexpr float yerr_barrel_l1_def = 0.00210;
+    constexpr float yerr_barrel_l1[] = {0.00375, 0.00230, 0.00250, 0.00250, 0.00230, 0.00230, 0.00210, 0.00210, 0.00240};
     constexpr float xerr_barrel_ln[] = {0.00115, 0.00120, 0.00088};
-    constexpr float xerr_barrel_ln_def = 0.00200;  // 0.01030;
-    constexpr float yerr_barrel_ln[] = {
-        0.00375, 0.00230, 0.00250, 0.00250, 0.00230, 0.00230, 0.00210, 0.00210, 0.00240};
-    constexpr float yerr_barrel_ln_def = 0.00210;
+    constexpr float yerr_barrel_ln[] = {0.00375, 0.00230, 0.00250, 0.00250, 0.00230, 0.00230, 0.00210, 0.00210, 0.00240};
     constexpr float xerr_endcap[] = {0.0020, 0.0020};
-    constexpr float xerr_endcap_def = 0.0020;
     constexpr float yerr_endcap[] = {0.00210};
-    constexpr float yerr_endcap_def = 0.00210;
+
 
     auto sx = cp.maxRow[ic] - cp.minRow[ic];
     auto sy = cp.maxCol[ic] - cp.minCol[ic];
 
     // is edgy ?
-    bool isEdgeX = cp.minRow[ic] == 0 or cp.maxRow[ic] == phase1PixelTopology::lastRowInModule;
-    bool isEdgeY = cp.minCol[ic] == 0 or cp.maxCol[ic] == phase1PixelTopology::lastColInModule;
+    bool isEdgeX = cp.minRow[ic] == 0 or cp.maxRow[ic] == uint16_t(detParams.nRows - 1);
+    bool isEdgeY = cp.minCol[ic] == 0 or cp.maxCol[ic] == uint16_t(detParams.nCols - 1);
     // is one and big?
-    bool isBig1X = (0 == sx) && phase1PixelTopology::isBigPixX(cp.minRow[ic]);
-    bool isBig1Y = (0 == sy) && phase1PixelTopology::isBigPixY(cp.minCol[ic]);
+    bool isBig1X = isUpgrade? false : ((0 == sx) && phase1PixelTopology::isBigPixX(cp.minRow[ic]));
+    bool isBig1Y = isUpgrade? false : ((0 == sy) && phase1PixelTopology::isBigPixY(cp.minCol[ic]));
 
+    if(!isUpgrade)
+    {
     if (!isEdgeX && !isBig1X) {
       if (not detParams.isBarrel) {
         cp.xerr[ic] = sx < std::size(xerr_endcap) ? xerr_endcap[sx] : xerr_endcap_def;
@@ -309,7 +362,31 @@ namespace pixelCPEforGPU {
         cp.yerr[ic] = sy < std::size(yerr_barrel_ln) ? yerr_barrel_ln[sy] : yerr_barrel_ln_def;
       }
     }
-  }
+    }
+    else
+    {
+      if (!isEdgeX) {
+        if (not detParams.isBarrel) {
+          cp.xerr[ic] = sx < std::size(xerr_endcap_u) ? xerr_endcap_u[sx] : xerr_endcap_def;
+        } else if (detParams.layer == 1) {
+          cp.xerr[ic] = sx < std::size(xerr_barrel_l1_u) ? xerr_barrel_l1_u[sx] : xerr_barrel_l1_def;
+        } else {
+          cp.xerr[ic] = sx < std::size(xerr_barrel_ln_u) ? xerr_barrel_ln_u[sx] : xerr_barrel_ln_def;
+        }
+      }
+
+      if (!isEdgeY) {
+        if (not detParams.isBarrel) {
+          cp.yerr[ic] = sy < std::size(yerr_endcap_u) ? yerr_endcap_u[sy] : yerr_endcap_def;
+        } else if (detParams.layer == 1) {
+          cp.yerr[ic] = sy < std::size(yerr_barrel_l1_u) ? yerr_barrel_l1_u[sy] : yerr_barrel_l1_def;
+        } else {
+          cp.yerr[ic] = sy < std::size(yerr_barrel_ln_u) ? yerr_barrel_ln_u[sy] : yerr_barrel_ln_def;
+        }
+      }
+    }
+
+}
 
   constexpr inline void errorFromDB(CommonParams const& __restrict__ comParams,
                                     DetParams const& __restrict__ detParams,
@@ -323,13 +400,16 @@ namespace pixelCPEforGPU {
     auto sy = cp.maxCol[ic] - cp.minCol[ic];
 
     // is edgy ?
-    bool isEdgeX = cp.minRow[ic] == 0 or cp.maxRow[ic] == phase1PixelTopology::lastRowInModule;
-    bool isEdgeY = cp.minCol[ic] == 0 or cp.maxCol[ic] == phase1PixelTopology::lastColInModule;
+    bool isEdgeX = cp.minRow[ic] == 0 or cp.maxRow[ic] == uint16_t(detParams.nRows - 1);
+    bool isEdgeY = cp.minCol[ic] == 0 or cp.maxCol[ic] == uint16_t(detParams.nCols - 1);
     // is one and big?
+    bool isBig1X = comParams.isUpgrade? false : ((0 == sx) && phase1PixelTopology::isBigPixX(cp.minRow[ic]));
+    bool isBig1Y = comParams.isUpgrade? false : ((0 == sy) && phase1PixelTopology::isBigPixY(cp.minCol[ic]));
+
     uint32_t ix = (0 == sx);
     uint32_t iy = (0 == sy);
-    ix += (0 == sx) && phase1PixelTopology::isBigPixX(cp.minRow[ic]);
-    iy += (0 == sy) && phase1PixelTopology::isBigPixY(cp.minCol[ic]);
+    ix += (0 == sx) && isBig1X;
+    iy += (0 == sy) && isBig1Y;
 
     if (not isEdgeX)
       cp.xerr[ic] = detParams.sx[ix];

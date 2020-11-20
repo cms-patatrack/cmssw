@@ -73,6 +73,7 @@ CAHitNtupletGeneratorOnGPU::CAHitNtupletGeneratorOnGPU(const edm::ParameterSet& 
                cfg.getParameter<double>("hardCurvCut"),
                cfg.getParameter<double>("dcaCutInnerTriplet"),
                cfg.getParameter<double>("dcaCutOuterTriplet"),
+	       cfg.getParameter<bool>("isUpgrade"),
                makeQualityCuts(cfg.getParameterSet("trackQualityCuts"))) {
 #ifdef DUMP_GPU_TK_TUPLES
   printf("TK: %s %s % %s %s %s %s %s %s %s %s %s %s %s %s %s\n",
@@ -147,6 +148,7 @@ void CAHitNtupletGeneratorOnGPU::fillDescriptions(edm::ParameterSetDescription& 
   desc.add<bool>("doZ0Cut", true);
   desc.add<bool>("doPtCut", true);
   desc.add<bool>("useRiemannFit", false)->setComment("true for Riemann, false for BrokenLine");
+  desc.add<bool>("isUpgrade", false);
 
   edm::ParameterSetDescription trackQualityCuts;
   trackQualityCuts.add<double>("chi2MaxPt", 10.)->setComment("max pT used to determine the pT-dependent chi2 cut");
@@ -214,7 +216,7 @@ PixelTrackHeterogeneous CAHitNtupletGeneratorOnGPU::makeTuples(TrackingRecHit2DC
     return tracks;
 
   // now fit
-  HelixFitOnGPU fitter(bfield, m_params.fit5as4_);
+  HelixFitOnGPU fitter(bfield, m_params.fit5as4_, m_params.isUpgrade_);
   fitter.allocateOnGPU(&(soa->hitIndices), kernels.tupleMultiplicity(), soa);
 
   if (m_params.useRiemannFit_) {

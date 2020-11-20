@@ -2,7 +2,7 @@
 #include <iostream>
 #include <tuple>
 
-#include "Geometry/TrackerGeometryBuilder/interface/phase1PixelTopology.h"
+#include "Geometry/TrackerGeometryBuilder/interface/pixelTopology.h"
 
 namespace {
 

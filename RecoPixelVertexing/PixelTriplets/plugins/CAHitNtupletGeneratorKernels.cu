@@ -58,7 +58,8 @@ void CAHitNtupletGeneratorKernelsGPU::launchKernels(HitsOnCPU const &hh, TkSoA *
       m_params.CAThetaCutBarrel_,
       m_params.CAThetaCutForward_,
       m_params.dcaCutInnerTriplet_,
-      m_params.dcaCutOuterTriplet_);
+      m_params.dcaCutOuterTriplet_,
+      m_params.isUpgrade_);
   cudaCheck(cudaGetLastError());
 
   if (nhits > 1 && m_params.earlyFishbone_) {
@@ -199,11 +200,14 @@ void CAHitNtupletGeneratorKernelsGPU::buildDoublets(HitsOnCPU const &hh, cudaStr
     return;  // protect against empty events
 
   // FIXME avoid magic numbers
-  auto nActualPairs = gpuPixelDoublets::nPairs;
-  if (!m_params.includeJumpingForwardDoublets_)
+  auto nActualPairs = m_params.isUpgrade_ ? gpuPixelDoublets::nPairsUpgrade : gpuPixelDoublets::nPairs;
+  if (!m_params.includeJumpingForwardDoublets_ && ! m_params.isUpgrade_)
     nActualPairs = 15;
-  if (m_params.minHitsPerNtuplet_ > 3) {
+  if (m_params.minHitsPerNtuplet_ > 3 && ! m_params.isUpgrade_) {
     nActualPairs = 13;
+  }
+  if (m_params.minHitsPerNtuplet_ > 3 &&  m_params.isUpgrade_ && !m_params.includeJumpingForwardDoublets_){
+    nActualPairs = 31;
   }
 
   assert(nActualPairs <= gpuPixelDoublets::nPairs);
@@ -223,7 +227,8 @@ void CAHitNtupletGeneratorKernelsGPU::buildDoublets(HitsOnCPU const &hh, cudaStr
                                                                     m_params.doClusterCut_,
                                                                     m_params.doZ0Cut_,
                                                                     m_params.doPtCut_,
-                                                                    m_params.maxNumberOfDoublets_);
+                                                                    m_params.maxNumberOfDoublets_,
+								    m_params.isUpgrade_);
   cudaCheck(cudaGetLastError());
 
 #ifdef GPU_DEBUG
@@ -242,7 +247,7 @@ void CAHitNtupletGeneratorKernelsGPU::classifyTuples(HitsOnCPU const &hh, TkSoA 
 
   // classify tracks based on kinematics
   auto numberOfBlocks = (3 * CAConstants::maxNumberOfQuadruplets() / 4 + blockSize - 1) / blockSize;
-  kernel_classifyTracks<<<numberOfBlocks, blockSize, 0, cudaStream>>>(tuples_d, tracks_d, m_params.cuts_, quality_d);
+  kernel_classifyTracks<<<numberOfBlocks, blockSize, 0, cudaStream>>>(tuples_d, tracks_d, m_params.cuts_, quality_d, m_params.isUpgrade_);
   cudaCheck(cudaGetLastError());
 
   if (m_params.lateFishbone_) {

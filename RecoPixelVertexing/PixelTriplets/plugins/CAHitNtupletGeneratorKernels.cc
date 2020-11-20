@@ -45,14 +45,19 @@ void CAHitNtupletGeneratorKernelsCPU::buildDoublets(HitsOnCPU const &hh, cudaStr
     return;  // protect against empty events
 
   // FIXME avoid magic numbers
-  auto nActualPairs = gpuPixelDoublets::nPairs;
-  if (!m_params.includeJumpingForwardDoublets_)
+  auto nActualPairs = m_params.isUpgrade_ ? gpuPixelDoublets::nPairsUpgrade : gpuPixelDoublets::nPairs;
+  if (!m_params.includeJumpingForwardDoublets_ && ! m_params.isUpgrade_)
     nActualPairs = 15;
-  if (m_params.minHitsPerNtuplet_ > 3) {
+  if (m_params.minHitsPerNtuplet_ > 3 && ! m_params.isUpgrade_) {
     nActualPairs = 13;
   }
+  if (m_params.minHitsPerNtuplet_ > 3 &&  m_params.isUpgrade_ && !m_params.includeJumpingForwardDoublets_){
+    nActualPairs = 31;
+  } 
 
-  assert(nActualPairs <= gpuPixelDoublets::nPairs);
+  auto maxPairs = m_params.isUpgrade_ ? gpuPixelDoublets::nPairsUpgrade : gpuPixelDoublets::nPairs;
+  
+  assert(nActualPairs <= maxPairs);
   gpuPixelDoublets::getDoubletsFromHisto(device_theCells_.get(),
                                          device_nCells_,
                                          device_theCellNeighbors_.get(),
@@ -64,7 +69,8 @@ void CAHitNtupletGeneratorKernelsCPU::buildDoublets(HitsOnCPU const &hh, cudaStr
                                          m_params.doClusterCut_,
                                          m_params.doZ0Cut_,
                                          m_params.doPtCut_,
-                                         m_params.maxNumberOfDoublets_);
+                                         m_params.maxNumberOfDoublets_,
+					 m_params.isUpgrade_);
 }
 
 template <>
@@ -99,7 +105,8 @@ void CAHitNtupletGeneratorKernelsCPU::launchKernels(HitsOnCPU const &hh, TkSoA *
                  m_params.CAThetaCutBarrel_,
                  m_params.CAThetaCutForward_,
                  m_params.dcaCutInnerTriplet_,
-                 m_params.dcaCutOuterTriplet_);
+                 m_params.dcaCutOuterTriplet_,
+		 m_params.isUpgrade_);
 
   if (nhits > 1 && m_params.earlyFishbone_) {
     gpuPixelDoublets::fishbone(
@@ -152,7 +159,7 @@ void CAHitNtupletGeneratorKernelsCPU::classifyTuples(HitsOnCPU const &hh, TkSoA 
   auto *quality_d = (Quality *)(&tracks_d->m_quality);
 
   // classify tracks based on kinematics
-  kernel_classifyTracks(tuples_d, tracks_d, m_params.cuts_, quality_d);
+  kernel_classifyTracks(tuples_d, tracks_d, m_params.cuts_, quality_d, m_params.isUpgrade_);
 
   if (m_params.lateFishbone_) {
     // apply fishbone cleaning to good tracks

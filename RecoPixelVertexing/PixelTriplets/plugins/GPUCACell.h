@@ -31,7 +31,7 @@ public:
   using Hits = TrackingRecHit2DSOAView;
   using hindex_type = Hits::hindex_type;
 
-  using TmpTuple = cms::cuda::VecArray<uint32_t, 6>;
+  using TmpTuple = cms::cuda::VecArray<uint32_t, 16>;
 
   using HitContainer = pixelTrack::HitContainer;
   using Quality = trackQuality::Quality;
@@ -141,12 +141,13 @@ public:
                                   const float CAThetaCutBarrel,
                                   const float CAThetaCutForward,
                                   const float dcaCutInnerTriplet,
-                                  const float dcaCutOuterTriplet) const {
+                                  const float dcaCutOuterTriplet,
+				  const float upgrade) const {
     // detIndex of the layerStart for the Phase1 Pixel Detector:
     // [BPX1, BPX2, BPX3, BPX4,  FP1,  FP2,  FP3,  FN1,  FN2,  FN3, LAST_VALID]
     // [   0,   96,  320,  672, 1184, 1296, 1408, 1520, 1632, 1744,       1856]
-    constexpr uint32_t last_bpix1_detIndex = 96;
-    constexpr uint32_t last_barrel_detIndex = 1184;
+    uint32_t last_bpix1_detIndex = upgrade ? 108 : 96;
+    uint32_t last_barrel_detIndex = upgrade ? 756 : 1184;
     auto ri = get_inner_r(hh);
     auto zi = get_inner_z(hh);
 
@@ -290,7 +291,7 @@ public:
     // than a threshold
 
     tmpNtuplet.push_back_unsafe(theDoubletId);
-    assert(tmpNtuplet.size() <= 4);
+    assert(tmpNtuplet.size() <= 16);
 
     bool last = true;
     for (int j = 0; j < outerNeighbors().size(); ++j) {
@@ -309,7 +310,7 @@ public:
             ((!startAt0) && hole0(hh, cells[tmpNtuplet[0]])))
 #endif
         {
-          hindex_type hits[6];
+          hindex_type hits[16];
           auto nh = 0U;
           for (auto c : tmpNtuplet) {
             hits[nh++] = cells[c].theInnerHitId;
@@ -325,7 +326,7 @@ public:
       }
     }
     tmpNtuplet.pop_back();
-    assert(tmpNtuplet.size() < 4);
+    assert(tmpNtuplet.size() < 16);
   }
 
 private:
