@@ -10,6 +10,8 @@
 
 class SiPixelDigiErrorsCUDA {
 public:
+  using PixelErrorCompactVector = cms::cuda::SimpleVector<PixelErrorCompact>;
+
   SiPixelDigiErrorsCUDA() = default;
   explicit SiPixelDigiErrorsCUDA(size_t maxFedWords, PixelFormatterErrors errors, cudaStream_t stream);
   ~SiPixelDigiErrorsCUDA() = default;
@@ -21,20 +23,18 @@ public:
 
   const PixelFormatterErrors& formatterErrors() const { return formatterErrors_h; }
 
-  cms::cuda::SimpleVector<PixelErrorCompact>* error() { return error_d.get(); }
-  cms::cuda::SimpleVector<PixelErrorCompact> const* error() const { return error_d.get(); }
-  cms::cuda::SimpleVector<PixelErrorCompact> const* c_error() const { return error_d.get(); }
+  PixelErrorCompactVector* error() { return error_d.get(); }
+  PixelErrorCompactVector const* c_error() const { return error_d.get(); }
 
-  using HostDataError =
-      std::pair<cms::cuda::SimpleVector<PixelErrorCompact>, cms::cuda::host::unique_ptr<PixelErrorCompact[]>>;
+  using HostDataError = std::pair<PixelErrorCompactVector, cms::cuda::host::unique_ptr<PixelErrorCompact[]>>;
   HostDataError dataErrorToHostAsync(cudaStream_t stream) const;
 
   void copyErrorToHostAsync(cudaStream_t stream);
 
 private:
   cms::cuda::device::unique_ptr<PixelErrorCompact[]> data_d;
-  cms::cuda::device::unique_ptr<cms::cuda::SimpleVector<PixelErrorCompact>> error_d;
-  cms::cuda::host::unique_ptr<cms::cuda::SimpleVector<PixelErrorCompact>> error_h;
+  cms::cuda::device::unique_ptr<PixelErrorCompactVector> error_d;
+  cms::cuda::host::unique_ptr<PixelErrorCompactVector> error_h;
   PixelFormatterErrors formatterErrors_h;
 };
 

@@ -8,13 +8,12 @@
 #include <cassert>
 
 SiPixelDigiErrorsCUDA::SiPixelDigiErrorsCUDA(size_t maxFedWords, PixelFormatterErrors errors, cudaStream_t stream)
-    : formatterErrors_h(std::move(errors)) {
-  error_d = cms::cuda::make_device_unique<cms::cuda::SimpleVector<PixelErrorCompact>>(stream);
-  data_d = cms::cuda::make_device_unique<PixelErrorCompact[]>(maxFedWords, stream);
-
+    : data_d(cms::cuda::make_device_unique<PixelErrorCompact[]>(maxFedWords, stream)),
+      error_d(cms::cuda::make_device_unique<PixelErrorCompactVector>(stream)),
+      error_h(cms::cuda::make_host_unique<PixelErrorCompactVector>(stream)),
+      formatterErrors_h(std::move(errors)) {
   cms::cuda::memsetAsync(data_d, 0x00, maxFedWords, stream);
 
-  error_h = cms::cuda::make_host_unique<cms::cuda::SimpleVector<PixelErrorCompact>>(stream);
   cms::cuda::make_SimpleVector(error_h.get(), maxFedWords, data_d.get());
   assert(error_h->empty());
   assert(error_h->capacity() == static_cast<int>(maxFedWords));
