@@ -10,7 +10,8 @@
 class SiPixelErrorsSoA {
 public:
   SiPixelErrorsSoA() = default;
-  explicit SiPixelErrorsSoA(size_t nErrors, const SiPixelErrorCompact *error, const SiPixelFormatterErrors *err);
+  explicit SiPixelErrorsSoA(size_t nErrors, const SiPixelErrorCompact *error, const SiPixelFormatterErrors *err)
+      : error_(error, error + nErrors), formatterErrors_(err) {}
   ~SiPixelErrorsSoA() = default;
 
   auto size() const { return error_.size(); }
