@@ -7,10 +7,10 @@
 
 #include <cassert>
 
-SiPixelDigiErrorsCUDA::SiPixelDigiErrorsCUDA(size_t maxFedWords, PixelFormatterErrors errors, cudaStream_t stream)
-    : data_d(cms::cuda::make_device_unique<PixelErrorCompact[]>(maxFedWords, stream)),
-      error_d(cms::cuda::make_device_unique<PixelErrorCompactVector>(stream)),
-      error_h(cms::cuda::make_host_unique<PixelErrorCompactVector>(stream)),
+SiPixelDigiErrorsCUDA::SiPixelDigiErrorsCUDA(size_t maxFedWords, SiPixelFormatterErrors errors, cudaStream_t stream)
+    : data_d(cms::cuda::make_device_unique<SiPixelErrorCompact[]>(maxFedWords, stream)),
+      error_d(cms::cuda::make_device_unique<SiPixelErrorCompactVector>(stream)),
+      error_h(cms::cuda::make_host_unique<SiPixelErrorCompactVector>(stream)),
       formatterErrors_h(std::move(errors)) {
   cms::cuda::memsetAsync(data_d, 0x00, maxFedWords, stream);
 
@@ -29,7 +29,7 @@ SiPixelDigiErrorsCUDA::HostDataError SiPixelDigiErrorsCUDA::dataErrorToHostAsync
   // On one hand size() could be sufficient. On the other hand, if
   // someone copies the SimpleVector<>, (s)he might expect the data
   // buffer to actually have space for capacity() elements.
-  auto data = cms::cuda::make_host_unique<PixelErrorCompact[]>(error_h->capacity(), stream);
+  auto data = cms::cuda::make_host_unique<SiPixelErrorCompact[]>(error_h->capacity(), stream);
 
   // but transfer only the required amount
   if (not error_h->empty()) {
