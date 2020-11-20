@@ -39,7 +39,7 @@ namespace pixelgpudetails {
                                                            pixelCPEforGPU::ParamsOnGPU const* cpeParams,
                                                            cudaStream_t stream) const {
     auto nHits = clusters_d.nClusters();
-    TrackingRecHit2DCUDA hits_d(nHits, cpeParams, clusters_d.clusModuleStart(), stream);
+    TrackingRecHit2DCUDA hits_d(nHits, cpeParams, clusters_d.c_clusModuleStart(), stream);
 
     int threadsPerBlock = 128;
     int blocks = digis_d.nModules();  // active modules (with digis)
@@ -58,7 +58,7 @@ namespace pixelgpudetails {
 
     // assuming full warp of threads is better than a smaller number...
     if (nHits) {
-      setHitsLayerStart<<<1, 32, 0, stream>>>(clusters_d.clusModuleStart(), cpeParams, hits_d.hitsLayerStart());
+      setHitsLayerStart<<<1, 32, 0, stream>>>(clusters_d.c_clusModuleStart(), cpeParams, hits_d.hitsLayerStart());
       cudaCheck(cudaGetLastError());
     }
 
