@@ -602,8 +602,8 @@ namespace pixelgpudetails {
 
       gpuCalibPixel::calibDigis<<<blocks, threadsPerBlock, 0, stream>>>(isRun2,
                                                                         digis_d.moduleInd(),
-                                                                        digis_d.c_xx(),
-                                                                        digis_d.c_yy(),
+                                                                        digis_d.xx(),
+                                                                        digis_d.yy(),
                                                                         digis_d.adc(),
                                                                         gains,
                                                                         wordCounter,
@@ -622,7 +622,7 @@ namespace pixelgpudetails {
 #endif
 
       countModules<<<blocks, threadsPerBlock, 0, stream>>>(
-          digis_d.c_moduleInd(), clusters_d.moduleStart(), digis_d.clus(), wordCounter);
+          digis_d.moduleInd(), clusters_d.moduleStart(), digis_d.clus(), wordCounter);
       cudaCheck(cudaGetLastError());
 
       // read the number of modules into a data member, used by getProduct())
@@ -634,9 +634,9 @@ namespace pixelgpudetails {
 #ifdef GPU_DEBUG
       std::cout << "CUDA findClus kernel launch with " << blocks << " blocks of " << threadsPerBlock << " threads\n";
 #endif
-      findClus<<<blocks, threadsPerBlock, 0, stream>>>(digis_d.c_moduleInd(),
-                                                       digis_d.c_xx(),
-                                                       digis_d.c_yy(),
+      findClus<<<blocks, threadsPerBlock, 0, stream>>>(digis_d.moduleInd(),
+                                                       digis_d.xx(),
+                                                       digis_d.yy(),
                                                        clusters_d.moduleStart(),
                                                        clusters_d.clusInModule(),
                                                        clusters_d.moduleId(),
@@ -650,7 +650,7 @@ namespace pixelgpudetails {
 
       // apply charge cut
       clusterChargeCut<<<blocks, threadsPerBlock, 0, stream>>>(digis_d.moduleInd(),
-                                                               digis_d.c_adc(),
+                                                               digis_d.adc(),
                                                                clusters_d.moduleStart(),
                                                                clusters_d.clusInModule(),
                                                                clusters_d.moduleId(),

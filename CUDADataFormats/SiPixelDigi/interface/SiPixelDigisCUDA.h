@@ -34,13 +34,13 @@ public:
   uint32_t *pdigi() { return pdigi_d.get(); }
   uint32_t *rawIdArr() { return rawIdArr_d.get(); }
 
-  uint16_t const *c_xx() const { return xx_d.get(); }
-  uint16_t const *c_yy() const { return yy_d.get(); }
-  uint16_t const *c_adc() const { return adc_d.get(); }
-  uint16_t const *c_moduleInd() const { return moduleInd_d.get(); }
-  int32_t const *c_clus() const { return clus_d.get(); }
-  uint32_t const *c_pdigi() const { return pdigi_d.get(); }
-  uint32_t const *c_rawIdArr() const { return rawIdArr_d.get(); }
+  uint16_t const *xx() const { return xx_d.get(); }
+  uint16_t const *yy() const { return yy_d.get(); }
+  uint16_t const *adc() const { return adc_d.get(); }
+  uint16_t const *moduleInd() const { return moduleInd_d.get(); }
+  int32_t const *clus() const { return clus_d.get(); }
+  uint32_t const *pdigi() const { return pdigi_d.get(); }
+  uint32_t const *rawIdArr() const { return rawIdArr_d.get(); }
 
   cms::cuda::host::unique_ptr<uint16_t[]> adcToHostAsync(cudaStream_t stream) const;
   cms::cuda::host::unique_ptr<int32_t[]> clusToHostAsync(cudaStream_t stream) const;
