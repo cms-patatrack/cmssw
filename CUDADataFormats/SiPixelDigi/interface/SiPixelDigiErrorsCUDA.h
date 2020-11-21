@@ -25,7 +25,7 @@ public:
   const SiPixelFormatterErrors& formatterErrors() const { return formatterErrors_h; }
 
   SiPixelErrorCompactVector* error() { return error_d.get(); }
-  SiPixelErrorCompactVector const* c_error() const { return error_d.get(); }
+  SiPixelErrorCompactVector const* error() const { return error_d.get(); }
 
   using HostDataError = std::pair<SiPixelErrorCompactVector, cms::cuda::host::unique_ptr<SiPixelErrorCompact[]>>;
   HostDataError dataErrorToHostAsync(cudaStream_t stream) const;
