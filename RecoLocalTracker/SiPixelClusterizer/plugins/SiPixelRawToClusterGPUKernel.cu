@@ -637,7 +637,7 @@ namespace pixelgpudetails {
       findClus<<<blocks, threadsPerBlock, 0, stream>>>(digis_d.c_moduleInd(),
                                                        digis_d.c_xx(),
                                                        digis_d.c_yy(),
-                                                       clusters_d.c_moduleStart(),
+                                                       clusters_d.moduleStart(),
                                                        clusters_d.clusInModule(),
                                                        clusters_d.moduleId(),
                                                        digis_d.clus(),
@@ -651,9 +651,9 @@ namespace pixelgpudetails {
       // apply charge cut
       clusterChargeCut<<<blocks, threadsPerBlock, 0, stream>>>(digis_d.moduleInd(),
                                                                digis_d.c_adc(),
-                                                               clusters_d.c_moduleStart(),
+                                                               clusters_d.moduleStart(),
                                                                clusters_d.clusInModule(),
-                                                               clusters_d.c_moduleId(),
+                                                               clusters_d.moduleId(),
                                                                digis_d.clus(),
                                                                wordCounter);
       cudaCheck(cudaGetLastError());
@@ -664,7 +664,7 @@ namespace pixelgpudetails {
       // synchronization/ExternalWork
 
       // MUST be ONE block
-      fillHitsModuleStart<<<1, 1024, 0, stream>>>(clusters_d.c_clusInModule(), clusters_d.clusModuleStart());
+      fillHitsModuleStart<<<1, 1024, 0, stream>>>(clusters_d.clusInModule(), clusters_d.clusModuleStart());
 
       // last element holds the number of all clusters
       cudaCheck(cudaMemcpyAsync(&(nModules_Clusters_h[1]),

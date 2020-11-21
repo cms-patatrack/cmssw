@@ -27,10 +27,10 @@ public:
   uint32_t *moduleId() { return moduleId_d.get(); }
   uint32_t *clusModuleStart() { return clusModuleStart_d.get(); }
 
-  uint32_t const *c_moduleStart() const { return moduleStart_d.get(); }
-  uint32_t const *c_clusInModule() const { return clusInModule_d.get(); }
-  uint32_t const *c_moduleId() const { return moduleId_d.get(); }
-  uint32_t const *c_clusModuleStart() const { return clusModuleStart_d.get(); }
+  uint32_t const *moduleStart() const { return moduleStart_d.get(); }
+  uint32_t const *clusInModule() const { return clusInModule_d.get(); }
+  uint32_t const *moduleId() const { return moduleId_d.get(); }
+  uint32_t const *clusModuleStart() const { return clusModuleStart_d.get(); }
 
   class DeviceConstView {
   public:
