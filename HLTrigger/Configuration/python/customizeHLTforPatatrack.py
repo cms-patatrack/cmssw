@@ -57,7 +57,7 @@ def customiseCommon(process):
         process.Status_OnGPU = cms.Path(process.statusOnGPU + process.statusOnGPUFilter)
         if 'HLTSchedule' in process.__dict__:
             process.HLTSchedule.append(process.Status_OnGPU)
-        if process.schedule:
+        if process.schedule is not None:
             process.schedule.append(process.Status_OnGPU)
 
 
@@ -531,11 +531,6 @@ def customiseEcalLocalReconstruction(process):
         )
     )
 
-    # consume the ECAL rechits
-    process.hltEcalConsumer = cms.EDAnalyzer("GenericConsumer",
-        eventProducts = cms.untracked.vstring( 'hltEcalRecHit' )
-    )
-
     # Tasks and Sequences
 
     process.HLTDoFullUnpackingEgammaEcalWithoutPreshowerTask = cms.Task(
@@ -551,7 +546,6 @@ def customiseEcalLocalReconstruction(process):
         process.hltEcalRecHit)                              # legacy producer
 
     process.HLTDoFullUnpackingEgammaEcalWithoutPreshowerSequence = cms.Sequence(
-        process.hltEcalConsumer,                            # consume the ECAL rechits
         process.HLTDoFullUnpackingEgammaEcalWithoutPreshowerTask)
 
     process.HLTPreshowerTask = cms.Task(
@@ -565,11 +559,9 @@ def customiseEcalLocalReconstruction(process):
         process.HLTPreshowerTask)
 
     process.HLTDoFullUnpackingEgammaEcalSequence = cms.Sequence(
-        process.hltEcalConsumer,                            # consume the ECAL rechits
         process.HLTDoFullUnpackingEgammaEcalTask)
 
     process.HLTDoFullUnpackingEgammaEcalMFSequence = cms.Sequence(
-        process.hltEcalConsumer,                            # consume the ECAL rechits
         process.HLTDoFullUnpackingEgammaEcalTask)
 
 
@@ -658,11 +650,6 @@ def customiseHcalLocalReconstruction(process):
         )
     )
 
-    # consume the HCAL rechits
-    process.hltHbheConsumer = cms.EDAnalyzer("GenericConsumer",
-        eventProducts = cms.untracked.vstring( 'hltHbhereco' )
-    )
-
 
     # Tasks and Sequences
 
@@ -677,7 +664,6 @@ def customiseHcalLocalReconstruction(process):
         process.hltHoreco)                                  # legacy producer
 
     process.HLTDoLocalHcalSequence = cms.Sequence(
-        process.hltHbheConsumer,                            # consume the HCAL rechits
         process.HLTDoLocalHcalTask)
 
     process.HLTStoppedHSCPLocalHcalRecoTask = cms.Task(
@@ -688,7 +674,6 @@ def customiseHcalLocalReconstruction(process):
         process.hltHbhereco)                                # SwitchProducer between the legacy producer and the copy from gpu with conversion
 
     process.HLTStoppedHSCPLocalHcalReco = cms.Sequence(
-        process.hltHbheConsumer,                            # consume the HCAL rechits
         process.HLTStoppedHSCPLocalHcalRecoTask)
 
 
@@ -703,4 +688,95 @@ def customizeHLTforPatatrack(process):
     process = customisePixelTrackReconstruction(process)
     process = customiseEcalLocalReconstruction(process)
     process = customiseHcalLocalReconstruction(process)
+    return process
+
+
+def _addConsumerPath(process):
+    # add to a path all consumers and the tasks that define the producers
+    process.Consumer = cms.Path(
+        process.HLTBeginSequence +
+        process.hltPixelConsumer +
+        process.hltEcalConsumer +
+        process.hltHbheConsumer,
+        process.HLTDoLocalPixelTask,
+        process.HLTRecoPixelTracksTask,
+        process.HLTRecopixelvertexingTask,
+        process.HLTDoFullUnpackingEgammaEcalTask,
+        process.HLTDoLocalHcalTask,
+    )
+
+    if 'HLTSchedule' in process.__dict__:
+        process.HLTSchedule.append(process.Consumer)
+    if process.schedule is not None:
+        process.schedule.append(process.Consumer)
+
+    # done
+    return process
+
+
+def consumeGPUSoAProducts(process):
+    # consume the Pixel tracks and vertices on the GPU in SoA format
+    process.hltPixelConsumer = cms.EDAnalyzer("GenericConsumer",
+        eventProducts = cms.untracked.vstring( 'hltPixelTracksCUDA', 'hltPixelVerticesCUDA' )
+    )
+
+    # consume the ECAL uncalibrated rechits on the GPU in SoA format
+    process.hltEcalConsumer = cms.EDAnalyzer("GenericConsumer",
+        eventProducts = cms.untracked.vstring( 'hltEcalUncalibRecHitGPU' )
+    )
+
+    # consume the HCAL rechits on the GPU in SoA format
+    process.hltHbheConsumer = cms.EDAnalyzer("GenericConsumer",
+        eventProducts = cms.untracked.vstring( 'hltHbherecoGPU' )
+    )
+
+    # add to a path all consumers and the tasks that define the producers
+    process = _addConsumerPath(process)
+
+    # done
+    return process
+
+
+def consumeCPUSoAProducts(process):
+    # consume the Pixel tracks and vertices on the CPU in SoA format
+    process.hltPixelConsumer = cms.EDAnalyzer("GenericConsumer",
+        eventProducts = cms.untracked.vstring( 'hltPixelTracksSoA', 'hltPixelVerticesSoA' )
+    )
+
+    # consume the ECAL uncalibrated rechits on the CPU in SoA format
+    process.hltEcalConsumer = cms.EDAnalyzer("GenericConsumer",
+        eventProducts = cms.untracked.vstring( 'hltEcalUncalibRecHitSoA' )
+    )
+
+    # consume the HCAL rechits on the CPU in legacy format
+    process.hltHbheConsumer = cms.EDAnalyzer("GenericConsumer",
+        eventProducts = cms.untracked.vstring( 'hltHbhereco' )
+    )
+
+    # add to a path all consumers and the tasks that define the producers
+    process = _addConsumerPath(process)
+
+    # done
+    return process
+
+def consumeCPULegacyProducts(process):
+    # consume the Pixel tracks and vertices on the CPU in legacy format
+    process.hltPixelConsumer = cms.EDAnalyzer("GenericConsumer",
+        eventProducts = cms.untracked.vstring( 'hltPixelTracks', 'hltPixelVertices' )
+    )
+
+    # consume the ECAL runcalibrated echits on the CPU in legacy format
+    process.hltEcalConsumer = cms.EDAnalyzer("GenericConsumer",
+        eventProducts = cms.untracked.vstring( 'hltEcalUncalibRecHit' )
+    )
+
+    # consume the HCAL rechits on the CPU in legacy format
+    process.hltHbheConsumer = cms.EDAnalyzer("GenericConsumer",
+        eventProducts = cms.untracked.vstring( 'hltHbhereco' )
+    )
+
+    # add to a path all consumers and the tasks that define the producers
+    process = _addConsumerPath(process)
+
+    # done
     return process
