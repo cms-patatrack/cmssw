@@ -30,8 +30,8 @@ using TkSoA = pixelTrack::TrackSoA;
 using HitContainer = pixelTrack::HitContainer;
 
 __global__ void kernel_checkOverflows(HitContainer const *foundNtuplets,
-                                      CAConstants::TupleMultiplicity const * tupleMultiplicity,
-                                      CAHitNtupletGeneratorKernelsGPU::HitToTuple const * hitToTuple,
+                                      CAConstants::TupleMultiplicity const *tupleMultiplicity,
+                                      CAHitNtupletGeneratorKernelsGPU::HitToTuple const *hitToTuple,
                                       cms::cuda::AtomicPairCounter *apc,
                                       GPUCACell const *__restrict__ cells,
                                       uint32_t const *__restrict__ nCells,
@@ -96,9 +96,7 @@ __global__ void kernel_checkOverflows(HitContainer const *foundNtuplets,
       atomicAdd(&c.nKilledCells, 1);
     if (0 == thisCell.theUsed)
       atomicAdd(&c.nEmptyCells, 1);
-    if (0==hitToTuple->size(thisCell.get_inner_hit_id()) && 
-        0==hitToTuple->size(thisCell.get_outer_hit_id())
-       )
+    if (0 == hitToTuple->size(thisCell.get_inner_hit_id()) && 0 == hitToTuple->size(thisCell.get_outer_hit_id()))
       atomicAdd(&c.nZeroTrackCells, 1);
   }
 
