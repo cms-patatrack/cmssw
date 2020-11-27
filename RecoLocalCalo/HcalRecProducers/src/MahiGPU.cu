@@ -563,7 +563,7 @@ namespace hcal {
       }
 
       if (sample == 0 && ipulse == 0) {
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < hcal::constants::maxSamples; i++) {
           auto const value = hcal::reconstruction::compute_pulse_shape_value(t0,
                                                                              i,
                                                                              0,
@@ -576,7 +576,7 @@ namespace hcal {
           printf("pulse(%d) = %f\n", i, value);
         }
         printf("\n");
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < hcal::constants::maxSamples; i++) {
           auto const value = hcal::reconstruction::compute_pulse_shape_value(t0p,
                                                                              i,
                                                                              0,
@@ -589,7 +589,7 @@ namespace hcal {
           printf("pulseP(%d) = %f\n", i, value);
         }
         printf("\n");
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < hcal::constants::maxSamples; i++) {
           auto const value = hcal::reconstruction::compute_pulse_shape_value(t0m,
                                                                              i,
                                                                              0,
@@ -646,10 +646,15 @@ namespace hcal {
                                  : 0;
 
       // store to global
-      pulseMatrix[ipulse * nsamples + sample] = value;
-      ;
-      pulseMatrixM[ipulse * nsamples + sample] = value_t0m;
-      pulseMatrixP[ipulse * nsamples + sample] = value_t0p;
+      if (amplitude > 0.f) {
+        pulseMatrix[ipulse * nsamples + sample] = value;
+        pulseMatrixM[ipulse * nsamples + sample] = value_t0m;
+        pulseMatrixP[ipulse * nsamples + sample] = value_t0p;
+      } else {
+        pulseMatrix[ipulse * nsamples + sample] = 0.f;
+        pulseMatrixM[ipulse * nsamples + sample] = 0.f;
+        pulseMatrixP[ipulse * nsamples + sample] = 0.f;
+      }
     }
 
     template <int NSAMPLES, int NPULSES>

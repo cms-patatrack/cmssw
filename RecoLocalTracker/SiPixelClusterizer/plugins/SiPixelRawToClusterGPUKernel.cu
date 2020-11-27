@@ -8,29 +8,22 @@
 
 // C++ includes
 #include <cassert>
-#include <chrono>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <string>
 
 // CUDA includes
-#include <cuda.h>
 #include <cuda_runtime.h>
-#include <thrust/device_vector.h>
-#include <thrust/execution_policy.h>
-#include <thrust/host_vector.h>
-#include <thrust/sort.h>
-#include <thrust/unique.h>
 
 // CMSSW includes
 #include "CUDADataFormats/SiPixelCluster/interface/gpuClusteringConstants.h"
+#include "CondFormats/SiPixelObjects/interface/SiPixelROCsStatusAndMapping.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/device_unique_ptr.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/host_unique_ptr.h"
-#include "RecoLocalTracker/SiPixelClusterizer/interface/SiPixelFedCablingMapGPU.h"
 #include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuCalibPixel.h"
 #include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuClusterChargeCut.h"
 #include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuClustering.h"
@@ -68,7 +61,7 @@ namespace pixelgpudetails {
 
   __device__ bool isBarrel(uint32_t rawId) { return (1 == ((rawId >> 25) & 0x7)); }
 
-  __device__ pixelgpudetails::DetIdGPU getRawId(const SiPixelFedCablingMapGPU *cablingMap,
+  __device__ pixelgpudetails::DetIdGPU getRawId(const SiPixelROCsStatusAndMapping *cablingMap,
                                                 uint8_t fed,
                                                 uint32_t link,
                                                 uint32_t roc) {
@@ -198,7 +191,7 @@ namespace pixelgpudetails {
   __device__ bool dcolIsValid(uint32_t dcol, uint32_t pxid) { return ((dcol < 26) & (2 <= pxid) & (pxid < 162)); }
 
   __device__ uint8_t checkROC(
-      uint32_t errorWord, uint8_t fedId, uint32_t link, const SiPixelFedCablingMapGPU *cablingMap, bool debug = false) {
+      uint32_t errorWord, uint8_t fedId, uint32_t link, const SiPixelROCsStatusAndMapping *cablingMap, bool debug = false) {
     uint8_t errorType = (errorWord >> pixelgpudetails::ROC_shift) & pixelgpudetails::ERROR_mask;
     if (errorType < 25)
       return 0;
@@ -276,7 +269,7 @@ namespace pixelgpudetails {
   __device__ uint32_t getErrRawID(uint8_t fedId,
                                   uint32_t errWord,
                                   uint32_t errorType,
-                                  const SiPixelFedCablingMapGPU *cablingMap,
+                                  const SiPixelROCsStatusAndMapping *cablingMap,
                                   bool debug = false) {
     uint32_t rID = 0xffffffff;
 
@@ -351,7 +344,7 @@ namespace pixelgpudetails {
   }
 
   // Kernel to perform Raw to Digi conversion
-  __global__ void RawToDigi_kernel(const SiPixelFedCablingMapGPU *cablingMap,
+  __global__ void RawToDigi_kernel(const SiPixelROCsStatusAndMapping *cablingMap,
                                    const unsigned char *modToUnp,
                                    const uint32_t wordCounter,
                                    const uint32_t *word,
@@ -362,7 +355,7 @@ namespace pixelgpudetails {
                                    uint32_t *pdigi,
                                    uint32_t *rawIdArr,
                                    uint16_t *moduleId,
-                                   cms::cuda::SimpleVector<PixelErrorCompact> *err,
+                                   cms::cuda::SimpleVector<SiPixelErrorCompact> *err,
                                    bool useQualityInfo,
                                    bool includeErrors,
                                    bool debug) {
@@ -397,7 +390,7 @@ namespace pixelgpudetails {
       skipROC = (roc < pixelgpudetails::maxROCIndex) ? false : (errorType != 0);
       if (includeErrors and skipROC) {
         uint32_t rID = getErrRawID(fedId, ww, errorType, cablingMap, debug);
-        err->push_back(PixelErrorCompact{rID, ww, errorType, fedId});
+        err->push_back(SiPixelErrorCompact{rID, ww, errorType, fedId});
         continue;
       }
 
@@ -441,7 +434,7 @@ namespace pixelgpudetails {
         if (includeErrors) {
           if (not rocRowColIsValid(row, col)) {
             uint8_t error = conversionError(fedId, 3, debug);  //use the device function and fill the arrays
-            err->push_back(PixelErrorCompact{rawId, ww, error, fedId});
+            err->push_back(SiPixelErrorCompact{rawId, ww, error, fedId});
             if (debug)
               printf("BPIX1  Error status: %i\n", error);
             continue;
@@ -457,7 +450,7 @@ namespace pixelgpudetails {
         localPix.col = col;
         if (includeErrors and not dcolIsValid(dcol, pxid)) {
           uint8_t error = conversionError(fedId, 3, debug);
-          err->push_back(PixelErrorCompact{rawId, ww, error, fedId});
+          err->push_back(SiPixelErrorCompact{rawId, ww, error, fedId});
           if (debug)
             printf("Error status: %i %d %d %d %d\n", error, dcol, pxid, fedId, roc);
           continue;
@@ -524,11 +517,11 @@ namespace pixelgpudetails {
 
   // Interface to outside
   void SiPixelRawToClusterGPUKernel::makeClustersAsync(bool isRun2,
-                                                       const SiPixelFedCablingMapGPU *cablingMap,
+                                                       const SiPixelROCsStatusAndMapping *cablingMap,
                                                        const unsigned char *modToUnp,
                                                        const SiPixelGainForHLTonGPU *gains,
                                                        const WordFedAppender &wordFed,
-                                                       PixelFormatterErrors &&errors,
+                                                       SiPixelFormatterErrors &&errors,
                                                        const uint32_t wordCounter,
                                                        const uint32_t fedCounter,
                                                        bool useQualityInfo,
@@ -602,8 +595,8 @@ namespace pixelgpudetails {
 
       gpuCalibPixel::calibDigis<<<blocks, threadsPerBlock, 0, stream>>>(isRun2,
                                                                         digis_d.moduleInd(),
-                                                                        digis_d.c_xx(),
-                                                                        digis_d.c_yy(),
+                                                                        digis_d.xx(),
+                                                                        digis_d.yy(),
                                                                         digis_d.adc(),
                                                                         gains,
                                                                         wordCounter,
@@ -622,7 +615,7 @@ namespace pixelgpudetails {
 #endif
 
       countModules<<<blocks, threadsPerBlock, 0, stream>>>(
-          digis_d.c_moduleInd(), clusters_d.moduleStart(), digis_d.clus(), wordCounter);
+          digis_d.moduleInd(), clusters_d.moduleStart(), digis_d.clus(), wordCounter);
       cudaCheck(cudaGetLastError());
 
       // read the number of modules into a data member, used by getProduct())
@@ -634,10 +627,10 @@ namespace pixelgpudetails {
 #ifdef GPU_DEBUG
       std::cout << "CUDA findClus kernel launch with " << blocks << " blocks of " << threadsPerBlock << " threads\n";
 #endif
-      findClus<<<blocks, threadsPerBlock, 0, stream>>>(digis_d.c_moduleInd(),
-                                                       digis_d.c_xx(),
-                                                       digis_d.c_yy(),
-                                                       clusters_d.c_moduleStart(),
+      findClus<<<blocks, threadsPerBlock, 0, stream>>>(digis_d.moduleInd(),
+                                                       digis_d.xx(),
+                                                       digis_d.yy(),
+                                                       clusters_d.moduleStart(),
                                                        clusters_d.clusInModule(),
                                                        clusters_d.moduleId(),
                                                        digis_d.clus(),
@@ -650,10 +643,10 @@ namespace pixelgpudetails {
 
       // apply charge cut
       clusterChargeCut<<<blocks, threadsPerBlock, 0, stream>>>(digis_d.moduleInd(),
-                                                               digis_d.c_adc(),
-                                                               clusters_d.c_moduleStart(),
+                                                               digis_d.adc(),
+                                                               clusters_d.moduleStart(),
                                                                clusters_d.clusInModule(),
-                                                               clusters_d.c_moduleId(),
+                                                               clusters_d.moduleId(),
                                                                digis_d.clus(),
                                                                wordCounter);
       cudaCheck(cudaGetLastError());
@@ -664,7 +657,7 @@ namespace pixelgpudetails {
       // synchronization/ExternalWork
 
       // MUST be ONE block
-      fillHitsModuleStart<<<1, 1024, 0, stream>>>(clusters_d.c_clusInModule(), clusters_d.clusModuleStart());
+      fillHitsModuleStart<<<1, 1024, 0, stream>>>(clusters_d.clusInModule(), clusters_d.clusModuleStart());
 
       // last element holds the number of all clusters
       cudaCheck(cudaMemcpyAsync(&(nModules_Clusters_h[1]),

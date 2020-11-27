@@ -11,7 +11,6 @@
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/SiPixelCluster/interface/SiPixelCluster.h"
 #include "DataFormats/TrackerRecHit2D/interface/SiPixelRecHitCollection.h"
-#include "FWCore/Framework/interface/ESHandle.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
@@ -41,22 +40,22 @@ public:
 private:
   void produce(edm::StreamID streamID, edm::Event& iEvent, const edm::EventSetup& iSetup) const override;
 
-  // The mess with inputs will be cleaned up when migrating to the new framework
-  edm::EDGetTokenT<reco::BeamSpot> bsGetToken_;
-  edm::EDGetTokenT<SiPixelClusterCollectionNew> clusterToken_;  // Legacy Clusters
-  edm::EDPutTokenT<TrackingRecHit2DCPU> tokenHit_;
-  edm::EDPutTokenT<HMSstorage> tokenModuleStart_;
-
-  std::string const cpeName_;
-  bool const convert2Legacy_;
+  const edm::ESGetToken<TrackerGeometry, TrackerDigiGeometryRecord> geomToken_;
+  const edm::ESGetToken<PixelClusterParameterEstimator, TkPixelCPERecord> cpeToken_;
+  const edm::EDGetTokenT<reco::BeamSpot> bsGetToken_;
+  const edm::EDGetTokenT<SiPixelClusterCollectionNew> clusterToken_;  // Legacy Clusters
+  const edm::EDPutTokenT<TrackingRecHit2DCPU> tokenHit_;
+  const edm::EDPutTokenT<HMSstorage> tokenModuleStart_;
+  const bool convert2Legacy_;
 };
 
 SiPixelRecHitSoAFromLegacy::SiPixelRecHitSoAFromLegacy(const edm::ParameterSet& iConfig)
-    : bsGetToken_{consumes<reco::BeamSpot>(iConfig.getParameter<edm::InputTag>("beamSpot"))},
+    : geomToken_(esConsumes()),
+      cpeToken_(esConsumes(edm::ESInputTag("", iConfig.getParameter<std::string>("CPE")))),
+      bsGetToken_{consumes<reco::BeamSpot>(iConfig.getParameter<edm::InputTag>("beamSpot"))},
       clusterToken_{consumes<SiPixelClusterCollectionNew>(iConfig.getParameter<edm::InputTag>("src"))},
       tokenHit_{produces<TrackingRecHit2DCPU>()},
       tokenModuleStart_{produces<HMSstorage>()},
-      cpeName_(iConfig.getParameter<std::string>("CPE")),
       convert2Legacy_(iConfig.getParameter<bool>("convertToLegacy")) {
   if (convert2Legacy_)
     produces<SiPixelRecHitCollectionNew>();
@@ -73,20 +72,10 @@ void SiPixelRecHitSoAFromLegacy::fillDescriptions(edm::ConfigurationDescriptions
 }
 
 void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEvent, const edm::EventSetup& es) const {
-  const TrackerGeometry* geom_ = nullptr;
-  const PixelClusterParameterEstimator* cpe_ = nullptr;
-
-  edm::ESHandle<TrackerGeometry> geom;
-  es.get<TrackerDigiGeometryRecord>().get(geom);
-  geom_ = geom.product();
-
-  edm::ESHandle<PixelClusterParameterEstimator> hCPE;
-  es.get<TkPixelCPERecord>().get(cpeName_, hCPE);
-  cpe_ = dynamic_cast<const PixelCPEBase*>(hCPE.product());
-
-  PixelCPEFast const* fcpe = dynamic_cast<const PixelCPEFast*>(cpe_);
-  if (!fcpe) {
-    throw cms::Exception("Configuration") << "too bad, not a fast cpe gpu processing not possible....";
+  const TrackerGeometry* geom_ = &es.getData(geomToken_);
+  PixelCPEFast const* fcpe = dynamic_cast<const PixelCPEFast*>(&es.getData(cpeToken_));
+  if (not fcpe) {
+    throw cms::Exception("Configuration") << "SiPixelRecHitSoAFromLegacy can only use a CPE of type PixelCPEFast";
   }
   auto const& cpeView = fcpe->getCPUProduct();
 

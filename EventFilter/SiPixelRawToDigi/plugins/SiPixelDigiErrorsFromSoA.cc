@@ -6,7 +6,7 @@
 #include "DataFormats/DetId/interface/DetIdCollection.h"
 #include "DataFormats/SiPixelDetId/interface/PixelFEDChannel.h"
 #include "DataFormats/SiPixelDigi/interface/PixelDigi.h"
-#include "DataFormats/SiPixelDigi/interface/SiPixelDigiErrorsSoA.h"
+#include "DataFormats/SiPixelRawData/interface/SiPixelErrorsSoA.h"
 #include "EventFilter/SiPixelRawToDigi/interface/PixelDataFormatter.h"
 #include "FWCore/Framework/interface/ESTransientHandle.h"
 #include "FWCore/Framework/interface/ESWatcher.h"
@@ -30,16 +30,15 @@ public:
 private:
   void produce(edm::Event& iEvent, const edm::EventSetup& iSetup) override;
 
-  edm::EDGetTokenT<SiPixelDigiErrorsSoA> digiErrorSoAGetToken_;
-
-  edm::EDPutTokenT<edm::DetSetVector<SiPixelRawDataError>> errorPutToken_;
-  edm::EDPutTokenT<DetIdCollection> tkErrorPutToken_;
-  edm::EDPutTokenT<DetIdCollection> userErrorPutToken_;
-  edm::EDPutTokenT<edmNew::DetSetVector<PixelFEDChannel>> disabledChannelPutToken_;
+  const edm::ESGetToken<SiPixelFedCablingMap, SiPixelFedCablingMapRcd> cablingToken_;
+  const edm::EDGetTokenT<SiPixelErrorsSoA> digiErrorSoAGetToken_;
+  const edm::EDPutTokenT<edm::DetSetVector<SiPixelRawDataError>> errorPutToken_;
+  const edm::EDPutTokenT<DetIdCollection> tkErrorPutToken_;
+  const edm::EDPutTokenT<DetIdCollection> userErrorPutToken_;
+  const edm::EDPutTokenT<edmNew::DetSetVector<PixelFEDChannel>> disabledChannelPutToken_;
 
   edm::ESWatcher<SiPixelFedCablingMapRcd> cablingWatcher_;
   std::unique_ptr<SiPixelFedCablingTree> cabling_;
-  const std::string cablingMapLabel_;
 
   const std::vector<int> tkerrorlist_;
   const std::vector<int> usererrorlist_;
@@ -48,12 +47,12 @@ private:
 };
 
 SiPixelDigiErrorsFromSoA::SiPixelDigiErrorsFromSoA(const edm::ParameterSet& iConfig)
-    : digiErrorSoAGetToken_{consumes<SiPixelDigiErrorsSoA>(iConfig.getParameter<edm::InputTag>("digiErrorSoASrc"))},
+    : cablingToken_(esConsumes(edm::ESInputTag("", iConfig.getParameter<std::string>("CablingMapLabel")))),
+      digiErrorSoAGetToken_{consumes<SiPixelErrorsSoA>(iConfig.getParameter<edm::InputTag>("digiErrorSoASrc"))},
       errorPutToken_{produces<edm::DetSetVector<SiPixelRawDataError>>()},
       tkErrorPutToken_{produces<DetIdCollection>()},
       userErrorPutToken_{produces<DetIdCollection>("UserErrorModules")},
       disabledChannelPutToken_{produces<edmNew::DetSetVector<PixelFEDChannel>>()},
-      cablingMapLabel_(iConfig.getParameter<std::string>("CablingMapLabel")),
       tkerrorlist_(iConfig.getParameter<std::vector<int>>("ErrorList")),
       usererrorlist_(iConfig.getParameter<std::vector<int>>("UserErrorList")),
       usePhase1_(iConfig.getParameter<bool>("UsePhase1")) {}
@@ -76,8 +75,7 @@ void SiPixelDigiErrorsFromSoA::produce(edm::Event& iEvent, const edm::EventSetup
   // initialize cabling map or update if necessary
   if (cablingWatcher_.check(iSetup)) {
     // cabling map, which maps online address (fed->link->ROC->local pixel) to offline (DetId->global pixel)
-    edm::ESTransientHandle<SiPixelFedCablingMap> cablingMap;
-    iSetup.get<SiPixelFedCablingMapRcd>().get(cablingMapLabel_, cablingMap);
+    const SiPixelFedCablingMap* cablingMap = &iSetup.getData(cablingToken_);
     cabling_ = cablingMap->cablingTree();
     LogDebug("map version:") << cabling_->version();
   }
@@ -97,7 +95,7 @@ void SiPixelDigiErrorsFromSoA::produce(edm::Event& iEvent, const edm::EventSetup
 
   auto size = digiErrors.size();
   for (auto i = 0U; i < size; i++) {
-    PixelErrorCompact err = digiErrors.error(i);
+    SiPixelErrorCompact err = digiErrors.error(i);
     if (err.errorType != 0) {
       SiPixelRawDataError error(err.word, err.errorType, err.fedId + 1200);
       errors[err.rawId].push_back(error);
