@@ -52,7 +52,11 @@ namespace pixelgpudetails {
   const uint32_t numRowsInRoc = 80;
   const uint32_t numColsInRoc = 52;
 
+#ifdef GPU_HION_EVENTS
+  const uint32_t MAX_WORD = 8000;
+#else
   const uint32_t MAX_WORD = 2000;
+#endif
 
   const uint32_t ADC_shift = 0;
   const uint32_t PXID_shift = ADC_shift + ADC_bits;

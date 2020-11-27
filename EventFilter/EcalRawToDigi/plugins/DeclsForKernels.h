@@ -17,7 +17,11 @@ namespace ecal {
 
     constexpr auto empty_event_size = EMPTYEVENTSIZE;
     constexpr uint32_t nfeds_max = 54;
+#ifdef GPU_HION_EVENTS
+    constexpr uint32_t nbytes_per_fed_max = 32 * 1024;
+#else
     constexpr uint32_t nbytes_per_fed_max = 10 * 1024;
+#endif
 
     struct InputDataCPU {
       cms::cuda::host::unique_ptr<unsigned char[]> data;
