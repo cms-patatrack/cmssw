@@ -95,9 +95,9 @@ private:
 
   uint32_t* m_hitsLayerStart;
 
-  PhiBinner * m_hist; // FIXME use a more descriptive name consistently
+  PhiBinner* m_hist;  // FIXME use a more descriptive name consistently
 
   uint32_t m_nHits;
 };
 
-#endif
+#endif  // CUDADataFormats_TrackingRecHit_interface_TrackingRecHit2DSOAView_h
