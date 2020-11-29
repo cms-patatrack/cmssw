@@ -1,6 +1,8 @@
 #include "BrokenLineFitOnGPU.h"
 
 void HelixFitOnGPU::launchBrokenLineKernelsOnCPU(HitsView const* hv, uint32_t hitsInFit, uint32_t maxNumberOfTuples) {
+  resetGrid();
+
   assert(tuples_d);
 
   //  Fit internals

@@ -2,16 +2,20 @@
 
 template <>
 void CAHitNtupletGeneratorKernelsCPU::printCounters(Counters const *counters) {
+  resetGrid();
   kernel_printCounters(counters);
 }
 
 template <>
 void CAHitNtupletGeneratorKernelsCPU::fillHitDetIndices(HitsView const *hv, TkSoA *tracks_d, cudaStream_t) {
+  resetGrid();
   kernel_fillHitDetIndices(&tracks_d->hitIndices, hv, &tracks_d->detIndices);
 }
 
 template <>
 void CAHitNtupletGeneratorKernelsCPU::buildDoublets(HitsOnCPU const &hh, cudaStream_t stream) {
+  resetGrid();
+
   auto nhits = hh.nHits();
 
 #ifdef NTUPLE_DEBUG
@@ -69,6 +73,8 @@ void CAHitNtupletGeneratorKernelsCPU::buildDoublets(HitsOnCPU const &hh, cudaStr
 
 template <>
 void CAHitNtupletGeneratorKernelsCPU::launchKernels(HitsOnCPU const &hh, TkSoA *tracks_d, cudaStream_t cudaStream) {
+  resetGrid();
+
   auto *tuples_d = &tracks_d->hitIndices;
   auto *quality_d = (Quality *)(&tracks_d->m_quality);
 
@@ -149,6 +155,8 @@ void CAHitNtupletGeneratorKernelsCPU::launchKernels(HitsOnCPU const &hh, TkSoA *
 
 template <>
 void CAHitNtupletGeneratorKernelsCPU::classifyTuples(HitsOnCPU const &hh, TkSoA *tracks_d, cudaStream_t cudaStream) {
+  resetGrid();
+
   auto const *tuples_d = &tracks_d->hitIndices;
   auto *quality_d = (Quality *)(&tracks_d->m_quality);
 
