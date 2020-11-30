@@ -11,7 +11,7 @@
 #include <cstdint>
 #include <cstring>
 
-// include the CUDA runtime header to define some of the attivutes, types and sybols also on the CPU
+// include the CUDA runtime header to define some of the attributes, types and sybols also on the CPU
 #include <cuda_runtime.h>
 
 // make sure function are inlined to avoid multiple definition
