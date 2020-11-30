@@ -156,8 +156,6 @@ namespace gpuVertexFinder {
     // std::cout << "found " << (*ws_d).nvIntermediate << " vertices " << std::endl;
     fitVertices(soa, ws_d.get(), 50.);
     // one block per vertex!
-    assert(blockIdx.x == 0);
-    assert(gridDim.x == 1);
     splitVertices(soa, ws_d.get(), 9.f);
     fitVertices(soa, ws_d.get(), 5000.);
     sortByPt2(soa, ws_d.get());
