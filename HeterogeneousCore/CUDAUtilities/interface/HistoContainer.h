@@ -14,6 +14,7 @@
 #include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudastdAlgorithm.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/prefixScan.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/FlexiStorage.h"
 
 namespace cms {
   namespace cuda {
@@ -144,7 +145,7 @@ namespace cms {
 
     template <typename T,                  // the type of the discretized input values
               uint32_t NBINS,              // number of bins
-              uint32_t SIZE,               // max number of element
+              int32_t SIZE,               // max number of element. If -1 is initialized at runtime using external storage
               uint32_t S = sizeof(T) * 8,  // number of significant bits in T
               typename I = uint32_t,  // type stored in the container (usually an index in a vector of the input values)
               uint32_t NHISTS = 1     // number of histos stored
@@ -176,7 +177,8 @@ namespace cms {
       static constexpr uint32_t nhists() { return NHISTS; }
       static constexpr uint32_t totbins() { return NHISTS * NBINS + 1; }
       static constexpr uint32_t nbits() { return ilog2(NBINS - 1) + 1; }
-      static constexpr uint32_t capacity() { return SIZE; }
+      static constexpr int32_t ctCapacity() { return SIZE; }
+      constexpr auto capacity() { return bins.capacity(); }
 
       static constexpr auto histOff(uint32_t nh) { return NBINS * nh; }
 
@@ -185,6 +187,11 @@ namespace cms {
         constexpr uint32_t mask = (1 << nbits()) - 1;
         return (t >> shift) & mask;
       }
+
+      __host__ __device__ void initStorage(I * d, int32_t s) {
+          bins.init(d,s);
+      }  
+
 
       __host__ __device__ void zero() {
         for (auto &i : off)
@@ -300,15 +307,15 @@ namespace cms {
       constexpr auto size() const { return uint32_t(off[totbins() - 1]); }
       constexpr auto size(uint32_t b) const { return off[b + 1] - off[b]; }
 
-      constexpr index_type const *begin() const { return bins; }
+      constexpr index_type const *begin() const { return bins.data(); }
       constexpr index_type const *end() const { return begin() + size(); }
 
-      constexpr index_type const *begin(uint32_t b) const { return bins + off[b]; }
-      constexpr index_type const *end(uint32_t b) const { return bins + off[b + 1]; }
+      constexpr index_type const *begin(uint32_t b) const { return bins.data() + off[b]; }
+      constexpr index_type const *end(uint32_t b) const { return bins.data() + off[b + 1]; }
 
       Counter off[totbins()];
       int32_t psws;  // prefix-scan working space
-      index_type bins[capacity()];
+      FlexiStorage<index_type,SIZE> bins;
     };
 
     template <typename I,        // type stored in the container (usually an index in a vector of the input values)

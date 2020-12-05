@@ -40,6 +40,10 @@
     <flags CXXFLAGS="-g"/>
   </bin>
 
+  <bin file="FlexiStorage_t.cpp">
+   <flags CXXFLAGS="-g"/>
+  </bin>
+
   <bin file="HistoContainer_t.cu" name="gpuHistoContainer_t">
     <flags CUDA_FLAGS="-g"/>
   </bin>

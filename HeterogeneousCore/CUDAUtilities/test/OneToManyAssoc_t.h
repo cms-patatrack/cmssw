@@ -77,7 +77,7 @@ __global__ void fill(TK const* __restrict__ tk, Assoc* __restrict__ assoc, int32
   }
 }
 
-__global__ void verify(Assoc* __restrict__ assoc) { assert(assoc->size() < Assoc::capacity()); }
+__global__ void verify(Assoc* __restrict__ assoc) { assert(assoc->size() < Assoc::ctCapacity()); }
 
 template <typename Assoc>
 __global__ void fillBulk(AtomicPairCounter* apc, TK const* __restrict__ tk, Assoc* __restrict__ assoc, int32_t n) {
@@ -92,7 +92,7 @@ template <typename Assoc>
 __global__ void verifyBulk(Assoc const* __restrict__ assoc, AtomicPairCounter const* apc) {
   if (apc->get().m >= Assoc::nbins())
     printf("Overflow %d %d\n", apc->get().m, Assoc::nbins());
-  assert(assoc->size() < Assoc::capacity());
+  assert(assoc->size() < Assoc::ctCapacity());
 }
 
 int main() {
@@ -118,9 +118,9 @@ int main() {
   assert(gridDim.z == 1);
 #endif
 
-  std::cout << "OneToManyAssoc " << sizeof(Assoc) << ' ' << Assoc::nbins() << ' ' << Assoc::capacity() << std::endl;
+  std::cout << "OneToManyAssoc " << sizeof(Assoc) << ' ' << Assoc::nbins() << ' ' << Assoc::ctCapacity() << std::endl;
   std::cout << "OneToManyAssoc (small) " << sizeof(SmallAssoc) << ' ' << SmallAssoc::nbins() << ' '
-            << SmallAssoc::capacity() << std::endl;
+            << SmallAssoc::ctCapacity() << std::endl;
 
   std::mt19937 eng;
 
