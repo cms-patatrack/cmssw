@@ -3,7 +3,7 @@
 template <>
 void CAHitNtupletGeneratorKernelsGPU::fillHitDetIndices(HitsView const *hv, TkSoA *tracks_d, cudaStream_t cudaStream) {
   auto blockSize = 128;
-  auto numberOfBlocks = (HitContainer::capacity() + blockSize - 1) / blockSize;
+  auto numberOfBlocks = (HitContainer::ctCapacity() + blockSize - 1) / blockSize;
 
   kernel_fillHitDetIndices<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
       &tracks_d->hitIndices, hv, &tracks_d->detIndices);
@@ -21,7 +21,7 @@ void CAHitNtupletGeneratorKernelsGPU::launchKernels(HitsOnCPU const &hh, TkSoA *
   auto *quality_d = (Quality *)(&tracks_d->m_quality);
 
   // zero tuples
-  cms::cuda::launchZero(tuples_d, cudaStream);
+  cms::cuda::launchZero(tuples_d, nullptr, 0, cudaStream);
 
   auto nhits = hh.nHits();
   assert(nhits <= pixelGPUConstants::maxNumberOfHits);
@@ -257,7 +257,7 @@ void CAHitNtupletGeneratorKernelsGPU::classifyTuples(HitsOnCPU const &hh, TkSoA 
   }
   if (m_params.minHitsPerNtuplet_ < 4) {
     // remove duplicates (tracks that share a hit)
-    numberOfBlocks = (HitToTuple::capacity() + blockSize - 1) / blockSize;
+    numberOfBlocks = (HitToTuple::ctCapacity() + blockSize - 1) / blockSize;
     kernel_tripletCleaner<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
         hh.view(), tuples_d, tracks_d, quality_d, device_hitToTuple_.get());
     cudaCheck(cudaGetLastError());
@@ -283,7 +283,7 @@ void CAHitNtupletGeneratorKernelsGPU::classifyTuples(HitsOnCPU const &hh, TkSoA 
 
   if (m_params.doStats_) {
     // counters (add flag???)
-    numberOfBlocks = (HitToTuple::capacity() + blockSize - 1) / blockSize;
+    numberOfBlocks = (HitToTuple::ctCapacity() + blockSize - 1) / blockSize;
     kernel_doStatsForHitInTracks<<<numberOfBlocks, blockSize, 0, cudaStream>>>(device_hitToTuple_.get(), counters_);
     cudaCheck(cudaGetLastError());
     numberOfBlocks = (3 * CAConstants::maxNumberOfQuadruplets() / 4 + blockSize - 1) / blockSize;

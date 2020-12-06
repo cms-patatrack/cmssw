@@ -75,7 +75,7 @@ void CAHitNtupletGeneratorKernelsCPU::launchKernels(HitsOnCPU const &hh, TkSoA *
   assert(tuples_d && quality_d);
 
   // zero tuples
-  cms::cuda::launchZero(tuples_d, cudaStream);
+  cms::cuda::launchZero(tuples_d, nullptr, 0, cudaStream);
 
   auto nhits = hh.nHits();
   assert(nhits <= pixelGPUConstants::maxNumberOfHits);
