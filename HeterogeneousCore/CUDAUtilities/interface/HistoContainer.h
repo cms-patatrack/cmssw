@@ -19,6 +19,23 @@
 namespace cms {
   namespace cuda {
 
+
+   template <typename Histo>
+   __global__ void zeroAndInit(Histo * h, typename Histo::index_type * mem, int s) {
+     int first = blockDim.x * blockIdx.x + threadIdx.x;
+     for (int i = first, nt = h->totbins(); i < nt; i += gridDim.x * blockDim.x) {
+        h->off[i]=0;
+     }
+     if (0==first) {
+        h->psws=0;
+        if constexpr (Histo::ctCapacity()<0) {
+           assert(mem);
+           assert(s>0);
+           h->initStorage(mem,s);
+        }
+     }
+    }
+
     template <typename Histo, typename T>
     __global__ void countFromVector(Histo *__restrict__ h,
                                     uint32_t nh,
@@ -53,18 +70,32 @@ namespace cms {
 
     template <typename Histo>
     inline __attribute__((always_inline)) void launchZero(Histo *__restrict__ h,
+                                                          typename Histo::index_type * mem, 
+                                                          int s,
                                                           cudaStream_t stream
 #ifndef __CUDACC__
                                                           = cudaStreamDefault
 #endif
     ) {
+     if constexpr (Histo::ctCapacity()<0) {
+        assert(mem);
+        assert(s>0);
+     }
+#ifdef __CUDACC__
+      auto nthreads = 1024;
+      auto nblocks = (Histo::totbins() + nthreads - 1) / nthreads;
+      zeroAndInit<<<nblocks, nthreads, 0, stream>>>(
+        h, mem, s
+      );
+      cudaCheck(cudaGetLastError());
+#else
       uint32_t *poff = (uint32_t *)((char *)(h) + offsetof(Histo, off));
       int32_t size = offsetof(Histo, bins) - offsetof(Histo, off);
       assert(size >= int(sizeof(uint32_t) * Histo::totbins()));
-#ifdef __CUDACC__
-      cudaCheck(cudaMemsetAsync(poff, 0, size, stream));
-#else
       ::memset(poff, 0, size);
+      if constexpr (Histo::ctCapacity()<0) {
+        h->initStorage(mem,s);
+      }
 #endif
     }
 
@@ -95,12 +126,13 @@ namespace cms {
                                                                   uint32_t const *__restrict__ offsets,
                                                                   uint32_t totSize,
                                                                   int nthreads,
+                                                                  typename Histo::index_type * mem,                                       
                                                                   cudaStream_t stream
 #ifndef __CUDACC__
                                                                   = cudaStreamDefault
 #endif
     ) {
-      launchZero(h, stream);
+      launchZero(h, mem,totSize, stream);
 #ifdef __CUDACC__
       auto nblocks = (totSize + nthreads - 1) / nthreads;
       countFromVector<<<nblocks, nthreads, 0, stream>>>(h, nh, v, offsets);
@@ -320,7 +352,7 @@ namespace cms {
 
     template <typename I,        // type stored in the container (usually an index in a vector of the input values)
               uint32_t MAXONES,  // max number of "ones"
-              uint32_t MAXMANYS  // max number of "manys"
+              int32_t MAXMANYS  // max number of "manys"
               >
     using OneToManyAssoc = HistoContainer<uint32_t, MAXONES, MAXMANYS, sizeof(uint32_t) * 8, I, 1>;
 
