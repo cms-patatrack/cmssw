@@ -18,7 +18,7 @@ public:
   using hindex_type = uint32_t;  // if above is <=2^32
 
   using PhiBinner =
-      cms::cuda::HistoContainer<int16_t, 128, gpuClustering::MaxNumClusters, 8 * sizeof(int16_t), hindex_type, 10>;
+      cms::cuda::HistoContainer<int16_t, 128, -1, 8 * sizeof(int16_t), hindex_type, 10>;
 
   using Hist = PhiBinner;  // FIXME
 
@@ -96,6 +96,7 @@ private:
   uint32_t* m_hitsLayerStart;
 
   PhiBinner* m_hist;  // FIXME use a more descriptive name consistently
+  PhiBinner::index_type * m_histStorage;
 
   uint32_t m_nHits;
 };

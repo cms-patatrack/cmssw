@@ -34,6 +34,7 @@ public:
   auto hitsModuleStart() const { return m_hitsModuleStart; }
   auto hitsLayerStart() { return m_hitsLayerStart; }
   auto phiBinner() { return m_hist; }
+  auto binnerStorage() {return m_histStorage;}
   auto iphi() { return m_iphi; }
 
   // only the local coord and detector index
@@ -43,7 +44,7 @@ public:
 
 private:
   static constexpr uint32_t n16 = 4;
-  static constexpr uint32_t n32 = 9;
+  static constexpr uint32_t n32 = 10;
   static_assert(sizeof(uint32_t) == sizeof(float));  // just stating the obvious
 
   unique_ptr<uint16_t[]> m_store16;  //!
@@ -60,6 +61,7 @@ private:
 
   // needed as kernel params...
   Hist* m_hist;
+  Hist::index_type * m_histStorage;
   uint32_t* m_hitsLayerStart;
   int16_t* m_iphi;
 };
@@ -101,11 +103,15 @@ TrackingRecHit2DHeterogeneous<Traits>::TrackingRecHit2DHeterogeneous(uint32_t nH
   m_store32 = Traits::template make_device_unique<float[]>(nHits * n32 + 11, stream);
   m_HistStore = Traits::template make_device_unique<TrackingRecHit2DSOAView::Hist>(stream);
 
+  static_assert(sizeof(TrackingRecHit2DSOAView::hindex_type)==sizeof(float));
+  static_assert(sizeof(TrackingRecHit2DSOAView::hindex_type)==sizeof(TrackingRecHit2DSOAView::Hist::index_type));
+
   auto get16 = [&](int i) { return m_store16.get() + i * nHits; };
   auto get32 = [&](int i) { return m_store32.get() + i * nHits; };
 
   // copy all the pointers
   m_hist = view->m_hist = m_HistStore.get();
+  m_histStorage = view->m_histStorage = reinterpret_cast<TrackingRecHit2DSOAView::Hist::index_type *>(get32(9));
 
   view->m_xl = get32(0);
   view->m_yl = get32(1);

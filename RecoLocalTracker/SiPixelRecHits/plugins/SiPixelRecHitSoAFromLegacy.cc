@@ -240,7 +240,7 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
     output->hitsLayerStart()[i] = hitsModuleStart[cpeView.layerGeometry().layerStart[i]];
   }
   cms::cuda::fillManyFromVector(
-      output->phiBinner(), 10, output->iphi(), output->hitsLayerStart(), numberOfHits, 256, nullptr);
+      output->phiBinner(), 10, output->iphi(), output->hitsLayerStart(), numberOfHits, 256, output->binnerStorage());
 
   // std::cout << "created HitSoa for " <<  numberOfClusters << " clusters in " << numberOfDetUnits << " Dets" << std::endl;
   iEvent.put(std::move(output));
