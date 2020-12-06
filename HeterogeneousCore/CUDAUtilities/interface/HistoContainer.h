@@ -19,21 +19,20 @@
 namespace cms {
   namespace cuda {
 
-
-   template <typename Histo>
-   __global__ void zeroAndInit(Histo * h, typename Histo::index_type * mem, int s) {
-     int first = blockDim.x * blockIdx.x + threadIdx.x;
-     for (int i = first, nt = h->totbins(); i < nt; i += gridDim.x * blockDim.x) {
-        h->off[i]=0;
-     }
-     if (0==first) {
-        h->psws=0;
-        if constexpr (Histo::ctCapacity()<0) {
-           assert(mem);
-           assert(s>0);
-           h->initStorage(mem,s);
+    template <typename Histo>
+    __global__ void zeroAndInit(Histo *h, typename Histo::index_type *mem, int s) {
+      int first = blockDim.x * blockIdx.x + threadIdx.x;
+      for (int i = first, nt = h->totbins(); i < nt; i += gridDim.x * blockDim.x) {
+        h->off[i] = 0;
+      }
+      if (0 == first) {
+        h->psws = 0;
+        if constexpr (Histo::ctCapacity() < 0) {
+          assert(mem);
+          assert(s > 0);
+          h->initStorage(mem, s);
         }
-     }
+      }
     }
 
     template <typename Histo, typename T>
@@ -70,31 +69,29 @@ namespace cms {
 
     template <typename Histo>
     inline __attribute__((always_inline)) void launchZero(Histo *__restrict__ h,
-                                                          typename Histo::index_type * mem, 
+                                                          typename Histo::index_type *mem,
                                                           int s,
                                                           cudaStream_t stream
 #ifndef __CUDACC__
                                                           = cudaStreamDefault
 #endif
     ) {
-     if constexpr (Histo::ctCapacity()<0) {
+      if constexpr (Histo::ctCapacity() < 0) {
         assert(mem);
-        assert(s>0);
-     }
+        assert(s > 0);
+      }
 #ifdef __CUDACC__
       auto nthreads = 1024;
       auto nblocks = (Histo::totbins() + nthreads - 1) / nthreads;
-      zeroAndInit<<<nblocks, nthreads, 0, stream>>>(
-        h, mem, s
-      );
+      zeroAndInit<<<nblocks, nthreads, 0, stream>>>(h, mem, s);
       cudaCheck(cudaGetLastError());
 #else
       uint32_t *poff = (uint32_t *)((char *)(h) + offsetof(Histo, off));
       int32_t size = offsetof(Histo, bins) - offsetof(Histo, off);
       assert(size >= int(sizeof(uint32_t) * Histo::totbins()));
       ::memset(poff, 0, size);
-      if constexpr (Histo::ctCapacity()<0) {
-        h->initStorage(mem,s);
+      if constexpr (Histo::ctCapacity() < 0) {
+        h->initStorage(mem, s);
       }
 #endif
     }
@@ -126,13 +123,13 @@ namespace cms {
                                                                   uint32_t const *__restrict__ offsets,
                                                                   uint32_t totSize,
                                                                   int nthreads,
-                                                                  typename Histo::index_type * mem,                                       
+                                                                  typename Histo::index_type *mem,
                                                                   cudaStream_t stream
 #ifndef __CUDACC__
                                                                   = cudaStreamDefault
 #endif
     ) {
-      launchZero(h, mem,totSize, stream);
+      launchZero(h, mem, totSize, stream);
 #ifdef __CUDACC__
       auto nblocks = (totSize + nthreads - 1) / nthreads;
       countFromVector<<<nblocks, nthreads, 0, stream>>>(h, nh, v, offsets);
@@ -175,9 +172,9 @@ namespace cms {
       }
     }
 
-    template <typename T,                  // the type of the discretized input values
-              uint32_t NBINS,              // number of bins
-              int32_t SIZE,               // max number of element. If -1 is initialized at runtime using external storage
+    template <typename T,      // the type of the discretized input values
+              uint32_t NBINS,  // number of bins
+              int32_t SIZE,    // max number of element. If -1 is initialized at runtime using external storage
               uint32_t S = sizeof(T) * 8,  // number of significant bits in T
               typename I = uint32_t,  // type stored in the container (usually an index in a vector of the input values)
               uint32_t NHISTS = 1     // number of histos stored
@@ -220,10 +217,7 @@ namespace cms {
         return (t >> shift) & mask;
       }
 
-      __host__ __device__ void initStorage(I * d, int32_t s) {
-          bins.init(d,s);
-      }  
-
+      __host__ __device__ void initStorage(I *d, int32_t s) { bins.init(d, s); }
 
       __host__ __device__ void zero() {
         for (auto &i : off)
@@ -347,12 +341,12 @@ namespace cms {
 
       Counter off[totbins()];
       int32_t psws;  // prefix-scan working space
-      FlexiStorage<index_type,SIZE> bins;
+      FlexiStorage<index_type, SIZE> bins;
     };
 
     template <typename I,        // type stored in the container (usually an index in a vector of the input values)
               uint32_t MAXONES,  // max number of "ones"
-              int32_t MAXMANYS  // max number of "manys"
+              int32_t MAXMANYS   // max number of "manys"
               >
     using OneToManyAssoc = HistoContainer<uint32_t, MAXONES, MAXMANYS, sizeof(uint32_t) * 8, I, 1>;
 

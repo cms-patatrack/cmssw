@@ -37,7 +37,6 @@ void go() {
   auto h_s = make_device_unique<uint32_t[]>(N, nullptr);
   // auto h_s = make_device_unique<Hist::index_type[]>(N, nullptr);
 
-
   auto off_d = make_device_unique<uint32_t[]>(nParts + 1, nullptr);
 
   for (int it = 0; it < 5; ++it) {
@@ -74,11 +73,11 @@ void go() {
 
     cudaCheck(cudaMemcpy(v_d.get(), v, N * sizeof(T), cudaMemcpyHostToDevice));
 
-    fillManyFromVector(h_d.get(), nParts, v_d.get(), off_d.get(), offsets[10], 256, h_s.get(),0);
+    fillManyFromVector(h_d.get(), nParts, v_d.get(), off_d.get(), offsets[10], 256, h_s.get(), 0);
     cudaCheck(cudaMemcpy(&h, h_d.get(), sizeof(Hist), cudaMemcpyDeviceToHost));
-    assert(h.capacity()==offsets[10]);
-    cudaCheck(cudaMemcpy(mem, h_s.get(), N*sizeof(uint32_t), cudaMemcpyDeviceToHost));
-    h.initStorage(mem,N);
+    assert(h.capacity() == offsets[10]);
+    cudaCheck(cudaMemcpy(mem, h_s.get(), N * sizeof(uint32_t), cudaMemcpyDeviceToHost));
+    h.initStorage(mem, N);
     assert(0 == h.off[0]);
     assert(offsets[10] == h.size());
 

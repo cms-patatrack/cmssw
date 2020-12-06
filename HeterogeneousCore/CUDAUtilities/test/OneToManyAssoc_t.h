@@ -176,7 +176,7 @@ int main() {
   auto v_d = tr.data();
 #endif
 
-  launchZero(a_d.get(), nullptr,0, 0);
+  launchZero(a_d.get(), nullptr, 0, 0);
 
 #ifdef __CUDACC__
   auto nThreads = 256;
@@ -276,8 +276,8 @@ int main() {
   auto m1_d = std::make_unique<Multiplicity>();
   auto m2_d = std::make_unique<Multiplicity>();
 #endif
-  launchZero(m1_d.get(), nullptr,0,0);
-  launchZero(m2_d.get(), nullptr,0,0);
+  launchZero(m1_d.get(), nullptr, 0, 0);
+  launchZero(m2_d.get(), nullptr, 0, 0);
 
 #ifdef __CUDACC__
   nBlocks = (4 * N + nThreads - 1) / nThreads;

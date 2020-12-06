@@ -55,7 +55,7 @@ void go() {
       offsets[8] = 256 * 11 + offsets[7];
       offsets[9] = 44 + offsets[8];
       offsets[10] = 3297 + offsets[9];
-     assert(offsets[10] <= N);
+      assert(offsets[10] <= N);
     }
 
     cudaCheck(cudaMemcpy(off_d.get(), offsets, 4 * (nParts + 1), cudaMemcpyHostToDevice));
@@ -70,7 +70,7 @@ void go() {
 
     cudaCheck(cudaMemcpy(v_d.get(), v, N * sizeof(T), cudaMemcpyHostToDevice));
 
-    fillManyFromVector(h_d.get(), nParts, v_d.get(), off_d.get(), offsets[10], 256, nullptr,0);
+    fillManyFromVector(h_d.get(), nParts, v_d.get(), off_d.get(), offsets[10], 256, nullptr, 0);
     cudaCheck(cudaMemcpy(&h, h_d.get(), sizeof(Hist), cudaMemcpyDeviceToHost));
     assert(0 == h.off[0]);
     assert(offsets[10] == h.size());

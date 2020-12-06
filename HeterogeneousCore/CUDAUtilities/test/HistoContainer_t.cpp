@@ -28,7 +28,7 @@ void go() {
   using HistR = HistoContainer<T, NBINS, -1, S>;
   using Hist = HistoContainer<T, NBINS, N, S>;
   using Hist4 = HistoContainer<T, NBINS, N, S, uint16_t, 4>;
- std::cout << "HistoContainerR " << HistR::nbits() << ' ' << HistR::nbins() << ' ' << HistR::totbins() << ' '
+  std::cout << "HistoContainerR " << HistR::nbits() << ' ' << HistR::nbins() << ' ' << HistR::totbins() << ' '
             << HistR::ctCapacity() << ' ' << (rmax - rmin) / HistR::nbins() << std::endl;
   std::cout << "bins " << int(Hist::bin(0)) << ' ' << int(Hist::bin(rmin)) << ' ' << int(Hist::bin(rmax)) << std::endl;
 
@@ -43,8 +43,8 @@ void go() {
 
   uint32_t mem[N];
   HistR hr;
-  hr.initStorage(mem,N);
-  std::cout <<"HistoContainerR " << hr.capacity() << std::endl;
+  hr.initStorage(mem, N);
+  std::cout << "HistoContainerR " << hr.capacity() << std::endl;
   assert(hr.capacity() == N);
   Hist h;
   Hist4 h4;
@@ -103,8 +103,8 @@ void go() {
 
     for (uint32_t i = 0; i < Hist::nbins(); ++i) {
       assert(h.size(i) == hr.size(i));
-      assert(*h.begin(i)==*hr.begin(i));
-    } 
+      assert(*h.begin(i) == *hr.begin(i));
+    }
 
     for (uint32_t i = 0; i < Hist::nbins(); ++i) {
       if (0 == h.size(i))
