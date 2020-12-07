@@ -2,11 +2,6 @@
 
 #include "DataFormats/CaloRecHit/interface/MultifitComputations.h"
 
-// needed to compile with USER_CXXFLAGS="-DCOMPUTE_TDC_TIME"
-#include "DataFormats/HcalRecHit/interface/HcalSpecialTimes.h"
-// TODO reuse some of the HCAL constats from
-//#include "RecoLocalCalo/HcalRecAlgos/interface/HcalConstants.h"
-// ?
 
 #include "SimpleAlgoGPU.h"
 #include "KernelHelpers.h"
