@@ -116,7 +116,6 @@ void EcalRawToDigiGPU::acquire(edm::Event const& event,
   uint32_t currentCummOffset = 0;
   uint32_t counter = 0;
   for (auto const& fed : fedsToUnpack_) {
-    //std::cout << "fed: " << fed << std::endl;
     auto const& data = rawDataHandle->FEDData(fed);
     auto const nbytes = data.size();
 
@@ -145,9 +144,6 @@ void EcalRawToDigiGPU::produce(edm::Event& event, edm::EventSetup const& setup) 
   // get the number of channels
   outputGPU_.digisEB.size = outputCPU_.nchannels[0];
   outputGPU_.digisEE.size = outputCPU_.nchannels[1];
-
-  //ecal::DigisCollection digisEB{outputGPU_.idsEB, outputGPU_.samplesEB, nchannelsEB};
-  //ecal::DigisCollection digisEE{outputGPU_.idsEE, outputGPU_.samplesEE, nchannelsEE};
 
   ctx.emplace(event, digisEBToken_, std::move(outputGPU_.digisEB));
   ctx.emplace(event, digisEEToken_, std::move(outputGPU_.digisEE));

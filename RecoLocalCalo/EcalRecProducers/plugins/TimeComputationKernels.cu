@@ -1,4 +1,3 @@
-#include <iostream>
 #include <limits>
 
 #include <cuda.h>
@@ -42,7 +41,6 @@ namespace ecal {
       // TODO: make sure that this branch plays nicely with __syncthreads inside
       // can there be a deadlock even if the thread is inactive
       if (ch < nchannels) {
-        //
         int sample = tx % nsamples;
 
         // shared mem inits
@@ -82,10 +80,6 @@ namespace ecal {
 
         if (sample == 0) {
           // note, subtract to remove the double counting of sample == 3
-          //s_sum0[ltx] += s_sum0[ltx+1] - s_sum0[ltx+3];
-          //s_sum1[ltx] += s_sum1[ltx+1] - s_sum1[ltx+3];
-          //s_sumA[ltx] += s_sumA[ltx+1] - s_sumA[ltx+3];
-          //s_sumAA[ltx] += s_sumAA[ltx+1] - s_sumAA[ltx+3];
           const auto sum0 = s_sum0[ltx] + s_sum0[ltx + 1] - s_sum0[ltx + 3];
           const auto sum1 = s_sum1[ltx] + s_sum1[ltx + 1] - s_sum1[ltx + 3];
           const auto sumA = s_sumA[ltx] + s_sumA[ltx + 1] - s_sumA[ltx + 3];
@@ -214,13 +208,6 @@ namespace ecal {
       // we will end up with inactive threads which need to be dragged along
       // through the synching point
       //
-      /*
-    bool const condToExit = ch >= nchannels
-        ? true
-        : useless_sample_values[tx_i] 
-          || useless_sample_values[tx_j]
-          || sample_values[tx_i]<=1 || sample_values[tx_j]<=1;
-          */
       bool const condForUselessSamples = useless_sample_values[tx_i] || useless_sample_values[tx_j] ||
                                          sample_values[tx_i] <= 1 || sample_values[tx_j] <= 1;
 
@@ -1100,7 +1087,6 @@ namespace ecal {
           std::sqrt(timeError * timeError + timeConstantTerm * timeConstantTerm * 0.04 * 0.04);  // 0.04 = 1./25.
 
 #ifdef DEBUG_TIME_CORRECTION
-      //    if (gtx == 0) {
       printf("ch = %d timeMax = %f timeError = %f jitter = %f correction = %f\n",
              gtx,
              timeMax,
