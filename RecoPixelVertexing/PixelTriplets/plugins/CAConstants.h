@@ -59,7 +59,7 @@ namespace CAConstants {
   using CellTracksVector = cms::cuda::SimpleVector<CellTracks>;
 
   using OuterHitOfCell = cms::cuda::VecArray<uint32_t, maxCellsPerHit()>;
-  using TuplesContainer = cms::cuda::OneToManyAssoc<hindex_type, maxTuples(), 5 * maxTuples()>;
+  using TuplesContainer = cms::cuda::OneToManyAssoc<hindex_type, maxTuples(), 8 * maxTuples()>;
   using HitToTuple =
       cms::cuda::OneToManyAssoc<tindex_type, pixelGPUConstants::maxNumberOfHits, 12 * maxTuples()>;  // 3.5 should be enough
   using TupleMultiplicity = cms::cuda::OneToManyAssoc<tindex_type, 16, maxTuples()>;

@@ -83,7 +83,8 @@ void CAHitNtupletGeneratorKernelsGPU::launchKernels(HitsOnCPU const &hh, TkSoA *
                                                                      tuples_d,
                                                                      device_hitTuple_apc_,
                                                                      quality_d,
-                                                                     m_params.minHitsPerNtuplet_);
+                                                                     m_params.minHitsPerNtuplet_,
+								     m_params.isUpgrade_);
   cudaCheck(cudaGetLastError());
 
   if (m_params.doStats_)
@@ -206,11 +207,14 @@ void CAHitNtupletGeneratorKernelsGPU::buildDoublets(HitsOnCPU const &hh, cudaStr
   if (m_params.minHitsPerNtuplet_ > 3 && ! m_params.isUpgrade_) {
     nActualPairs = 13;
   }
-  if (m_params.minHitsPerNtuplet_ > 3 &&  m_params.isUpgrade_ && !m_params.includeJumpingForwardDoublets_){
+  if (m_params.minHitsPerNtuplet_ > 3 &&  m_params.isUpgrade_ && false && !m_params.includeJumpingForwardDoublets_){
     nActualPairs = 31;
   }
 
-  assert(nActualPairs <= gpuPixelDoublets::nPairs);
+  auto maxPairs = m_params.isUpgrade_ ? gpuPixelDoublets::nPairsUpgrade : gpuPixelDoublets::nPairs;
+
+  assert(nActualPairs <= maxPairs);
+ 
   int stride = 4;
   int threadsPerBlock = gpuPixelDoublets::getDoubletsFromHistoMaxBlockSize / stride;
   int blocks = (4 * nhits + threadsPerBlock - 1) / threadsPerBlock;
@@ -275,7 +279,7 @@ void CAHitNtupletGeneratorKernelsGPU::classifyTuples(HitsOnCPU const &hh, TkSoA 
     kernel_fillHitInTracks<<<numberOfBlocks, blockSize, 0, cudaStream>>>(tuples_d, quality_d, device_hitToTuple_.get());
     cudaCheck(cudaGetLastError());
   }
-  if (m_params.minHitsPerNtuplet_ < 4) {
+  if (m_params.minHitsPerNtuplet_ < 5) {
     // remove duplicates (tracks that share a hit)
     numberOfBlocks = (HitToTuple::capacity() + blockSize - 1) / blockSize;
     kernel_tripletCleaner<<<numberOfBlocks, blockSize, 0, cudaStream>>>(

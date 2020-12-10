@@ -170,7 +170,7 @@ __global__ void kernel_fastDuplicateRemover(GPUCACell const *__restrict__ cells,
     // if (thisCell.theDoubletId < 0) continue;
 
     float mc = 10000.f;
-    uint16_t im = 60000;
+    uint32_t im = 60000000;
 
     auto score = [&](auto it) {
       return std::abs(tracks->tip(it));  // tip
@@ -273,7 +273,7 @@ __global__ void kernel_find_ntuplets(GPUCACell::Hits const *__restrict__ hhp,
                                      HitContainer *foundNtuplets,
                                      cms::cuda::AtomicPairCounter *apc,
                                      Quality *__restrict__ quality,
-                                     unsigned int minHitsPerNtuplet) {
+                                     unsigned int minHitsPerNtuplet,bool upgrade) {
   // recursive: not obvious to widen
   auto const &hh = *hhp;
 
@@ -284,7 +284,8 @@ __global__ void kernel_find_ntuplets(GPUCACell::Hits const *__restrict__ hhp,
       continue;  // cut by earlyFishbone
 
     auto pid = thisCell.theLayerPairId;
-    auto doit = minHitsPerNtuplet > 3 ? pid < 3 : pid < 8 || pid > 12;
+    auto doit = upgrade ? minHitsPerNtuplet > 3 ? pid < 3 || (pid > 6 && pid < 20) : pid < 23 : minHitsPerNtuplet > 3 ? pid < 3 : pid < 8 || pid > 12;
+    doit=true;
     if (doit) {
       GPUCACell::TmpTuple stack;
       stack.reset();
@@ -320,7 +321,7 @@ __global__ void kernel_countMultiplicity(HitContainer const *__restrict__ foundN
     assert(quality[it] == trackQuality::bad);
     if (nhits > 16)
       printf("wrong mult %d %d\n", it, nhits);
-    assert(nhits < 8);
+    assert(nhits < 16);
     tupleMultiplicity->countDirect(nhits);
   }
 }
@@ -338,7 +339,7 @@ __global__ void kernel_fillMultiplicity(HitContainer const *__restrict__ foundNt
     assert(quality[it] == trackQuality::bad);
     if (nhits > 16)
       printf("wrong mult %d %d\n", it, nhits);
-    assert(nhits < 8);
+    assert(nhits <16);
     tupleMultiplicity->fillDirect(nhits, it);
   }
 }
@@ -404,7 +405,7 @@ __global__ void kernel_classifyTracks(HitContainer const *__restrict__ tuples,
     // (see CAHitNtupletGeneratorGPU.cc)
     auto const &region = (nhits > 3) ? cuts.quadruplet : cuts.triplet;
     bool isOk = (std::abs(tracks->tip(it)) < region.maxTip) and (tracks->pt(it) > region.minPt) and
-                (std::abs(tracks->zip(it)) < region.maxZip);
+                (std::abs(tracks->zip(it)) < region.maxZip) or true;
 
     if (isOk)
       quality[it] = trackQuality::loose;

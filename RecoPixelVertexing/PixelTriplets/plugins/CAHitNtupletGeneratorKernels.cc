@@ -51,7 +51,7 @@ void CAHitNtupletGeneratorKernelsCPU::buildDoublets(HitsOnCPU const &hh, cudaStr
   if (m_params.minHitsPerNtuplet_ > 3 && ! m_params.isUpgrade_) {
     nActualPairs = 13;
   }
-  if (m_params.minHitsPerNtuplet_ > 3 &&  m_params.isUpgrade_ && !m_params.includeJumpingForwardDoublets_){
+  if (false && m_params.minHitsPerNtuplet_ > 3 &&  m_params.isUpgrade_ && !m_params.includeJumpingForwardDoublets_){
     nActualPairs = 31;
   } 
 
@@ -102,7 +102,7 @@ void CAHitNtupletGeneratorKernelsCPU::launchKernels(HitsOnCPU const &hh, TkSoA *
                  device_isOuterHitOfCell_.get(),
                  m_params.hardCurvCut_,
                  m_params.ptmin_,
-                 m_params.CAThetaCutBarrel_,
+                 m_params.CAThetaCutBarrel_ * 10.f,
                  m_params.CAThetaCutForward_,
                  m_params.dcaCutInnerTriplet_,
                  m_params.dcaCutOuterTriplet_,
@@ -120,7 +120,8 @@ void CAHitNtupletGeneratorKernelsCPU::launchKernels(HitsOnCPU const &hh, TkSoA *
                        tuples_d,
                        device_hitTuple_apc_,
                        quality_d,
-                       m_params.minHitsPerNtuplet_);
+                       m_params.minHitsPerNtuplet_,
+		       m_params.isUpgrade_);
   if (m_params.doStats_)
     kernel_mark_used(hh.view(), device_theCells_.get(), device_nCells_);
 

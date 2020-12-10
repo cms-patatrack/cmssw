@@ -19,7 +19,7 @@ namespace gpuClustering {
   __global__ void countModules(uint16_t const* __restrict__ id,
                                uint32_t* __restrict__ moduleStart,
                                int32_t* __restrict__ clusterId,
-                               int numElements) {
+                               int numElements, uint16_t maxModules) {
     int first = blockDim.x * blockIdx.x + threadIdx.x;
     for (int i = first; i < numElements; i += gridDim.x * blockDim.x) {
       clusterId[i] = i;
@@ -30,7 +30,7 @@ namespace gpuClustering {
         --j;
       if (j < 0 or id[j] != id[i]) {
         // boundary...
-        auto loc = atomicInc(moduleStart, MaxNumModules);
+        auto loc = atomicInc(moduleStart, maxModules);
         moduleStart[loc + 1] = i;
       }
     }

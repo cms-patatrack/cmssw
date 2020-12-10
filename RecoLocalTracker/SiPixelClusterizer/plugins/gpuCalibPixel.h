@@ -72,9 +72,18 @@ namespace gpuCalibPixel {
  __global__ void calibDigisUpgrade(
                              uint16_t *xx, uint16_t *yy,
                              uint16_t *adc, uint32_t *pdigi,
-                             uint16_t *id,int numElements)
+                             uint16_t *id,int numElements,
+			     uint32_t* __restrict__ moduleStart,        // just to zero first
+                             uint32_t* __restrict__ nClustersInModule,  // just to zero them
+                             uint32_t* __restrict__ clusModuleStart)
    {
     int first = blockDim.x * blockIdx.x + threadIdx.x;
+
+    if (0 == first)
+      clusModuleStart[0] = moduleStart[0] = 0;
+    for (int i = first; i < gpuClustering::MaxNumModulesUpgrade; i += gridDim.x * blockDim.x) {
+      nClustersInModule[i] = 0;
+    }
 
    for (int i = first; i < numElements; i += gridDim.x * blockDim.x) {
       

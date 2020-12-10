@@ -13,7 +13,7 @@ cms::cuda::host::unique_ptr<float[]> TrackingRecHit2DCUDA::localCoordToHostAsync
 
 template <>
 cms::cuda::host::unique_ptr<uint32_t[]> TrackingRecHit2DCUDA::hitsModuleStartToHostAsync(cudaStream_t stream) const {
-  auto ret = cms::cuda::make_host_unique<uint32_t[]>(2001, stream);
-  cudaCheck(cudaMemcpyAsync(ret.get(), m_hitsModuleStart, 4 * 2001, cudaMemcpyDefault, stream));
+  auto ret = cms::cuda::make_host_unique<uint32_t[]>(4001, stream);
+  cudaCheck(cudaMemcpyAsync(ret.get(), m_hitsModuleStart, 4 * 4001, cudaMemcpyDefault, stream));
   return ret;
 }

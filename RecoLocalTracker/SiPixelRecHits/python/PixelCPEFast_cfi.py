@@ -35,4 +35,7 @@ PixelCPEFastESProducer = cms.ESProducer("PixelCPEFastESProducer",
 
     #MagneticFieldRecord: e.g. "" or "ParabolicMF"
     MagneticFieldRecord = cms.ESInputTag(""),
+
+    #Upgrade or not
+    Upgrade = cms.bool(False),
 )

@@ -35,7 +35,7 @@ public:
 
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
-  using HitModuleStart = std::array<uint32_t, gpuClustering::MaxNumModules + 1>;
+  using HitModuleStart = std::array<uint32_t, gpuClustering::MaxNumModulesUpgrade + 1>;
   using HMSstorage = HostProduct<unsigned int[]>;
 
 private:
@@ -105,7 +105,7 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
   auto const& input = *hclusters;
 
   // yes a unique ptr of a unique ptr so edm is happy and the pointer stay still...
-  auto hmsp = std::make_unique<uint32_t[]>(gpuClustering::MaxNumModules + 1);
+  auto hmsp = std::make_unique<uint32_t[]>(gpuClustering::MaxNumModulesUpgrade + 1);
   auto hitsModuleStart = hmsp.get();
   auto hms = std::make_unique<HMSstorage>(std::move(hmsp));  // hmsp is gone
   iEvent.put(tokenModuleStart_, std::move(hms));             // hms is gone! hitsModuleStart still alive and kicking...
@@ -125,11 +125,11 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
   std::vector<edm::Ref<edmNew::DetSetVector<SiPixelCluster>, SiPixelCluster>> clusterRef;
 
   constexpr uint32_t MaxHitsInModule = gpuClustering::MaxHitsInModule;
-  uint16_t maxModules = isUpgrade_ ? 4000 : 2000;
+  uint16_t maxModules = isUpgrade_ ? gpuClustering::MaxNumModulesUpgrade : gpuClustering::MaxNumModules;
   HitModuleStart moduleStart_;  // index of the first pixel of each module
   HitModuleStart clusInModule_;
   memset(&clusInModule_, 0, sizeof(HitModuleStart));  // needed??
-  assert((maxModules+1) == clusInModule_.size());
+  assert((gpuClustering::MaxNumModulesUpgrade+1) == clusInModule_.size());
   assert(0 == clusInModule_[maxModules]);
   uint32_t moduleId_;
   moduleStart_[1] = 0;  // we run sequentially....
@@ -185,6 +185,7 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
 
     auto const fc = hitsModuleStart[gind];
     auto const lc = hitsModuleStart[gind + 1];
+    // std::cout << gind << " - " << hitsModuleStart[gind] << " - " << hitsModuleStart[gind+1] << " - " << clusInModule_.size() << " - " << nclus << std::endl;
     assert(lc > fc);
     // std::cout << "in det " << gind << ": conv " << nclus << " hits from " << DSViter->size() << " legacy clusters"
     //          <<' '<< fc <<','<<lc<<std::endl;
@@ -253,12 +254,12 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
   
   // fill data structure to support CA
   for (auto i = 0U; i <= nLayers; ++i) {
-    output->hitsLayerStart()[i] = hitsModuleStart[cpeView.layerGeometry().layerStart[i]];
+    output->hitsLayerStart()[i] = hitsModuleStart[cpeView.layerGeometry().layerStart[i]]; 
   }
   cms::cuda::fillManyFromVector(
-      output->phiBinner(), nLayers, output->iphi(), output->hitsLayerStart(), numberOfHits, 256, nullptr);
+      output->phiBinner(), nLayers, output->iphi(), output->hitsLayerStart(), numberOfHits, 256, nullptr); 
 
-  // std::cout << "created HitSoa for " <<  numberOfClusters << " clusters in " << numberOfDetUnits << " Dets" << std::endl;
+  std::cout << "created HitSoa for " <<  numberOfClusters << " clusters in " << numberOfDetUnits << " Dets" << std::endl;
   iEvent.put(std::move(output));
   if (convert2Legacy_)
     iEvent.put(std::move(legacyOutput));
