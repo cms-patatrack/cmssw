@@ -38,63 +38,63 @@ namespace ecal {
       int ch = tx / nsamples;
       int nchannels_per_block = blockDim.x / nsamples;
 
-      // TODO: make sure that this branch plays nicely with __syncthreads inside
-      // can there be a deadlock even if the thread is inactive
-      if (ch < nchannels) {
-        int sample = tx % nsamples;
+      // threads that return here should not affect the __syncthreads() below since they have exitted the kernel
+      if (ch >= nchannels)
+        return;
 
-        // shared mem inits
-        extern __shared__ char sdata[];
-        char* s_sum0 = sdata;
-        SampleVector::Scalar* s_sum1 = reinterpret_cast<SampleVector::Scalar*>(s_sum0 + nchannels_per_block * nsamples);
-        SampleVector::Scalar* s_sumA = s_sum1 + nchannels_per_block * nsamples;
-        SampleVector::Scalar* s_sumAA = s_sumA + nchannels_per_block * nsamples;
+      int sample = tx % nsamples;
 
-        // TODO make sure no div by 0
-        const auto inv_error =
-            useless_sample_values[tx] ? 0.0 : 1.0 / (sample_value_errors[tx] * sample_value_errors[tx]);
-        const auto sample_value = sample_values[tx];
-        s_sum0[ltx] = useless_sample_values[tx] ? 0 : 1;
-        s_sum1[ltx] = inv_error;
-        s_sumA[ltx] = sample_value * inv_error;
-        s_sumAA[ltx] = sample_value * sample_value * inv_error;
-        __syncthreads();
+      // shared mem inits
+      extern __shared__ char sdata[];
+      char* s_sum0 = sdata;
+      SampleVector::Scalar* s_sum1 = reinterpret_cast<SampleVector::Scalar*>(s_sum0 + nchannels_per_block * nsamples);
+      SampleVector::Scalar* s_sumA = s_sum1 + nchannels_per_block * nsamples;
+      SampleVector::Scalar* s_sumAA = s_sumA + nchannels_per_block * nsamples;
 
-        // 5 threads for [0, 4] samples
-        if (sample < 5) {
-          s_sum0[ltx] += s_sum0[ltx + 5];
-          s_sum1[ltx] += s_sum1[ltx + 5];
-          s_sumA[ltx] += s_sumA[ltx + 5];
-          s_sumAA[ltx] += s_sumAA[ltx + 5];
-        }
-        __syncthreads();
+      // TODO make sure no div by 0
+      const auto inv_error =
+          useless_sample_values[tx] ? 0.0 : 1.0 / (sample_value_errors[tx] * sample_value_errors[tx]);
+      const auto sample_value = sample_values[tx];
+      s_sum0[ltx] = useless_sample_values[tx] ? 0 : 1;
+      s_sum1[ltx] = inv_error;
+      s_sumA[ltx] = sample_value * inv_error;
+      s_sumAA[ltx] = sample_value * sample_value * inv_error;
+      __syncthreads();
 
-        if (sample < 2) {
-          // note double counting of sample 3
-          s_sum0[ltx] += s_sum0[ltx + 2] + s_sum0[ltx + 3];
-          s_sum1[ltx] += s_sum1[ltx + 2] + s_sum1[ltx + 3];
-          s_sumA[ltx] += s_sumA[ltx + 2] + s_sumA[ltx + 3];
-          s_sumAA[ltx] += s_sumAA[ltx + 2] + s_sumAA[ltx + 3];
-        }
-        __syncthreads();
+      // 5 threads for [0, 4] samples
+      if (sample < 5) {
+        s_sum0[ltx] += s_sum0[ltx + 5];
+        s_sum1[ltx] += s_sum1[ltx + 5];
+        s_sumA[ltx] += s_sumA[ltx + 5];
+        s_sumAA[ltx] += s_sumAA[ltx + 5];
+      }
+      __syncthreads();
 
-        if (sample == 0) {
-          // note, subtract to remove the double counting of sample == 3
-          const auto sum0 = s_sum0[ltx] + s_sum0[ltx + 1] - s_sum0[ltx + 3];
-          const auto sum1 = s_sum1[ltx] + s_sum1[ltx + 1] - s_sum1[ltx + 3];
-          const auto sumA = s_sumA[ltx] + s_sumA[ltx + 1] - s_sumA[ltx + 3];
-          const auto sumAA = s_sumAA[ltx] + s_sumAA[ltx + 1] - s_sumAA[ltx + 3];
-          const auto chi2 = sum0 > 0 ? (sumAA - sumA * sumA / sum1) / sum0 : static_cast<ScalarType>(0);
-          chi2s[ch] = chi2;
-          sum0s[ch] = sum0;
-          sumAAs[ch] = sumAA;
+      if (sample < 2) {
+        // note double counting of sample 3
+        s_sum0[ltx] += s_sum0[ltx + 2] + s_sum0[ltx + 3];
+        s_sum1[ltx] += s_sum1[ltx + 2] + s_sum1[ltx + 3];
+        s_sumA[ltx] += s_sumA[ltx + 2] + s_sumA[ltx + 3];
+        s_sumAA[ltx] += s_sumAA[ltx + 2] + s_sumAA[ltx + 3];
+      }
+      __syncthreads();
+
+      if (sample == 0) {
+        // note, subtract to remove the double counting of sample == 3
+        const auto sum0 = s_sum0[ltx] + s_sum0[ltx + 1] - s_sum0[ltx + 3];
+        const auto sum1 = s_sum1[ltx] + s_sum1[ltx + 1] - s_sum1[ltx + 3];
+        const auto sumA = s_sumA[ltx] + s_sumA[ltx + 1] - s_sumA[ltx + 3];
+        const auto sumAA = s_sumAA[ltx] + s_sumAA[ltx + 1] - s_sumAA[ltx + 3];
+        const auto chi2 = sum0 > 0 ? (sumAA - sumA * sumA / sum1) / sum0 : static_cast<ScalarType>(0);
+        chi2s[ch] = chi2;
+        sum0s[ch] = sum0;
+        sumAAs[ch] = sumAA;
 
 #ifdef DEBUG_TC_NULLHYPOT
-          if (ch == 0) {
-            printf("chi2 = %f sum0 = %d sumAA = %f\n", chi2, static_cast<int>(sum0), sumAA);
-          }
-#endif
+        if (ch == 0) {
+          printf("chi2 = %f sum0 = %d sumAA = %f\n", chi2, static_cast<int>(sum0), sumAA);
         }
+#endif
       }
     }
 
@@ -148,8 +148,8 @@ namespace ecal {
       const auto* dids = ch >= offsetForInputs ? dids_ee : dids_eb;
       const int inputCh = ch >= offsetForInputs ? ch - offsetForInputs : ch;
 
-      // rmeove inactive threads
-      // TODO: need to understand if this is 100% safe in presence of syncthreads
+      // remove inactive threads
+      // threads that return here should not affect the __syncthreads() below since they have exitted the kernel
       if (ch >= nchannels)
         return;
 
@@ -831,140 +831,142 @@ namespace ecal {
       const auto* digis = ch >= offsetForInputs ? digis_ee : digis_eb;
       const auto* dids = ch >= offsetForInputs ? dids_ee : dids_eb;
 
-      if (ch < nchannels) {
-        // indices/inits
-        const int sample = tx % nsamples;
-        const int input_ch_start = inputCh * nsamples;
-        SampleVector::Scalar pedestal = 0.;
-        int num = 0;
+      // threads that return here should not affect the __syncthreads() below since they have exitted the kernel
+      if (ch >= nchannels)
+        return;
 
-        // configure shared mem
-        extern __shared__ char smem[];
-        ScalarType* shrSampleValues = reinterpret_cast<SampleVector::Scalar*>(smem);
-        ScalarType* shrSampleValueErrors = shrSampleValues + blockDim.x;
+      // indices/inits
+      const int sample = tx % nsamples;
+      const int input_ch_start = inputCh * nsamples;
+      SampleVector::Scalar pedestal = 0.;
+      int num = 0;
 
-        // 0 and 1 sample values
-        const auto adc0 = ecal::mgpa::adc(digis[input_ch_start]);
-        const auto gainId0 = ecal::mgpa::gainId(digis[input_ch_start]);
-        const auto adc1 = ecal::mgpa::adc(digis[input_ch_start + 1]);
-        const auto gainId1 = ecal::mgpa::gainId(digis[input_ch_start + 1]);
-        const auto did = DetId{dids[inputCh]};
-        const auto isBarrel = did.subdetId() == EcalBarrel;
-        const auto sample_mask = did.subdetId() == EcalBarrel ? sample_maskEB : sample_maskEE;
-        const auto hashedId = isBarrel ? ecal::reconstruction::hashedIndexEB(did.rawId())
-                                       : offsetForHashes + ecal::reconstruction::hashedIndexEE(did.rawId());
+      // configure shared mem
+      extern __shared__ char smem[];
+      ScalarType* shrSampleValues = reinterpret_cast<SampleVector::Scalar*>(smem);
+      ScalarType* shrSampleValueErrors = shrSampleValues + blockDim.x;
 
-        // set pedestal
-        // TODO this branch is non-divergent for a group of 10 threads
-        if (gainId0 == 1 && use_sample(sample_mask, 0)) {
-          pedestal = static_cast<SampleVector::Scalar>(adc0);
-          num = 1;
+      // 0 and 1 sample values
+      const auto adc0 = ecal::mgpa::adc(digis[input_ch_start]);
+      const auto gainId0 = ecal::mgpa::gainId(digis[input_ch_start]);
+      const auto adc1 = ecal::mgpa::adc(digis[input_ch_start + 1]);
+      const auto gainId1 = ecal::mgpa::gainId(digis[input_ch_start + 1]);
+      const auto did = DetId{dids[inputCh]};
+      const auto isBarrel = did.subdetId() == EcalBarrel;
+      const auto sample_mask = did.subdetId() == EcalBarrel ? sample_maskEB : sample_maskEE;
+      const auto hashedId = isBarrel ? ecal::reconstruction::hashedIndexEB(did.rawId())
+                                     : offsetForHashes + ecal::reconstruction::hashedIndexEE(did.rawId());
 
-          const auto diff = adc1 - adc0;
-          if (gainId1 == 1 && use_sample(sample_mask, 1) && std::abs(diff) < 3 * rms_x12[hashedId]) {
-            pedestal = (pedestal + static_cast<SampleVector::Scalar>(adc1)) / 2.0;
-            num = 2;
-          }
-        } else {
-          pedestal = mean_x12[ch];
+      // set pedestal
+      // TODO this branch is non-divergent for a group of 10 threads
+      if (gainId0 == 1 && use_sample(sample_mask, 0)) {
+        pedestal = static_cast<SampleVector::Scalar>(adc0);
+        num = 1;
+
+        const auto diff = adc1 - adc0;
+        if (gainId1 == 1 && use_sample(sample_mask, 1) && std::abs(diff) < 3 * rms_x12[hashedId]) {
+          pedestal = (pedestal + static_cast<SampleVector::Scalar>(adc1)) / 2.0;
+          num = 2;
         }
+      } else {
+        pedestal = mean_x12[ch];
+      }
 
-        // ped subtracted and gain-renormalized samples.
-        const auto gainId = ecal::mgpa::gainId(digis[inputTx]);
-        const auto adc = ecal::mgpa::adc(digis[inputTx]);
+      // ped subtracted and gain-renormalized samples.
+      const auto gainId = ecal::mgpa::gainId(digis[inputTx]);
+      const auto adc = ecal::mgpa::adc(digis[inputTx]);
 
-        bool bad = false;
-        SampleVector::Scalar sample_value, sample_value_error;
-        // TODO divergent branch
-        // TODO: piece below is general both for amplitudes and timing
-        // potentially there is a way to reduce the amount of code...
-        if (!use_sample(sample_mask, sample)) {
-          bad = true;
-          sample_value = 0;
-          sample_value_error = 0;
-        } else if (gainId == 1) {
-          sample_value = static_cast<SampleVector::Scalar>(adc) - pedestal;
-          sample_value_error = rms_x12[hashedId];
-        } else if (gainId == 2) {
-          sample_value = (static_cast<SampleVector::Scalar>(adc) - mean_x6[hashedId]) * gain12Over6[hashedId];
-          sample_value_error = rms_x6[hashedId] * gain12Over6[hashedId];
-        } else if (gainId == 3) {
-          sample_value = (static_cast<SampleVector::Scalar>(adc) - mean_x1[hashedId]) * gain6Over1[hashedId] *
-                         gain12Over6[hashedId];
-          sample_value_error = rms_x1[hashedId] * gain6Over1[hashedId] * gain12Over6[hashedId];
-        } else {
-          sample_value = 0;
-          sample_value_error = 0;
-          bad = true;
-        }
+      bool bad = false;
+      SampleVector::Scalar sample_value, sample_value_error;
+      // TODO divergent branch
+      // TODO: piece below is general both for amplitudes and timing
+      // potentially there is a way to reduce the amount of code...
+      if (!use_sample(sample_mask, sample)) {
+        bad = true;
+        sample_value = 0;
+        sample_value_error = 0;
+      } else if (gainId == 1) {
+        sample_value = static_cast<SampleVector::Scalar>(adc) - pedestal;
+        sample_value_error = rms_x12[hashedId];
+      } else if (gainId == 2) {
+        sample_value = (static_cast<SampleVector::Scalar>(adc) - mean_x6[hashedId]) * gain12Over6[hashedId];
+        sample_value_error = rms_x6[hashedId] * gain12Over6[hashedId];
+      } else if (gainId == 3) {
+        sample_value = (static_cast<SampleVector::Scalar>(adc) - mean_x1[hashedId]) * gain6Over1[hashedId] *
+                       gain12Over6[hashedId];
+        sample_value_error = rms_x1[hashedId] * gain6Over1[hashedId] * gain12Over6[hashedId];
+      } else {
+        sample_value = 0;
+        sample_value_error = 0;
+        bad = true;
+      }
 
-        // TODO: make sure we save things correctly when sample is useless
-        const auto useless_sample = (sample_value_error <= 0) | bad;
-        useless_sample_values[tx] = useless_sample;
-        sample_values[tx] = sample_value;
-        sample_value_errors[tx] = useless_sample ? 1e+9 : sample_value_error;
+      // TODO: make sure we save things correctly when sample is useless
+      const auto useless_sample = (sample_value_error <= 0) | bad;
+      useless_sample_values[tx] = useless_sample;
+      sample_values[tx] = sample_value;
+      sample_value_errors[tx] = useless_sample ? 1e+9 : sample_value_error;
+
+      // DEBUG
+#ifdef ECAL_RECO_CUDA_TC_INIT_DEBUG
+      if (ch == 0) {
+        printf("sample = %d sample_value = %f sample_value_error = %f useless = %c\n",
+               sample,
+               sample_value,
+               sample_value_error,
+               useless_sample ? '1' : '0');
+      }
+#endif
+
+      // store into the shared mem
+      shrSampleValues[threadIdx.x] = sample_value_error > 0 ? sample_value : std::numeric_limits<ScalarType>::min();
+      shrSampleValueErrors[threadIdx.x] = sample_value_error;
+      __syncthreads();
+
+      // perform the reduction with min
+      if (sample < 5) {
+        // note, if equal -> we keep the value with lower sample as for cpu
+        shrSampleValueErrors[threadIdx.x] = shrSampleValues[threadIdx.x] < shrSampleValues[threadIdx.x + 5]
+                                                ? shrSampleValueErrors[threadIdx.x + 5]
+                                                : shrSampleValueErrors[threadIdx.x];
+        shrSampleValues[threadIdx.x] = std::max(shrSampleValues[threadIdx.x], shrSampleValues[threadIdx.x + 5]);
+      }
+      __syncthreads();
+
+      // a bit of an overkill, but easier than to compare across 3 values
+      if (sample < 3) {
+        shrSampleValueErrors[threadIdx.x] = shrSampleValues[threadIdx.x] < shrSampleValues[threadIdx.x + 3]
+                                                ? shrSampleValueErrors[threadIdx.x + 3]
+                                                : shrSampleValueErrors[threadIdx.x];
+        shrSampleValues[threadIdx.x] = std::max(shrSampleValues[threadIdx.x], shrSampleValues[threadIdx.x + 3]);
+      }
+      __syncthreads();
+
+      if (sample < 2) {
+        shrSampleValueErrors[threadIdx.x] = shrSampleValues[threadIdx.x] < shrSampleValues[threadIdx.x + 2]
+                                                ? shrSampleValueErrors[threadIdx.x + 2]
+                                                : shrSampleValueErrors[threadIdx.x];
+        shrSampleValues[threadIdx.x] = std::max(shrSampleValues[threadIdx.x], shrSampleValues[threadIdx.x + 2]);
+      }
+      __syncthreads();
+
+      if (sample == 0) {
+        // we only needd the max error
+        const auto maxSampleValueError = shrSampleValues[threadIdx.x] < shrSampleValues[threadIdx.x + 1]
+                                             ? shrSampleValueErrors[threadIdx.x + 1]
+                                             : shrSampleValueErrors[threadIdx.x];
+
+        // # pedestal samples used
+        pedestal_nums[ch] = num;
+        // this is used downstream
+        ampMaxError[ch] = maxSampleValueError;
 
         // DEBUG
 #ifdef ECAL_RECO_CUDA_TC_INIT_DEBUG
         if (ch == 0) {
-          printf("sample = %d sample_value = %f sample_value_error = %f useless = %c\n",
-                 sample,
-                 sample_value,
-                 sample_value_error,
-                 useless_sample ? '1' : '0');
+          printf("pedestal_nums = %d ampMaxError = %f\n", num, maxSampleValueError);
         }
 #endif
-
-        // store into the shared mem
-        shrSampleValues[threadIdx.x] = sample_value_error > 0 ? sample_value : std::numeric_limits<ScalarType>::min();
-        shrSampleValueErrors[threadIdx.x] = sample_value_error;
-        __syncthreads();
-
-        // perform the reduction with min
-        if (sample < 5) {
-          // note, if equal -> we keep the value with lower sample as for cpu
-          shrSampleValueErrors[threadIdx.x] = shrSampleValues[threadIdx.x] < shrSampleValues[threadIdx.x + 5]
-                                                  ? shrSampleValueErrors[threadIdx.x + 5]
-                                                  : shrSampleValueErrors[threadIdx.x];
-          shrSampleValues[threadIdx.x] = std::max(shrSampleValues[threadIdx.x], shrSampleValues[threadIdx.x + 5]);
-        }
-        __syncthreads();
-
-        // a bit of an overkill, but easier than to compare across 3 values
-        if (sample < 3) {
-          shrSampleValueErrors[threadIdx.x] = shrSampleValues[threadIdx.x] < shrSampleValues[threadIdx.x + 3]
-                                                  ? shrSampleValueErrors[threadIdx.x + 3]
-                                                  : shrSampleValueErrors[threadIdx.x];
-          shrSampleValues[threadIdx.x] = std::max(shrSampleValues[threadIdx.x], shrSampleValues[threadIdx.x + 3]);
-        }
-        __syncthreads();
-
-        if (sample < 2) {
-          shrSampleValueErrors[threadIdx.x] = shrSampleValues[threadIdx.x] < shrSampleValues[threadIdx.x + 2]
-                                                  ? shrSampleValueErrors[threadIdx.x + 2]
-                                                  : shrSampleValueErrors[threadIdx.x];
-          shrSampleValues[threadIdx.x] = std::max(shrSampleValues[threadIdx.x], shrSampleValues[threadIdx.x + 2]);
-        }
-        __syncthreads();
-
-        if (sample == 0) {
-          // we only needd the max error
-          const auto maxSampleValueError = shrSampleValues[threadIdx.x] < shrSampleValues[threadIdx.x + 1]
-                                               ? shrSampleValueErrors[threadIdx.x + 1]
-                                               : shrSampleValueErrors[threadIdx.x];
-
-          // # pedestal samples used
-          pedestal_nums[ch] = num;
-          // this is used downstream
-          ampMaxError[ch] = maxSampleValueError;
-
-          // DEBUG
-#ifdef ECAL_RECO_CUDA_TC_INIT_DEBUG
-          if (ch == 0) {
-            printf("pedestal_nums = %d ampMaxError = %f\n", num, maxSampleValueError);
-          }
-#endif
-        }
       }
     }
 
