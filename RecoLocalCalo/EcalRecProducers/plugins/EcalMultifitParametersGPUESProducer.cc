@@ -30,7 +30,7 @@ protected:
                       edm::ValidityInterval&) override;
 
 private:
-  edm::ParameterSet const& pset_;
+  edm::ParameterSet const pset_;
 };
 
 EcalMultifitParametersGPUESProducer::EcalMultifitParametersGPUESProducer(edm::ParameterSet const& pset) : pset_{pset} {

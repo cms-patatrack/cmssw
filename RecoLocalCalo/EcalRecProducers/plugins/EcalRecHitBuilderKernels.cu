@@ -503,10 +503,7 @@ namespace ecal {
           flagBits[inputCh] |= (0x1 << (RecHitFlags::RecHitFlags_kGood));
         }
 
-        if (isBarrel && (lasercalib < EBLaserMIN || lasercalib > EBLaserMAX)) {
-          flagBits[inputCh] |= (0x1 << (RecHitFlags::RecHitFlags_kPoorCalib));
-        }
-        if (!isBarrel && (lasercalib < EELaserMIN || lasercalib > EELaserMAX)) {
+        if ((isBarrel && (lasercalib < EBLaserMIN || lasercalib > EBLaserMAX)) || (!isBarrel && (lasercalib < EELaserMIN || lasercalib > EELaserMAX))) {
           flagBits[inputCh] |= (0x1 << (RecHitFlags::RecHitFlags_kPoorCalib));
         }
 
