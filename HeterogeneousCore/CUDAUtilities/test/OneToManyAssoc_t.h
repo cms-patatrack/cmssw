@@ -24,7 +24,7 @@ constexpr uint32_t MaxAssocs = 4 * MaxTk;
 #ifdef RUNTIME_SIZE
 using Assoc = cms::cuda::OneToManyAssoc<uint16_t, -1, -1>;
 using SmallAssoc = cms::cuda::OneToManyAssoc<uint16_t, 128, -1>;
-using Multiplicity = cms::cuda::OneToManyAssoc<uint16_t, 8, -1>;
+using Multiplicity = cms::cuda::OneToManyAssoc<uint16_t, 8, MaxTk>;
 #else
 using Assoc = cms::cuda::OneToManyAssoc<uint16_t, MaxElem, MaxAssocs>;
 using SmallAssoc = cms::cuda::OneToManyAssoc<uint16_t, 128, MaxAssocs>;
@@ -231,17 +231,27 @@ int main() {
     int  a_n = MaxElem;
 
     Assoc::index_type * a_st2 = nullptr;
-    SmallAssoc::index_type * as_st2 = nullptr;
+    SmallAssoc::index_type * sa_st2 = nullptr;
     int     a_n2 = MaxAssocs;
 
 // storage
 #ifdef RUNTIME_SIZE
-
-          
-
+#ifdef __CUDACC__
+   auto a_st_d = cms::cuda::make_device_unique<Assoc::Counter[]>(a_n,nullptr);
+   auto a_st2_d = cms::cuda::make_device_unique<Assoc::index_type[]>(a_n2,nullptr);
+   auto sa_st2_d = cms::cuda::make_device_unique<SmallAssoc::index_type[]>(a_n2,nullptr);
+#else        
+   auto a_st_d = std::make_unique<Assoc::Counter[]>(a_n);
+   auto a_st2_d = std::make_unique<Assoc::index_type[]>(a_n2);
+   auto sa_st2_d = std::make_unique<SmallAssoc::index_type[]>(a_n2);
+#endif
+   a_st = a_st_d.get();
+   a_st2    = a_st2_d.get();
+   sa_st2    = sa_st2_d.get();
 #endif
 
   launchZero(a_d.get(), a_st2, a_n2, a_st, a_n, 0);
+  launchZero(sa_d.get(), sa_st2, a_n2, nullptr, 0, 0);
 
 #ifdef __CUDACC__
   auto nThreads = 256;

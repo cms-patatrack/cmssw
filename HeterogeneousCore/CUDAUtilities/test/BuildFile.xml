@@ -88,6 +88,19 @@
     <flags CXXFLAGS="-g"/>
   </bin>
 
+  <bin file="OneToManyAssoc_t.cu" name="gpuOneToManyAssocRT_t">
+    <flags CUDA_FLAGS="-g -DRUNTIME_SIZE"/>
+  </bin>
+
+  <bin file="OneToManyAssoc_t.cu" name="gpuOneToManyAssocRT_debug">
+    <flags CUDA_FLAGS="-g -DGPU_DEBUG -DRUNTIME_SIZE"/>
+  </bin>
+
+  <bin file="OneToManyAssoc_t.cpp" name="cpuOneToManyAssocRT_t">
+    <flags CXXFLAGS="-g -DRUNTIME_SIZE"/>
+  </bin>
+
+
   <bin file="prefixScan_t.cu" name="gpuPrefixScan_t">
     <flags CUDA_FLAGS="-g"/>
   </bin>
