@@ -13,7 +13,7 @@
 #include "HeterogeneousCore/CUDAUtilities/interface/currentDevice.h"
 #endif
 
-#include "HeterogeneousCore/CUDAUtilities/interface/HistoContainer.h"
+#include "HeterogeneousCore/CUDAUtilities/interface/OneToManyAssoc.h"
 using cms::cuda::AtomicPairCounter;
 
 constexpr uint32_t MaxElem = 64000;
@@ -32,7 +32,7 @@ __global__ void countMultiLocal(TK const* __restrict__ tk, Multiplicity* __restr
     if (threadIdx.x == 0)
       local.zero();
     __syncthreads();
-    local.countDirect(2 + i % 4);
+    local.count(2 + i % 4);
     __syncthreads();
     if (threadIdx.x == 0)
       assoc->add(local);
@@ -42,12 +42,12 @@ __global__ void countMultiLocal(TK const* __restrict__ tk, Multiplicity* __restr
 __global__ void countMulti(TK const* __restrict__ tk, Multiplicity* __restrict__ assoc, int32_t n) {
   int first = blockDim.x * blockIdx.x + threadIdx.x;
   for (int i = first; i < n; i += gridDim.x * blockDim.x)
-    assoc->countDirect(2 + i % 4);
+    assoc->count(2 + i % 4);
 }
 
 __global__ void verifyMulti(Multiplicity* __restrict__ m1, Multiplicity* __restrict__ m2) {
   auto first = blockDim.x * blockIdx.x + threadIdx.x;
-  for (auto i = first; i < Multiplicity::totbins(); i += gridDim.x * blockDim.x)
+  for (int i = first; i < m1->totOnes(); i += gridDim.x * blockDim.x)
     assert(m1->off[i] == m2->off[i]);
 }
 
@@ -60,7 +60,7 @@ __global__ void count(TK const* __restrict__ tk, Assoc* __restrict__ assoc, int3
     if (k >= n)
       return;
     if (tk[k][j] < MaxElem)
-      assoc->countDirect(tk[k][j]);
+      assoc->count(tk[k][j]);
   }
 }
 
@@ -73,11 +73,11 @@ __global__ void fill(TK const* __restrict__ tk, Assoc* __restrict__ assoc, int32
     if (k >= n)
       return;
     if (tk[k][j] < MaxElem)
-      assoc->fillDirect(tk[k][j], k);
+      assoc->fill(tk[k][j], k);
   }
 }
 
-__global__ void verify(Assoc* __restrict__ assoc) { assert(assoc->size() < Assoc::ctCapacity()); }
+__global__ void verify(Assoc* __restrict__ assoc) { assert(int(assoc->size()) < assoc->capacity()); }
 
 template <typename Assoc>
 __global__ void fillBulk(AtomicPairCounter* apc, TK const* __restrict__ tk, Assoc* __restrict__ assoc, int32_t n) {
@@ -90,9 +90,9 @@ __global__ void fillBulk(AtomicPairCounter* apc, TK const* __restrict__ tk, Asso
 
 template <typename Assoc>
 __global__ void verifyBulk(Assoc const* __restrict__ assoc, AtomicPairCounter const* apc) {
-  if (apc->get().m >= Assoc::nbins())
-    printf("Overflow %d %d\n", apc->get().m, Assoc::nbins());
-  assert(assoc->size() < Assoc::ctCapacity());
+  if (int(apc->get().m) >= assoc->nOnes())
+    printf("Overflow %d %d\n", apc->get().m, assoc->nOnes());
+  assert(int(assoc->size()) < assoc->capacity());
 }
 
 int main() {
@@ -118,8 +118,8 @@ int main() {
   assert(gridDim.z == 1);
 #endif
 
-  std::cout << "OneToManyAssoc " << sizeof(Assoc) << ' ' << Assoc::nbins() << ' ' << Assoc::ctCapacity() << std::endl;
-  std::cout << "OneToManyAssoc (small) " << sizeof(SmallAssoc) << ' ' << SmallAssoc::nbins() << ' '
+  std::cout << "OneToManyAssoc " << sizeof(Assoc) << ' ' << Assoc::ctNOnes() << ' ' << Assoc::ctCapacity() << std::endl;
+  std::cout << "OneToManyAssoc (small) " << sizeof(SmallAssoc) << ' ' << SmallAssoc::ctNOnes() << ' '
             << SmallAssoc::ctCapacity() << std::endl;
 
   std::mt19937 eng;
@@ -176,7 +176,7 @@ int main() {
   auto v_d = tr.data();
 #endif
 
-  launchZero(a_d.get(), nullptr, 0, 0);
+  launchZero(a_d.get(), nullptr, 0, nullptr, 0, 0);
 
 #ifdef __CUDACC__
   auto nThreads = 256;
@@ -184,12 +184,12 @@ int main() {
 
   count<<<nBlocks, nThreads>>>(v_d.get(), a_d.get(), N);
 
-  launchFinalize(a_d.get(), 0);
+  launchFinalize(a_d.get(), nullptr, 0, 0);
   verify<<<1, 1>>>(a_d.get());
   fill<<<nBlocks, nThreads>>>(v_d.get(), a_d.get(), N);
 #else
   count(v_d, a_d.get(), N);
-  launchFinalize(a_d.get());
+  launchFinalize(a_d.get(),nullptr,0);
   verify(a_d.get());
   fill(v_d, a_d.get(), N);
 #endif
@@ -218,7 +218,7 @@ int main() {
   assert(0 == la.size(n));
   std::cout << "found with " << n << " elements " << double(ave) / n << ' ' << imax << ' ' << z << std::endl;
 
-  // now the inverse map (actually this is the direct....)
+  // now the inverse map (actually this is the ....)
   AtomicPairCounter* dc_d;
   AtomicPairCounter dc(0);
 
@@ -276,18 +276,18 @@ int main() {
   auto m1_d = std::make_unique<Multiplicity>();
   auto m2_d = std::make_unique<Multiplicity>();
 #endif
-  launchZero(m1_d.get(), nullptr, 0, 0);
-  launchZero(m2_d.get(), nullptr, 0, 0);
+  launchZero(m1_d.get(), nullptr, 0, nullptr, 0,0);
+  launchZero(m2_d.get(), nullptr, 0, nullptr, 0,0);
 
 #ifdef __CUDACC__
   nBlocks = (4 * N + nThreads - 1) / nThreads;
   countMulti<<<nBlocks, nThreads>>>(v_d.get(), m1_d.get(), N);
   countMultiLocal<<<nBlocks, nThreads>>>(v_d.get(), m2_d.get(), N);
-  verifyMulti<<<1, Multiplicity::totbins()>>>(m1_d.get(), m2_d.get());
+  verifyMulti<<<1, Multiplicity::ctNOnes()>>>(m1_d.get(), m2_d.get());
 
-  launchFinalize(m1_d.get(), 0);
-  launchFinalize(m2_d.get(), 0);
-  verifyMulti<<<1, Multiplicity::totbins()>>>(m1_d.get(), m2_d.get());
+  launchFinalize(m1_d.get(), nullptr, 0, 0);
+  launchFinalize(m2_d.get(), nullptr, 0, 0);
+  verifyMulti<<<1, Multiplicity::ctNOnes()>>>(m1_d.get(), m2_d.get());
 
   cudaCheck(cudaGetLastError());
   cudaCheck(cudaDeviceSynchronize());
@@ -296,8 +296,8 @@ int main() {
   countMultiLocal(v_d, m2_d.get(), N);
   verifyMulti(m1_d.get(), m2_d.get());
 
-  launchFinalize(m1_d.get());
-  launchFinalize(m2_d.get());
+  launchFinalize(m1_d.get(), nullptr, 0);
+  launchFinalize(m2_d.get(), nullptr, 0);
   verifyMulti(m1_d.get(), m2_d.get());
 #endif
   return 0;
