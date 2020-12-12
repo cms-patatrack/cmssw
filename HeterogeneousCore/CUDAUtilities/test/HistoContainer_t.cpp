@@ -28,8 +28,8 @@ void go() {
   using HistR = HistoContainer<T, NBINS, -1, S>;
   using Hist = HistoContainer<T, NBINS, N, S>;
   using Hist4 = HistoContainer<T, NBINS, N, S, uint16_t, 4>;
-  std::cout << "HistoContainerR " << HistR::nbits() << ' ' << HistR::nbins() << ' ' << HistR::totbins() << ' ' << HistR::ctNOnes() << ' '
-            << HistR::ctCapacity() << ' ' << (rmax - rmin) / HistR::nbins() << std::endl;
+  std::cout << "HistoContainerR " << HistR::nbits() << ' ' << HistR::nbins() << ' ' << HistR::totbins() << ' '
+            << HistR::ctNOnes() << ' ' << HistR::ctCapacity() << ' ' << (rmax - rmin) / HistR::nbins() << std::endl;
   std::cout << "bins " << int(Hist::bin(0)) << ' ' << int(Hist::bin(rmin)) << ' ' << int(Hist::bin(rmax)) << std::endl;
 
   std::cout << "HistoContainer " << Hist::nbits() << ' ' << Hist::nbins() << ' ' << Hist::totbins() << ' '

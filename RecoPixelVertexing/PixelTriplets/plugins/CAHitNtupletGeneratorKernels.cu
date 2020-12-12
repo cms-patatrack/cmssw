@@ -21,7 +21,7 @@ void CAHitNtupletGeneratorKernelsGPU::launchKernels(HitsOnCPU const &hh, TkSoA *
   auto *quality_d = (Quality *)(&tracks_d->m_quality);
 
   // zero tuples
-  cms::cuda::launchZero(tuples_d, nullptr, 0,nullptr, 0, cudaStream);
+  cms::cuda::launchZero(tuples_d, nullptr, 0, nullptr, 0, cudaStream);
 
   auto nhits = hh.nHits();
   assert(nhits <= pixelGPUConstants::maxNumberOfHits);

@@ -96,9 +96,9 @@ namespace cms {
               typename I = uint32_t,  // type stored in the container (usually an index in a vector of the input values)
               uint32_t NHISTS = 1     // number of histos stored
               >
-    class HistoContainer : public OneToManyAssoc<I,NHISTS * NBINS + 1,SIZE> {
+    class HistoContainer : public OneToManyAssoc<I, NHISTS * NBINS + 1, SIZE> {
     public:
-      using Base = OneToManyAssoc<I,NBINS,SIZE>;
+      using Base = OneToManyAssoc<I, NBINS, SIZE>;
       using Counter = typename Base::Counter;
       using index_type = typename Base::Counter;
       using UT = typename std::make_unsigned<T>::type;
@@ -163,7 +163,6 @@ namespace cms {
         assert(w > 0);
         this->content[w - 1] = j;
       }
-
     };
 
   }  // namespace cuda
