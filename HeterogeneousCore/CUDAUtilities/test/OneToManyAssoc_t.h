@@ -20,7 +20,6 @@ constexpr uint32_t MaxElem = 64000;
 constexpr uint32_t MaxTk = 8000;
 constexpr uint32_t MaxAssocs = 4 * MaxTk;
 
-
 #ifdef RUNTIME_SIZE
 using Assoc = cms::cuda::OneToManyAssoc<uint16_t, -1, -1>;
 using SmallAssoc = cms::cuda::OneToManyAssoc<uint16_t, 128, -1>;
@@ -103,12 +102,9 @@ __global__ void verifyBulk(Assoc const* __restrict__ assoc, AtomicPairCounter co
   assert(int(assoc->size()) < assoc->capacity());
 }
 
-
-
-
 template <typename Assoc>
 __global__ void verifyFill(Assoc const* __restrict__ la, int n) {
-  printf("assoc size %d\n",la->size());
+  printf("assoc size %d\n", la->size());
   int imax = 0;
   long long ave = 0;
   int z = 0;
@@ -122,39 +118,35 @@ __global__ void verifyFill(Assoc const* __restrict__ la, int n) {
     imax = std::max(imax, int(x));
   }
   assert(0 == la->size(n));
-  printf("found with %d elements %f %d %d\n",n,double(ave) / n,imax, z);
+  printf("found with %d elements %f %d %d\n", n, double(ave) / n, imax, z);
 }
-
 
 template <typename Assoc>
 __global__ void verifyFinal(Assoc const* __restrict__ la, int N) {
-  printf("assoc size %d\n",la->size());
+  printf("assoc size %d\n", la->size());
 
   int imax = 0;
   long long ave = 0;
   for (int i = 0; i < N; ++i) {
     auto x = la->size(i);
     if (!(x == 4 || x == 3))
-      printf("%d %d\n",i,x);
+      printf("%d %d\n", i, x);
     assert(x == 4 || x == 3);
     ave += x;
     imax = std::max(imax, int(x));
   }
   assert(0 == la->size(N));
-  printf("found with ave occupancy %f %d\n", double(ave) / N ,imax);
+  printf("found with ave occupancy %f %d\n", double(ave) / N, imax);
 }
 
-
-template<typename T>
-auto make_unique( std::size_t size ) {
+template <typename T>
+auto make_unique(std::size_t size) {
 #ifdef __CUDACC__
-   return cms::cuda::make_device_unique<T>(size,0);
+  return cms::cuda::make_device_unique<T>(size, 0);
 #else
   return std::make_unique<T>(size);
 #endif
 }
-
-
 
 int main() {
 #ifdef __CUDACC__
@@ -235,21 +227,21 @@ int main() {
   auto v_d = tr.data();
 #endif
 
-    Assoc::Counter * a_st = nullptr;
-    int  a_n = MaxElem;
+  Assoc::Counter* a_st = nullptr;
+  int a_n = MaxElem;
 
-    Assoc::index_type * a_st2 = nullptr;
-    SmallAssoc::index_type * sa_st2 = nullptr;
-    int     a_n2 = MaxAssocs;
+  Assoc::index_type* a_st2 = nullptr;
+  SmallAssoc::index_type* sa_st2 = nullptr;
+  int a_n2 = MaxAssocs;
 
 // storage
 #ifdef RUNTIME_SIZE
-   auto a_st_d = make_unique<Assoc::Counter[]>(a_n);
-   auto a_st2_d = make_unique<Assoc::index_type[]>(a_n2);
-   auto sa_st2_d = make_unique<SmallAssoc::index_type[]>(a_n2);
-   a_st = a_st_d.get();
-   a_st2    = a_st2_d.get();
-   sa_st2    = sa_st2_d.get();
+  auto a_st_d = make_unique<Assoc::Counter[]>(a_n);
+  auto a_st2_d = make_unique<Assoc::index_type[]>(a_n2);
+  auto sa_st2_d = make_unique<SmallAssoc::index_type[]>(a_n2);
+  a_st = a_st_d.get();
+  a_st2 = a_st2_d.get();
+  sa_st2 = sa_st2_d.get();
 #endif
 
   launchZero(a_d.get(), a_st2, a_n2, a_st, a_n, 0);
@@ -264,17 +256,16 @@ int main() {
   launchFinalize(a_d.get(), a_st, a_n, 0);
   verify<<<1, 1>>>(a_d.get());
   fill<<<nBlocks, nThreads>>>(v_d.get(), a_d.get(), N);
-  verifyFill<<<1, 1>>>(a_d.get(),n);
+  verifyFill<<<1, 1>>>(a_d.get(), n);
 
 #else
   count(v_d, a_d.get(), N);
-  launchFinalize(a_d.get(),a_st,a_n);
+  launchFinalize(a_d.get(), a_st, a_n);
   verify(a_d.get());
   fill(v_d, a_d.get(), N);
-  verifyFill(a_d.get(),n);
+  verifyFill(a_d.get(), n);
 
 #endif
-
 
   // now the inverse map (actually this is the ....)
   AtomicPairCounter* dc_d;
@@ -289,7 +280,7 @@ int main() {
   verifyBulk<<<1, 1>>>(a_d.get(), dc_d);
 
   cudaCheck(cudaMemcpy(&dc, dc_d, sizeof(AtomicPairCounter), cudaMemcpyDeviceToHost));
-  verifyFinal<<<1, 1>>>(a_d.get(),N);
+  verifyFinal<<<1, 1>>>(a_d.get(), N);
 
   cudaCheck(cudaMemset(dc_d, 0, sizeof(AtomicPairCounter)));
   fillBulk<<<nBlocks, nThreads>>>(dc_d, v_d.get(), sa_d.get(), N);
@@ -302,7 +293,7 @@ int main() {
   finalizeBulk(dc_d, a_d.get());
   verifyBulk(a_d.get(), dc_d);
 
-  verifyFinal(a_d.get(),N);
+  verifyFinal(a_d.get(), N);
 
   AtomicPairCounter sdc(0);
   fillBulk(&sdc, v_d, sa_d.get(), N);
@@ -313,27 +304,24 @@ int main() {
 
   std::cout << "final counter value " << dc.get().n << ' ' << dc.get().m << std::endl;
 
-
-
   // here verify use of block local counters
   auto m1_d = make_unique<Multiplicity[]>(1);
   auto m2_d = make_unique<Multiplicity[]>(1);
 
-   Multiplicity::index_type * m1_st = nullptr;
-   Multiplicity::index_type * m2_st = nullptr;
-   int m_n = 0;
+  Multiplicity::index_type* m1_st = nullptr;
+  Multiplicity::index_type* m2_st = nullptr;
+  int m_n = 0;
 
 #ifdef RUNTIME_SIZE
-   m_n = MaxTk;
-   auto m1_st_d = make_unique<Multiplicity::index_type[]>(m_n);
-   auto m2_st_d = make_unique<Multiplicity::index_type[]>(m_n);
-   m1_st = m1_st_d.get();
-   m2_st = m1_st_d.get();
+  m_n = MaxTk;
+  auto m1_st_d = make_unique<Multiplicity::index_type[]>(m_n);
+  auto m2_st_d = make_unique<Multiplicity::index_type[]>(m_n);
+  m1_st = m1_st_d.get();
+  m2_st = m1_st_d.get();
 #endif
 
-
-  launchZero(m1_d.get(), m1_st, m_n, nullptr, 0,0);
-  launchZero(m2_d.get(), m2_st, m_n, nullptr, 0,0);
+  launchZero(m1_d.get(), m1_st, m_n, nullptr, 0, 0);
+  launchZero(m2_d.get(), m2_st, m_n, nullptr, 0, 0);
 
 #ifdef __CUDACC__
   nBlocks = (4 * N + nThreads - 1) / nThreads;

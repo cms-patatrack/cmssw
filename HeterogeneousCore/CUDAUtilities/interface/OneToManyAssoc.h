@@ -20,25 +20,26 @@ namespace cms {
   namespace cuda {
 
     template <typename Assoc>
-    __global__ void zeroAndInit(Assoc *h, typename Assoc::index_type *mem, int s, typename Assoc::Counter * c,  int32_t n) {
+    __global__ void zeroAndInit(
+        Assoc *h, typename Assoc::index_type *mem, int s, typename Assoc::Counter *c, int32_t n) {
       int first = blockDim.x * blockIdx.x + threadIdx.x;
 
       if (0 == first) {
         h->psws = 0;
-        h->initStorage(c,n,mem, s);
+        h->initStorage(c, n, mem, s);
       }
       __syncthreads();
       for (int i = first, nt = h->totOnes(); i < nt; i += gridDim.x * blockDim.x) {
         h->off[i] = 0;
       }
-     }
+    }
 
- 
     template <typename Assoc>
     inline __attribute__((always_inline)) void launchZero(Assoc *__restrict__ h,
                                                           typename Assoc::index_type *mem,
                                                           int s,
-							  typename Assoc::Counter * c,  int32_t n,
+                                                          typename Assoc::Counter *c,
+                                                          int32_t n,
                                                           cudaStream_t stream
 #ifndef __CUDACC__
                                                           = cudaStreamDefault
@@ -52,16 +53,16 @@ namespace cms {
       if constexpr (Assoc::ctNOnes() < 0) {
         assert(c);
         assert(n > 0);
-	nOnes = n;
+        nOnes = n;
       }
-      assert(nOnes>0);
+      assert(nOnes > 0);
 #ifdef __CUDACC__
       auto nthreads = 1024;
       auto nblocks = (nOnes + nthreads - 1) / nthreads;
-      zeroAndInit<<<nblocks, nthreads, 0, stream>>>(h, mem, s,c,n);
+      zeroAndInit<<<nblocks, nthreads, 0, stream>>>(h, mem, s, c, n);
       cudaCheck(cudaGetLastError());
 #else
-      h->initStorage(c,n,mem, s);
+      h->initStorage(c, n, mem, s);
       h->zero();
       h->psws = 0;
 #endif
@@ -69,45 +70,43 @@ namespace cms {
 
     template <typename Assoc>
     inline __attribute__((always_inline)) void launchFinalize(Assoc *__restrict__ h,
-							  typename Assoc::Counter * c,  int32_t n,
+                                                              typename Assoc::Counter *c,
+                                                              int32_t n,
                                                               cudaStream_t stream
 #ifndef __CUDACC__
                                                               = cudaStreamDefault
 #endif
     ) {
 #ifdef __CUDACC__
-      using Counter =  typename Assoc::Counter;
+      using Counter = typename Assoc::Counter;
       auto nOnes = Assoc::ctNOnes();
-      Counter * poff = (Counter *)((char *)(h) + offsetof(Assoc, off));
+      Counter *poff = (Counter *)((char *)(h) + offsetof(Assoc, off));
       if constexpr (Assoc::ctNOnes() < 0) {
         assert(c);
         assert(n > 0);
-	nOnes = n;
-	poff = c;
+        nOnes = n;
+        poff = c;
       }
-      assert(nOnes>0);
-      int32_t * ppsws = (int32_t *)((char *)(h) + offsetof(Assoc, psws));
+      assert(nOnes > 0);
+      int32_t *ppsws = (int32_t *)((char *)(h) + offsetof(Assoc, psws));
       auto nthreads = 1024;
       auto nblocks = (nOnes + nthreads - 1) / nthreads;
-      multiBlockPrefixScan<<<nblocks, nthreads, sizeof(int32_t) * nblocks, stream>>>(
-          poff, poff, nOnes, ppsws);
+      multiBlockPrefixScan<<<nblocks, nthreads, sizeof(int32_t) * nblocks, stream>>>(poff, poff, nOnes, ppsws);
       cudaCheck(cudaGetLastError());
 #else
       h->finalize();
 #endif
     }
 
-
     template <typename Assoc>
     __global__ void finalizeBulk(AtomicPairCounter const *apc, Assoc *__restrict__ assoc) {
       assoc->bulkFinalizeFill(*apc);
     }
 
-
-    template < typename I,  // type stored in the container (usually an index in a vector of the input values)
-               int32_t ONES,  // number of "Ones" If -1 is initialized at runtime using external storage
-               int32_t SIZE    // max number of element. If -1 is initialized at runtime using external storage
-               >
+    template <typename I,    // type stored in the container (usually an index in a vector of the input values)
+              int32_t ONES,  // number of "Ones" If -1 is initialized at runtime using external storage
+              int32_t SIZE   // max number of element. If -1 is initialized at runtime using external storage
+              >
     class OneToManyAssoc {
     public:
       using Counter = uint32_t;
@@ -115,7 +114,7 @@ namespace cms {
       using CountersOnly = OneToManyAssoc<I, ONES, 0>;
 
       using index_type = I;
- 
+
       static constexpr uint32_t ilog2(uint32_t v) {
         constexpr uint32_t b[] = {0x2, 0xC, 0xF0, 0xFF00, 0xFFFF0000};
         constexpr uint32_t s[] = {1, 2, 4, 8, 16};
@@ -129,35 +128,33 @@ namespace cms {
         return r;
       }
 
- 
       static constexpr int32_t ctNOnes() { return ONES; }
       constexpr auto totOnes() const { return off.capacity(); }
-      constexpr auto nOnes() const { return totOnes()-1; }
+      constexpr auto nOnes() const { return totOnes() - 1; }
       static constexpr int32_t ctCapacity() { return SIZE; }
       constexpr auto capacity() const { return content.capacity(); }
 
-
-      __host__ __device__ void initStorage(Counter * c,  int32_t n, I *d, int32_t s) {
-	if constexpr (ctNOnes() < 0) {
-	  assert(c);
+      __host__ __device__ void initStorage(Counter *c, int32_t n, I *d, int32_t s) {
+        if constexpr (ctNOnes() < 0) {
+          assert(c);
           assert(n > 0);
-	  off.init(c,n);
-	}  
-	if constexpr (ctCapacity() < 0) {
-	  assert(d);
+          off.init(c, n);
+        }
+        if constexpr (ctCapacity() < 0) {
+          assert(d);
           assert(s > 0);
           content.init(d, s);
         }
       }
-      
+
       __host__ __device__ void initStorage(I *d, int32_t s) { content.init(d, s); }
 
       __host__ __device__ void zero() {
         for (int32_t i = 0; i < totOnes(); ++i) {
-           off[i] = 0;
+          off[i] = 0;
         }
       }
-	
+
       __host__ __device__ __forceinline__ void add(CountersOnly const &co) {
         for (int32_t i = 0; i < totOnes(); ++i) {
 #ifdef __CUDA_ARCH__
@@ -226,8 +223,6 @@ namespace cms {
         }
       }
 
- 
-
       __host__ __device__ __forceinline__ void finalize(Counter *ws = nullptr) {
         assert(off[totOnes() - 1] == 0);
         blockPrefixScan(off.data(), totOnes(), ws);
@@ -243,7 +238,7 @@ namespace cms {
       constexpr index_type const *begin(uint32_t b) const { return content.data() + off[b]; }
       constexpr index_type const *end(uint32_t b) const { return content.data() + off[b + 1]; }
 
-      FlexiStorage<Counter,ONES> off;
+      FlexiStorage<Counter, ONES> off;
       int32_t psws;  // prefix-scan working space
       FlexiStorage<index_type, SIZE> content;
     };
