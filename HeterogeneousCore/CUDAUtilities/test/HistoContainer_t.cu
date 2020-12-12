@@ -28,8 +28,10 @@ void go() {
 
   using Hist = HistoContainer<T, 128, N, 8 * sizeof(T), uint32_t, nParts>;
   std::cout << "HistoContainer " << (int)(offsetof(Hist, off)) << ' ' << Hist::nbins() << ' ' << Hist::totbins() << ' '
-            << Hist::ctCapacity() << ' ' << offsetof(Hist, bins) - offsetof(Hist, off) << ' '
+            << Hist::ctCapacity() << ' ' << offsetof(Hist, content) - offsetof(Hist, off) << ' '
             << (std::numeric_limits<T>::max() - std::numeric_limits<T>::min()) / Hist::nbins() << std::endl;
+
+  assert(Hist::totbins()==Hist::ctNOnes());
 
   Hist h;
   auto h_d = make_device_unique<Hist[]>(1, nullptr);

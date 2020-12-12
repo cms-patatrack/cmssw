@@ -104,7 +104,7 @@ namespace cms {
     }
 
     template <typename I,    // type stored in the container (usually an index in a vector of the input values)
-              int32_t ONES,  // number of "Ones" If -1 is initialized at runtime using external storage
+              int32_t ONES,  // number of "Ones"  +1. If -1 is initialized at runtime using external storage
               int32_t SIZE   // max number of element. If -1 is initialized at runtime using external storage
               >
     class OneToManyAssoc {
