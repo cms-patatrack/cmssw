@@ -145,6 +145,16 @@ __global__ void verifyFinal(Assoc const* __restrict__ la, int N) {
 }
 
 
+template<typename T>
+auto make_unique( std::size_t size ) {
+#ifdef __CUDACC__
+   return cms::cuda::make_device_unique<T>(size,0);
+#else
+  return std::make_unique<T>(size);
+#endif
+}
+
+
 
 int main() {
 #ifdef __CUDACC__
@@ -215,15 +225,13 @@ int main() {
   }
   std::cout << "filled with " << n << " elements " << double(ave) / n << ' ' << imax << ' ' << nz << std::endl;
 
+  auto a_d = make_unique<Assoc[]>(1);
+  auto sa_d = make_unique<SmallAssoc[]>(1);
 #ifdef __CUDACC__
   auto v_d = cms::cuda::make_device_unique<std::array<uint16_t, 4>[]>(N, nullptr);
   assert(v_d.get());
-  auto a_d = cms::cuda::make_device_unique<Assoc[]>(1, nullptr);
-  auto sa_d = cms::cuda::make_device_unique<SmallAssoc[]>(1, nullptr);
   cudaCheck(cudaMemcpy(v_d.get(), tr.data(), N * sizeof(std::array<uint16_t, 4>), cudaMemcpyHostToDevice));
 #else
-  auto a_d = std::make_unique<Assoc>();
-  auto sa_d = std::make_unique<SmallAssoc>();
   auto v_d = tr.data();
 #endif
 
@@ -236,15 +244,9 @@ int main() {
 
 // storage
 #ifdef RUNTIME_SIZE
-#ifdef __CUDACC__
-   auto a_st_d = cms::cuda::make_device_unique<Assoc::Counter[]>(a_n,nullptr);
-   auto a_st2_d = cms::cuda::make_device_unique<Assoc::index_type[]>(a_n2,nullptr);
-   auto sa_st2_d = cms::cuda::make_device_unique<SmallAssoc::index_type[]>(a_n2,nullptr);
-#else        
-   auto a_st_d = std::make_unique<Assoc::Counter[]>(a_n);
-   auto a_st2_d = std::make_unique<Assoc::index_type[]>(a_n2);
-   auto sa_st2_d = std::make_unique<SmallAssoc::index_type[]>(a_n2);
-#endif
+   auto a_st_d = make_unique<Assoc::Counter[]>(a_n);
+   auto a_st2_d = make_unique<Assoc::index_type[]>(a_n2);
+   auto sa_st2_d = make_unique<SmallAssoc::index_type[]>(a_n2);
    a_st = a_st_d.get();
    a_st2    = a_st2_d.get();
    sa_st2    = sa_st2_d.get();
@@ -314,15 +316,24 @@ int main() {
 
 
   // here verify use of block local counters
-#ifdef __CUDACC__
-  auto m1_d = cms::cuda::make_device_unique<Multiplicity[]>(1, nullptr);
-  auto m2_d = cms::cuda::make_device_unique<Multiplicity[]>(1, nullptr);
-#else
-  auto m1_d = std::make_unique<Multiplicity>();
-  auto m2_d = std::make_unique<Multiplicity>();
+  auto m1_d = make_unique<Multiplicity[]>(1);
+  auto m2_d = make_unique<Multiplicity[]>(1);
+
+   Multiplicity::index_type * m1_st = nullptr;
+   Multiplicity::index_type * m2_st = nullptr;
+   int m_n = 0;
+
+#ifdef RUNTIME_SIZE
+   m_n = MaxTk;
+   auto m1_st_d = make_unique<Multiplicity::index_type[]>(m_n);
+   auto m2_st_d = make_unique<Multiplicity::index_type[]>(m_n);
+   m1_st = m1_st_d.get();
+   m2_st = m1_st_d.get();
 #endif
-  launchZero(m1_d.get(), nullptr, 0, nullptr, 0,0);
-  launchZero(m2_d.get(), nullptr, 0, nullptr, 0,0);
+
+
+  launchZero(m1_d.get(), m1_st, m_n, nullptr, 0,0);
+  launchZero(m2_d.get(), m2_st, m_n, nullptr, 0,0);
 
 #ifdef __CUDACC__
   nBlocks = (4 * N + nThreads - 1) / nThreads;
