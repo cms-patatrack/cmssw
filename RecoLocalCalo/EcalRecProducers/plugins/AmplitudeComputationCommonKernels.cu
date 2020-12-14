@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <limits>
 
 #include <cuda.h>
@@ -359,7 +360,7 @@ namespace ecal {
       auto const* G1SamplesCorrelation = isBarrel ? G1SamplesCorrelationEB : G1SamplesCorrelationEE;
       bool tmp2 = isSaturated[ch];
       bool hasGainSwitch = tmp0 || tmp1 || tmp2;
-      auto const vidx = ecal::abs(ty - tx);
+      auto const vidx = std::abs(ty - tx);
 
       // non-divergent branch for all threads per block
       if (hasGainSwitch) {

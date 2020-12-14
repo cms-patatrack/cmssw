@@ -1,4 +1,4 @@
-#include <iostream>
+#include <cmath>
 #include <limits>
 
 #include <cuda.h>
@@ -297,7 +297,7 @@ namespace ecal {
           auto deltachi2 = chi2_now - chi2;
           chi2 = chi2_now;
 
-          if (ecal::abs(deltachi2) < 1e-3)
+          if (std::abs(deltachi2) < 1e-3)
             break;
 
           //---- AM: TEST

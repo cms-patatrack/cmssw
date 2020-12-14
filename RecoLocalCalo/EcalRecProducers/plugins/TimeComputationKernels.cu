@@ -1,3 +1,4 @@
+#include <cmath>
 #include <limits>
 
 #include <cuda.h>
@@ -787,7 +788,7 @@ namespace ecal {
         const auto sumFF = shr_sumFF[threadIdx.x] + shr_sumFF[threadIdx.x + 1] - shr_sumFF[threadIdx.x + 3];
 
         const auto denom = sumFF * sum1 - sumF * sumF;
-        const auto condForDenom = sum1 > 0 && ecal::abs(denom) > 1.e-20;
+        const auto condForDenom = sum1 > 0 && std::abs(denom) > 1.e-20;
         const auto amplitudeMax = condForDenom ? (sumAF * sum1 - sumA * sumF) / denom : static_cast<ScalarType>(0.);
 
         // store into global mem
