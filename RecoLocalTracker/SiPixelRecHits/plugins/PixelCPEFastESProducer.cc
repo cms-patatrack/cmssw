@@ -75,23 +75,23 @@ std::unique_ptr<PixelClusterParameterEstimator> PixelCPEFastESProducer::produce(
 }
 
 void PixelCPEFastESProducer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
-  // PixelCPEFastESProducer
   edm::ParameterSetDescription desc;
-  desc.add<bool>("DoLorentz", false);
-  desc.add<double>("lAWidthFPix", 0);
-  desc.add<bool>("useLAAlignmentOffsets", false);
-  desc.add<bool>("LoadTemplatesFromDB", true);
-  desc.add<bool>("UseErrorsFromTemplates", true);
+
+  // from PixelCPEBase
+  PixelCPEBase::fillPSetDescription(desc);
+
+  // used by PixelCPEFast
   desc.add<double>("EdgeClusterErrorX", 50.0);
-  desc.add<edm::ESInputTag>("MagneticFieldRecord", edm::ESInputTag());
-  desc.add<bool>("useLAWidthFromDB", true);
-  desc.add<bool>("TruncatePixelCharge", true);
-  desc.add<int>("ClusterProbComputationFlag", 0);
-  desc.add<double>("lAOffset", 0);
   desc.add<double>("EdgeClusterErrorY", 85.0);
+  desc.add<bool>("UseErrorsFromTemplates", true);
+  desc.add<bool>("TruncatePixelCharge", true);
+
+  // specific to PixelCPEFastESProducer
   desc.add<std::string>("ComponentName", "PixelCPEFast");
-  desc.add<double>("lAWidthBPix", 0);
-  desc.add<bool>("Alpha2Order", true);
+  desc.add<edm::ESInputTag>("MagneticFieldRecord", edm::ESInputTag());
+  desc.add<bool>("useLAAlignmentOffsets", false);
+  desc.add<bool>("DoLorentz", false);
+
   descriptions.add("PixelCPEFastESProducer", desc);
 }
 
