@@ -20,7 +20,7 @@
 
 #include "CAHitNtupletGeneratorOnGPU.h"
 #include "CUDADataFormats/Track/interface/PixelTrackHeterogeneous.h"
-#include "CUDADataFormats/TrackingRecHit/interface/TrackingRecHit2DCUDA.h"
+#include "CUDADataFormats/TrackingRecHit/interface/TrackingRecHit2DHeterogeneous.h"
 
 class CAHitNtupletCUDA : public edm::global::EDProducer<> {
 public:

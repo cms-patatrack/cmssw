@@ -9,7 +9,7 @@
 
 #include <cuda_runtime.h>
 
-#include "CUDADataFormats/TrackingRecHit/interface/TrackingRecHit2DCUDA.h"
+#include "CUDADataFormats/TrackingRecHit/interface/TrackingRecHit2DHeterogeneous.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/SimpleVector.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/VecArray.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"

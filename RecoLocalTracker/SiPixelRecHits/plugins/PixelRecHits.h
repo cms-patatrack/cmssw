@@ -8,7 +8,7 @@
 #include "CUDADataFormats/BeamSpot/interface/BeamSpotCUDA.h"
 #include "CUDADataFormats/SiPixelCluster/interface/SiPixelClustersCUDA.h"
 #include "CUDADataFormats/SiPixelDigi/interface/SiPixelDigisCUDA.h"
-#include "CUDADataFormats/TrackingRecHit/interface/TrackingRecHit2DCUDA.h"
+#include "CUDADataFormats/TrackingRecHit/interface/TrackingRecHit2DHeterogeneous.h"
 
 namespace pixelgpudetails {
 

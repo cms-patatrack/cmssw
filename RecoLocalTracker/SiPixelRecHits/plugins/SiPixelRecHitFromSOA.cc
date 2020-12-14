@@ -2,7 +2,7 @@
 
 #include "CUDADataFormats/Common/interface/Product.h"
 #include "CUDADataFormats/Common/interface/HostProduct.h"
-#include "CUDADataFormats/TrackingRecHit/interface/TrackingRecHit2DCUDA.h"
+#include "CUDADataFormats/TrackingRecHit/interface/TrackingRecHit2DHeterogeneous.h"
 #include "DataFormats/Common/interface/DetSetVectorNew.h"
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/SiPixelCluster/interface/SiPixelCluster.h"

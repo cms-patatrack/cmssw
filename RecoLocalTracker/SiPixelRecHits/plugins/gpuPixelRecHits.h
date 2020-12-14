@@ -7,7 +7,7 @@
 
 #include "CUDADataFormats/BeamSpot/interface/BeamSpotCUDA.h"
 #include "CUDADataFormats/SiPixelCluster/interface/gpuClusteringConstants.h"
-#include "CUDADataFormats/TrackingRecHit/interface/TrackingRecHit2DCUDA.h"
+#include "CUDADataFormats/TrackingRecHit/interface/TrackingRecHit2DHeterogeneous.h"
 #include "DataFormats/Math/interface/approx_atan2.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
 #include "RecoLocalTracker/SiPixelRecHits/interface/pixelCPEforGPU.h"
