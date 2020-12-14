@@ -190,16 +190,16 @@ namespace cms {
     const edmNew::DetSetVector<SiPixelCluster>& input = *inputhandle;
 
     // fill cluster arrays
-    auto hmsp = std::make_unique<uint32_t[]>(gpuClustering::MaxNumModules + 1);
+    auto hmsp = std::make_unique<uint32_t[]>(gpuClustering::maxNumModules + 1);
     auto hitsModuleStart = hmsp.get();
-    std::array<uint32_t, gpuClustering::MaxNumModules + 1> clusInModule{};
+    std::array<uint32_t, gpuClustering::maxNumModules + 1> clusInModule{};
     for (auto DSViter = input.begin(); DSViter != input.end(); DSViter++) {
       unsigned int detid = DSViter->detId();
       DetId detIdObject(detid);
       const GeomDetUnit* genericDet = geom.idToDetUnit(detIdObject);
       auto gind = genericDet->index();
       // FIXME to be changed to support Phase2
-      if (gind >= int(gpuClustering::MaxNumModules))
+      if (gind >= int(gpuClustering::maxNumModules))
         continue;
       auto const nclus = DSViter->size();
       assert(nclus > 0);
@@ -207,10 +207,10 @@ namespace cms {
       numberOfClusters += nclus;
     }
     hitsModuleStart[0] = 0;
-    assert(clusInModule.size() > gpuClustering::MaxNumModules);
+    assert(clusInModule.size() > gpuClustering::maxNumModules);
     for (int i = 1, n = clusInModule.size(); i < n; ++i)
       hitsModuleStart[i] = hitsModuleStart[i - 1] + clusInModule[i - 1];
-    assert(numberOfClusters == int(hitsModuleStart[gpuClustering::MaxNumModules]));
+    assert(numberOfClusters == int(hitsModuleStart[gpuClustering::maxNumModules]));
 
     // yes a unique ptr of a unique ptr so edm is happy and the pointer stay still...
     iEvent.emplace(tHost_, std::move(hmsp));  // hmsp is gone, hitsModuleStart still alive and kicking...

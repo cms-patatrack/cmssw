@@ -472,22 +472,22 @@ namespace pixelgpudetails {
   }  // end of Raw to Digi kernel
 
   __global__ void fillHitsModuleStart(uint32_t const *__restrict__ cluStart, uint32_t *__restrict__ moduleStart) {
-    assert(gpuClustering::MaxNumModules < 2048);  // easy to extend at least till 32*1024
+    assert(gpuClustering::maxNumModules < 2048);  // easy to extend at least till 32*1024
     assert(1 == gridDim.x);
     assert(0 == blockIdx.x);
 
     int first = threadIdx.x;
 
-    // limit to MaxHitsInModule;
-    for (int i = first, iend = gpuClustering::MaxNumModules; i < iend; i += blockDim.x) {
+    // limit to maxHitsInModule()
+    for (int i = first, iend = gpuClustering::maxNumModules; i < iend; i += blockDim.x) {
       moduleStart[i + 1] = std::min(gpuClustering::maxHitsInModule(), cluStart[i]);
     }
 
     __shared__ uint32_t ws[32];
     cms::cuda::blockPrefixScan(moduleStart + 1, moduleStart + 1, 1024, ws);
-    cms::cuda::blockPrefixScan(moduleStart + 1025, moduleStart + 1025, gpuClustering::MaxNumModules - 1024, ws);
+    cms::cuda::blockPrefixScan(moduleStart + 1025, moduleStart + 1025, gpuClustering::maxNumModules - 1024, ws);
 
-    for (int i = first + 1025, iend = gpuClustering::MaxNumModules + 1; i < iend; i += blockDim.x) {
+    for (int i = first + 1025, iend = gpuClustering::maxNumModules + 1; i < iend; i += blockDim.x) {
       moduleStart[i] += moduleStart[1024];
     }
     __syncthreads();
@@ -498,23 +498,22 @@ namespace pixelgpudetails {
     assert(c0 == moduleStart[1]);
     assert(moduleStart[1024] >= moduleStart[1023]);
     assert(moduleStart[1025] >= moduleStart[1024]);
-    assert(moduleStart[gpuClustering::MaxNumModules] >= moduleStart[1025]);
+    assert(moduleStart[gpuClustering::maxNumModules] >= moduleStart[1025]);
 
-    for (int i = first, iend = gpuClustering::MaxNumModules + 1; i < iend; i += blockDim.x) {
+    for (int i = first, iend = gpuClustering::maxNumModules + 1; i < iend; i += blockDim.x) {
       if (0 != i)
         assert(moduleStart[i] >= moduleStart[i - i]);
       // [BPX1, BPX2, BPX3, BPX4,  FP1,  FP2,  FP3,  FN1,  FN2,  FN3, LAST_VALID]
       // [   0,   96,  320,  672, 1184, 1296, 1408, 1520, 1632, 1744,       1856]
-      if (i == 96 || i == 1184 || i == 1744 || i == gpuClustering::MaxNumModules)
+      if (i == 96 || i == 1184 || i == 1744 || i == gpuClustering::maxNumModules)
         printf("moduleStart %d %d\n", i, moduleStart[i]);
     }
 #endif
 
     // avoid overflow
-    constexpr auto MAX_HITS = gpuClustering::MaxNumClusters;
-    for (int i = first, iend = gpuClustering::MaxNumModules + 1; i < iend; i += blockDim.x) {
-      if (moduleStart[i] > MAX_HITS)
-        moduleStart[i] = MAX_HITS;
+    auto constexpr maxNumClusters = gpuClustering::maxNumClusters;
+    for (int i = first, iend = gpuClustering::maxNumModules + 1; i < iend; i += blockDim.x) {
+      moduleStart[i] = std::clamp(moduleStart[i], 0U, maxNumClusters);
     }
   }
 
@@ -541,7 +540,7 @@ namespace pixelgpudetails {
     if (includeErrors) {
       digiErrors_d = SiPixelDigiErrorsCUDA(pixelgpudetails::MAX_FED_WORDS, std::move(errors), stream);
     }
-    clusters_d = SiPixelClustersCUDA(gpuClustering::MaxNumModules, stream);
+    clusters_d = SiPixelClustersCUDA(gpuClustering::maxNumModules, stream);
 
     nModules_Clusters_h = cms::cuda::make_host_unique<uint32_t[]>(2, stream);
 
@@ -594,7 +593,7 @@ namespace pixelgpudetails {
       using namespace gpuClustering;
       int threadsPerBlock = 256;
       int blocks =
-          (std::max(int(wordCounter), int(gpuClustering::MaxNumModules)) + threadsPerBlock - 1) / threadsPerBlock;
+          (std::max(int(wordCounter), int(gpuClustering::maxNumModules)) + threadsPerBlock - 1) / threadsPerBlock;
 
       gpuCalibPixel::calibDigis<<<blocks, threadsPerBlock, 0, stream>>>(isRun2,
                                                                         digis_d.moduleInd(),
@@ -626,7 +625,7 @@ namespace pixelgpudetails {
           &(nModules_Clusters_h[0]), clusters_d.moduleStart(), sizeof(uint32_t), cudaMemcpyDefault, stream));
 
       threadsPerBlock = 256;
-      blocks = MaxNumModules;
+      blocks = maxNumModules;
 #ifdef GPU_DEBUG
       std::cout << "CUDA findClus kernel launch with " << blocks << " blocks of " << threadsPerBlock << " threads\n";
 #endif
@@ -664,7 +663,7 @@ namespace pixelgpudetails {
 
       // last element holds the number of all clusters
       cudaCheck(cudaMemcpyAsync(&(nModules_Clusters_h[1]),
-                                clusters_d.clusModuleStart() + gpuClustering::MaxNumModules,
+                                clusters_d.clusModuleStart() + gpuClustering::maxNumModules,
                                 sizeof(uint32_t),
                                 cudaMemcpyDefault,
                                 stream));

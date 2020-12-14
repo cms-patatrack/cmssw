@@ -83,7 +83,7 @@ void SiPixelRecHitFromSOA::acquire(edm::Event const& iEvent,
 
 void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es) {
   // yes a unique ptr of a unique ptr so edm is happy
-  auto sizeOfHitModuleStart = gpuClustering::MaxNumModules + 1;
+  auto sizeOfHitModuleStart = gpuClustering::maxNumModules + 1;
   auto hmsp = std::make_unique<uint32_t[]>(sizeOfHitModuleStart);
   std::copy(m_hitsModuleStart.get(), m_hitsModuleStart.get() + sizeOfHitModuleStart, hmsp.get());
   auto hms = std::make_unique<HMSstorage>(std::move(hmsp));  // hmsp is gone
@@ -107,7 +107,7 @@ void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es
 
   auto const& input = *hclusters;
 
-  constexpr uint32_t MaxHitsInModule = gpuClustering::MaxHitsInModule;
+  constexpr uint32_t maxHitsInModule = gpuClustering::maxHitsInModule();
 
   int numberOfDetUnits = 0;
   int numberOfClusters = 0;
@@ -127,10 +127,10 @@ void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es
     assert(lc > fc);
     // std::cout << "in det " << gind << ": conv " << nhits << " hits from " << DSViter->size() << " legacy clusters"
     //          <<' '<< fc <<','<<lc<<std::endl;
-    if (nhits > MaxHitsInModule)
+    if (nhits > maxHitsInModule)
       printf(
-          "WARNING: too many clusters %d in Module %d. Only first %d Hits converted\n", nhits, gind, MaxHitsInModule);
-    nhits = std::min(nhits, MaxHitsInModule);
+          "WARNING: too many clusters %d in Module %d. Only first %d Hits converted\n", nhits, gind, maxHitsInModule);
+    nhits = std::min(nhits, maxHitsInModule);
 
     //std::cout << "in det " << gind << "conv " << nhits << " hits from " << DSViter->size() << " legacy clusters"
     //          <<' '<< lc <<','<<fc<<std::endl;

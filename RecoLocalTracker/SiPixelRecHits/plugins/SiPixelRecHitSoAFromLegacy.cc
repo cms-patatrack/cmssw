@@ -34,7 +34,7 @@ public:
 
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
-  using HitModuleStart = std::array<uint32_t, gpuClustering::MaxNumModules + 1>;
+  using HitModuleStart = std::array<uint32_t, gpuClustering::maxNumModules + 1>;
   using HMSstorage = HostProduct<unsigned int[]>;
 
 private:
@@ -91,7 +91,7 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
   auto const& input = *hclusters;
 
   // yes a unique ptr of a unique ptr so edm is happy and the pointer stay still...
-  auto hmsp = std::make_unique<uint32_t[]>(gpuClustering::MaxNumModules + 1);
+  auto hmsp = std::make_unique<uint32_t[]>(gpuClustering::maxNumModules + 1);
   auto hitsModuleStart = hmsp.get();
   auto hms = std::make_unique<HMSstorage>(std::move(hmsp));  // hmsp is gone
   iEvent.put(tokenModuleStart_, std::move(hms));             // hms is gone! hitsModuleStart still alive and kicking...
@@ -108,7 +108,7 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
 
   std::vector<edm::Ref<edmNew::DetSetVector<SiPixelCluster>, SiPixelCluster>> clusterRef;
 
-  constexpr uint32_t MaxHitsInModule = gpuClustering::MaxHitsInModule;
+  constexpr uint32_t maxHitsInModule = gpuClustering::maxHitsInModule();
 
   HitModuleStart moduleStart_;  // index of the first pixel of each module
   HitModuleStart clusInModule_;
@@ -173,9 +173,9 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
     // std::cout << "in det " << gind << ": conv " << nclus << " hits from " << DSViter->size() << " legacy clusters"
     //          <<' '<< fc <<','<<lc<<std::endl;
     assert((lc - fc) == nclus);
-    if (nclus > MaxHitsInModule)
+    if (nclus > maxHitsInModule)
       printf(
-          "WARNING: too many clusters %d in Module %d. Only first %d Hits converted\n", nclus, gind, MaxHitsInModule);
+          "WARNING: too many clusters %d in Module %d. Only first %d Hits converted\n", nclus, gind, maxHitsInModule);
 
     // fill digis
     xx_.clear();
@@ -212,7 +212,7 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
     // we run on blockId.x==0
     gpuPixelRecHits::getHits(&cpeView, &bsHost, &digiView, ndigi, &clusterView, output->view());
     for (auto h = fc; h < lc; ++h)
-      if (h - fc < MaxHitsInModule)
+      if (h - fc < maxHitsInModule)
         assert(gind == output->view()->detectorIndex(h));
       else
         assert(9999 == output->view()->detectorIndex(h));
@@ -220,7 +220,7 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
       SiPixelRecHitCollectionNew::FastFiller recHitsOnDetUnit(*legacyOutput, detid);
       for (auto h = fc; h < lc; ++h) {
         auto ih = h - fc;
-        if (ih >= MaxHitsInModule)
+        if (ih >= maxHitsInModule)
           break;
         assert(ih < clusterRef.size());
         LocalPoint lp(output->view()->xLocal(h), output->view()->yLocal(h));

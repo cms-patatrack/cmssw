@@ -6,6 +6,7 @@
 #include <limits>
 
 #include "CUDADataFormats/BeamSpot/interface/BeamSpotCUDA.h"
+#include "CUDADataFormats/SiPixelCluster/interface/gpuClusteringConstants.h"
 #include "CUDADataFormats/TrackingRecHit/interface/TrackingRecHit2DCUDA.h"
 #include "DataFormats/Math/interface/approx_atan2.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
@@ -53,7 +54,7 @@ namespace gpuPixelRecHits {
     }
 
     // to be moved in common namespace...
-    constexpr uint16_t InvId = 9999;  // must be > MaxNumModules
+    using gpuClustering::invalidModuleId;
     constexpr int32_t MaxHitsInIter = pixelCPEforGPU::MaxHitsInIter;
 
     using ClusParams = pixelCPEforGPU::ClusParams;
@@ -70,7 +71,7 @@ namespace gpuPixelRecHits {
 #ifdef GPU_DEBUG
     if (threadIdx.x == 0) {
       auto k = first;
-      while (digis.moduleInd(k) == InvId)
+      while (digis.moduleInd(k) == invalidModuleId)
         ++k;
       assert(digis.moduleInd(k) == me);
     }
@@ -114,7 +115,7 @@ namespace gpuPixelRecHits {
 
       for (int i = first; i < numElements; i += blockDim.x) {
         auto id = digis.moduleInd(i);
-        if (id == InvId)
+        if (id == invalidModuleId)
           continue;  // not valid
         if (id != me)
           break;  // end of module
@@ -137,7 +138,7 @@ namespace gpuPixelRecHits {
       auto pixmx = cpeParams->detParams(me).pixmx;
       for (int i = first; i < numElements; i += blockDim.x) {
         auto id = digis.moduleInd(i);
-        if (id == InvId)
+        if (id == invalidModuleId)
           continue;  // not valid
         if (id != me)
           break;  // end of module

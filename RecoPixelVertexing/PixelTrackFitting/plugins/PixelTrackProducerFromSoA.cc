@@ -47,7 +47,7 @@ public:
 
   static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
 
-  //  using HitModuleStart = std::array<uint32_t,gpuClustering::MaxNumModules + 1>;
+  //  using HitModuleStart = std::array<uint32_t, gpuClustering::maxNumModules + 1>;
   using HMSstorage = HostProduct<unsigned int[]>;
 
 private:
