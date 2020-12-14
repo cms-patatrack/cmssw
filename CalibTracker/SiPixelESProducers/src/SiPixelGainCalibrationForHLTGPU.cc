@@ -3,6 +3,7 @@
 #include "CalibTracker/SiPixelESProducers/interface/SiPixelGainCalibrationForHLTGPU.h"
 #include "CondFormats/SiPixelObjects/interface/SiPixelGainCalibrationForHLT.h"
 #include "CondFormats/SiPixelObjects/interface/SiPixelGainForHLTonGPU.h"
+#include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "Geometry/CommonDetUnit/interface/GeomDetType.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
@@ -14,17 +15,16 @@ SiPixelGainCalibrationForHLTGPU::SiPixelGainCalibrationForHLTGPU(const SiPixelGa
   auto const& dus = geom.detUnits();
   unsigned m_detectors = dus.size();
   for (unsigned int i = 1; i < 7; ++i) {
-    if (geom.offsetDU(GeomDetEnumerators::tkDetEnum[i]) != dus.size() &&
-        dus[geom.offsetDU(GeomDetEnumerators::tkDetEnum[i])]->type().isTrackerStrip()) {
-      if (geom.offsetDU(GeomDetEnumerators::tkDetEnum[i]) < m_detectors)
-        m_detectors = geom.offsetDU(GeomDetEnumerators::tkDetEnum[i]);
+    const auto offset = geom.offsetDU(GeomDetEnumerators::tkDetEnum[i]);
+    if (offset != dus.size() && dus[offset]->type().isTrackerStrip()) {
+      if (m_detectors > offset)
+        m_detectors = offset;
     }
   }
 
-  /*
-  std::cout << "caching calibs for " << m_detectors << " pixel detectors of size " << gains.data().size() << std::endl;
-  std::cout << "sizes " << sizeof(char) << ' ' << sizeof(uint8_t) << ' ' << sizeof(SiPixelGainForHLTonGPU::DecodingStructure) << std::endl;
-  */
+  LogDebug("SiPixelGainCalibrationForHLTGPU")
+      << "caching calibs for " << m_detectors << " pixel detectors of size " << gains.data().size() << '\n'
+      << "sizes " << sizeof(char) << ' ' << sizeof(uint8_t) << ' ' << sizeof(SiPixelGainForHLTonGPU::DecodingStructure);
 
   cudaCheck(cudaMallocHost((void**)&gainForHLTonHost_, sizeof(SiPixelGainForHLTonGPU)));
   gainForHLTonHost_->v_pedestals =
@@ -51,15 +51,12 @@ SiPixelGainCalibrationForHLTGPU::SiPixelGainCalibrationForHLTGPU(const SiPixelGa
   gainForHLTonHost_->pedPrecision = static_cast<float>(maxPed - minPed) / nBinsToUseForEncoding;
   gainForHLTonHost_->gainPrecision = static_cast<float>(maxGain - minGain) / nBinsToUseForEncoding;
 
-  /*
-  std::cout << "precisions g " << gainForHLTonHost_->pedPrecision << ' ' << gainForHLTonHost_->gainPrecision << std::endl;
-  */
+  LogDebug("SiPixelGainCalibrationForHLTGPU")
+      << "precisions g " << gainForHLTonHost_->pedPrecision << ' ' << gainForHLTonHost_->gainPrecision;
 
   // fill the index map
   auto const& ind = gains.getIndexes();
-  /*
-  std::cout << ind.size() << " " << m_detectors << std::endl;
-  */
+  LogDebug("SiPixelGainCalibrationForHLTGPU") << ind.size() << " " << m_detectors;
 
   for (auto i = 0U; i < m_detectors; ++i) {
     auto p = std::lower_bound(
@@ -72,8 +69,8 @@ SiPixelGainCalibrationForHLTGPU::SiPixelGainCalibrationForHLTGPU(const SiPixelGa
     assert(p->ibegin != p->iend);
     assert(p->ncols > 0);
     gainForHLTonHost_->rangeAndCols[i] = std::make_pair(SiPixelGainForHLTonGPU::Range(p->ibegin, p->iend), p->ncols);
-    // if (ind[i].detid!=dus[i]->geographicalId()) std::cout << ind[i].detid<<"!="<<dus[i]->geographicalId() << std::endl;
-    // gainForHLTonHost_->rangeAndCols[i] = std::make_pair(SiPixelGainForHLTonGPU::Range(ind[i].ibegin,ind[i].iend), ind[i].ncols);
+    if (ind[i].detid != dus[i]->geographicalId())
+      LogDebug("SiPixelGainCalibrationForHLTGPU") << ind[i].detid << "!=" << dus[i]->geographicalId();
   }
 }
 
