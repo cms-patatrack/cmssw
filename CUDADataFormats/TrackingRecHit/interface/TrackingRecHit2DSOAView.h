@@ -89,7 +89,8 @@ private:
   uint16_t* m_detInd;
 
   // supporting objects
-  AverageGeometry* m_averageGeometry;  // owned (corrected for beam spot: not sure where to host it otherwise)
+  // m_averageGeometry is corrected for beam spot, not sure where to host it otherwise
+  AverageGeometry* m_averageGeometry;              // owned by TrackingRecHit2DHeterogeneous
   pixelCPEforGPU::ParamsOnGPU const* m_cpeParams;  // forwarded from setup, NOT owned
   uint32_t const* m_hitsModuleStart;               // forwarded from clusters
 
