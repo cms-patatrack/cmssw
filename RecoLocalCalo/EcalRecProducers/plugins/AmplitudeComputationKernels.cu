@@ -17,64 +17,6 @@
 namespace ecal {
   namespace multifit {
 
-    void eigen_solve_submatrix(SampleMatrix& mat, SampleVector& invec, SampleVector& outvec, unsigned NP) {
-      using namespace Eigen;
-      switch (NP) {  // pulse matrix is always square.
-        case 10: {
-          Matrix<SampleMatrix::Scalar, 10, 10> temp = mat.topLeftCorner<10, 10>();
-          outvec.head<10>() = temp.ldlt().solve(invec.head<10>());
-          break;
-        }
-        case 9: {
-          Matrix<SampleMatrix::Scalar, 9, 9> temp = mat.topLeftCorner<9, 9>();
-          outvec.head<9>() = temp.ldlt().solve(invec.head<9>());
-          break;
-        }
-        case 8: {
-          Matrix<SampleMatrix::Scalar, 8, 8> temp = mat.topLeftCorner<8, 8>();
-          outvec.head<8>() = temp.ldlt().solve(invec.head<8>());
-          break;
-        }
-        case 7: {
-          Matrix<SampleMatrix::Scalar, 7, 7> temp = mat.topLeftCorner<7, 7>();
-          outvec.head<7>() = temp.ldlt().solve(invec.head<7>());
-          break;
-        }
-        case 6: {
-          Matrix<SampleMatrix::Scalar, 6, 6> temp = mat.topLeftCorner<6, 6>();
-          outvec.head<6>() = temp.ldlt().solve(invec.head<6>());
-          break;
-        }
-        case 5: {
-          Matrix<SampleMatrix::Scalar, 5, 5> temp = mat.topLeftCorner<5, 5>();
-          outvec.head<5>() = temp.ldlt().solve(invec.head<5>());
-          break;
-        }
-        case 4: {
-          Matrix<SampleMatrix::Scalar, 4, 4> temp = mat.topLeftCorner<4, 4>();
-          outvec.head<4>() = temp.ldlt().solve(invec.head<4>());
-          break;
-        }
-        case 3: {
-          Matrix<SampleMatrix::Scalar, 3, 3> temp = mat.topLeftCorner<3, 3>();
-          outvec.head<3>() = temp.ldlt().solve(invec.head<3>());
-          break;
-        }
-        case 2: {
-          Matrix<SampleMatrix::Scalar, 2, 2> temp = mat.topLeftCorner<2, 2>();
-          outvec.head<2>() = temp.ldlt().solve(invec.head<2>());
-          break;
-        }
-        case 1: {
-          Matrix<SampleMatrix::Scalar, 1, 1> temp = mat.topLeftCorner<1, 1>();
-          outvec.head<1>() = temp.ldlt().solve(invec.head<1>());
-          break;
-        }
-        default:
-          return;
-      }
-    }
-
     template <typename MatrixType>
     __device__ __forceinline__ bool update_covariance(EcalPulseCovariance const& pulse_covariance,
                                                       MatrixType& inverse_cov,
