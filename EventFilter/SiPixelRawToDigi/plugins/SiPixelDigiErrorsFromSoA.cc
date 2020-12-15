@@ -60,6 +60,7 @@ SiPixelDigiErrorsFromSoA::SiPixelDigiErrorsFromSoA(const edm::ParameterSet& iCon
 void SiPixelDigiErrorsFromSoA::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   edm::ParameterSetDescription desc;
   desc.add<edm::InputTag>("digiErrorSoASrc", edm::InputTag("siPixelDigiErrorsSoA"));
+  // the configuration parameters here are named following those in SiPixelRawToDigi
   desc.add<std::string>("CablingMapLabel", "")->setComment("CablingMap label");
   desc.add<bool>("UsePhase1", false)->setComment("##  Use phase1");
   desc.add<std::vector<int>>("ErrorList", std::vector<int>{29})
