@@ -25,7 +25,7 @@
 #include "RecoLocalTracker/SiPixelRecHits/interface/PixelCPEBase.h"
 #include "RecoLocalTracker/SiPixelRecHits/interface/PixelCPEFast.h"
 
-#include "RecoLocalTracker/SiPixelRecHits/plugins/gpuPixelRecHits.h"
+#include "gpuPixelRecHits.h"
 
 class SiPixelRecHitSoAFromLegacy : public edm::global::EDProducer<> {
 public:
@@ -215,7 +215,7 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
       if (h - fc < maxHitsInModule)
         assert(gind == output->view()->detectorIndex(h));
       else
-        assert(9999 == output->view()->detectorIndex(h));
+        assert(gpuClustering::invalidModuleId == output->view()->detectorIndex(h));
     if (convert2Legacy_) {
       SiPixelRecHitCollectionNew::FastFiller recHitsOnDetUnit(*legacyOutput, detid);
       for (auto h = fc; h < lc; ++h) {
