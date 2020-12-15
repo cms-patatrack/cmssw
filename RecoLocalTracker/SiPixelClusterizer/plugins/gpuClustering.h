@@ -4,11 +4,10 @@
 #include <cstdint>
 #include <cstdio>
 
+#include "CUDADataFormats/SiPixelCluster/interface/gpuClusteringConstants.h"
 #include "Geometry/TrackerGeometryBuilder/interface/phase1PixelTopology.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/HistoContainer.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
-
-#include "gpuClusteringConstants.h"
 
 namespace gpuClustering {
 

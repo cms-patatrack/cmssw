@@ -6,10 +6,10 @@
 #include <cuda_runtime.h>
 
 // CMSSW headers
+#include "CUDADataFormats/SiPixelCluster/interface/gpuClusteringConstants.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/device_unique_ptr.h"
 #include "RecoLocalTracker/SiPixelClusterizer/plugins/SiPixelRawToClusterGPUKernel.h"
-#include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuClusteringConstants.h"
 
 #include "PixelRecHitGPUKernel.h"
 #include "gpuPixelRecHits.h"

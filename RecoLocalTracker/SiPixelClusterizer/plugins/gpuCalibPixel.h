@@ -8,8 +8,6 @@
 #include "CondFormats/SiPixelObjects/interface/SiPixelGainForHLTonGPU.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
 
-#include "gpuClusteringConstants.h"
-
 namespace gpuCalibPixel {
 
   using gpuClustering::invalidModuleId;

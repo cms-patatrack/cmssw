@@ -4,10 +4,9 @@
 #include <cstdint>
 #include <cstdio>
 
+#include "CUDADataFormats/SiPixelCluster/interface/gpuClusteringConstants.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/prefixScan.h"
-
-#include "gpuClusteringConstants.h"
 
 namespace gpuClustering {
 
