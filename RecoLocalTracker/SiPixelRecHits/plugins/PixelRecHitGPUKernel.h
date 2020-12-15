@@ -1,5 +1,5 @@
-#ifndef RecoLocalTracker_SiPixelRecHits_plugins_PixelRecHits_h
-#define RecoLocalTracker_SiPixelRecHits_plugins_PixelRecHits_h
+#ifndef RecoLocalTracker_SiPixelRecHits_plugins_PixelRecHitGPUKernel_h
+#define RecoLocalTracker_SiPixelRecHits_plugins_PixelRecHitGPUKernel_h
 
 #include <cstdint>
 
@@ -30,4 +30,4 @@ namespace pixelgpudetails {
   };
 }  // namespace pixelgpudetails
 
-#endif  // RecoLocalTracker_SiPixelRecHits_plugins_PixelRecHits_h
+#endif  // RecoLocalTracker_SiPixelRecHits_plugins_PixelRecHitGPUKernel_h

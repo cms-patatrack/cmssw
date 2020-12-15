@@ -11,7 +11,7 @@
 #include "RecoLocalTracker/SiPixelClusterizer/plugins/SiPixelRawToClusterGPUKernel.h"
 #include "RecoLocalTracker/SiPixelClusterizer/plugins/gpuClusteringConstants.h"
 
-#include "PixelRecHits.h"
+#include "PixelRecHitGPUKernel.h"
 #include "gpuPixelRecHits.h"
 
 namespace {

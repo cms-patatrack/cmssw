@@ -21,7 +21,7 @@
 #include "RecoLocalTracker/SiPixelRecHits/interface/PixelCPEBase.h"
 #include "RecoLocalTracker/SiPixelRecHits/interface/PixelCPEFast.h"
 
-#include "PixelRecHits.h"  // TODO : spit product from kernel
+#include "PixelRecHitGPUKernel.h"
 
 class SiPixelRecHitCUDA : public edm::global::EDProducer<> {
 public:
