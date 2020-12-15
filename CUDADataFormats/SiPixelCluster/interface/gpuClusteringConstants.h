@@ -6,18 +6,22 @@
 
 namespace pixelGPUConstants {
 #ifdef GPU_SMALL_EVENTS
+  // kept for testing and debugging
   constexpr uint32_t maxNumberOfHits = 24 * 1024;
 #else
-  constexpr uint32_t maxNumberOfHits =
-      48 * 1024;  // data at pileup 50 has 18300 +/- 3500 hits; 40000 is around 6 sigma away
+  // data at pileup 50 has 18300 +/- 3500 hits; 40000 is around 6 sigma away
+  // tested on MC events with 55-75 pileup events
+  constexpr uint32_t maxNumberOfHits = 48 * 1024;
 #endif
 }  // namespace pixelGPUConstants
 
 namespace gpuClustering {
 #ifdef GPU_SMALL_EVENTS
+  // kept for testing and debugging
   constexpr uint32_t maxHitsInIter() { return 64; }
 #else
   // optimized for real data PU 50
+  // tested on MC events with 55-75 pileup events
   constexpr uint32_t maxHitsInIter() { return 160; }
 #endif
   constexpr uint32_t maxHitsInModule() { return 1024; }
