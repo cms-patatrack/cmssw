@@ -43,6 +43,7 @@ public:
   cms::cuda::host::unique_ptr<uint32_t[]> hitsModuleStartToHostAsync(cudaStream_t stream) const;
 
 private:
+  // number of elements of size 16 and 32 respectively
   static constexpr uint32_t n16 = 4;
   static constexpr uint32_t n32 = 10;
   static_assert(sizeof(uint32_t) == sizeof(float));  // just stating the obvious
@@ -100,7 +101,8 @@ TrackingRecHit2DHeterogeneous<Traits>::TrackingRecHit2DHeterogeneous(uint32_t nH
   // this will break 1to1 correspondence with cluster and module locality
   // so unless proven VERY inefficient we keep it ordered as generated
   m_store16 = Traits::template make_device_unique<uint16_t[]>(nHits * n16, stream);
-  m_store32 = Traits::template make_device_unique<float[]>(nHits * n32 + 11, stream);
+  m_store32 =
+      Traits::template make_device_unique<float[]>(nHits * n32 + phase1PixelTopology::numberOfLayers + 1, stream);
   m_HistStore = Traits::template make_device_unique<TrackingRecHit2DSOAView::Hist>(stream);
 
   static_assert(sizeof(TrackingRecHit2DSOAView::hindex_type) == sizeof(float));
