@@ -105,7 +105,7 @@ namespace gpuPixelDoublets {
 
       // found hit corresponding to our cuda thread, now do the job
       auto mi = hh.detectorIndex(i);
-      if (mi > 2000)
+      if (mi > gpuClustering::maxNumModules)
         continue;  // invalid
 
       /* maybe clever, not effective when zoCut is on
@@ -201,7 +201,7 @@ namespace gpuPixelDoublets {
           assert(oi >= offsets[outer]);
           assert(oi < offsets[outer + 1]);
           auto mo = hh.detectorIndex(oi);
-          if (mo > 2000)
+          if (mo > gpuClustering::maxNumModules)
             continue;  //    invalid
 
           if (doZ0Cut && z0cutoff(oi))

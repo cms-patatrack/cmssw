@@ -113,8 +113,8 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
   HitModuleStart moduleStart_;  // index of the first pixel of each module
   HitModuleStart clusInModule_;
   memset(&clusInModule_, 0, sizeof(HitModuleStart));  // needed??
-  assert(2001 == clusInModule_.size());
-  assert(0 == clusInModule_[2000]);
+  assert(gpuClustering::maxNumModules + 1 == clusInModule_.size());
+  assert(0 == clusInModule_[gpuClustering::maxNumModules]);
   uint32_t moduleId_;
   moduleStart_[1] = 0;  // we run sequentially....
 
@@ -128,7 +128,7 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
     DetId detIdObject(detid);
     const GeomDetUnit* genericDet = geom_->idToDetUnit(detIdObject);
     auto gind = genericDet->index();
-    assert(gind < 2000);
+    assert(gind < gpuClustering::maxNumModules);
     auto const nclus = DSViter->size();
     clusInModule_[gind] = nclus;
     numberOfClusters += nclus;
@@ -136,7 +136,7 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
   hitsModuleStart[0] = 0;
   for (int i = 1, n = clusInModule_.size(); i < n; ++i)
     hitsModuleStart[i] = hitsModuleStart[i - 1] + clusInModule_[i - 1];
-  assert(numberOfClusters == int(hitsModuleStart[2000]));
+  assert(numberOfClusters == int(hitsModuleStart[gpuClustering::maxNumModules]));
 
   // output SoA
   auto output = std::make_unique<TrackingRecHit2DCPU>(numberOfClusters, &cpeView, hitsModuleStart, nullptr);
@@ -149,7 +149,7 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
   }
 
   if (convert2Legacy_)
-    legacyOutput->reserve(2000, numberOfClusters);
+    legacyOutput->reserve(gpuClustering::maxNumModules, numberOfClusters);
 
   int numberOfDetUnits = 0;
   int numberOfHits = 0;
@@ -159,7 +159,7 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
     DetId detIdObject(detid);
     const GeomDetUnit* genericDet = geom_->idToDetUnit(detIdObject);
     auto const gind = genericDet->index();
-    assert(gind < 2000);
+    assert(gind < gpuClustering::maxNumModules);
     const PixelGeomDetUnit* pixDet = dynamic_cast<const PixelGeomDetUnit*>(genericDet);
     assert(pixDet);
     auto const nclus = DSViter->size();

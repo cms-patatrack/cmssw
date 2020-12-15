@@ -26,7 +26,8 @@ int main(void) {
 
   using namespace gpuClustering;
 
-  int numElements = 256 * 2000;
+  constexpr int numElements = 256 * maxNumModules;
+
   // these in reality are already on GPU
   auto h_id = std::make_unique<uint16_t[]>(numElements);
   auto h_x = std::make_unique<uint16_t[]>(numElements);

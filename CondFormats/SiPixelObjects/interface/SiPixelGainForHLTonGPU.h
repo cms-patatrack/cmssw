@@ -16,6 +16,7 @@
 #endif  // __device__
 #endif  // __CUDACC__
 
+#include "CUDADataFormats/SiPixelCluster/interface/gpuClusteringConstants.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cuda_assert.h"
 
 struct SiPixelGainForHLTonGPU_DecodingStructure {
@@ -59,7 +60,7 @@ public:
   constexpr float decodePed(unsigned int ped) const { return ped * pedPrecision_ + minPed_; }
 
   DecodingStructure* v_pedestals_;
-  std::pair<Range, int> rangeAndCols_[2000];
+  std::pair<Range, int> rangeAndCols_[gpuClustering::maxNumModules];
 
   float minPed_, maxPed_, minGain_, maxGain_;
   float pedPrecision_, gainPrecision_;

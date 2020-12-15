@@ -22,6 +22,7 @@ __global__ void simLink(const SiPixelDigisCUDA::DeviceConstView* dd,
                         uint32_t n) {
   constexpr uint32_t invTK = 0;  // std::numeric_limits<int32_t>::max();
   using gpuClustering::invalidModuleId;
+  using gpuClustering::maxNumModules;
 
   auto const& hh = *hhp;
   auto i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -32,12 +33,12 @@ __global__ void simLink(const SiPixelDigisCUDA::DeviceConstView* dd,
   auto id = dd->moduleInd(i);
   if (invalidModuleId == id)
     return;
-  assert(id < 2000);
+  assert(id < maxNumModules);
 
   auto ch = pixelgpudetails::pixelToChannel(dd->xx(i), dd->yy(i));
   auto first = hh.hitsModuleStart(id);
   auto cl = first + dd->clus(i);
-  assert(cl < 2000 * blockDim.x);
+  assert(cl < maxNumModules * blockDim.x);
 
   const Clus2TP me{{id, ch, 0, 0, 0, 0, 0}};
 

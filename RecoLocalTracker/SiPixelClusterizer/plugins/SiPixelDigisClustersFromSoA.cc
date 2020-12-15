@@ -1,3 +1,4 @@
+#include "CUDADataFormats/SiPixelCluster/interface/gpuClusteringConstants.h"
 #include "DataFormats/Common/interface/DetSetVector.h"
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/DetId/interface/DetId.h"
@@ -84,7 +85,7 @@ void SiPixelDigisClustersFromSoA::produce(edm::StreamID, edm::Event& iEvent, con
 
   auto collection = std::make_unique<edm::DetSetVector<PixelDigi>>();
   auto outputClusters = std::make_unique<SiPixelClusterCollectionNew>();
-  outputClusters->reserve(2000, nDigis / 4);
+  outputClusters->reserve(gpuClustering::maxNumModules, nDigis / 4);
 
   edm::DetSet<PixelDigi>* detDigis = nullptr;
   for (uint32_t i = 0; i < nDigis; i++) {
