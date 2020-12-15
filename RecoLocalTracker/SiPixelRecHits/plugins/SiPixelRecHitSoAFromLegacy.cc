@@ -1,6 +1,5 @@
 #include <cuda_runtime.h>
 
-// hack waiting for if constexpr
 #include "CUDADataFormats/BeamSpot/interface/BeamSpotCUDA.h"
 #include "CUDADataFormats/SiPixelCluster/interface/SiPixelClustersCUDA.h"
 #include "CUDADataFormats/SiPixelDigi/interface/SiPixelDigisCUDA.h"
@@ -90,21 +89,24 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
   iEvent.getByToken(clusterToken_, hclusters);
   auto const& input = *hclusters;
 
-  // yes a unique ptr of a unique ptr so edm is happy and the pointer stay still...
+  // allocate a buffer for the indices of the clusters
   auto hmsp = std::make_unique<uint32_t[]>(gpuClustering::maxNumModules + 1);
+  // hitsModuleStart is a non-owning pointer to the buffer
   auto hitsModuleStart = hmsp.get();
-  auto hms = std::make_unique<HMSstorage>(std::move(hmsp));  // hmsp is gone
-  iEvent.put(tokenModuleStart_, std::move(hms));             // hms is gone! hitsModuleStart still alive and kicking...
+  // wrap the buffer in a HostProduct
+  auto hms = std::make_unique<HMSstorage>(std::move(hmsp));
+  // move the HostProduct to the Event, without reallocating the buffer or affecting hitsModuleStart
+  iEvent.put(tokenModuleStart_, std::move(hms));
 
   // legacy output
   auto legacyOutput = std::make_unique<SiPixelRecHitCollectionNew>();
 
   // storage
-  std::vector<uint16_t> xx_;
-  std::vector<uint16_t> yy_;
-  std::vector<uint16_t> adc_;
-  std::vector<uint16_t> moduleInd_;
-  std::vector<int32_t> clus_;
+  std::vector<uint16_t> xx;
+  std::vector<uint16_t> yy;
+  std::vector<uint16_t> adc;
+  std::vector<uint16_t> moduleInd;
+  std::vector<int32_t> clus;
 
   std::vector<edm::Ref<edmNew::DetSetVector<SiPixelCluster>, SiPixelCluster>> clusterRef;
 
@@ -170,19 +172,19 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
     auto const fc = hitsModuleStart[gind];
     auto const lc = hitsModuleStart[gind + 1];
     assert(lc > fc);
-    // std::cout << "in det " << gind << ": conv " << nclus << " hits from " << DSViter->size() << " legacy clusters"
-    //          <<' '<< fc <<','<<lc<<std::endl;
+    LogDebug("SiPixelRecHitSoAFromLegacy") << "in det " << gind << ": conv " << nclus << " hits from "
+                                           << DSViter->size() << " legacy clusters" << ' ' << fc << ',' << lc;
     assert((lc - fc) == nclus);
     if (nclus > maxHitsInModule)
       printf(
           "WARNING: too many clusters %d in Module %d. Only first %d Hits converted\n", nclus, gind, maxHitsInModule);
 
     // fill digis
-    xx_.clear();
-    yy_.clear();
-    adc_.clear();
-    moduleInd_.clear();
-    clus_.clear();
+    xx.clear();
+    yy.clear();
+    adc.clear();
+    moduleInd.clear();
+    clus.clear();
     clusterRef.clear();
     moduleId_ = gind;
     uint32_t ic = 0;
@@ -191,11 +193,11 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
       assert(clust.size() > 0);
       for (int i = 0, nd = clust.size(); i < nd; ++i) {
         auto px = clust.pixel(i);
-        xx_.push_back(px.x);
-        yy_.push_back(px.y);
-        adc_.push_back(px.adc);
-        moduleInd_.push_back(gind);
-        clus_.push_back(ic);
+        xx.push_back(px.x);
+        yy.push_back(px.y);
+        adc.push_back(px.adc);
+        moduleInd.push_back(gind);
+        clus.push_back(ic);
         ++ndigi;
       }
       assert(clust.originalId() == ic);  // make sure hits and clus are in sync
@@ -204,10 +206,10 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
       ic++;
     }
     assert(nclus == ic);
-    assert(clus_.size() == ndigi);
+    assert(clus.size() == ndigi);
     numberOfHits += nclus;
     // filled creates view
-    SiPixelDigisCUDA::DeviceConstView digiView{xx_.data(), yy_.data(), adc_.data(), moduleInd_.data(), clus_.data()};
+    SiPixelDigisCUDA::DeviceConstView digiView{xx.data(), yy.data(), adc.data(), moduleInd.data(), clus.data()};
     assert(digiView.adc(0) != 0);
     // we run on blockId.x==0
     gpuPixelRecHits::getHits(&cpeView, &bsHost, &digiView, ndigi, &clusterView, output->view());
@@ -240,7 +242,8 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
   cms::cuda::fillManyFromVector(
       output->phiBinner(), 10, output->iphi(), output->hitsLayerStart(), numberOfHits, 256, nullptr);
 
-  // std::cout << "created HitSoa for " <<  numberOfClusters << " clusters in " << numberOfDetUnits << " Dets" << std::endl;
+  LogDebug("SiPixelRecHitSoAFromLegacy") << "created HitSoa for " << numberOfClusters << " clusters in "
+                                         << numberOfDetUnits << " Dets";
   iEvent.put(std::move(output));
   if (convert2Legacy_)
     iEvent.put(std::move(legacyOutput));
