@@ -237,8 +237,8 @@ def customisePixelTrackReconstruction(process):
     # referenced in process.HLTRecoPixelTracksTask
 
     # cpu only: convert the pixel rechits from legacy to SoA format
-    from RecoLocalTracker.SiPixelRecHits.siPixelRecHitHostSoA_cfi import siPixelRecHitHostSoA as _siPixelRecHitHostSoA
-    process.hltSiPixelRecHitSoA = _siPixelRecHitHostSoA.clone(
+    from RecoLocalTracker.SiPixelRecHits.siPixelRecHitSoAFromLegacy_cfi import siPixelRecHitSoAFromLegacy as _siPixelRecHitSoAFromLegacy
+    process.hltSiPixelRecHitSoA = _siPixelRecHitSoAFromLegacy.clone(
         src = "hltSiPixelClusters",
         beamSpot = "hltOnlineBeamSpot",
         convertToLegacy = True

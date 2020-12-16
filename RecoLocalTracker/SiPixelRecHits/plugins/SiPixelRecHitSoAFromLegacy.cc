@@ -67,7 +67,7 @@ void SiPixelRecHitSoAFromLegacy::fillDescriptions(edm::ConfigurationDescriptions
   desc.add<edm::InputTag>("src", edm::InputTag("siPixelClustersPreSplitting"));
   desc.add<std::string>("CPE", "PixelCPEFast");
   desc.add<bool>("convertToLegacy", false);
-  descriptions.add("siPixelRecHitHostSoA", desc);
+  descriptions.addWithDefaultLabel(desc);
 }
 
 void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEvent, const edm::EventSetup& es) const {
