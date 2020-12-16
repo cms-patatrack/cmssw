@@ -14,39 +14,7 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "Geometry/Records/interface/TrackerTopologyRcd.h"
-
-namespace {
-  struct AccretionCluster {
-    typedef unsigned short UShort;
-    static constexpr UShort MAXSIZE = 256;
-    UShort adc[MAXSIZE];
-    UShort x[MAXSIZE];
-    UShort y[MAXSIZE];
-    UShort xmin = 16000;
-    UShort ymin = 16000;
-    unsigned int isize = 0;
-    int charge = 0;
-
-    void clear() {
-      isize = 0;
-      charge = 0;
-      xmin = 16000;
-      ymin = 16000;
-    }
-
-    bool add(SiPixelCluster::PixelPos const& p, UShort const iadc) {
-      if (isize == MAXSIZE)
-        return false;
-      xmin = std::min(xmin, (unsigned short)(p.row()));
-      ymin = std::min(ymin, (unsigned short)(p.col()));
-      adc[isize] = iadc;
-      x[isize] = p.row();
-      y[isize++] = p.col();
-      charge += iadc;
-      return true;
-    }
-  };
-}  // namespace
+#include "RecoLocalTracker/SiPixelClusterizer/plugins/PixelClusterizerBase.h"
 
 class SiPixelDigisClustersFromSoA : public edm::global::EDProducer<> {
 public:
@@ -98,7 +66,7 @@ void SiPixelDigisClustersFromSoA::produce(edm::StreamID, edm::Event& iEvent, con
   }
 
   int32_t nclus = -1;
-  std::vector<AccretionCluster> aclusters(1024);
+  std::vector<PixelClusterizerBase::AccretionCluster> aclusters(1024);
   auto totCluseFilled = 0;
 
   auto fillClusters = [&](uint32_t detId) {
