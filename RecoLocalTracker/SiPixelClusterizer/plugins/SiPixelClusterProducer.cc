@@ -123,7 +123,7 @@ void SiPixelClusterProducer::produce(edm::Event& e, const edm::EventSetup& es) {
   // Step D: write output to file
   output->shrink_to_fit();
 
-  // set sequential identifier (this is a const interface, but we need to set it after the sorting)
+  // set sequential identifier
   for (auto& clusters : *output) {
     uint16_t id = 0;
     for (auto& cluster : clusters) {
