@@ -47,14 +47,14 @@ namespace cms {
     }
 
     template <typename Assoc>
-    inline __attribute__((always_inline)) void launchZero(Assoc * h,
+    inline __attribute__((always_inline)) void launchZero(Assoc *h,
                                                           cudaStream_t stream
 #ifndef __CUDACC__
                                                           = cudaStreamDefault
 #endif
     ) {
-     typename Assoc::View view = {h,nullptr,nullptr,-1,-1};
-     launchZero(view, stream);
+      typename Assoc::View view = {h, nullptr, nullptr, -1, -1};
+      launchZero(view, stream);
     }
     template <typename Assoc>
     inline __attribute__((always_inline)) void launchZero(OneToManyAssocView<Assoc> view,
@@ -89,15 +89,15 @@ namespace cms {
 #endif
     }
 
-   template <typename Assoc>
-    inline __attribute__((always_inline)) void launchFinalize(Assoc * h,
+    template <typename Assoc>
+    inline __attribute__((always_inline)) void launchFinalize(Assoc *h,
                                                               cudaStream_t stream
 #ifndef __CUDACC__
                                                               = cudaStreamDefault
 #endif
     ) {
-     typename Assoc::View view = {h,nullptr,nullptr,-1,-1};
-     launchFinalize(view,stream);
+      typename Assoc::View view = {h, nullptr, nullptr, -1, -1};
+      launchFinalize(view, stream);
     }
 
     template <typename Assoc>
