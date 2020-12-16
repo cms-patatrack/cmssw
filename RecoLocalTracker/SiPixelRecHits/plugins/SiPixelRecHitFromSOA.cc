@@ -28,7 +28,7 @@ public:
 
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
-  using HMSstorage = HostProduct<unsigned int[]>;
+  using HMSstorage = HostProduct<uint32_t[]>;
 
 private:
   void acquire(edm::Event const& iEvent,
@@ -82,12 +82,14 @@ void SiPixelRecHitFromSOA::acquire(edm::Event const& iEvent,
 }
 
 void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es) {
-  // yes a unique ptr of a unique ptr so edm is happy
-  auto sizeOfHitModuleStart = gpuClustering::maxNumModules + 1;
-  auto hmsp = std::make_unique<uint32_t[]>(sizeOfHitModuleStart);
-  std::copy(m_hitsModuleStart.get(), m_hitsModuleStart.get() + sizeOfHitModuleStart, hmsp.get());
-  auto hms = std::make_unique<HMSstorage>(std::move(hmsp));  // hmsp is gone
-  iEvent.put(std::move(hms));                                // hms is gone!
+
+  // allocate a buffer for the indices of the clusters
+  auto hmsp = std::make_unique<uint32_t[]>(gpuClustering::maxNumModules + 1);
+  std::copy(m_hitsModuleStart.get(), m_hitsModuleStart.get() + gpuClustering::maxNumModules + 1, hmsp.get());
+  // wrap the buffer in a HostProduct
+  auto hms = std::make_unique<HMSstorage>(std::move(hmsp));
+  // move the HostProduct to the Event, without reallocating the buffer
+  iEvent.put(std::move(hms));
 
   auto output = std::make_unique<SiPixelRecHitCollectionNew>();
   if (0 == m_nHits) {

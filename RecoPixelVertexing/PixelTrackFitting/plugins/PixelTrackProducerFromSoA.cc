@@ -48,7 +48,7 @@ public:
   static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
 
   //  using HitModuleStart = std::array<uint32_t, gpuClustering::maxNumModules + 1>;
-  using HMSstorage = HostProduct<unsigned int[]>;
+  using HMSstorage = HostProduct<uint32_t[]>;
 
 private:
   void produce(edm::StreamID streamID, edm::Event &iEvent, const edm::EventSetup &iSetup) const override;

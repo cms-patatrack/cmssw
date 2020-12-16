@@ -85,7 +85,6 @@
 // Make heterogeneous framework happy
 #include "CUDADataFormats/SiPixelCluster/interface/gpuClusteringConstants.h"
 #include "CUDADataFormats/Common/interface/HostProduct.h"
-using HMSstorage = HostProduct<unsigned int[]>;
 
 using namespace std;
 
@@ -115,6 +114,8 @@ namespace cms {
              TrackerGeometry const& geom);
 
   private:
+    using HMSstorage = HostProduct<uint32_t[]>;
+
     // TO DO: maybe allow a map of pointers?
     /// const PixelClusterParameterEstimator * cpe_;  // what we got (for now, one ptr to base class)
     PixelCPEBase const* cpe_ = nullptr;  // What we got (for now, one ptr to base class)
@@ -189,9 +190,11 @@ namespace cms {
 
     const edmNew::DetSetVector<SiPixelCluster>& input = *inputhandle;
 
-    // fill cluster arrays
+    // allocate a buffer for the indices of the clusters
     auto hmsp = std::make_unique<uint32_t[]>(gpuClustering::maxNumModules + 1);
+    // hitsModuleStart is a non-owning pointer to the buffer
     auto hitsModuleStart = hmsp.get();
+    // fill cluster arrays
     std::array<uint32_t, gpuClustering::maxNumModules + 1> clusInModule{};
     for (auto const& dsv : input) {
       unsigned int detid = dsv.detId();
@@ -212,8 +215,8 @@ namespace cms {
       hitsModuleStart[i] = hitsModuleStart[i - 1] + clusInModule[i - 1];
     assert(numberOfClusters == int(hitsModuleStart[gpuClustering::maxNumModules]));
 
-    // yes a unique ptr of a unique ptr so edm is happy and the pointer stay still...
-    iEvent.emplace(tHost_, std::move(hmsp));  // hmsp is gone, hitsModuleStart still alive and kicking...
+    // wrap the buffer in a HostProduct, and move it to the Event, without reallocating the buffer or affecting hitsModuleStart
+    iEvent.emplace(tHost_, std::move(hmsp));
 
     numberOfClusters = 0;
     for (auto const& dsv : input) {
