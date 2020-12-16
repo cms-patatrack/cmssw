@@ -293,8 +293,7 @@ public:
     assert(tmpNtuplet.size() <= 4);
 
     bool last = true;
-    for (int j = 0; j < outerNeighbors().size(); ++j) {
-      auto otherCell = outerNeighbors()[j];
+    for (unsigned int otherCell : outerNeighbors()) {
       if (cells[otherCell].theDoubletId < 0)
         continue;  // killed by earlyFishbone
       last = false;

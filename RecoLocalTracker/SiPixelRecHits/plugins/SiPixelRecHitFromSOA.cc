@@ -111,9 +111,9 @@ void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es
 
   int numberOfDetUnits = 0;
   int numberOfClusters = 0;
-  for (auto DSViter = input.begin(); DSViter != input.end(); DSViter++) {
+  for (auto const& dsv: input) {
     numberOfDetUnits++;
-    unsigned int detid = DSViter->detId();
+    unsigned int detid = dsv.detId();
     DetId detIdObject(detid);
     const GeomDetUnit* genericDet = geom->idToDetUnit(detIdObject);
     auto gind = genericDet->index();
@@ -125,26 +125,26 @@ void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es
     auto nhits = lc - fc;
 
     assert(lc > fc);
-    // std::cout << "in det " << gind << ": conv " << nhits << " hits from " << DSViter->size() << " legacy clusters"
+    // std::cout << "in det " << gind << ": conv " << nhits << " hits from " << dsv.size() << " legacy clusters"
     //          <<' '<< fc <<','<<lc<<std::endl;
     if (nhits > maxHitsInModule)
       printf(
           "WARNING: too many clusters %d in Module %d. Only first %d Hits converted\n", nhits, gind, maxHitsInModule);
     nhits = std::min(nhits, maxHitsInModule);
 
-    //std::cout << "in det " << gind << "conv " << nhits << " hits from " << DSViter->size() << " legacy clusters"
+    //std::cout << "in det " << gind << "conv " << nhits << " hits from " << dsv.size() << " legacy clusters"
     //          <<' '<< lc <<','<<fc<<std::endl;
 
     if (0 == nhits)
       continue;
     auto jnd = [&](int k) { return fc + k; };
-    assert(nhits <= DSViter->size());
-    if (nhits != DSViter->size()) {
-      edm::LogWarning("GPUHits2CPU") << "nhits!= nclus " << nhits << ' ' << DSViter->size() << std::endl;
+    assert(nhits <= dsv.size());
+    if (nhits != dsv.size()) {
+      edm::LogWarning("GPUHits2CPU") << "nhits!= nclus " << nhits << ' ' << dsv.size() << std::endl;
     }
-    for (auto const& clust : *DSViter) {
+    for (auto const& clust : dsv) {
       assert(clust.originalId() >= 0);
-      assert(clust.originalId() < DSViter->size());
+      assert(clust.originalId() < dsv.size());
       if (clust.originalId() >= nhits)
         continue;
       auto ij = jnd(clust.originalId());

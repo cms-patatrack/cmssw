@@ -106,13 +106,13 @@ void SiPixelDigiErrorsFromSoA::produce(edm::Event& iEvent, const edm::EventSetup
 
   constexpr uint32_t dummydetid = 0xffffffff;
   typedef PixelDataFormatter::Errors::iterator IE;
-  for (IE is = errors.begin(); is != errors.end(); is++) {
-    uint32_t errordetid = is->first;
+  for (auto& error : errors) {
+    uint32_t errordetid = error.first;
     if (errordetid == dummydetid) {  // errors given dummy detId must be sorted by Fed
       nodeterrors.insert(nodeterrors.end(), errors[errordetid].begin(), errors[errordetid].end());
     } else {
       edm::DetSet<SiPixelRawDataError>& errorDetSet = errorcollection.find_or_insert(errordetid);
-      errorDetSet.data.insert(errorDetSet.data.end(), is->second.begin(), is->second.end());
+      errorDetSet.data.insert(errorDetSet.data.end(), error.second.begin(), error.second.end());
       // Fill detid of the detectors where there is error AND the error number is listed
       // in the configurable error list in the job option cfi.
       // Code needs to be here, because there can be a set of errors for each

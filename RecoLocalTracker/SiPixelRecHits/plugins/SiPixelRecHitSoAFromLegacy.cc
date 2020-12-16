@@ -125,13 +125,13 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
 
   // fill cluster arrays
   int numberOfClusters = 0;
-  for (auto DSViter = input.begin(); DSViter != input.end(); DSViter++) {
-    unsigned int detid = DSViter->detId();
+  for (auto const& dsv : input) {
+    unsigned int detid = dsv.detId();
     DetId detIdObject(detid);
     const GeomDetUnit* genericDet = geom_->idToDetUnit(detIdObject);
     auto gind = genericDet->index();
     assert(gind < gpuClustering::maxNumModules);
-    auto const nclus = DSViter->size();
+    auto const nclus = dsv.size();
     clusInModule_[gind] = nclus;
     numberOfClusters += nclus;
   }
@@ -155,16 +155,16 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
 
   int numberOfDetUnits = 0;
   int numberOfHits = 0;
-  for (auto DSViter = input.begin(); DSViter != input.end(); DSViter++) {
+  for (auto const& dsv : input) {
     numberOfDetUnits++;
-    unsigned int detid = DSViter->detId();
+    unsigned int detid = dsv.detId();
     DetId detIdObject(detid);
     const GeomDetUnit* genericDet = geom_->idToDetUnit(detIdObject);
     auto const gind = genericDet->index();
     assert(gind < gpuClustering::maxNumModules);
     const PixelGeomDetUnit* pixDet = dynamic_cast<const PixelGeomDetUnit*>(genericDet);
     assert(pixDet);
-    auto const nclus = DSViter->size();
+    auto const nclus = dsv.size();
     assert(clusInModule_[gind] == nclus);
     if (0 == nclus)
       continue;  // is this really possible?
@@ -173,7 +173,7 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
     auto const lc = hitsModuleStart[gind + 1];
     assert(lc > fc);
     LogDebug("SiPixelRecHitSoAFromLegacy") << "in det " << gind << ": conv " << nclus << " hits from "
-                                           << DSViter->size() << " legacy clusters" << ' ' << fc << ',' << lc;
+                                           << dsv.size() << " legacy clusters" << ' ' << fc << ',' << lc;
     assert((lc - fc) == nclus);
     if (nclus > maxHitsInModule)
       printf(
@@ -189,7 +189,7 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
     moduleId_ = gind;
     uint32_t ic = 0;
     uint32_t ndigi = 0;
-    for (auto const& clust : *DSViter) {
+    for (auto const& clust : dsv) {
       assert(clust.size() > 0);
       for (int i = 0, nd = clust.size(); i < nd; ++i) {
         auto px = clust.pixel(i);
