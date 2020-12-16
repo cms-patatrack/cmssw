@@ -193,15 +193,15 @@ namespace cms {
     auto hmsp = std::make_unique<uint32_t[]>(gpuClustering::maxNumModules + 1);
     auto hitsModuleStart = hmsp.get();
     std::array<uint32_t, gpuClustering::maxNumModules + 1> clusInModule{};
-    for (auto DSViter = input.begin(); DSViter != input.end(); DSViter++) {
-      unsigned int detid = DSViter->detId();
+    for (auto const& dsv : input) {
+      unsigned int detid = dsv.detId();
       DetId detIdObject(detid);
       const GeomDetUnit* genericDet = geom.idToDetUnit(detIdObject);
       auto gind = genericDet->index();
       // FIXME to be changed to support Phase2
       if (gind >= int(gpuClustering::maxNumModules))
         continue;
-      auto const nclus = DSViter->size();
+      auto const nclus = dsv.size();
       assert(nclus > 0);
       clusInModule[gind] = nclus;
       numberOfClusters += nclus;
@@ -216,16 +216,16 @@ namespace cms {
     iEvent.emplace(tHost_, std::move(hmsp));  // hmsp is gone, hitsModuleStart still alive and kicking...
 
     numberOfClusters = 0;
-    for (auto DSViter = input.begin(); DSViter != input.end(); DSViter++) {
+    for (auto const& dsv : input) {
       numberOfDetUnits++;
-      unsigned int detid = DSViter->detId();
+      unsigned int detid = dsv.detId();
       DetId detIdObject(detid);
       const GeomDetUnit* genericDet = geom.idToDetUnit(detIdObject);
       const PixelGeomDetUnit* pixDet = dynamic_cast<const PixelGeomDetUnit*>(genericDet);
       assert(pixDet);
       SiPixelRecHitCollectionNew::FastFiller recHitsOnDetUnit(output, detid);
 
-      edmNew::DetSet<SiPixelCluster>::const_iterator clustIt = DSViter->begin(), clustEnd = DSViter->end();
+      edmNew::DetSet<SiPixelCluster>::const_iterator clustIt = dsv.begin(), clustEnd = dsv.end();
 
       for (; clustIt != clustEnd; clustIt++) {
         numberOfClusters++;
