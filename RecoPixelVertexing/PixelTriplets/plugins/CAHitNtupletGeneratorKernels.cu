@@ -21,7 +21,7 @@ void CAHitNtupletGeneratorKernelsGPU::launchKernels(HitsOnCPU const &hh, TkSoA *
   auto *quality_d = (Quality *)(&tracks_d->m_quality);
 
   // zero tuples
-  cms::cuda::launchZero(tuples_d, nullptr, 0, nullptr, 0, cudaStream);
+  cms::cuda::launchZero(tuples_d, cudaStream);
 
   auto nhits = hh.nHits();
   assert(nhits <= pixelGPUConstants::maxNumberOfHits);
@@ -108,7 +108,7 @@ void CAHitNtupletGeneratorKernelsGPU::launchKernels(HitsOnCPU const &hh, TkSoA *
   numberOfBlocks = (3 * CAConstants::maxTuples() / 4 + blockSize - 1) / blockSize;
   kernel_countMultiplicity<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
       tuples_d, quality_d, device_tupleMultiplicity_.get());
-  cms::cuda::launchFinalize(device_tupleMultiplicity_.get(), nullptr, 0, cudaStream);
+  cms::cuda::launchFinalize(device_tupleMultiplicity_.get(), cudaStream);
   kernel_fillMultiplicity<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
       tuples_d, quality_d, device_tupleMultiplicity_.get());
   cudaCheck(cudaGetLastError());
@@ -250,7 +250,7 @@ void CAHitNtupletGeneratorKernelsGPU::classifyTuples(HitsOnCPU const &hh, TkSoA 
     kernel_countHitInTracks<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
         tuples_d, quality_d, device_hitToTuple_.get());
     cudaCheck(cudaGetLastError());
-    cms::cuda::launchFinalize(device_hitToTuple_.get(), nullptr, 0, cudaStream);
+    cms::cuda::launchFinalize(device_hitToTuple_.get(), cudaStream);
     cudaCheck(cudaGetLastError());
     kernel_fillHitInTracks<<<numberOfBlocks, blockSize, 0, cudaStream>>>(tuples_d, quality_d, device_hitToTuple_.get());
     cudaCheck(cudaGetLastError());
