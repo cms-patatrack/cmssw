@@ -1,4 +1,3 @@
-#include <cuda.h>
 #include <cuda_runtime.h>
 
 #include "CondFormats/SiPixelTransient/interface/SiPixelTemplate.h"
@@ -44,7 +43,7 @@ PixelCPEFast::PixelCPEFast(edm::ParameterSet const& conf,
   }
 
   // Rechit errors in case other, more correct, errors are not vailable
-  // This are constants. Maybe there is a more efficienct way to store them.
+  // These are constants. Maybe there is a more efficienct way to store them.
   xerr_barrel_l1_ = {0.00115, 0.00120, 0.00088};
   xerr_barrel_l1_def_ = 0.01030;
   yerr_barrel_l1_ = {0.00375, 0.00230, 0.00250, 0.00250, 0.00230, 0.00230, 0.00210, 0.00210, 0.00240};
