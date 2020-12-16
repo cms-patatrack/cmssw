@@ -36,7 +36,6 @@ namespace gpuClustering {
   }
 
   __global__
-      //  __launch_bounds__(256,4)
       void
       findClus(uint16_t const* __restrict__ id,           // module id of each pixel
                uint16_t const* __restrict__ x,            // local coordinates of each pixel

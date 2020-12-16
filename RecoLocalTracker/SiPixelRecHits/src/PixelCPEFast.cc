@@ -309,9 +309,9 @@ void PixelCPEFast::errorFromTemplates(DetParam const& theDetParam,
   float dummy;
 
   SiPixelGenError gtempl(thePixelGenError_);
-  int gtemplID_ = theDetParam.detTemplateId;
+  int gtemplID = theDetParam.detTemplateId;
 
-  theClusterParam.qBin_ = gtempl.qbin(gtemplID_,
+  theClusterParam.qBin_ = gtempl.qbin(gtemplID,
                                       theClusterParam.cotalpha,
                                       theClusterParam.cotbeta,
                                       locBz,

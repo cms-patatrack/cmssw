@@ -21,6 +21,8 @@
 // CMSSW includes
 #include "CUDADataFormats/SiPixelCluster/interface/gpuClusteringConstants.h"
 #include "CondFormats/SiPixelObjects/interface/SiPixelROCsStatusAndMapping.h"
+#include "DataFormats/FEDRawData/interface/FEDNumbering.h"
+#include "DataFormats/TrackerCommon/interface/TrackerTopology.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/cudaCheck.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/device_unique_ptr.h"
 #include "HeterogeneousCore/CUDAUtilities/interface/host_unique_ptr.h"
@@ -46,7 +48,7 @@ namespace pixelgpudetails {
                                                                         const cms_uint32_t *src,
                                                                         unsigned int length) {
     std::memcpy(word_.get() + wordCounterGPU, src, sizeof(cms_uint32_t) * length);
-    std::memset(fedId_.get() + wordCounterGPU / 2, fedId - 1200, length / 2);
+    std::memset(fedId_.get() + wordCounterGPU / 2, fedId - FEDNumbering::MINSiPixeluTCAFEDID, length / 2);
   }
 
   ////////////////////
@@ -59,7 +61,7 @@ namespace pixelgpudetails {
 
   __device__ uint32_t getADC(uint32_t ww) { return ((ww >> pixelgpudetails::ADC_shift) & pixelgpudetails::ADC_mask); }
 
-  __device__ bool isBarrel(uint32_t rawId) { return (1 == ((rawId >> 25) & 0x7)); }
+  __device__ bool isBarrel(uint32_t rawId) { return (PixelSubdetector::PixelBarrel == ((rawId >> DetId::kSubdetOffset) & DetId::kSubdetMask)); }
 
   __device__ pixelgpudetails::DetIdGPU getRawId(const SiPixelROCsStatusAndMapping *cablingMap,
                                                 uint8_t fed,
@@ -67,7 +69,7 @@ namespace pixelgpudetails {
                                                 uint32_t roc) {
     uint32_t index = fed * MAX_LINK * MAX_ROC + (link - 1) * MAX_ROC + roc;
     pixelgpudetails::DetIdGPU detId = {
-        cablingMap->RawId[index], cablingMap->rocInDet[index], cablingMap->moduleId[index]};
+        cablingMap->rawId[index], cablingMap->rocInDet[index], cablingMap->moduleId[index]};
     return detId;
   }
 
@@ -137,15 +139,13 @@ namespace pixelgpudetails {
 
     uint32_t gRow = rowOffset + slopeRow * local.row;
     uint32_t gCol = colOffset + slopeCol * local.col;
-    //printf("Inside frameConversion row: %u, column: %u\n", gRow, gCol);
+    // inside frameConversion row: gRow, column: gCol
     pixelgpudetails::Pixel global = {gRow, gCol};
     return global;
   }
 
   __device__ uint8_t conversionError(uint8_t fedId, uint8_t status, bool debug = false) {
     uint8_t errorType = 0;
-
-    // debug = true;
 
     switch (status) {
       case (1): {
@@ -181,11 +181,8 @@ namespace pixelgpudetails {
   }
 
   __device__ bool rocRowColIsValid(uint32_t rocRow, uint32_t rocCol) {
-    uint32_t numRowsInRoc = 80;
-    uint32_t numColsInRoc = 52;
-
-    /// row and collumn in ROC representation
-    return ((rocRow < numRowsInRoc) & (rocCol < numColsInRoc));
+    /// row and column in ROC representation
+    return ((rocRow < pixelgpudetails::numRowsInRoc) & (rocCol < pixelgpudetails::numColsInRoc));
   }
 
   __device__ bool dcolIsValid(uint32_t dcol, uint32_t pxid) { return ((dcol < 26) & (2 <= pxid) & (pxid < 162)); }
@@ -287,7 +284,7 @@ namespace pixelgpudetails {
         //cabling.pxid = 2;
         uint32_t roc = 1;
         uint32_t link = (errWord >> pixelgpudetails::LINK_shift) & pixelgpudetails::LINK_mask;
-        uint32_t rID_temp = getRawId(cablingMap, fedId, link, roc).RawId;
+        uint32_t rID_temp = getRawId(cablingMap, fedId, link, roc).rawId;
         if (rID_temp != 9999)
           rID = rID_temp;
         break;
@@ -323,7 +320,7 @@ namespace pixelgpudetails {
         //cabling.pxid = 2;
         uint32_t roc = 1;
         uint32_t link = chanNmbr;
-        uint32_t rID_temp = getRawId(cablingMap, fedId, link, roc).RawId;
+        uint32_t rID_temp = getRawId(cablingMap, fedId, link, roc).rawId;
         if (rID_temp != 9999)
           rID = rID_temp;
         break;
@@ -334,7 +331,7 @@ namespace pixelgpudetails {
         //cabling.pxid = 2;
         uint32_t roc = (errWord >> pixelgpudetails::ROC_shift) & pixelgpudetails::ROC_mask;
         uint32_t link = (errWord >> pixelgpudetails::LINK_shift) & pixelgpudetails::LINK_mask;
-        uint32_t rID_temp = getRawId(cablingMap, fedId, link, roc).RawId;
+        uint32_t rID_temp = getRawId(cablingMap, fedId, link, roc).rawId;
         if (rID_temp != 9999)
           rID = rID_temp;
         break;
@@ -397,7 +394,7 @@ namespace pixelgpudetails {
         continue;
       }
 
-      uint32_t rawId = detId.RawId;
+      uint32_t rawId = detId.rawId;
       uint32_t rocIdInDetUnit = detId.rocInDet;
       bool barrel = isBarrel(rawId);
 
