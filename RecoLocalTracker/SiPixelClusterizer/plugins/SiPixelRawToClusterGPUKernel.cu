@@ -3,7 +3,6 @@
  * File Name: RawToClusterGPU.cu
  * Description: It converts Raw data into Digi Format on GPU
  * Finaly the Output of RawToDigi data is given to pixelClusterizer
- *
 **/
 
 // C++ includes
@@ -61,7 +60,9 @@ namespace pixelgpudetails {
 
   __device__ uint32_t getADC(uint32_t ww) { return ((ww >> pixelgpudetails::ADC_shift) & pixelgpudetails::ADC_mask); }
 
-  __device__ bool isBarrel(uint32_t rawId) { return (PixelSubdetector::PixelBarrel == ((rawId >> DetId::kSubdetOffset) & DetId::kSubdetMask)); }
+  __device__ bool isBarrel(uint32_t rawId) {
+    return (PixelSubdetector::PixelBarrel == ((rawId >> DetId::kSubdetOffset) & DetId::kSubdetMask));
+  }
 
   __device__ pixelgpudetails::DetIdGPU getRawId(const SiPixelROCsStatusAndMapping *cablingMap,
                                                 uint8_t fed,
@@ -144,6 +145,7 @@ namespace pixelgpudetails {
     return global;
   }
 
+  // error decoding and handling copied from EventFilter/SiPixelRawToDigi/src/ErrorChecker.cc
   __device__ uint8_t conversionError(uint8_t fedId, uint8_t status, bool debug = false) {
     uint8_t errorType = 0;
 
@@ -187,6 +189,7 @@ namespace pixelgpudetails {
 
   __device__ bool dcolIsValid(uint32_t dcol, uint32_t pxid) { return ((dcol < 26) & (2 <= pxid) & (pxid < 162)); }
 
+  // error decoding and handling copied from EventFilter/SiPixelRawToDigi/src/ErrorChecker.cc
   __device__ uint8_t checkROC(uint32_t errorWord,
                               uint8_t fedId,
                               uint32_t link,
@@ -240,15 +243,15 @@ namespace pixelgpudetails {
       case (30): {
         if (debug)
           printf("TBM error trailer (errorType = 30)\n");
-        int StateMatch_bits = 4;
-        int StateMatch_shift = 8;
-        uint32_t StateMatch_mask = ~(~uint32_t(0) << StateMatch_bits);
-        int StateMatch = (errorWord >> StateMatch_shift) & StateMatch_mask;
-        if (StateMatch != 1 && StateMatch != 8) {
+        int stateMatch_bits = 4;
+        int stateMatch_shift = 8;
+        uint32_t stateMatch_mask = ~(~uint32_t(0) << stateMatch_bits);
+        int stateMatch = (errorWord >> stateMatch_shift) & stateMatch_mask;
+        if (stateMatch != 1 && stateMatch != 8) {
           if (debug)
             printf("FED error 30 with unexpected State Bits (errorType = 30)\n");
         }
-        if (StateMatch == 1)
+        if (stateMatch == 1)
           errorType = 40;  // 1=Overflow -> 40, 8=number of ROCs -> 30
         errorFound = true;
         break;
@@ -266,6 +269,7 @@ namespace pixelgpudetails {
     return errorFound ? errorType : 0;
   }
 
+  // error decoding and handling copied from EventFilter/SiPixelRawToDigi/src/ErrorChecker.cc
   __device__ uint32_t getErrRawID(uint8_t fedId,
                                   uint32_t errWord,
                                   uint32_t errorType,
@@ -279,13 +283,10 @@ namespace pixelgpudetails {
       case 31:
       case 36:
       case 40: {
-        //set dummy values for cabling just to get detId from link
-        //cabling.dcol = 0;
-        //cabling.pxid = 2;
         uint32_t roc = 1;
         uint32_t link = (errWord >> pixelgpudetails::LINK_shift) & pixelgpudetails::LINK_mask;
         uint32_t rID_temp = getRawId(cablingMap, fedId, link, roc).rawId;
-        if (rID_temp != 9999)
+        if (rID_temp != gpuClustering::invalidModuleId)
           rID = rID_temp;
         break;
       }
@@ -315,24 +316,19 @@ namespace pixelgpudetails {
         if ((chanNmbr < 1) || (chanNmbr > 36))
           break;  // signifies unexpected result
 
-        // set dummy values for cabling just to get detId from link if in Barrel
-        //cabling.dcol = 0;
-        //cabling.pxid = 2;
         uint32_t roc = 1;
         uint32_t link = chanNmbr;
         uint32_t rID_temp = getRawId(cablingMap, fedId, link, roc).rawId;
-        if (rID_temp != 9999)
+        if (rID_temp != gpuClustering::invalidModuleId)
           rID = rID_temp;
         break;
       }
       case 37:
       case 38: {
-        //cabling.dcol = 0;
-        //cabling.pxid = 2;
         uint32_t roc = (errWord >> pixelgpudetails::ROC_shift) & pixelgpudetails::ROC_mask;
         uint32_t link = (errWord >> pixelgpudetails::LINK_shift) & pixelgpudetails::LINK_mask;
         uint32_t rID_temp = getRawId(cablingMap, fedId, link, roc).rawId;
-        if (rID_temp != 9999)
+        if (rID_temp != gpuClustering::invalidModuleId)
           rID = rID_temp;
         break;
       }
@@ -374,7 +370,7 @@ namespace pixelgpudetails {
       // initialize (too many coninue below)
       pdigi[gIndex] = 0;
       rawIdArr[gIndex] = 0;
-      moduleId[gIndex] = 9999;
+      moduleId[gIndex] = gpuClustering::invalidModuleId;
 
       uint32_t ww = word[gIndex];  // Array containing 32 bit raw data
       if (ww == 0) {
@@ -408,8 +404,8 @@ namespace pixelgpudetails {
       if (skipROC)
         continue;
 
-      uint32_t layer = 0;                   //, ladder =0;
-      int side = 0, panel = 0, module = 0;  //disk = 0, blade = 0
+      uint32_t layer = 0;
+      int side = 0, panel = 0, module = 0;
 
       if (barrel) {
         layer = (rawId >> pixelgpudetails::layerStartBit) & pixelgpudetails::layerMask;
@@ -419,9 +415,7 @@ namespace pixelgpudetails {
         // endcap ids
         layer = 0;
         panel = (rawId >> pixelgpudetails::panelStartBit) & pixelgpudetails::panelMask;
-        //disk  = (rawId >> diskStartBit_) & diskMask_;
         side = (panel == 1) ? -1 : 1;
-        //blade = (rawId >> bladeStartBit_) & bladeMask_;
       }
 
       // ***special case of layer to 1 be handled here
