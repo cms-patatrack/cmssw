@@ -691,6 +691,14 @@ def customizeHLTforPatatrack(process):
     return process
 
 
+# customisation for running the Patatrack reconstruction, with automatic offload via CUDA when a supported gpu is available
+def customizeHLTforPatatrackPixelTracks(process):
+    process = customiseCommon(process)
+    process = customisePixelLocalReconstruction(process)
+    process = customisePixelTrackReconstruction(process)
+    return process
+
+
 def _addConsumerPath(process):
     # add to a path all consumers and the tasks that define the producers
     process.Consumer = cms.Path(
