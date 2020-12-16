@@ -43,7 +43,8 @@ void go() {
 
   uint32_t mem[N];
   HistR hr;
-  hr.initStorage(mem, N);
+  typename HistR::View view{&hr, nullptr, mem, -1, N};
+  hr.initStorage(view);
   std::cout << "HistoContainerR " << hr.capacity() << std::endl;
   assert(hr.capacity() == N);
   Hist h;

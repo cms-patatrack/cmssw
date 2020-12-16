@@ -76,8 +76,11 @@ void go() {
     fillManyFromVector(h_d.get(), nParts, v_d.get(), off_d.get(), offsets[10], 256, h_s.get(), 0);
     cudaCheck(cudaMemcpy(&h, h_d.get(), sizeof(Hist), cudaMemcpyDeviceToHost));
     assert(h.capacity() == offsets[10]);
+    // get content
     cudaCheck(cudaMemcpy(mem, h_s.get(), N * sizeof(uint32_t), cudaMemcpyDeviceToHost));
-    h.initStorage(mem, N);
+    typename Hist::View view = {&h, nullptr, mem, -1, N};
+    // plug correct content
+    h.initStorage(view);
     assert(0 == h.off[0]);
     assert(offsets[10] == h.size());
 

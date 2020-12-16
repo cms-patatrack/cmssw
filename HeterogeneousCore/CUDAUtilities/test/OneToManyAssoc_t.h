@@ -243,9 +243,10 @@ int main() {
   a_st2 = a_st2_d.get();
   sa_st2 = sa_st2_d.get();
 #endif
-
-  launchZero(a_d.get(), a_st2, a_n2, a_st, a_n, 0);
-  launchZero(sa_d.get(), sa_st2, a_n2, nullptr, 0, 0);
+  Assoc::View aView = {a_d.get(), a_st, a_st2, a_n, a_n2};
+  launchZero(aView, 0);
+  SmallAssoc::View saView = {sa_d.get(), nullptr, sa_st2, -1, a_n2};
+  launchZero(saView, 0);
 
 #ifdef __CUDACC__
   auto nThreads = 256;
@@ -253,14 +254,14 @@ int main() {
 
   count<<<nBlocks, nThreads>>>(v_d.get(), a_d.get(), N);
 
-  launchFinalize(a_d.get(), a_st, a_n, 0);
+  launchFinalize(aView, 0);
   verify<<<1, 1>>>(a_d.get());
   fill<<<nBlocks, nThreads>>>(v_d.get(), a_d.get(), N);
   verifyFill<<<1, 1>>>(a_d.get(), n);
 
 #else
   count(v_d, a_d.get(), N);
-  launchFinalize(a_d.get(), a_st, a_n);
+  launchFinalize(aView);
   verify(a_d.get());
   fill(v_d, a_d.get(), N);
   verifyFill(a_d.get(), n);
@@ -319,9 +320,10 @@ int main() {
   m1_st = m1_st_d.get();
   m2_st = m1_st_d.get();
 #endif
-
-  launchZero(m1_d.get(), m1_st, m_n, nullptr, 0, 0);
-  launchZero(m2_d.get(), m2_st, m_n, nullptr, 0, 0);
+  Multiplicity::View view1 = {m1_d.get(), nullptr, m1_st, -1, m_n};
+  Multiplicity::View view2 = {m2_d.get(), nullptr, m2_st, -1, m_n};
+  launchZero(view1, 0);
+  launchZero(view2, 0);
 
 #ifdef __CUDACC__
   nBlocks = (4 * N + nThreads - 1) / nThreads;
@@ -329,8 +331,8 @@ int main() {
   countMultiLocal<<<nBlocks, nThreads>>>(v_d.get(), m2_d.get(), N);
   verifyMulti<<<1, Multiplicity::ctNOnes()>>>(m1_d.get(), m2_d.get());
 
-  launchFinalize(m1_d.get(), nullptr, 0, 0);
-  launchFinalize(m2_d.get(), nullptr, 0, 0);
+  launchFinalize(view1, 0);
+  launchFinalize(view2, 0);
   verifyMulti<<<1, Multiplicity::ctNOnes()>>>(m1_d.get(), m2_d.get());
 
   cudaCheck(cudaGetLastError());
@@ -340,8 +342,8 @@ int main() {
   countMultiLocal(v_d, m2_d.get(), N);
   verifyMulti(m1_d.get(), m2_d.get());
 
-  launchFinalize(m1_d.get(), nullptr, 0);
-  launchFinalize(m2_d.get(), nullptr, 0);
+  launchFinalize(view1, 0);
+  launchFinalize(view2, 0);
   verifyMulti(m1_d.get(), m2_d.get());
 #endif
   return 0;

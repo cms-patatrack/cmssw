@@ -43,7 +43,7 @@ namespace cms {
                                                                   uint32_t nh,
                                                                   T const *__restrict__ v,
                                                                   uint32_t const *__restrict__ offsets,
-                                                                  uint32_t totSize,
+                                                                  int32_t totSize,
                                                                   int nthreads,
                                                                   typename Histo::index_type *mem,
                                                                   cudaStream_t stream
@@ -51,12 +51,14 @@ namespace cms {
                                                                   = cudaStreamDefault
 #endif
     ) {
-      launchZero(h, mem, totSize, nullptr, 0, stream);
+      typename Histo::View view = {h, nullptr, mem, -1, totSize};
+      launchZero(view, stream);
 #ifdef __CUDACC__
       auto nblocks = (totSize + nthreads - 1) / nthreads;
+      assert(nblocks > 0);
       countFromVector<<<nblocks, nthreads, 0, stream>>>(h, nh, v, offsets);
       cudaCheck(cudaGetLastError());
-      launchFinalize(h, nullptr, 0, stream);
+      launchFinalize(view, stream);
       fillFromVector<<<nblocks, nthreads, 0, stream>>>(h, nh, v, offsets);
       cudaCheck(cudaGetLastError());
 #else
@@ -98,9 +100,10 @@ namespace cms {
               >
     class HistoContainer : public OneToManyAssoc<I, NHISTS * NBINS + 1, SIZE> {
     public:
-      using Base = OneToManyAssoc<I, NBINS, SIZE>;
+      using Base = OneToManyAssoc<I, NHISTS * NBINS + 1, SIZE>;
+      using View = typename Base::View;
       using Counter = typename Base::Counter;
-      using index_type = typename Base::Counter;
+      using index_type = typename Base::index_type;
       using UT = typename std::make_unsigned<T>::type;
 
       static constexpr uint32_t ilog2(uint32_t v) {
