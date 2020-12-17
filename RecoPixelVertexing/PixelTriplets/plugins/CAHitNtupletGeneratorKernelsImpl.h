@@ -3,6 +3,8 @@
 //
 
 // #define NTUPLE_DEBUG
+// #define GPU_DEBUG
+
 
 #include <cmath>
 #include <cstdint>
@@ -38,7 +40,7 @@ __global__ void kernel_checkOverflows(HitContainer const *foundNtuplets,
                                       gpuPixelDoublets::CellNeighborsVector const *cellNeighbors,
                                       gpuPixelDoublets::CellTracksVector const *cellTracks,
                                       GPUCACell::OuterHitOfCell const *__restrict__ isOuterHitOfCell,
-                                      uint32_t nHits,
+                                      int32_t nHits,
                                       uint32_t maxNumberOfDoublets,
                                       CAHitNtupletGeneratorKernelsGPU::Counters *counters) {
   auto first = threadIdx.x + blockIdx.x * blockDim.x;
@@ -55,11 +57,12 @@ __global__ void kernel_checkOverflows(HitContainer const *foundNtuplets,
 
 #ifdef NTUPLE_DEBUG
   if (0 == first) {
-    printf("number of found cells %d, found tuples %d with total hits %d out of %d\n",
+    printf("number of found cells %d, found tuples %d with total hits %d out of %d %d\n",
            *nCells,
            apc->get().m,
            apc->get().n,
-           nHits);
+           nHits,
+           hitToTuple->totOnes());
     if (apc->get().m < CAConstants::maxNumberOfQuadruplets()) {
       assert(foundNtuplets->size(apc->get().m) == 0);
       assert(foundNtuplets->size() == apc->get().n);
@@ -71,7 +74,7 @@ __global__ void kernel_checkOverflows(HitContainer const *foundNtuplets,
       printf("ERROR %d, %d\n", idx, foundNtuplets->size(idx));
     assert(foundNtuplets->size(idx) < 6);
     for (auto ih = foundNtuplets->begin(idx); ih != foundNtuplets->end(idx); ++ih)
-      assert(*ih < nHits);
+      assert(int(*ih) < nHits);
   }
 #endif
 
@@ -84,6 +87,8 @@ __global__ void kernel_checkOverflows(HitContainer const *foundNtuplets,
       printf("cellNeighbors overflow\n");
     if (cellTracks && cellTracks->full())
       printf("cellTracks overflow\n");
+    if (int(hitToTuple->nOnes())<nHits) 
+      printf("ERROR hitToTuple  overflow %d %d\n",hitToTuple->nOnes(),nHits);
   }
 
   for (int idx = first, nt = (*nCells); idx < nt; idx += gridDim.x * blockDim.x) {
@@ -386,7 +391,7 @@ __global__ void kernel_classifyTracks(HitContainer const *__restrict__ tuples,
                     (cuts.chi2Coeff[0] + pt * (cuts.chi2Coeff[1] + pt * (cuts.chi2Coeff[2] + pt * cuts.chi2Coeff[3])));
     // above number were for Quads not normalized so for the time being just multiple by ndof for Quads  (triplets to be understood)
     if (3.f * tracks->chi2(it) >= chi2Cut) {
-#ifdef NTUPLE_DEBUG
+#ifdef NTUPLE_FIT_DEBUG
       printf("Bad fit %d size %d pt %f eta %f chi2 %f\n",
              it,
              tuples->size(it),

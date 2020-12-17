@@ -15,6 +15,10 @@ void CAHitNtupletGeneratorKernelsCPU::allocateOnGPU(int32_t nHits, cudaStream_t 
   device_theCellNeighbors_ = Traits::template make_unique<CAConstants::CellNeighborsVector>(stream);
   device_theCellTracks_ = Traits::template make_unique<CAConstants::CellTracksVector>(stream);
 
+#ifdef  GPU_DEBUG
+  std::cout << "Allocation for tuple building. N hits " << nHits << std::endl;
+#endif
+
   nHits++;  // storage requires one more counter;
   assert(nHits > 0);
   device_hitToTuple_ = Traits::template make_unique<HitToTuple>(stream);
@@ -39,4 +43,8 @@ void CAHitNtupletGeneratorKernelsCPU::allocateOnGPU(int32_t nHits, cudaStream_t 
   }
   cms::cuda::launchZero(device_tupleMultiplicity_.get(), stream);
   cms::cuda::launchZero(hitToTupleView_, stream);  // we may wish to keep it in the edm...
+#ifdef GPU_DEBUG
+  cudaDeviceSynchronize();
+  cudaCheck(cudaGetLastError());
+#endif
 }
