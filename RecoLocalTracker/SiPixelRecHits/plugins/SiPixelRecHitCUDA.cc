@@ -53,7 +53,7 @@ void SiPixelRecHitCUDA::fillDescriptions(edm::ConfigurationDescriptions& descrip
   edm::ParameterSetDescription desc;
 
   desc.add<edm::InputTag>("beamSpot", edm::InputTag("offlineBeamSpotCUDA"));
-  desc.add<edm::InputTag>("src", edm::InputTag("siPixelClustersCUDAPreSplitting"));
+  desc.add<edm::InputTag>("src", edm::InputTag("siPixelClustersPreSplittingCUDA"));
   desc.add<std::string>("CPE", "PixelCPEFast");
   descriptions.add("siPixelRecHitCUDA", desc);
 }
