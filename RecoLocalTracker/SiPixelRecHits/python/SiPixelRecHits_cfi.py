@@ -28,14 +28,14 @@ gpu.toModify(siPixelRecHitsPreSplitting,
 
 siPixelRecHitsPreSplittingTask = cms.Task(siPixelRecHitsPreSplitting)
 
-siPixelRecHitsCUDAPreSplitting = _siPixelRecHitCUDA.clone(
+siPixelRecHitsPreSplittingCUDA = _siPixelRecHitCUDA.clone(
     beamSpot = "offlineBeamSpotToCUDA"
 )
 
-siPixelRecHitsLegacyPreSplitting = _siPixelRecHitFromSOA.clone()
+siPixelRecHitsPreSplittingLegacy = _siPixelRecHitFromSOA.clone()
 siPixelRecHitsPreSplittingTaskCUDA = cms.Task(
-    siPixelRecHitsCUDAPreSplitting,
-    siPixelRecHitsLegacyPreSplitting,
+    siPixelRecHitsPreSplittingCUDA,
+    siPixelRecHitsPreSplittingLegacy,
 )
 
 from Configuration.ProcessModifiers.gpu_cff import gpu

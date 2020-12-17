@@ -58,7 +58,7 @@ void CAHitNtupletCUDA::fillDescriptions(edm::ConfigurationDescriptions& descript
   edm::ParameterSetDescription desc;
 
   desc.add<bool>("onGPU", true);
-  desc.add<edm::InputTag>("pixelRecHitSrc", edm::InputTag("siPixelRecHitsCUDAPreSplitting"));
+  desc.add<edm::InputTag>("pixelRecHitSrc", edm::InputTag("siPixelRecHitsPreSplittingCUDA"));
 
   CAHitNtupletGeneratorOnGPU::fillDescriptions(desc);
   auto label = "caHitNtupletCUDA";
