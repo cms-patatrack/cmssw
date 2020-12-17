@@ -15,10 +15,10 @@ void CAHitNtupletGeneratorKernelsCPU::allocateOnGPU(int32_t nHits, cudaStream_t 
   device_theCellNeighbors_ = Traits::template make_unique<CAConstants::CellNeighborsVector>(stream);
   device_theCellTracks_ = Traits::template make_unique<CAConstants::CellTracksVector>(stream);
 
-  nHits++; // storage requires one more counter;
-  assert(nHits>0);
+  nHits++;  // storage requires one more counter;
+  assert(nHits > 0);
   device_hitToTuple_ = Traits::template make_unique<HitToTuple>(stream);
-  device_hitToTupleStorage_ = Traits::template make_unique<HitToTuple::Counter[]>(nHits,stream);
+  device_hitToTupleStorage_ = Traits::template make_unique<HitToTuple::Counter[]>(nHits, stream);
   hitToTupleView_.assoc = device_hitToTuple_.get();
   hitToTupleView_.offStorage = device_hitToTupleStorage_.get();
   hitToTupleView_.offSize = nHits;
@@ -32,9 +32,7 @@ void CAHitNtupletGeneratorKernelsCPU::allocateOnGPU(int32_t nHits, cudaStream_t 
   device_nCells_ = (uint32_t*)(device_storage_.get() + 2);
 
   // FIXME: consider collapsing these 3 in one adhoc kernel
-  if
-      constexpr
-      (std::is_same<Traits, cms::cudacompat::GPUTraits>::value) {
+  if constexpr (std::is_same<Traits, cms::cudacompat::GPUTraits>::value) {
     cudaCheck(cudaMemsetAsync(device_nCells_, 0, sizeof(uint32_t), stream));
   } else {
     *device_nCells_ = 0;
