@@ -195,6 +195,12 @@ PixelTrackHeterogeneous CAHitNtupletGeneratorOnGPU::makeTuplesAsync(TrackingRecH
   }
   kernels.classifyTuples(hits_d, soa, stream);
 
+#ifdef GPU_DEBUG
+  cudaDeviceSynchronize();
+  cudaCheck(cudaGetLastError());
+  std::cout << "finished building pixel tracks on GPU" << std::endl;
+#endif
+
   return tracks;
 }
 
@@ -228,9 +234,7 @@ PixelTrackHeterogeneous CAHitNtupletGeneratorOnGPU::makeTuples(TrackingRecHit2DC
   kernels.classifyTuples(hits_d, soa, nullptr);
 
 #ifdef GPU_DEBUG
-  cudaDeviceSynchronize();
-  cudaCheck(cudaGetLastError());
-  std::cout << "finished building pixel tracks" << std::endl;
+  std::cout << "finished building pixel tracks on CPU" << std::endl;
 #endif
 
   return tracks;
