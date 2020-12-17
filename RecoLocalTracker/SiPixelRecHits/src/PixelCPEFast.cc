@@ -27,15 +27,13 @@ PixelCPEFast::PixelCPEFast(edm::ParameterSet const& conf,
                            const SiPixelLorentzAngle* lorentzAngle,
                            const SiPixelGenErrorDBObject* genErrorDBObject,
                            const SiPixelLorentzAngle* lorentzAngleWidth)
-    : PixelCPEBase(conf, mag, geom, ttopo, lorentzAngle, genErrorDBObject, nullptr, lorentzAngleWidth, 0) {
-  EdgeClusterErrorX_ = conf.getParameter<double>("EdgeClusterErrorX");
-  EdgeClusterErrorY_ = conf.getParameter<double>("EdgeClusterErrorY");
-
-  UseErrorsFromTemplates_ = conf.getParameter<bool>("UseErrorsFromTemplates");
-  TruncatePixelCharge_ = conf.getParameter<bool>("TruncatePixelCharge");
-
+    : PixelCPEBase(conf, mag, geom, ttopo, lorentzAngle, genErrorDBObject, nullptr, lorentzAngleWidth, 0),
+      edgeClusterErrorX_(conf.getParameter<double>("EdgeClusterErrorX")),
+      edgeClusterErrorY_(conf.getParameter<double>("EdgeClusterErrorY")),
+      useErrorsFromTemplates_(conf.getParameter<bool>("UseErrorsFromTemplates")),
+      truncatePixelCharge_(conf.getParameter<bool>("TruncatePixelCharge")) {
   // Use errors from templates or from GenError
-  if (UseErrorsFromTemplates_) {
+  if (useErrorsFromTemplates_) {
     if (!SiPixelGenError::pushfile(*genErrorDBObject_, thePixelGenError_))
       throw cms::Exception("InvalidCalibrationLoaded")
           << "ERROR: GenErrors not filled correctly. Check the sqlite file. Using SiPixelTemplateDBObject version "
@@ -70,37 +68,37 @@ PixelCPEFast::PixelCPEFast(edm::ParameterSet const& conf,
 const pixelCPEforGPU::ParamsOnGPU* PixelCPEFast::getGPUProductAsync(cudaStream_t cudaStream) const {
   const auto& data = gpuData_.dataForCurrentDeviceAsync(cudaStream, [this](GPUData& data, cudaStream_t stream) {
     // and now copy to device...
-    cudaCheck(cudaMalloc((void**)&data.h_paramsOnGPU.m_commonParams, sizeof(pixelCPEforGPU::CommonParams)));
-    cudaCheck(cudaMalloc((void**)&data.h_paramsOnGPU.m_detParams,
+    cudaCheck(cudaMalloc((void**)&data.paramsOnGPU_h.m_commonParams, sizeof(pixelCPEforGPU::CommonParams)));
+    cudaCheck(cudaMalloc((void**)&data.paramsOnGPU_h.m_detParams,
                          this->m_detParamsGPU.size() * sizeof(pixelCPEforGPU::DetParams)));
-    cudaCheck(cudaMalloc((void**)&data.h_paramsOnGPU.m_averageGeometry, sizeof(pixelCPEforGPU::AverageGeometry)));
-    cudaCheck(cudaMalloc((void**)&data.h_paramsOnGPU.m_layerGeometry, sizeof(pixelCPEforGPU::LayerGeometry)));
-    cudaCheck(cudaMalloc((void**)&data.d_paramsOnGPU, sizeof(pixelCPEforGPU::ParamsOnGPU)));
+    cudaCheck(cudaMalloc((void**)&data.paramsOnGPU_h.m_averageGeometry, sizeof(pixelCPEforGPU::AverageGeometry)));
+    cudaCheck(cudaMalloc((void**)&data.paramsOnGPU_h.m_layerGeometry, sizeof(pixelCPEforGPU::LayerGeometry)));
+    cudaCheck(cudaMalloc((void**)&data.paramsOnGPU_d, sizeof(pixelCPEforGPU::ParamsOnGPU)));
 
     cudaCheck(cudaMemcpyAsync(
-        data.d_paramsOnGPU, &data.h_paramsOnGPU, sizeof(pixelCPEforGPU::ParamsOnGPU), cudaMemcpyDefault, stream));
-    cudaCheck(cudaMemcpyAsync((void*)data.h_paramsOnGPU.m_commonParams,
+        data.paramsOnGPU_d, &data.paramsOnGPU_h, sizeof(pixelCPEforGPU::ParamsOnGPU), cudaMemcpyDefault, stream));
+    cudaCheck(cudaMemcpyAsync((void*)data.paramsOnGPU_h.m_commonParams,
                               &this->m_commonParamsGPU,
                               sizeof(pixelCPEforGPU::CommonParams),
                               cudaMemcpyDefault,
                               stream));
-    cudaCheck(cudaMemcpyAsync((void*)data.h_paramsOnGPU.m_averageGeometry,
+    cudaCheck(cudaMemcpyAsync((void*)data.paramsOnGPU_h.m_averageGeometry,
                               &this->m_averageGeometry,
                               sizeof(pixelCPEforGPU::AverageGeometry),
                               cudaMemcpyDefault,
                               stream));
-    cudaCheck(cudaMemcpyAsync((void*)data.h_paramsOnGPU.m_layerGeometry,
+    cudaCheck(cudaMemcpyAsync((void*)data.paramsOnGPU_h.m_layerGeometry,
                               &this->m_layerGeometry,
                               sizeof(pixelCPEforGPU::LayerGeometry),
                               cudaMemcpyDefault,
                               stream));
-    cudaCheck(cudaMemcpyAsync((void*)data.h_paramsOnGPU.m_detParams,
+    cudaCheck(cudaMemcpyAsync((void*)data.paramsOnGPU_h.m_detParams,
                               this->m_detParamsGPU.data(),
                               this->m_detParamsGPU.size() * sizeof(pixelCPEforGPU::DetParams),
                               cudaMemcpyDefault,
                               stream));
   });
-  return data.d_paramsOnGPU;
+  return data.paramsOnGPU_d;
 }
 
 void PixelCPEFast::fillParamsForGpu() {
@@ -276,12 +274,12 @@ void PixelCPEFast::fillParamsForGpu() {
 }
 
 PixelCPEFast::GPUData::~GPUData() {
-  if (d_paramsOnGPU != nullptr) {
-    cudaFree((void*)h_paramsOnGPU.m_commonParams);
-    cudaFree((void*)h_paramsOnGPU.m_detParams);
-    cudaFree((void*)h_paramsOnGPU.m_averageGeometry);
-    cudaFree((void*)h_paramsOnGPU.m_layerGeometry);
-    cudaFree(d_paramsOnGPU);
+  if (paramsOnGPU_d != nullptr) {
+    cudaFree((void*)paramsOnGPU_h.m_commonParams);
+    cudaFree((void*)paramsOnGPU_h.m_detParams);
+    cudaFree((void*)paramsOnGPU_h.m_averageGeometry);
+    cudaFree((void*)paramsOnGPU_h.m_layerGeometry);
+    cudaFree(paramsOnGPU_d);
   }
 }
 
@@ -350,7 +348,7 @@ LocalPoint PixelCPEFast::localPosition(DetParam const& theDetParam, ClusterParam
 
   assert(!theClusterParam.with_track_angle);
 
-  if (UseErrorsFromTemplates_) {
+  if (useErrorsFromTemplates_) {
     errorFromTemplates(theDetParam, theClusterParam, theClusterParam.theCluster->charge());
   } else {
     theClusterParam.qBin_ = 0;
@@ -360,7 +358,7 @@ LocalPoint PixelCPEFast::localPosition(DetParam const& theDetParam, ClusterParam
   int Q_l_X;  //!< Q of the last   pixel  in X
   int Q_f_Y;  //!< Q of the first  pixel  in Y
   int Q_l_Y;  //!< Q of the last   pixel  in Y
-  collect_edge_charges(theClusterParam, Q_f_X, Q_l_X, Q_f_Y, Q_l_Y, UseErrorsFromTemplates_ && TruncatePixelCharge_);
+  collect_edge_charges(theClusterParam, Q_f_X, Q_l_X, Q_f_Y, Q_l_Y, useErrorsFromTemplates_ && truncatePixelCharge_);
 
   // do GPU like ...
   pixelCPEforGPU::ClusParams cp;
@@ -445,8 +443,8 @@ LocalError PixelCPEFast::localError(DetParam const& theDetParam, ClusterParam& t
 
   // Default errors are the maximum error used for edge clusters.
   // These are determined by looking at residuals for edge clusters
-  float xerr = EdgeClusterErrorX_ * micronsToCm;
-  float yerr = EdgeClusterErrorY_ * micronsToCm;
+  float xerr = edgeClusterErrorX_ * micronsToCm;
+  float yerr = edgeClusterErrorY_ * micronsToCm;
 
   // Find if cluster is at the module edge.
   int maxPixelCol = theClusterParam.theCluster->maxPixelCol();
@@ -464,7 +462,7 @@ LocalError PixelCPEFast::localError(DetParam const& theDetParam, ClusterParam& t
   bool bigInX = theDetParam.theRecTopol->containsBigPixelInX(minPixelRow, maxPixelRow);
   bool bigInY = theDetParam.theRecTopol->containsBigPixelInY(minPixelCol, maxPixelCol);
 
-  if (UseErrorsFromTemplates_) {
+  if (useErrorsFromTemplates_) {
     //
     // Use template errors
 
