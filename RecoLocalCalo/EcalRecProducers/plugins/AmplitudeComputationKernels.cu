@@ -89,7 +89,7 @@ namespace ecal {
       DataType* shrAtAStorage = reinterpret_cast<DataType*>(shrmem) +
                                 calo::multifit::MapSymM<DataType, NPULSES>::total * (threadIdx.x + blockDim.x);
 
-      // FIXME: remove eitehr idx or ch -> they are teh same thing
+      // channel
       int idx = threadIdx.x + blockDim.x * blockIdx.x;
 
 // ref the right ptr
@@ -99,14 +99,13 @@ namespace ecal {
       ARRANGE(energies);
 #undef ARRANGE
 
-      auto const ch = idx;
       if (idx < nchannels) {
         if (static_cast<MinimizationState>(acState[idx]) == MinimizationState::Precomputed)
           return;
 
         // get the hash
-        int const inputCh = ch >= offsetForInputs ? ch - offsetForInputs : ch;
-        auto const* dids = ch >= offsetForInputs ? dids_ee : dids_eb;
+        int const inputCh = idx >= offsetForInputs ? idx - offsetForInputs : idx;
+        auto const* dids = idx >= offsetForInputs ? dids_ee : dids_eb;
         auto const did = DetId{dids[inputCh]};
         auto const isBarrel = did.subdetId() == EcalBarrel;
         auto const hashedId = isBarrel ? ecal::reconstruction::hashedIndexEB(did.rawId())

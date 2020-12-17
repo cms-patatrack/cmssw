@@ -103,6 +103,9 @@ namespace ecal {
         auto const hashedId = isBarrel ? ecal::reconstruction::hashedIndexEB(did.rawId())
                                        : offsetForHashes + ecal::reconstruction::hashedIndexEE(did.rawId());
 
+        //
+        // pulse shape template
+
         // will be used in the future for setting state
         auto const rmsForChecking = rms_x12[hashedId];
 
@@ -390,7 +393,8 @@ namespace ecal {
           int gainidx = 0;
           char mask = gainidx;
           int pedestal = gainNoise[ch][ty] == mask ? 1 : 0;
-          noise_value += rms_x12[hashedId] * rms_x12[hashedId] * pedestal * G12SamplesCorrelation[vidx]; // gainratio is 1
+          //            NB: gainratio is 1, that is why it does not appear in the formula
+          noise_value += rms_x12[hashedId] * rms_x12[hashedId] * pedestal * G12SamplesCorrelation[vidx];
           // non-divergent branch
           if (!dynamicPedestal && addPedestalUncertainty > 0.f) {
             noise_value += addPedestalUncertainty * addPedestalUncertainty * pedestal; // gainratio is 1
