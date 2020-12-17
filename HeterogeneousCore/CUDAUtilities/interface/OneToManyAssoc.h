@@ -24,7 +24,7 @@ namespace cms {
       using Counter = typename Assoc::Counter;
       using index_type = typename Assoc::index_type;
 
-      Assoc *assoc;
+      Assoc *assoc = nullptr;
       Counter *offStorage = nullptr;
       index_type *contentStorage = nullptr;
       int32_t offSize = -1;

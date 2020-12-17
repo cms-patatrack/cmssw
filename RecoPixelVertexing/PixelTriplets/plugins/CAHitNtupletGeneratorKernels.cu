@@ -250,7 +250,7 @@ void CAHitNtupletGeneratorKernelsGPU::classifyTuples(HitsOnCPU const &hh, TkSoA 
     kernel_countHitInTracks<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
         tuples_d, quality_d, device_hitToTuple_.get());
     cudaCheck(cudaGetLastError());
-    cms::cuda::launchFinalize(device_hitToTuple_.get(), cudaStream);
+    cms::cuda::launchFinalize(hitToTupleView_, cudaStream);
     cudaCheck(cudaGetLastError());
     kernel_fillHitInTracks<<<numberOfBlocks, blockSize, 0, cudaStream>>>(tuples_d, quality_d, device_hitToTuple_.get());
     cudaCheck(cudaGetLastError());
