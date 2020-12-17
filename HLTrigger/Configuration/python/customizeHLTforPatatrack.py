@@ -185,12 +185,12 @@ def customisePixelLocalReconstruction(process):
     )
 
     # SwitchProducer wrapping the legacy pixel rechit producer or the transfer of the pixel rechits to the host and the conversion from SoA
-    from RecoLocalTracker.SiPixelRecHits.siPixelRecHitFromSOA_cfi import siPixelRecHitFromSOA as _siPixelRecHitFromSOA
+    from RecoLocalTracker.SiPixelRecHits.siPixelRecHitFromCUDA_cfi import siPixelRecHitFromCUDA as _siPixelRecHitFromCUDA
     process.hltSiPixelRecHits = SwitchProducerCUDA(
         # legacy producer
         cpu = process.hltSiPixelRecHits,
         # converter to legacy format
-        cuda = _siPixelRecHitFromSOA.clone(
+        cuda = _siPixelRecHitFromCUDA.clone(
             pixelRecHitSrc = "hltSiPixelRecHitsCUDA",
             src = "hltSiPixelClusters"
         )

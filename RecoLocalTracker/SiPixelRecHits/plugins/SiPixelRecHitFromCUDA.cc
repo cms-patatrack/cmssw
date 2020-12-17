@@ -24,10 +24,10 @@
 #include "HeterogeneousCore/CUDACore/interface/ScopedContext.h"
 #include "RecoLocalTracker/SiPixelRecHits/interface/pixelCPEforGPU.h"
 
-class SiPixelRecHitFromSOA : public edm::stream::EDProducer<edm::ExternalWork> {
+class SiPixelRecHitFromCUDA : public edm::stream::EDProducer<edm::ExternalWork> {
 public:
-  explicit SiPixelRecHitFromSOA(const edm::ParameterSet& iConfig);
-  ~SiPixelRecHitFromSOA() override = default;
+  explicit SiPixelRecHitFromCUDA(const edm::ParameterSet& iConfig);
+  ~SiPixelRecHitFromCUDA() override = default;
 
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
@@ -49,23 +49,23 @@ private:
   cms::cuda::host::unique_ptr<uint32_t[]> hitsModuleStart_;
 };
 
-SiPixelRecHitFromSOA::SiPixelRecHitFromSOA(const edm::ParameterSet& iConfig)
+SiPixelRecHitFromCUDA::SiPixelRecHitFromCUDA(const edm::ParameterSet& iConfig)
     : geomToken_(esConsumes()),
       tokenHit_(
           consumes<cms::cuda::Product<TrackingRecHit2DCUDA>>(iConfig.getParameter<edm::InputTag>("pixelRecHitSrc"))),
       clusterToken_(consumes<SiPixelClusterCollectionNew>(iConfig.getParameter<edm::InputTag>("src"))) {
-  produces<SiPixelRecHitCollectionNew>();
+  produces<SiPixelRecHitCollection>();
   produces<HMSstorage>();
 }
 
-void SiPixelRecHitFromSOA::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+void SiPixelRecHitFromCUDA::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   edm::ParameterSetDescription desc;
   desc.add<edm::InputTag>("pixelRecHitSrc", edm::InputTag("siPixelRecHitsPreSplittingCUDA"));
   desc.add<edm::InputTag>("src", edm::InputTag("siPixelClustersPreSplitting"));
   descriptions.addWithDefaultLabel(desc);
 }
 
-void SiPixelRecHitFromSOA::acquire(edm::Event const& iEvent,
+void SiPixelRecHitFromCUDA::acquire(edm::Event const& iEvent,
                                    edm::EventSetup const& iSetup,
                                    edm::WaitingTaskWithArenaHolder waitingTaskHolder) {
   cms::cuda::Product<TrackingRecHit2DCUDA> const& inputDataWrapped = iEvent.get(tokenHit_);
@@ -74,7 +74,7 @@ void SiPixelRecHitFromSOA::acquire(edm::Event const& iEvent,
 
   nHits_ = inputData.nHits();
 
-  LogDebug("SiPixelRecHitFromSOA") << "converting " << nHits_ << " Hits";
+  LogDebug("SiPixelRecHitFromCUDA") << "converting " << nHits_ << " Hits";
 
   if (0 == nHits_)
     return;
@@ -82,7 +82,7 @@ void SiPixelRecHitFromSOA::acquire(edm::Event const& iEvent,
   hitsModuleStart_ = inputData.hitsModuleStartToHostAsync(ctx.stream());
 }
 
-void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es) {
+void SiPixelRecHitFromCUDA::produce(edm::Event& iEvent, edm::EventSetup const& es) {
   // allocate a buffer for the indices of the clusters
   auto hmsp = std::make_unique<uint32_t[]>(gpuClustering::maxNumModules + 1);
   std::copy(hitsModuleStart_.get(), hitsModuleStart_.get() + gpuClustering::maxNumModules + 1, hmsp.get());
@@ -91,7 +91,7 @@ void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es
   // move the HostProduct to the Event, without reallocating the buffer
   iEvent.put(std::move(hms));
 
-  auto output = std::make_unique<SiPixelRecHitCollectionNew>();
+  auto output = std::make_unique<SiPixelRecHitCollection>();
   if (0 == nHits_) {
     iEvent.put(std::move(output));
     return;
@@ -119,20 +119,20 @@ void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es
     auto gind = genericDet->index();
     const PixelGeomDetUnit* pixDet = dynamic_cast<const PixelGeomDetUnit*>(genericDet);
     assert(pixDet);
-    SiPixelRecHitCollectionNew::FastFiller recHitsOnDetUnit(*output, detid);
+    SiPixelRecHitCollection::FastFiller recHitsOnDetUnit(*output, detid);
     auto fc = hitsModuleStart_[gind];
     auto lc = hitsModuleStart_[gind + 1];
     auto nhits = lc - fc;
 
     assert(lc > fc);
-    LogDebug("SiPixelRecHitFromSOA") << "in det " << gind << ": conv " << nhits << " hits from " << dsv.size()
+    LogDebug("SiPixelRecHitFromCUDA") << "in det " << gind << ": conv " << nhits << " hits from " << dsv.size()
                                      << " legacy clusters" << ' ' << fc << ',' << lc;
     if (nhits > maxHitsInModule)
-      edm::LogWarning("SiPixelRecHitFromSOA") << fmt::sprintf(
+      edm::LogWarning("SiPixelRecHitFromCUDA") << fmt::sprintf(
           "Too many clusters %d in module %d. Only the first %d hits will be converted", nhits, gind, maxHitsInModule);
     nhits = std::min(nhits, maxHitsInModule);
 
-    LogDebug("SiPixelRecHitFromSOA") << "in det " << gind << "conv " << nhits << " hits from " << dsv.size()
+    LogDebug("SiPixelRecHitFromCUDA") << "in det " << gind << "conv " << nhits << " hits from " << dsv.size()
                                      << " legacy clusters" << ' ' << lc << ',' << fc;
 
     if (0 == nhits)
@@ -172,18 +172,18 @@ void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es
       recHitsOnDetUnit.push_back(hit);
       // =============================
 
-      LogDebug("SiPixelRecHitFromSOA") << "cluster " << numberOfClusters << " at " << lp << ' ' << le;
+      LogDebug("SiPixelRecHitFromCUDA") << "cluster " << numberOfClusters << " at " << lp << ' ' << le;
 
     }  //  <-- End loop on Clusters
 
     //  LogDebug("SiPixelRecHitGPU")
-    LogDebug("SiPixelRecHitFromSOA") << "found " << recHitsOnDetUnit.size() << " RecHits on " << detid;
+    LogDebug("SiPixelRecHitFromCUDA") << "found " << recHitsOnDetUnit.size() << " RecHits on " << detid;
 
   }  //    <-- End loop on DetUnits
 
-  LogDebug("SiPixelRecHitFromSOA") << "found " << numberOfDetUnits << " dets, " << numberOfClusters << " clusters";
+  LogDebug("SiPixelRecHitFromCUDA") << "found " << numberOfDetUnits << " dets, " << numberOfClusters << " clusters";
 
   iEvent.put(std::move(output));
 }
 
-DEFINE_FWK_MODULE(SiPixelRecHitFromSOA);
+DEFINE_FWK_MODULE(SiPixelRecHitFromCUDA);
