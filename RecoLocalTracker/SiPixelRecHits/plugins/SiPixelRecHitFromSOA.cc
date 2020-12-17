@@ -1,7 +1,9 @@
 #include <cuda_runtime.h>
 
-#include "CUDADataFormats/Common/interface/Product.h"
+#include <fmt/printf.h>
+
 #include "CUDADataFormats/Common/interface/HostProduct.h"
+#include "CUDADataFormats/Common/interface/Product.h"
 #include "CUDADataFormats/TrackingRecHit/interface/TrackingRecHit2DHeterogeneous.h"
 #include "DataFormats/Common/interface/DetSetVectorNew.h"
 #include "DataFormats/Common/interface/Handle.h"
@@ -11,6 +13,7 @@
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/Framework/interface/stream/EDProducer.h"
+#include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
@@ -41,10 +44,9 @@ private:
   edm::EDGetTokenT<cms::cuda::Product<TrackingRecHit2DCUDA>> tokenHit_;  // CUDA hits
   edm::EDGetTokenT<SiPixelClusterCollectionNew> clusterToken_;           // Legacy Clusters
 
-  uint32_t m_nHits;
-  cms::cuda::host::unique_ptr<uint16_t[]> m_store16;
-  cms::cuda::host::unique_ptr<float[]> m_store32;
-  cms::cuda::host::unique_ptr<uint32_t[]> m_hitsModuleStart;
+  uint32_t nHits_;
+  cms::cuda::host::unique_ptr<float[]> store32_;
+  cms::cuda::host::unique_ptr<uint32_t[]> hitsModuleStart_;
 };
 
 SiPixelRecHitFromSOA::SiPixelRecHitFromSOA(const edm::ParameterSet& iConfig)
@@ -60,7 +62,7 @@ void SiPixelRecHitFromSOA::fillDescriptions(edm::ConfigurationDescriptions& desc
   edm::ParameterSetDescription desc;
   desc.add<edm::InputTag>("pixelRecHitSrc", edm::InputTag("siPixelRecHitsPreSplittingCUDA"));
   desc.add<edm::InputTag>("src", edm::InputTag("siPixelClustersPreSplitting"));
-  descriptions.add("siPixelRecHitFromSOA", desc);
+  descriptions.addWithDefaultLabel(desc);
 }
 
 void SiPixelRecHitFromSOA::acquire(edm::Event const& iEvent,
@@ -70,50 +72,46 @@ void SiPixelRecHitFromSOA::acquire(edm::Event const& iEvent,
   cms::cuda::ScopedContextAcquire ctx{inputDataWrapped, std::move(waitingTaskHolder)};
   auto const& inputData = ctx.get(inputDataWrapped);
 
-  m_nHits = inputData.nHits();
+  nHits_ = inputData.nHits();
 
-  // std::cout<< "converting " << m_nHits << " Hits"<< std::endl;
+  LogDebug("SiPixelRecHitFromSOA") << "converting " << nHits_ << " Hits";
 
-  if (0 == m_nHits)
+  if (0 == nHits_)
     return;
-  m_store32 = inputData.localCoordToHostAsync(ctx.stream());
-  //  m_store16 = inputData.detIndexToHostAsync(ctx.stream();
-  m_hitsModuleStart = inputData.hitsModuleStartToHostAsync(ctx.stream());
+  store32_ = inputData.localCoordToHostAsync(ctx.stream());
+  hitsModuleStart_ = inputData.hitsModuleStartToHostAsync(ctx.stream());
 }
 
 void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es) {
-
   // allocate a buffer for the indices of the clusters
   auto hmsp = std::make_unique<uint32_t[]>(gpuClustering::maxNumModules + 1);
-  std::copy(m_hitsModuleStart.get(), m_hitsModuleStart.get() + gpuClustering::maxNumModules + 1, hmsp.get());
+  std::copy(hitsModuleStart_.get(), hitsModuleStart_.get() + gpuClustering::maxNumModules + 1, hmsp.get());
   // wrap the buffer in a HostProduct
   auto hms = std::make_unique<HMSstorage>(std::move(hmsp));
   // move the HostProduct to the Event, without reallocating the buffer
   iEvent.put(std::move(hms));
 
   auto output = std::make_unique<SiPixelRecHitCollectionNew>();
-  if (0 == m_nHits) {
+  if (0 == nHits_) {
     iEvent.put(std::move(output));
     return;
   }
 
-  auto xl = m_store32.get();
-  auto yl = xl + m_nHits;
-  auto xe = yl + m_nHits;
-  auto ye = xe + m_nHits;
+  auto xl = store32_.get();
+  auto yl = xl + nHits_;
+  auto xe = yl + nHits_;
+  auto ye = xe + nHits_;
 
   const TrackerGeometry* geom = &es.getData(geomToken_);
 
-  edm::Handle<SiPixelClusterCollectionNew> hclusters;
-  iEvent.getByToken(clusterToken_, hclusters);
-
+  edm::Handle<SiPixelClusterCollectionNew> hclusters = iEvent.getHandle(clusterToken_);
   auto const& input = *hclusters;
 
   constexpr uint32_t maxHitsInModule = gpuClustering::maxHitsInModule();
 
   int numberOfDetUnits = 0;
   int numberOfClusters = 0;
-  for (auto const& dsv: input) {
+  for (auto const& dsv : input) {
     numberOfDetUnits++;
     unsigned int detid = dsv.detId();
     DetId detIdObject(detid);
@@ -122,27 +120,27 @@ void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es
     const PixelGeomDetUnit* pixDet = dynamic_cast<const PixelGeomDetUnit*>(genericDet);
     assert(pixDet);
     SiPixelRecHitCollectionNew::FastFiller recHitsOnDetUnit(*output, detid);
-    auto fc = m_hitsModuleStart[gind];
-    auto lc = m_hitsModuleStart[gind + 1];
+    auto fc = hitsModuleStart_[gind];
+    auto lc = hitsModuleStart_[gind + 1];
     auto nhits = lc - fc;
 
     assert(lc > fc);
-    // std::cout << "in det " << gind << ": conv " << nhits << " hits from " << dsv.size() << " legacy clusters"
-    //          <<' '<< fc <<','<<lc<<std::endl;
+    LogDebug("SiPixelRecHitFromSOA") << "in det " << gind << ": conv " << nhits << " hits from " << dsv.size()
+                                     << " legacy clusters" << ' ' << fc << ',' << lc;
     if (nhits > maxHitsInModule)
-      printf(
-          "WARNING: too many clusters %d in Module %d. Only first %d Hits converted\n", nhits, gind, maxHitsInModule);
+      edm::LogWarning("SiPixelRecHitFromSOA") << fmt::sprintf(
+          "Too many clusters %d in module %d. Only the first %d hits will be converted", nhits, gind, maxHitsInModule);
     nhits = std::min(nhits, maxHitsInModule);
 
-    //std::cout << "in det " << gind << "conv " << nhits << " hits from " << dsv.size() << " legacy clusters"
-    //          <<' '<< lc <<','<<fc<<std::endl;
+    LogDebug("SiPixelRecHitFromSOA") << "in det " << gind << "conv " << nhits << " hits from " << dsv.size()
+                                     << " legacy clusters" << ' ' << lc << ',' << fc;
 
     if (0 == nhits)
       continue;
     auto jnd = [&](int k) { return fc + k; };
     assert(nhits <= dsv.size());
     if (nhits != dsv.size()) {
-      edm::LogWarning("GPUHits2CPU") << "nhits!= nclus " << nhits << ' ' << dsv.size() << std::endl;
+      edm::LogWarning("GPUHits2CPU") << "nhits!= nclus " << nhits << ' ' << dsv.size();
     }
     for (auto const& clust : dsv) {
       assert(clust.originalId() >= 0);
@@ -158,11 +156,11 @@ void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es
 
       numberOfClusters++;
 
-      /*   cpu version....  (for reference)
-           std::tuple<LocalPoint, LocalError, SiPixelRecHitQuality::QualWordType> tuple = cpe_->getParameters( clust, *genericDet );
-           LocalPoint lp( std::get<0>(tuple) );
-           LocalError le( std::get<1>(tuple) );
-           SiPixelRecHitQuality::QualWordType rqw( std::get<2>(tuple) );
+      /* cpu version....  (for reference)
+      std::tuple<LocalPoint, LocalError, SiPixelRecHitQuality::QualWordType> tuple = cpe_->getParameters( clust, *genericDet );
+      LocalPoint lp( std::get<0>(tuple) );
+      LocalError le( std::get<1>(tuple) );
+      SiPixelRecHitQuality::QualWordType rqw( std::get<2>(tuple) );
       */
 
       // Create a persistent edm::Ref to the cluster
@@ -174,23 +172,16 @@ void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es
       recHitsOnDetUnit.push_back(hit);
       // =============================
 
-      // std::cout << "SiPixelRecHitGPUVI " << numberOfClusters << ' '<< lp << " " << le << std::endl;
+      LogDebug("SiPixelRecHitFromSOA") << "cluster " << numberOfClusters << " at " << lp << ' ' << le;
 
     }  //  <-- End loop on Clusters
 
     //  LogDebug("SiPixelRecHitGPU")
-    //std::cout << "SiPixelRecHitGPUVI "
-    //	<< " Found " << recHitsOnDetUnit.size() << " RecHits on " << detid //;
-    // << std::endl;
+    LogDebug("SiPixelRecHitFromSOA") << "found " << recHitsOnDetUnit.size() << " RecHits on " << detid;
 
   }  //    <-- End loop on DetUnits
 
-  /*
-  std::cout << "SiPixelRecHitGPUVI $ det, clus, lost "
-    <<  numberOfDetUnits << ' '
-    << numberOfClusters  << ' '
-    << std::endl;
-  */
+  LogDebug("SiPixelRecHitFromSOA") << "found " << numberOfDetUnits << " dets, " << numberOfClusters << " clusters";
 
   iEvent.put(std::move(output));
 }
