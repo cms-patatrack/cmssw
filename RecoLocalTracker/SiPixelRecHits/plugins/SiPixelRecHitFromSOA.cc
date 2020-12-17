@@ -182,8 +182,8 @@ void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es
 
   }  //    <-- End loop on DetUnits
 
-  /*
-  std::cout << "SiPixelRecHitGPUVI $ det, clus, lost "
+  
+ /* std::cout << "SiPixelRecHitGPUVI $ det, clus, lost "
     <<  numberOfDetUnits << ' '
     << numberOfClusters  << ' '
     << std::endl;

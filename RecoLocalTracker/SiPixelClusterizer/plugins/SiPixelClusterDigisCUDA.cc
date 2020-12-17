@@ -88,26 +88,17 @@ void SiPixelClusterDigisCUDA::acquire(const edm::Event& iEvent,
 
   uint32_t nDigis = 0;
 
-  std::cout << "Looping for digis"<< std::endl;
-  // for (auto DSViter = input.begin(); DSViter != input.end(); DSViter++)
-  // {
-  //   nDigis += uint32_t(DSViter->size()); //Is there a smareter way?
-  // }
-  //
-  // SiPixelDigisCUDA digis_h(nDigis,nullptr);
-  //
-  // std::std::vector<int> v;
-  // std::cout << "Filling SoA "<< nDigis << std::endl;
-  // nDigis = 0;
-  // std::vector<uint16_t> i, x, y, a;
-  // std::vector<uint32_t> p;
+  for (auto DSViter = input.begin(); DSViter != input.end(); DSViter++)
+	nDigis = nDigis + uint32_t(DSViter->size());
 
-  auto x = cms::cuda::make_host_unique<uint16_t[]>(10000000, ctx.stream());
-  auto y = cms::cuda::make_host_unique<uint16_t[]>(10000000, ctx.stream());
-  auto a = cms::cuda::make_host_unique<uint16_t[]>(10000000, ctx.stream());
-  auto i = cms::cuda::make_host_unique<uint16_t[]>(10000000, ctx.stream());
-  auto p = cms::cuda::make_host_unique<uint32_t[]>(10000000, ctx.stream());
-  auto r = cms::cuda::make_host_unique<uint32_t[]>(10000000, ctx.stream());
+  auto x = cms::cuda::make_host_unique<uint16_t[]>(nDigis + 1,ctx.stream());
+  auto y = cms::cuda::make_host_unique<uint16_t[]>(nDigis + 1,ctx.stream());
+  auto a = cms::cuda::make_host_unique<uint16_t[]>(nDigis + 1,ctx.stream());
+  auto i = cms::cuda::make_host_unique<uint16_t[]>(nDigis + 1,ctx.stream());
+  auto p = cms::cuda::make_host_unique<uint32_t[]>(nDigis + 1,ctx.stream());
+  auto r = cms::cuda::make_host_unique<uint32_t[]>(nDigis + 1,ctx.stream());
+ 
+  nDigis = 0;
 
   for (auto DSViter = input.begin(); DSViter != input.end(); DSViter++)
   {
@@ -124,11 +115,11 @@ void SiPixelClusterDigisCUDA::acquire(const edm::Event& iEvent,
       i[nDigis] = uint16_t(gind);
       r[nDigis] = uint32_t(detid);
       nDigis++;
-  
     }
   }
+
   gpuAlgo_.makeDigiClustersAsync(
-                             i.get(),x.get(),y.get(),a.get(),p.get(),r.get(),
+     			     i.get(),x.get(),y.get(),a.get(),p.get(),r.get(), 
                              nDigis,
                              ctx.stream());
 }

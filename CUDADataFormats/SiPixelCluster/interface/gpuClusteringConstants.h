@@ -8,7 +8,7 @@ namespace pixelGPUConstants {
   constexpr uint32_t maxNumberOfHits = 24 * 1024;
 #else
   constexpr uint32_t maxNumberOfHits =
-      48 * 1024;  // data at pileup 50 has 18300 +/- 3500 hits; 40000 is around 6 sigma away
+      256 * 1024;  // data at pileup 50 has 18300 +/- 3500 hits; 40000 is around 6 sigma away
 #endif
 }  // namespace pixelGPUConstants
 
@@ -20,7 +20,7 @@ namespace gpuClustering {
   constexpr uint32_t maxHitsInIter() { return 160; }
 #endif
   constexpr uint32_t maxHitsInModule() { return 4096; }
-
+  
   constexpr uint32_t MaxNumModules = 4000;
   constexpr uint32_t MaxNumModulesUpgrade = 4000;
   constexpr int32_t  MaxNumClustersPerModules = maxHitsInModule();
