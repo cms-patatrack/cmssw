@@ -142,7 +142,7 @@ void PixelTrackProducerFromSoA::produce(edm::StreamID streamID,
   int32_t nt = 0;
 
   for (int32_t it = 0; it < maxTracks; ++it) {
-    minEta = std::min(float(tsoa.eta(it)),minEta);
+    minEta = std::min(float(tsoa.eta(it)), minEta);
     auto nHits = tsoa.nHits(it);
     if (nHits == 0)
       break;  // this is a guard: maybe we need to move to nTracks...
@@ -199,9 +199,8 @@ void PixelTrackProducerFromSoA::produce(edm::StreamID streamID,
     auto track = std::make_unique<reco::Track>(chi2, ndof, pos, mom, gp.charge(), CurvilinearTrajectoryError(mo));
     // filter???
     tracks.emplace_back(track.release(), hits);
-
   }
-//  std::cout << "processed " << nt << " good tuples " << tracks.size() << " out of " << indToEdm.size() << " - " << minEta<<std::endl;
+  //  std::cout << "processed " << nt << " good tuples " << tracks.size() << " out of " << indToEdm.size() << " - " << minEta<<std::endl;
 
   // store tracks
   storeTracks(iEvent, tracks, *httopo);

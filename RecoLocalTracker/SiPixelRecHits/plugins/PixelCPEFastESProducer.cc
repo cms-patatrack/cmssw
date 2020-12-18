@@ -96,7 +96,7 @@ void PixelCPEFastESProducer::fillDescriptions(edm::ConfigurationDescriptions& de
   desc.add<std::string>("ComponentName", "PixelCPEFast");
   desc.add<double>("lAWidthBPix", 0);
   desc.add<bool>("Alpha2Order", true);
-  desc.add<bool>("Upgrade",false);
+  desc.add<bool>("Upgrade", false);
   descriptions.add("PixelCPEFastESProducer", desc);
 }
 

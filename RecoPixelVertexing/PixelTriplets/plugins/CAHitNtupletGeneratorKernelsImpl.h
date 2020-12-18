@@ -205,7 +205,7 @@ __global__ void kernel_connect(cms::cuda::AtomicPairCounter *apc1,
                                float CAThetaCutForward,
                                float dcaCutInnerTriplet,
                                float dcaCutOuterTriplet,
-			       bool upgrade) {
+                               bool upgrade) {
   auto const &hh = *hhp;
 
   auto firstCellIndex = threadIdx.y + blockIdx.y * blockDim.y;
@@ -273,7 +273,8 @@ __global__ void kernel_find_ntuplets(GPUCACell::Hits const *__restrict__ hhp,
                                      HitContainer *foundNtuplets,
                                      cms::cuda::AtomicPairCounter *apc,
                                      Quality *__restrict__ quality,
-                                     unsigned int minHitsPerNtuplet,bool upgrade) {
+                                     unsigned int minHitsPerNtuplet,
+                                     bool upgrade) {
   // recursive: not obvious to widen
   auto const &hh = *hhp;
 
@@ -284,8 +285,9 @@ __global__ void kernel_find_ntuplets(GPUCACell::Hits const *__restrict__ hhp,
       continue;  // cut by earlyFishbone
 
     auto pid = thisCell.theLayerPairId;
-    auto doit = upgrade ? minHitsPerNtuplet > 3 ? pid < 3 || (pid > 6 && pid < 20) : pid < 23 : minHitsPerNtuplet > 3 ? pid < 3 : pid < 8 || pid > 12;
-    doit=true;
+    auto doit = upgrade ? minHitsPerNtuplet > 3 ? pid < 3 || (pid > 6 && pid < 20) : pid < 23
+                        : minHitsPerNtuplet > 3 ? pid < 3 : pid < 8 || pid > 12;
+    doit = true;
     if (doit) {
       GPUCACell::TmpTuple stack;
       stack.reset();
@@ -339,7 +341,7 @@ __global__ void kernel_fillMultiplicity(HitContainer const *__restrict__ foundNt
     assert(quality[it] == trackQuality::bad);
     if (nhits > 16)
       printf("wrong mult %d %d\n", it, nhits);
-    assert(nhits <16);
+    assert(nhits < 16);
     tupleMultiplicity->fillDirect(nhits, it);
   }
 }
@@ -347,7 +349,8 @@ __global__ void kernel_fillMultiplicity(HitContainer const *__restrict__ foundNt
 __global__ void kernel_classifyTracks(HitContainer const *__restrict__ tuples,
                                       TkSoA const *__restrict__ tracks,
                                       CAHitNtupletGeneratorKernelsGPU::QualityCuts cuts,
-                                      Quality *__restrict__ quality, bool upgrade) {
+                                      Quality *__restrict__ quality,
+                                      bool upgrade) {
   int first = blockDim.x * blockIdx.x + threadIdx.x;
   for (int it = first, nt = tuples->nbins(); it < nt; it += gridDim.x * blockDim.x) {
     auto nhits = tuples->size(it);
@@ -383,9 +386,12 @@ __global__ void kernel_classifyTracks(HitContainer const *__restrict__ tuples,
     //   - chi2Scale = 30 for broken line fit, 45 for Riemann fit
     // (see CAHitNtupletGeneratorGPU.cc)
     float pt = std::min<float>(tracks->pt(it), cuts.chi2MaxPt);
-    float chi2Cut = upgrade ? 2.5 : cuts.chi2Scale * (cuts.chi2Coeff[0] + pt * (cuts.chi2Coeff[1] + pt * (cuts.chi2Coeff[2] + pt * cuts.chi2Coeff[3])));
+    float chi2Cut =
+        upgrade ? 2.5
+                : cuts.chi2Scale * (cuts.chi2Coeff[0] +
+                                    pt * (cuts.chi2Coeff[1] + pt * (cuts.chi2Coeff[2] + pt * cuts.chi2Coeff[3])));
     // above number were for Quads not normalized so for the time being just multiple by ndof for Quads  (triplets to be understood)
-    bool isBad = upgrade ? (tracks->chi2(it)/tuples->size(it) >= chi2Cut) : (3.f * tracks->chi2(it) >= chi2Cut);
+    bool isBad = upgrade ? (tracks->chi2(it) / tuples->size(it) >= chi2Cut) : (3.f * tracks->chi2(it) >= chi2Cut);
     if (isBad) {
 #ifdef NTUPLE_DEBUG
       printf("Bad fit %d size %d pt %f eta %f chi2 %f\n",
@@ -405,7 +411,8 @@ __global__ void kernel_classifyTracks(HitContainer const *__restrict__ tuples,
     // (see CAHitNtupletGeneratorGPU.cc)
     auto const &region = (nhits > 3) ? cuts.quadruplet : cuts.triplet;
     bool isOk = (std::abs(tracks->tip(it)) < region.maxTip) and (tracks->pt(it) > region.minPt) and
-                (std::abs(tracks->zip(it)) < region.maxZip) or true;
+                    (std::abs(tracks->zip(it)) < region.maxZip) or
+                true;
 
     if (isOk)
       quality[it] = trackQuality::loose;
@@ -505,7 +512,7 @@ __global__ void kernel_tripletCleaner(TrackingRecHit2DSOAView const *__restrict_
       continue;
 
     float mc = 10000.f;
-    uint32_t im = 4000000; //for Phase2 would need uint32_t
+    uint32_t im = 4000000;  //for Phase2 would need uint32_t
     uint32_t maxNh = 0;
 
     // find maxNh

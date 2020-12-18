@@ -40,7 +40,8 @@ public:
 
   using TupleMultiplicity = CAConstants::TupleMultiplicity;
 
-  explicit HelixFitOnGPU(float bf, bool fit5as4, bool upgrade=false) : bField_(bf), fit5as4_(fit5as4), upgrade_(upgrade) {}
+  explicit HelixFitOnGPU(float bf, bool fit5as4, bool upgrade = false)
+      : bField_(bf), fit5as4_(fit5as4), upgrade_(upgrade) {}
   ~HelixFitOnGPU() { deallocateOnGPU(); }
 
   void setBField(double bField) { bField_ = bField; }

@@ -123,8 +123,8 @@ void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es
     auto fc = m_hitsModuleStart[gind];
     auto lc = m_hitsModuleStart[gind + 1];
     auto nhits = lc - fc;
-   //std::cout << "in det " << gind << ": conv " << nhits << " hits from " << DSViter->size() << " legacy clusters"
-              //<<' '<< fc <<','<<lc<<std::endl;
+    //std::cout << "in det " << gind << ": conv " << nhits << " hits from " << DSViter->size() << " legacy clusters"
+    //<<' '<< fc <<','<<lc<<std::endl;
     if (nhits > MaxHitsInModule)
       printf(
           "WARNING: too many clusters %d in Module %d. Only first %d Hits converted\n", nhits, gind, MaxHitsInModule);
@@ -136,7 +136,7 @@ void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es
     if (0 == nhits)
       continue;
     auto jnd = [&](int k) { return fc + k; };
-  
+
     if (nhits != DSViter->size()) {
       edm::LogWarning("GPUHits2CPU") << "nhits!= nclus " << nhits << ' ' << DSViter->size() << std::endl;
     }
@@ -182,8 +182,7 @@ void SiPixelRecHitFromSOA::produce(edm::Event& iEvent, edm::EventSetup const& es
 
   }  //    <-- End loop on DetUnits
 
-  
- /* std::cout << "SiPixelRecHitGPUVI $ det, clus, lost "
+  /* std::cout << "SiPixelRecHitGPUVI $ det, clus, lost "
     <<  numberOfDetUnits << ' '
     << numberOfClusters  << ' '
     << std::endl;

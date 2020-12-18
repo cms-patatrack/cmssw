@@ -23,14 +23,14 @@ namespace {
 
     assert(0 == hitsModuleStart[0]);
     uint8_t m = cpeParams->commonParams().isUpgrade ? 29 : 11;
-    if(cpeParams->commonParams().isUpgrade)
+    if (cpeParams->commonParams().isUpgrade)
 
-    if (i < m) {
-      hitsLayerStart[i] = hitsModuleStart[cpeParams->layerGeometry().layerStart[i]];
+      if (i < m) {
+        hitsLayerStart[i] = hitsModuleStart[cpeParams->layerGeometry().layerStart[i]];
 #ifdef GPU_DEBUG
-      printf("LayerStart %d %d: %d\n", i, cpeParams->layerGeometry().layerStart[i], hitsLayerStart[i]);
+        printf("LayerStart %d %d: %d\n", i, cpeParams->layerGeometry().layerStart[i], hitsLayerStart[i]);
 #endif
-    }
+      }
   }
 }  // namespace
 
@@ -65,10 +65,9 @@ namespace pixelgpudetails {
       cudaCheck(cudaGetLastError());
     }
 
-    if (nHits)
-    {
-	cms::cuda::fillManyFromVector(hits_d.phiBinner(),28, hits_d.iphi(), hits_d.hitsLayerStart(), nHits, 128, stream);
-    	cudaCheck(cudaGetLastError());
+    if (nHits) {
+      cms::cuda::fillManyFromVector(hits_d.phiBinner(), 28, hits_d.iphi(), hits_d.hitsLayerStart(), nHits, 128, stream);
+      cudaCheck(cudaGetLastError());
     }
 #ifdef GPU_DEBUG
     cudaDeviceSynchronize();

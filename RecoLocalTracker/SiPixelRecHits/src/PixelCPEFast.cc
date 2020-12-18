@@ -48,24 +48,21 @@ PixelCPEFast::PixelCPEFast(edm::ParameterSet const& conf,
 
   // Rechit errors in case other, more correct, errors are not vailable
   // This are constants. Maybe there is a more efficienct way to store them.
-  if(!isUpgrade_)
-  {
-  xerr_barrel_l1_ = {0.00115, 0.00120, 0.00088};
-  xerr_barrel_l1_def_ = 0.01030;
-  yerr_barrel_l1_ = {0.00375, 0.00230, 0.00250, 0.00250, 0.00230, 0.00230, 0.00210, 0.00210, 0.00240};
-  yerr_barrel_l1_def_ = 0.00210;
-  xerr_barrel_ln_ = {0.00115, 0.00120, 0.00088};
-  xerr_barrel_ln_def_ = 0.01030;
-  yerr_barrel_ln_ = {0.00375, 0.00230, 0.00250, 0.00250, 0.00230, 0.00230, 0.00210, 0.00210, 0.00240};
-  yerr_barrel_ln_def_ = 0.00210;
-  xerr_endcap_ = {0.0020, 0.0020};
-  xerr_endcap_def_ = 0.0020;
-  yerr_endcap_ = {0.00210};
-  yerr_endcap_def_ = 0.00075;
-  }
-  else
-  {
-   xerr_barrel_ln_ = {0.00025, 0.00030, 0.00035, 0.00035};
+  if (!isUpgrade_) {
+    xerr_barrel_l1_ = {0.00115, 0.00120, 0.00088};
+    xerr_barrel_l1_def_ = 0.01030;
+    yerr_barrel_l1_ = {0.00375, 0.00230, 0.00250, 0.00250, 0.00230, 0.00230, 0.00210, 0.00210, 0.00240};
+    yerr_barrel_l1_def_ = 0.00210;
+    xerr_barrel_ln_ = {0.00115, 0.00120, 0.00088};
+    xerr_barrel_ln_def_ = 0.01030;
+    yerr_barrel_ln_ = {0.00375, 0.00230, 0.00250, 0.00250, 0.00230, 0.00230, 0.00210, 0.00210, 0.00240};
+    yerr_barrel_ln_def_ = 0.00210;
+    xerr_endcap_ = {0.0020, 0.0020};
+    xerr_endcap_def_ = 0.0020;
+    yerr_endcap_ = {0.00210};
+    yerr_endcap_def_ = 0.00075;
+  } else {
+    xerr_barrel_ln_ = {0.00025, 0.00030, 0.00035, 0.00035};
     xerr_barrel_ln_def_ = 0.00035;
     yerr_barrel_ln_ = {0.00210, 0.00115, 0.00125};
     yerr_barrel_ln_def_ = 0.00125;
@@ -77,7 +74,6 @@ PixelCPEFast::PixelCPEFast(edm::ParameterSet const& conf,
     xerr_barrel_l1_def_ = 0.00035;
     yerr_barrel_l1_ = {0.00210, 0.00115, 0.00125};
     yerr_barrel_l1_def_ = 0.00125;
- 
   }
   fillParamsForGpu();
 
@@ -130,9 +126,9 @@ void PixelCPEFast::fillParamsForGpu() {
   m_commonParamsGPU.theThicknessE = m_DetParams.back().theThickness;
   m_commonParamsGPU.thePitchX = m_DetParams[0].thePitchX;
   m_commonParamsGPU.thePitchY = m_DetParams[0].thePitchY;
-  
-  
-  m_commonParamsGPU.numberOfLaddersInBarrel = isUpgrade_ ? phase2PixelTopology::numberOfLaddersInBarrel : phase1PixelTopology::numberOfLaddersInBarrel;
+
+  m_commonParamsGPU.numberOfLaddersInBarrel =
+      isUpgrade_ ? phase2PixelTopology::numberOfLaddersInBarrel : phase1PixelTopology::numberOfLaddersInBarrel;
   m_commonParamsGPU.isUpgrade = isUpgrade_;
   // std::cout << "pitch & thickness " <<  m_commonParamsGPU.thePitchX << ' ' << m_commonParamsGPU.thePitchY << "  " << m_commonParamsGPU.theThicknessB << ' ' << m_commonParamsGPU.theThicknessE << std::endl;
 
@@ -150,31 +146,27 @@ void PixelCPEFast::fillParamsForGpu() {
   for (auto i = 0U; i < m_DetParams.size(); ++i) {
     auto& p = m_DetParams[i];
     auto& g = m_detParamsGPU[i];
- 
+
     assert(p.theDet->index() == int(i));
     assert(m_commonParamsGPU.thePitchY == p.thePitchY);
     assert(m_commonParamsGPU.thePitchX == p.thePitchX);
     //assert(m_commonParamsGPU.theThickness==p.theThickness);
-    
-    if(!isUpgrade_)
-    {
+
+    if (!isUpgrade_) {
       g.nRowsRoc = 80;
       g.nColsRoc = 52;
       g.nRows = 2 * 80;
       g.nCols = 8 * 52;
 
       g.numPixsInModule = 2 * 80 * 8 * 52;
-    }
-    else
-    {
+    } else {
       g.nRowsRoc = p.theDet->specificTopology().rowsperroc();
       g.nColsRoc = p.theDet->specificTopology().colsperroc();
       g.nRows = p.theDet->specificTopology().rocsX() * g.nRowsRoc;
       g.nCols = p.theDet->specificTopology().rocsY() * g.nColsRoc;
 
       g.numPixsInModule = g.nRows * g.nCols;
-	
-    } 
+    }
 
     g.isBarrel = GeomDetEnumerators::isBarrel(p.thePart);
     g.isPosZ = p.theDet->surface().position().z() > 0;
@@ -252,12 +244,12 @@ void PixelCPEFast::fillParamsForGpu() {
     }
     std::cout << i << ' ' << m * std::sqrt(lape.xx()) << ' ' << m * std::sqrt(lape.yy()) << std::endl;
 #endif
-    
-    if(!isUpgrade_)
-    	errorFromTemplates(p, cp, 20000.f);
+
+    if (!isUpgrade_)
+      errorFromTemplates(p, cp, 20000.f);
     else
-        cp.qBin_ = 0;
- 
+      cp.qBin_ = 0;
+
     g.pixmx = std::max(0, cp.pixmx);
     g.sx[0] = cp.sigmax;
     g.sx[1] = cp.sx1;
@@ -302,12 +294,15 @@ void PixelCPEFast::fillParamsForGpu() {
     }
   }
 
-  int numberOfModulesInLadder = isUpgrade_ ? int(phase2PixelTopology::numberOfModulesInLadder) : int(phase1PixelTopology::numberOfModulesInLadder);
-  int numberOfModulesInBarrel = isUpgrade_ ? int(phase2PixelTopology::numberOfModulesInBarrel) : int(phase1PixelTopology::numberOfModulesInBarrel);
-  int numberOfLaddersInBarrel = isUpgrade_ ? int(phase2PixelTopology::numberOfLaddersInBarrel) : int(phase1PixelTopology::numberOfLaddersInBarrel);
-  
+  int numberOfModulesInLadder = isUpgrade_ ? int(phase2PixelTopology::numberOfModulesInLadder)
+                                           : int(phase1PixelTopology::numberOfModulesInLadder);
+  int numberOfModulesInBarrel = isUpgrade_ ? int(phase2PixelTopology::numberOfModulesInBarrel)
+                                           : int(phase1PixelTopology::numberOfModulesInBarrel);
+  int numberOfLaddersInBarrel = isUpgrade_ ? int(phase2PixelTopology::numberOfLaddersInBarrel)
+                                           : int(phase1PixelTopology::numberOfLaddersInBarrel);
+
   int firstEndcapPos = 4, firstEndcapNeg = isUpgrade_ ? 16 : 7;
-  float ladderFactor = 1.f/float(numberOfModulesInLadder);
+  float ladderFactor = 1.f / float(numberOfModulesInLadder);
 
   // compute ladder baricenter (only in global z) for the barrel
   auto& aveGeom = m_averageGeometry;
@@ -335,28 +330,32 @@ void PixelCPEFast::fillParamsForGpu() {
   }
 
   // compute "max z" for first layer in endcap (should we restrict to the outermost ring?)
-  if(!isUpgrade_)
-  {
-    for (auto im = phase1PixelTopology::layerStart[firstEndcapPos]; im < phase1PixelTopology::layerStart[firstEndcapPos+1]; ++im) {
+  if (!isUpgrade_) {
+    for (auto im = phase1PixelTopology::layerStart[firstEndcapPos];
+         im < phase1PixelTopology::layerStart[firstEndcapPos + 1];
+         ++im) {
       auto const& g = m_detParamsGPU[im];
       aveGeom.endCapZ[0] = std::max(aveGeom.endCapZ[0], g.frame.z());
     }
-    for (auto im = phase1PixelTopology::layerStart[firstEndcapNeg]; im < phase1PixelTopology::layerStart[firstEndcapNeg+1]; ++im) {
+    for (auto im = phase1PixelTopology::layerStart[firstEndcapNeg];
+         im < phase1PixelTopology::layerStart[firstEndcapNeg + 1];
+         ++im) {
       auto const& g = m_detParamsGPU[im];
       aveGeom.endCapZ[1] = std::min(aveGeom.endCapZ[1], g.frame.z());
     }
-  // correct for outer ring being closer
-  aveGeom.endCapZ[0] -= 1.5f;
-  aveGeom.endCapZ[1] += 1.5f; 
-  }
-  else
-  {
-
-    for (auto im = phase2PixelTopology::layerStart[firstEndcapPos]; im < phase2PixelTopology::layerStart[firstEndcapPos+1]; ++im) {
+    // correct for outer ring being closer
+    aveGeom.endCapZ[0] -= 1.5f;
+    aveGeom.endCapZ[1] += 1.5f;
+  } else {
+    for (auto im = phase2PixelTopology::layerStart[firstEndcapPos];
+         im < phase2PixelTopology::layerStart[firstEndcapPos + 1];
+         ++im) {
       auto const& g = m_detParamsGPU[im];
       aveGeom.endCapZ[0] = std::max(aveGeom.endCapZ[0], g.frame.z());
     }
-    for (auto im = phase2PixelTopology::layerStart[firstEndcapNeg]; im < phase2PixelTopology::layerStart[firstEndcapNeg+1]; ++im) {
+    for (auto im = phase2PixelTopology::layerStart[firstEndcapNeg];
+         im < phase2PixelTopology::layerStart[firstEndcapNeg + 1];
+         ++im) {
       auto const& g = m_detParamsGPU[im];
       aveGeom.endCapZ[1] = std::min(aveGeom.endCapZ[1], g.frame.z());
     }
@@ -371,20 +370,16 @@ void PixelCPEFast::fillParamsForGpu() {
   */
 
   // fill Layer and ladders geometry
-  
-  if(!isUpgrade_)
-  {
+
+  if (!isUpgrade_) {
     memcpy(m_layerGeometry.layerStart, phase1PixelTopology::layerStart, sizeof(phase1PixelTopology::layerStart));
     memcpy(m_layerGeometry.layer, phase1PixelTopology::layer.data(), phase1PixelTopology::layer.size());
     m_layerGeometry.maxModuleStride = phase1PixelTopology::maxModuleStride;
-  }
-  else
-  {
-
+  } else {
     memcpy(m_layerGeometry.layerStart, phase2PixelTopology::layerStart, sizeof(phase2PixelTopology::layerStart));
     memcpy(m_layerGeometry.layer, phase2PixelTopology::layer.data(), phase2PixelTopology::layer.size());
-    m_layerGeometry.maxModuleStride = phase2PixelTopology::maxModuleStride; 
-  } 
+    m_layerGeometry.maxModuleStride = phase2PixelTopology::maxModuleStride;
+  }
 }
 
 PixelCPEFast::GPUData::~GPUData() {
@@ -565,8 +560,10 @@ LocalError PixelCPEFast::localError(DetParam const& theDetParam, ClusterParam& t
   int minPixelCol = theClusterParam.theCluster->minPixelCol();
   int minPixelRow = theClusterParam.theCluster->minPixelRow();
 
-  bool edgex = (minPixelRow==0) | (maxPixelRow==0) | (minPixelRow==theDetParam.theRecTopol->nrows() - 1) | (maxPixelRow==theDetParam.theRecTopol->nrows() - 1);
-  bool edgey = (minPixelCol==0) | (maxPixelCol==0) | (minPixelCol==theDetParam.theRecTopol->ncolumns() - 1) | (maxPixelCol==theDetParam.theRecTopol->ncolumns() - 1);
+  bool edgex = (minPixelRow == 0) | (maxPixelRow == 0) | (minPixelRow == theDetParam.theRecTopol->nrows() - 1) |
+               (maxPixelRow == theDetParam.theRecTopol->nrows() - 1);
+  bool edgey = (minPixelCol == 0) | (maxPixelCol == 0) | (minPixelCol == theDetParam.theRecTopol->ncolumns() - 1) |
+               (maxPixelCol == theDetParam.theRecTopol->ncolumns() - 1);
 
   unsigned int sizex = theClusterParam.theCluster->sizeX();
   unsigned int sizey = theClusterParam.theCluster->sizeY();

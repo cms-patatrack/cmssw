@@ -18,11 +18,11 @@ namespace gpuCalibPixel {
   constexpr float VCaltoElectronGain_L1 = 50;      // L1:   49.6 +- 2.6
   constexpr float VCaltoElectronOffset = -60;      // L2-4: -60 +- 130
   constexpr float VCaltoElectronOffset_L1 = -670;  // L1:   -670 +- 220
-  
-  constexpr float    ElectronPerADCGain = 600;
-  constexpr int8_t   Phase2ReadoutMode  = -1;
+
+  constexpr float ElectronPerADCGain = 600;
+  constexpr int8_t Phase2ReadoutMode = -1;
   constexpr uint16_t Phase2DigiBaseline = 1000;
-  constexpr uint8_t  Phase2KinkADC      = 8;
+  constexpr uint8_t Phase2KinkADC = 8;
 
   __global__ void calibDigis(bool isRun2,
                              uint16_t* id,
@@ -69,14 +69,15 @@ namespace gpuCalibPixel {
       }
     }
   }
- __global__ void calibDigisUpgrade(
-                             uint16_t *xx, uint16_t *yy,
-                             uint16_t *adc, uint32_t *pdigi,
-                             uint16_t *id,int numElements,
-			     uint32_t* __restrict__ moduleStart,        // just to zero first
-                             uint32_t* __restrict__ nClustersInModule,  // just to zero them
-                             uint32_t* __restrict__ clusModuleStart)
-   {
+  __global__ void calibDigisUpgrade(uint16_t* xx,
+                                    uint16_t* yy,
+                                    uint16_t* adc,
+                                    uint32_t* pdigi,
+                                    uint16_t* id,
+                                    int numElements,
+                                    uint32_t* __restrict__ moduleStart,        // just to zero first
+                                    uint32_t* __restrict__ nClustersInModule,  // just to zero them
+                                    uint32_t* __restrict__ clusModuleStart) {
     int first = blockDim.x * blockIdx.x + threadIdx.x;
 
     if (0 == first)
@@ -85,22 +86,19 @@ namespace gpuCalibPixel {
       nClustersInModule[i] = 0;
     }
 
-   for (int i = first; i < numElements; i += gridDim.x * blockDim.x) {
-      
+    for (int i = first; i < numElements; i += gridDim.x * blockDim.x) {
       if (InvId == id[i])
         continue;
       int mode = (Phase2ReadoutMode < -1 ? -1 : Phase2ReadoutMode);
 
-      if(mode < 0)
+      if (mode < 0)
         adc[i] = std::max(100, int(adc[i] * ElectronPerADCGain));
-      else
-      {
+      else {
         if (adc[i] < Phase2KinkADC)
           adc[i] = int((adc[i] - 0.5) * ElectronPerADCGain);
-        else
-        {
+        else {
           constexpr int8_t dspp = (Phase2ReadoutMode < 10 ? Phase2ReadoutMode : 10);
-          constexpr int8_t ds   = int8_t(dspp <= 1 ? 1 : (dspp - 1) * (dspp - 1));
+          constexpr int8_t ds = int8_t(dspp <= 1 ? 1 : (dspp - 1) * (dspp - 1));
 
           adc[i] -= (Phase2KinkADC - 1);
           adc[i] *= ds;
@@ -110,11 +108,11 @@ namespace gpuCalibPixel {
         }
 
         adc[i] += int(Phase2DigiBaseline);
-        adc[i] = std::max(uint16_t(100),adc[i]);
-        }
+        adc[i] = std::max(uint16_t(100), adc[i]);
+      }
     }
   }
-  
+
 }  // namespace gpuCalibPixel
 
 #endif  // RecoLocalTracker_SiPixelClusterizer_plugins_gpuCalibPixel_h

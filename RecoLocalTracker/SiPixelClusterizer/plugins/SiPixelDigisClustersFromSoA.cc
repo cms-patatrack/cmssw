@@ -63,16 +63,14 @@ private:
   edm::EDPutTokenT<SiPixelClusterCollectionNew> clusterPutToken_;
 
   bool isUpgrade_;
-
 };
 
 SiPixelDigisClustersFromSoA::SiPixelDigisClustersFromSoA(const edm::ParameterSet& iConfig)
     : digiGetToken_(consumes<SiPixelDigisSoA>(iConfig.getParameter<edm::InputTag>("src"))),
       digiPutToken_(produces<edm::DetSetVector<PixelDigi>>()),
-      clusterPutToken_(produces<SiPixelClusterCollectionNew>())
-      {
-        isUpgrade_ = iConfig.getParameter<bool>("Upgrade");
-      }
+      clusterPutToken_(produces<SiPixelClusterCollectionNew>()) {
+  isUpgrade_ = iConfig.getParameter<bool>("Upgrade");
+}
 
 void SiPixelDigisClustersFromSoA::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   edm::ParameterSetDescription desc;
@@ -179,4 +177,3 @@ void SiPixelDigisClustersFromSoA::produce(edm::StreamID, edm::Event& iEvent, con
 }
 
 DEFINE_FWK_MODULE(SiPixelDigisClustersFromSoA);
-

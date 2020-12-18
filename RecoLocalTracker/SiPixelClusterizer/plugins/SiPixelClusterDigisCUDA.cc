@@ -36,8 +36,6 @@ public:
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
 private:
-
-
   void acquire(const edm::Event& iEvent,
                const edm::EventSetup& iSetup,
                edm::WaitingTaskWithArenaHolder waitingTaskHolder) override;
@@ -53,17 +51,12 @@ private:
 
   pixelgpudetails::SiPixelRawToClusterGPUKernel gpuAlgo_;
   PixelDataFormatter::Errors errors_;
-
 };
 
 SiPixelClusterDigisCUDA::SiPixelClusterDigisCUDA(const edm::ParameterSet& iConfig)
-    :
-      pixelDigiToken_(consumes<edm::DetSetVector<PixelDigi>>(iConfig.getParameter<edm::InputTag>("InputLabel"))),
+    : pixelDigiToken_(consumes<edm::DetSetVector<PixelDigi>>(iConfig.getParameter<edm::InputTag>("InputLabel"))),
       digiPutToken_(produces<cms::cuda::Product<SiPixelDigisCUDA>>()),
-      clusterPutToken_(produces<cms::cuda::Product<SiPixelClustersCUDA>>())
-{
-
-}
+      clusterPutToken_(produces<cms::cuda::Product<SiPixelClustersCUDA>>()) {}
 
 void SiPixelClusterDigisCUDA::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   edm::ParameterSetDescription desc;
@@ -71,11 +64,10 @@ void SiPixelClusterDigisCUDA::fillDescriptions(edm::ConfigurationDescriptions& d
   descriptions.addWithDefaultLabel(desc);
 }
 
-
 void SiPixelClusterDigisCUDA::acquire(const edm::Event& iEvent,
                                       const edm::EventSetup& iSetup,
                                       edm::WaitingTaskWithArenaHolder waitingTaskHolder) {
-  cms::cuda::ScopedContextAcquire ctx{iEvent.streamID(), std::move(waitingTaskHolder), ctxState_}; 
+  cms::cuda::ScopedContextAcquire ctx{iEvent.streamID(), std::move(waitingTaskHolder), ctxState_};
 
   edm::Handle<edm::DetSetVector<PixelDigi>> digis;
   iEvent.getByToken(pixelDigiToken_, digis);
@@ -89,25 +81,23 @@ void SiPixelClusterDigisCUDA::acquire(const edm::Event& iEvent,
   uint32_t nDigis = 0;
 
   for (auto DSViter = input.begin(); DSViter != input.end(); DSViter++)
-	nDigis = nDigis + uint32_t(DSViter->size());
+    nDigis = nDigis + uint32_t(DSViter->size());
 
-  auto x = cms::cuda::make_host_unique<uint16_t[]>(nDigis + 1,ctx.stream());
-  auto y = cms::cuda::make_host_unique<uint16_t[]>(nDigis + 1,ctx.stream());
-  auto a = cms::cuda::make_host_unique<uint16_t[]>(nDigis + 1,ctx.stream());
-  auto i = cms::cuda::make_host_unique<uint16_t[]>(nDigis + 1,ctx.stream());
-  auto p = cms::cuda::make_host_unique<uint32_t[]>(nDigis + 1,ctx.stream());
-  auto r = cms::cuda::make_host_unique<uint32_t[]>(nDigis + 1,ctx.stream());
- 
+  auto x = cms::cuda::make_host_unique<uint16_t[]>(nDigis + 1, ctx.stream());
+  auto y = cms::cuda::make_host_unique<uint16_t[]>(nDigis + 1, ctx.stream());
+  auto a = cms::cuda::make_host_unique<uint16_t[]>(nDigis + 1, ctx.stream());
+  auto i = cms::cuda::make_host_unique<uint16_t[]>(nDigis + 1, ctx.stream());
+  auto p = cms::cuda::make_host_unique<uint32_t[]>(nDigis + 1, ctx.stream());
+  auto r = cms::cuda::make_host_unique<uint32_t[]>(nDigis + 1, ctx.stream());
+
   nDigis = 0;
 
-  for (auto DSViter = input.begin(); DSViter != input.end(); DSViter++)
-  {
+  for (auto DSViter = input.begin(); DSViter != input.end(); DSViter++) {
     unsigned int detid = DSViter->detId();
     DetId detIdObject(detid);
     const GeomDetUnit* genericDet = geom_->idToDetUnit(detIdObject);
     auto const gind = genericDet->index();
-    for (auto const& px : *DSViter)
-    {
+    for (auto const& px : *DSViter) {
       x[nDigis] = uint16_t(px.row());
       y[nDigis] = uint16_t(px.column());
       a[nDigis] = uint16_t(px.adc());
@@ -118,10 +108,7 @@ void SiPixelClusterDigisCUDA::acquire(const edm::Event& iEvent,
     }
   }
 
-  gpuAlgo_.makeDigiClustersAsync(
-     			     i.get(),x.get(),y.get(),a.get(),p.get(),r.get(), 
-                             nDigis,
-                             ctx.stream());
+  gpuAlgo_.makeDigiClustersAsync(i.get(), x.get(), y.get(), a.get(), p.get(), r.get(), nDigis, ctx.stream());
 }
 
 void SiPixelClusterDigisCUDA::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {

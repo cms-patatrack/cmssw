@@ -8,7 +8,7 @@
 namespace gpuPixelDoublets {
 
   constexpr int nPairs = 13 + 2 + 4;
-  constexpr int nPairsUpgrade = 6 + 14 + 3 + 8 + 6 +14;
+  constexpr int nPairsUpgrade = 6 + 14 + 3 + 8 + 6 + 14;
 
   static_assert(nPairs <= CAConstants::maxNumberOfLayerPairs());
   static_assert(nPairsUpgrade <= CAConstants::maxNumberOfLayerPairs());
@@ -186,7 +186,8 @@ namespace gpuPixelDoublets {
                                 bool doClusterCut,
                                 bool doZ0Cut,
                                 bool doPtCut,
-                                uint32_t maxNumOfDoublets, bool upgrade) {
+                                uint32_t maxNumOfDoublets,
+                                bool upgrade) {
     auto const& __restrict__ hh = *hhp;
     doubletsFromHisto(upgrade ? layerPairsUpgrade : layerPairs,
                       nActualPairs,
@@ -205,7 +206,7 @@ namespace gpuPixelDoublets {
                       doZ0Cut,
                       doPtCut,
                       maxNumOfDoublets,
-		      upgrade);
+                      upgrade);
   }
 
 }  // namespace gpuPixelDoublets

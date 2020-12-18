@@ -46,17 +46,17 @@ void CAHitNtupletGeneratorKernelsCPU::buildDoublets(HitsOnCPU const &hh, cudaStr
 
   // FIXME avoid magic numbers
   auto nActualPairs = m_params.isUpgrade_ ? gpuPixelDoublets::nPairsUpgrade : gpuPixelDoublets::nPairs;
-  if (!m_params.includeJumpingForwardDoublets_ && ! m_params.isUpgrade_)
+  if (!m_params.includeJumpingForwardDoublets_ && !m_params.isUpgrade_)
     nActualPairs = 15;
-  if (m_params.minHitsPerNtuplet_ > 3 && ! m_params.isUpgrade_) {
+  if (m_params.minHitsPerNtuplet_ > 3 && !m_params.isUpgrade_) {
     nActualPairs = 13;
   }
-  if (m_params.minHitsPerNtuplet_ > 3 &&  m_params.isUpgrade_ && !m_params.includeJumpingForwardDoublets_){
+  if (m_params.minHitsPerNtuplet_ > 3 && m_params.isUpgrade_ && !m_params.includeJumpingForwardDoublets_) {
     nActualPairs = 31;
-  } 
+  }
 
   auto maxPairs = m_params.isUpgrade_ ? gpuPixelDoublets::nPairsUpgrade : gpuPixelDoublets::nPairs;
-  
+
   assert(nActualPairs <= maxPairs);
   gpuPixelDoublets::getDoubletsFromHisto(device_theCells_.get(),
                                          device_nCells_,
@@ -70,7 +70,7 @@ void CAHitNtupletGeneratorKernelsCPU::buildDoublets(HitsOnCPU const &hh, cudaStr
                                          m_params.doZ0Cut_,
                                          m_params.doPtCut_,
                                          m_params.maxNumberOfDoublets_,
-					 m_params.isUpgrade_);
+                                         m_params.isUpgrade_);
 }
 
 template <>
@@ -106,7 +106,7 @@ void CAHitNtupletGeneratorKernelsCPU::launchKernels(HitsOnCPU const &hh, TkSoA *
                  m_params.CAThetaCutForward_,
                  m_params.dcaCutInnerTriplet_,
                  m_params.dcaCutOuterTriplet_,
-		 m_params.isUpgrade_);
+                 m_params.isUpgrade_);
 
   if (nhits > 1 && m_params.earlyFishbone_) {
     gpuPixelDoublets::fishbone(
@@ -121,7 +121,7 @@ void CAHitNtupletGeneratorKernelsCPU::launchKernels(HitsOnCPU const &hh, TkSoA *
                        device_hitTuple_apc_,
                        quality_d,
                        m_params.minHitsPerNtuplet_,
-		       m_params.isUpgrade_);
+                       m_params.isUpgrade_);
   if (m_params.doStats_)
     kernel_mark_used(hh.view(), device_theCells_.get(), device_nCells_);
 

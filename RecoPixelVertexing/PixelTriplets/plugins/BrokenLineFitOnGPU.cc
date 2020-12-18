@@ -63,25 +63,21 @@ void HelixFitOnGPU::launchBrokenLineKernelsOnCPU(HitsView const* hv, uint32_t hi
                      5,
                      offset);
     }
-    
-    if(upgrade_)
-    {
-	
-    	for (uint32_t i = 6; i < 16; i++) 
-        {
-            kernelBLFastFit<4>(
-                tuples_d, tupleMultiplicity_d, hv, hitsGPU_.get(), hits_geGPU_.get(), fast_fit_resultsGPU_.get(), i, offset);
 
-            kernelBLFit<4>(tupleMultiplicity_d,
-                           bField_,
-                           outputSoa_d,
-                           hitsGPU_.get(),
-                           hits_geGPU_.get(),
-                           fast_fit_resultsGPU_.get(),
-                           i,
-                           offset);
+    if (upgrade_) {
+      for (uint32_t i = 6; i < 16; i++) {
+        kernelBLFastFit<4>(
+            tuples_d, tupleMultiplicity_d, hv, hitsGPU_.get(), hits_geGPU_.get(), fast_fit_resultsGPU_.get(), i, offset);
 
-          }
+        kernelBLFit<4>(tupleMultiplicity_d,
+                       bField_,
+                       outputSoa_d,
+                       hitsGPU_.get(),
+                       hits_geGPU_.get(),
+                       fast_fit_resultsGPU_.get(),
+                       i,
+                       offset);
+      }
     }
 
   }  // loop on concurrent fits

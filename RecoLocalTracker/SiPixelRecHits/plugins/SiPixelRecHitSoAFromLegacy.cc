@@ -59,7 +59,7 @@ SiPixelRecHitSoAFromLegacy::SiPixelRecHitSoAFromLegacy(const edm::ParameterSet& 
       tokenModuleStart_{produces<HMSstorage>()},
       cpeName_(iConfig.getParameter<std::string>("CPE")),
       convert2Legacy_(iConfig.getParameter<bool>("convertToLegacy")),
-      isUpgrade_(iConfig.getParameter<bool>("Upgrade")){
+      isUpgrade_(iConfig.getParameter<bool>("Upgrade")) {
   if (convert2Legacy_)
     produces<SiPixelRecHitCollectionNew>();
 }
@@ -129,7 +129,7 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
   HitModuleStart moduleStart_;  // index of the first pixel of each module
   HitModuleStart clusInModule_;
   memset(&clusInModule_, 0, sizeof(HitModuleStart));  // needed??
-  assert((gpuClustering::MaxNumModulesUpgrade+1) == clusInModule_.size());
+  assert((gpuClustering::MaxNumModulesUpgrade + 1) == clusInModule_.size());
   assert(0 == clusInModule_[maxModules]);
   uint32_t moduleId_;
   moduleStart_[1] = 0;  // we run sequentially....
@@ -251,14 +251,14 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
     }
   }
   assert(numberOfHits == numberOfClusters);
-  
+
   // fill data structure to support CA
   for (auto i = 0U; i <= nLayers; ++i) {
-    output->hitsLayerStart()[i] = hitsModuleStart[cpeView.layerGeometry().layerStart[i]]; 
+    output->hitsLayerStart()[i] = hitsModuleStart[cpeView.layerGeometry().layerStart[i]];
     //std::cout << i << " - " << cpeView.layerGeometry().layerStart[i] << " - " << hitsModuleStart[cpeView.layerGeometry().layerStart[i]] << std::endl;
   }
   cms::cuda::fillManyFromVector(
-      output->phiBinner(), nLayers, output->iphi(), output->hitsLayerStart(), numberOfHits, 128, nullptr); 
+      output->phiBinner(), nLayers, output->iphi(), output->hitsLayerStart(), numberOfHits, 128, nullptr);
 
   //std::cout << "created HitSoa for " <<  numberOfClusters << " clusters in " << numberOfDetUnits << " Dets" << std::endl;
   iEvent.put(std::move(output));

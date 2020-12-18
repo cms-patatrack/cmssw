@@ -70,7 +70,7 @@ namespace cAHitNtupletGenerator {
            float hardCurvCut,
            float dcaCutInnerTriplet,
            float dcaCutOuterTriplet,
-	   bool isUpgrade,
+           bool isUpgrade,
            QualityCuts const& cuts)
         : onGPU_(onGPU),
           minHitsPerNtuplet_(minHitsPerNtuplet),
@@ -91,7 +91,7 @@ namespace cAHitNtupletGenerator {
           hardCurvCut_(hardCurvCut),
           dcaCutInnerTriplet_(dcaCutInnerTriplet),
           dcaCutOuterTriplet_(dcaCutOuterTriplet),
-	  isUpgrade_(isUpgrade),
+          isUpgrade_(isUpgrade),
           cuts_(cuts) {}
 
     const bool onGPU_;

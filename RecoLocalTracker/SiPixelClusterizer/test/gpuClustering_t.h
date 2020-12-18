@@ -255,7 +255,8 @@ int main(void) {
     std::cout << "CUDA countModules kernel launch with " << blocksPerGrid << " blocks of " << threadsPerBlock
               << " threads\n";
 
-    cms::cuda::launch(countModules, {blocksPerGrid, threadsPerBlock}, d_id.get(), d_moduleStart.get(), d_clus.get(), n, MaxNumModules);
+    cms::cuda::launch(
+        countModules, {blocksPerGrid, threadsPerBlock}, d_id.get(), d_moduleStart.get(), d_clus.get(), n, MaxNumModules);
 
     blocksPerGrid = MaxNumModules;  //nModules;
 
@@ -272,7 +273,8 @@ int main(void) {
                       d_clusInModule.get(),
                       d_moduleId.get(),
                       d_clus.get(),
-                      n,false);
+                      n,
+                      false);
     cudaDeviceSynchronize();
     cudaCheck(cudaMemcpy(&nModules, d_moduleStart.get(), sizeof(uint32_t), cudaMemcpyDeviceToHost));
 
