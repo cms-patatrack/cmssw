@@ -207,7 +207,7 @@ void CAHitNtupletGeneratorKernelsGPU::buildDoublets(HitsOnCPU const &hh, cudaStr
   if (m_params.minHitsPerNtuplet_ > 3 && ! m_params.isUpgrade_) {
     nActualPairs = 13;
   }
-  if (m_params.minHitsPerNtuplet_ > 3 &&  m_params.isUpgrade_ && false && !m_params.includeJumpingForwardDoublets_){
+  if (m_params.minHitsPerNtuplet_ > 3 &&  m_params.isUpgrade_ && !m_params.includeJumpingForwardDoublets_){
     nActualPairs = 31;
   }
 
@@ -268,7 +268,7 @@ void CAHitNtupletGeneratorKernelsGPU::classifyTuples(HitsOnCPU const &hh, TkSoA 
       device_theCells_.get(), device_nCells_, tuples_d, tracks_d);
   cudaCheck(cudaGetLastError());
 
-  if (m_params.minHitsPerNtuplet_ < 4 || m_params.doStats_) {
+  if (m_params.minHitsPerNtuplet_ < 5 || m_params.doStats_) {
     // fill hit->track "map"
     numberOfBlocks = (3 * CAConstants::maxNumberOfQuadruplets() / 4 + blockSize - 1) / blockSize;
     kernel_countHitInTracks<<<numberOfBlocks, blockSize, 0, cudaStream>>>(

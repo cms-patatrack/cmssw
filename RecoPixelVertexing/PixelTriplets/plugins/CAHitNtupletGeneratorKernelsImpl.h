@@ -505,7 +505,7 @@ __global__ void kernel_tripletCleaner(TrackingRecHit2DSOAView const *__restrict_
       continue;
 
     float mc = 10000.f;
-    uint16_t im = 60000; //for Phase2 would need uint32_t
+    uint32_t im = 4000000; //for Phase2 would need uint32_t
     uint32_t maxNh = 0;
 
     // find maxNh

@@ -299,9 +299,11 @@ namespace gpuPixelDoublets {
             continue;
           if (doPtCut && ptcut(oi, idphi)) //ptCut = true;
           #ifdef GPU_DEBUG
-          nPhi[pairLayerId]++;
-           ptCut = true;
-          #else
+          {
+	  nPhi[pairLayerId]++;
+          ptCut = true;
+          }
+	  #else
             continue;
           #endif
 
@@ -309,18 +311,18 @@ namespace gpuPixelDoublets {
           #ifdef GPU_DEBUG
           nPt[pairLayerId]++;
   	  
-          printf("Doublet %d %d - inn %.2f %.2f %.2f - out %.2f %.2f %.2f - %d %d - %d %d %d %d \n",
+if(false)          printf("Doublet %d %d - inn %.2f %.2f %.2f - out %.2f %.2f %.2f - %d %d - %d %d %d %d \n",
           inner,outer,
           hh.xGlobal(i),hh.yGlobal(i),hh.zGlobal(i),
           hh.xGlobal(oi),hh.yGlobal(oi),hh.zGlobal(oi),
           iphicut,idphi,
           z0Cut,phicut,ptCut, (z0Cut && phicut && ptCut));
 
-          /*if(z0Cut || phicut || ptCut)
+          if(z0Cut || phicut || ptCut)
           {
             continue;
           };
-*/
+
           #endif
           // printf("three\n");
           auto ind = atomicAdd(nCells, 1);

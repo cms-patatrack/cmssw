@@ -255,12 +255,12 @@ void SiPixelRecHitSoAFromLegacy::produce(edm::StreamID streamID, edm::Event& iEv
   // fill data structure to support CA
   for (auto i = 0U; i <= nLayers; ++i) {
     output->hitsLayerStart()[i] = hitsModuleStart[cpeView.layerGeometry().layerStart[i]]; 
-    std::cout << i << " - " << cpeView.layerGeometry().layerStart[i] << " - " << hitsModuleStart[cpeView.layerGeometry().layerStart[i]] << std::endl;
+    //std::cout << i << " - " << cpeView.layerGeometry().layerStart[i] << " - " << hitsModuleStart[cpeView.layerGeometry().layerStart[i]] << std::endl;
   }
   cms::cuda::fillManyFromVector(
       output->phiBinner(), nLayers, output->iphi(), output->hitsLayerStart(), numberOfHits, 128, nullptr); 
 
-  std::cout << "created HitSoa for " <<  numberOfClusters << " clusters in " << numberOfDetUnits << " Dets" << std::endl;
+  //std::cout << "created HitSoa for " <<  numberOfClusters << " clusters in " << numberOfDetUnits << " Dets" << std::endl;
   iEvent.put(std::move(output));
   if (convert2Legacy_)
     iEvent.put(std::move(legacyOutput));
