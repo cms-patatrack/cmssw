@@ -62,7 +62,7 @@ namespace CAConstants {
 #else
 #ifndef ONLY_PHICUT
   using CellNeighbors = cms::cuda::VecArray<uint32_t, 36>;
-  using CellTracks = cms::cuda::VdecArray<tindex_type, 48>;
+  using CellTracks = cms::cuda::VecArray<tindex_type, 48>;
 #else
   using CellNeighbors = cms::cuda::VecArray<uint32_t, 64>;
   using CellTracks = cms::cuda::VecArray<tindex_type, 64>;

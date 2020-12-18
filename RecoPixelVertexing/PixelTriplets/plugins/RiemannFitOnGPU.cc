@@ -106,5 +106,31 @@ void HelixFitOnGPU::launchRiemannKernelsOnCPU(HitsView const *hv, uint32_t nhits
                        circle_fit_resultsGPU_,
                        offset);
     }
+
+    if (upgrade_) {
+      for (uint32_t i = 6; i < 16; i++) {
+        kernelFastFit<4>(
+            tuples_d, tupleMultiplicity_d, i, hv, hitsGPU_.get(), hits_geGPU_.get(), fast_fit_resultsGPU_.get(), offset);
+
+        kernelCircleFit<4>(tupleMultiplicity_d,
+                           i,
+                           bField_,
+                           hitsGPU_.get(),
+                           hits_geGPU_.get(),
+                           fast_fit_resultsGPU_.get(),
+                           circle_fit_resultsGPU_,
+                           offset);
+
+        kernelLineFit<4>(tupleMultiplicity_d,
+                         i,
+                         bField_,
+                         outputSoa_d,
+                         hitsGPU_.get(),
+                         hits_geGPU_.get(),
+                         fast_fit_resultsGPU_.get(),
+                         circle_fit_resultsGPU_,
+                         offset);
+      }
+    }
   }
 }
