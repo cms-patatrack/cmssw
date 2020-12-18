@@ -15,7 +15,7 @@ void CAHitNtupletGeneratorKernelsCPU::allocateOnGPU(int32_t nHits, cudaStream_t 
   device_theCellNeighbors_ = Traits::template make_unique<CAConstants::CellNeighborsVector>(stream);
   device_theCellTracks_ = Traits::template make_unique<CAConstants::CellTracksVector>(stream);
 
-#ifdef  GPU_DEBUG
+#ifdef GPU_DEBUG
   std::cout << "Allocation for tuple building. N hits " << nHits << std::endl;
 #endif
 

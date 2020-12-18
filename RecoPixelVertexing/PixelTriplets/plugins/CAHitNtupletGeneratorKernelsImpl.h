@@ -5,7 +5,6 @@
 // #define NTUPLE_DEBUG
 // #define GPU_DEBUG
 
-
 #include <cmath>
 #include <cstdint>
 
@@ -87,8 +86,8 @@ __global__ void kernel_checkOverflows(HitContainer const *foundNtuplets,
       printf("cellNeighbors overflow\n");
     if (cellTracks && cellTracks->full())
       printf("cellTracks overflow\n");
-    if (int(hitToTuple->nOnes())<nHits) 
-      printf("ERROR hitToTuple  overflow %d %d\n",hitToTuple->nOnes(),nHits);
+    if (int(hitToTuple->nOnes()) < nHits)
+      printf("ERROR hitToTuple  overflow %d %d\n", hitToTuple->nOnes(), nHits);
   }
 
   for (int idx = first, nt = (*nCells); idx < nt; idx += gridDim.x * blockDim.x) {

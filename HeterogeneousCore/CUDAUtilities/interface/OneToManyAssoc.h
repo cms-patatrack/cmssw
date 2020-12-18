@@ -35,8 +35,8 @@ namespace cms {
     template <typename Assoc>
     __global__ void zeroAndInit(OneToManyAssocView<Assoc> view) {
       auto h = view.assoc;
-      assert(1==gridDim.x);
-      assert(0==blockIdx.x);
+      assert(1 == gridDim.x);
+      assert(0 == blockIdx.x);
 
       int first = threadIdx.x;
 

@@ -26,9 +26,10 @@ void CAHitNtupletGeneratorKernelsGPU::launchKernels(HitsOnCPU const &hh, TkSoA *
   auto nhits = hh.nHits();
   assert(nhits <= pixelGPUConstants::maxNumberOfHits);
 
-#ifdef  NTUPLE_DEBUG
+#ifdef NTUPLE_DEBUG
   std::cout << "start tuple building. N hits " << nhits << std::endl;
-  if (nhits<2) std::cout << "too few hits " << nhits << std::endl;
+  if (nhits < 2)
+    std::cout << "too few hits " << nhits << std::endl;
 #endif
 
   //
@@ -227,7 +228,6 @@ void CAHitNtupletGeneratorKernelsGPU::classifyTuples(HitsOnCPU const &hh, TkSoA 
 
   int32_t nhits = hh.nHits();
 
-
   auto blockSize = 64;
 
   // classify tracks based on kinematics
@@ -255,12 +255,13 @@ void CAHitNtupletGeneratorKernelsGPU::classifyTuples(HitsOnCPU const &hh, TkSoA 
 
   if (m_params.minHitsPerNtuplet_ < 4 || m_params.doStats_) {
     // fill hit->track "map"
-    assert(hitToTupleView_.offSize>nhits);
+    assert(hitToTupleView_.offSize > nhits);
     numberOfBlocks = (3 * CAConstants::maxNumberOfQuadruplets() / 4 + blockSize - 1) / blockSize;
     kernel_countHitInTracks<<<numberOfBlocks, blockSize, 0, cudaStream>>>(
         tuples_d, quality_d, device_hitToTuple_.get());
     cudaCheck(cudaGetLastError());
-    assert((hitToTupleView_.assoc==device_hitToTuple_.get()) && (hitToTupleView_.offStorage==device_hitToTupleStorage_.get()) && (hitToTupleView_.offSize>0));
+    assert((hitToTupleView_.assoc == device_hitToTuple_.get()) &&
+           (hitToTupleView_.offStorage == device_hitToTupleStorage_.get()) && (hitToTupleView_.offSize > 0));
     cms::cuda::launchFinalize(hitToTupleView_, cudaStream);
     cudaCheck(cudaGetLastError());
     kernel_fillHitInTracks<<<numberOfBlocks, blockSize, 0, cudaStream>>>(tuples_d, quality_d, device_hitToTuple_.get());
