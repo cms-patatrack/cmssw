@@ -31,17 +31,21 @@ namespace cms {
       int32_t contentSize = -1;
     };
 
+    // this MUST BE DONE in a single block (or in two kernels!)
     template <typename Assoc>
     __global__ void zeroAndInit(OneToManyAssocView<Assoc> view) {
       auto h = view.assoc;
-      int first = blockDim.x * blockIdx.x + threadIdx.x;
+      assert(1==gridDim.x);
+      assert(0==blockIdx.x);
+
+      int first = threadIdx.x;
 
       if (0 == first) {
         h->psws = 0;
         h->initStorage(view);
       }
       __syncthreads();
-      for (int i = first, nt = h->totOnes(); i < nt; i += gridDim.x * blockDim.x) {
+      for (int i = first, nt = h->totOnes(); i < nt; i += blockDim.x) {
         h->off[i] = 0;
       }
     }
@@ -77,7 +81,7 @@ namespace cms {
       assert(nOnes > 0);
 #ifdef __CUDACC__
       auto nthreads = 1024;
-      auto nblocks = (nOnes + nthreads - 1) / nthreads;
+      auto nblocks = 1;  // MUST BE ONE as memory is initialize in thread 0 (alternative is two kernels);
       zeroAndInit<<<nblocks, nthreads, 0, stream>>>(view);
       cudaCheck(cudaGetLastError());
 #else
