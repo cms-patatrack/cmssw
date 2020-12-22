@@ -29,7 +29,7 @@
 
 #include "Common.h"
 #include "DeclsForKernels.h"
-#include "EcalUncalibRecHitMultiFitAlgo_gpu_new.h"
+#include "EcalUncalibRecHitMultiFitAlgoGPU.h"
 
 class EcalUncalibRecHitProducerGPU : public edm::stream::EDProducer<edm::ExternalWork> {
 public:
