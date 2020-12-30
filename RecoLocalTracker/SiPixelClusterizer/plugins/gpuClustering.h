@@ -274,7 +274,7 @@ namespace gpuClustering {
       // adjust the cluster id to be a positive value starting from 0
       for (int i = first; i < msize; i += blockDim.x) {
         if (id[i] == invalidModuleId) {  // skip invalid pixels
-          clusterId[i] = -9999;
+          clusterId[i] = -gpuClustering::invalidModuleId;
           continue;
         }
         clusterId[i] = -clusterId[i] - 1;
