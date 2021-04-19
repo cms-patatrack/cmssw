@@ -1,0 +1,8 @@
+<use name="cuda"/>
+<use name="DataFormats/Math"/>
+<use name="FWCore/Framework"/>
+<use name="FWCore/ParameterSet"/>
+<use name="FWCore/PluginManager"/>
+<use name="HeterogeneousCore/CUDAUtilities"/>
+<use name="HeterogeneousCore/CUDACore"/>
+<flags EDM_PLUGIN="1"/>
